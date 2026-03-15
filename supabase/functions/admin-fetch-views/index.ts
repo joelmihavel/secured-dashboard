@@ -34,10 +34,11 @@ serve(async (req: Request) => {
 
   const supabase = createServiceClient();
 
-  const [userFunnel, m360, verifications] = await Promise.all([
+  const [userFunnel, m360, verifications, riskDetail] = await Promise.all([
     supabase.from("v_user_funnel").select("*"),
     supabase.from("v_m360_detail").select("*"),
     supabase.from("v_verification_analysis").select("*"),
+    supabase.from("v_risk_detail").select("*"),
   ]);
 
   if (userFunnel.error) {
@@ -49,12 +50,16 @@ serve(async (req: Request) => {
   if (verifications.error) {
     return errorResponse("v_verification_analysis: " + verifications.error.message, 500);
   }
+  if (riskDetail.error) {
+    return errorResponse("v_risk_detail: " + riskDetail.error.message, 500);
+  }
 
   return new Response(
     JSON.stringify({
       user_funnel: userFunnel.data,
       m360: m360.data,
       verifications: verifications.data,
+      risk_detail: riskDetail.data,
     }),
     {
       status: 200,

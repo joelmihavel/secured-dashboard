@@ -88,7 +88,7 @@ var C = {
 };
 
 // ===== Sheet Order =====
-var SHEET_ORDER = ['Summary', 'Users', 'User Details', 'Landlords', 'Verifications', 'Legends', 'M360', 'Conversions', 'Payments', 'Config', '_Data'];
+var SHEET_ORDER = ['Summary', 'Users', 'Review', 'User Details', 'Landlords', 'Risk', 'Verifications', 'Legends', 'M360', 'Conversions', 'Payments', 'Config', '_Data'];
 
 // ============================================================================
 // MAIN ENTRY POINTS
@@ -130,8 +130,10 @@ function syncAll() {
       Logger.log('WARNING: Tenant Log fetch failed: ' + e.message);
     }
     safeWrite('Users', function() { writeUsersSheet(allData.users, tenantMap); });
+    safeWrite('Review', function() { writeReviewSheet(allData.users); });
     safeWrite('User Details', function() { writeUserDetailsSheet(allData.users); });
     safeWrite('Landlords', function() { writeLandlordsSheet(allData.users); });
+    safeWrite('Risk', function() { writeRiskSheet(allData.riskDetail || []); });
     safeWrite('Verifications', function() { writeVerificationsSheet(allData.verifications || []); });
     safeWrite('Legends', function() { writeLegendsSheet(); });
     safeWrite('Payments', function() { writePaymentsSheet(allData.payments || []); });
@@ -229,7 +231,9 @@ function ensureTrigger() {
 function _getSelectedUserRows() {
   var sheet = SpreadsheetApp.getActiveSheet();
   var sheetName = sheet.getName();
-  if (sheetName !== 'Users' && sheetName !== 'User Details') return { error: 'Please select rows on the "Users" sheet.' };
+  if (sheetName !== 'Users' && sheetName !== 'User Details' && sheetName !== 'Review') {
+    return { error: 'Please select rows on the "Users" or "Review" sheet.' };
+  }
 
   var selection = sheet.getActiveRange();
   if (!selection) return { error: 'No rows selected.' };
@@ -239,24 +243,45 @@ function _getSelectedUserRows() {
   if (startRow <= 1) { startRow = 2; numRows = numRows - (2 - selection.getRow()); }
   if (numRows <= 0) return { error: 'No data rows selected (header row doesn\'t count).' };
 
-  // Read all needed columns in one batch: cols 1-17
-  var data = sheet.getRange(startRow, 1, numRows, 17).getValues();
   var users = [];
-  for (var i = 0; i < data.length; i++) {
-    var userId = String(data[i][0] || '').trim();
-    if (!userId || userId.length < 30) continue;
-    users.push({
-      userId: userId,
-      phone: String(data[i][1] || ''),
-      status: String(data[i][2] || ''),
-      name: String(data[i][3] || '') || userId.substring(0, 8),
-      rent: String(data[i][4] || ''),
-      risk: String(data[i][11] || ''),
-      adminReview: String(data[i][12] || '').trim().toLowerCase(),
-      auditStatus: String(data[i][15] || ''),
-      missingData: String(data[i][16] || ''),
-      row: startRow + i,
-    });
+  if (sheetName === 'Review') {
+    // Review cols: 0=ID, 1=Phone, 2=Name, 3=Status, 4=Rent, 5=City, 6=Risk, 7=Audit, 8=Missing, 9=AdminReview
+    var data = sheet.getRange(startRow, 1, numRows, REVIEW_SHEET_ADMIN_COL).getValues();
+    for (var i = 0; i < data.length; i++) {
+      var userId = String(data[i][0] || '').trim();
+      if (!userId || userId.length < 30) continue;
+      users.push({
+        userId: userId,
+        phone: String(data[i][1] || ''),
+        status: String(data[i][3] || ''),
+        name: String(data[i][2] || '') || userId.substring(0, 8),
+        rent: String(data[i][4] || ''),
+        risk: String(data[i][6] || ''),
+        adminReview: String(data[i][9] || '').trim().toLowerCase(),
+        auditStatus: String(data[i][7] || ''),
+        missingData: String(data[i][8] || ''),
+        row: startRow + i,
+      });
+    }
+  } else {
+    // Users/User Details cols: 0=ID, 1=Phone, 2=Status, 3=Name, 4=Rent, 11=Risk, 12=Admin, 15=Audit, 16=Missing
+    var data = sheet.getRange(startRow, 1, numRows, 17).getValues();
+    for (var i = 0; i < data.length; i++) {
+      var userId = String(data[i][0] || '').trim();
+      if (!userId || userId.length < 30) continue;
+      users.push({
+        userId: userId,
+        phone: String(data[i][1] || ''),
+        status: String(data[i][2] || ''),
+        name: String(data[i][3] || '') || userId.substring(0, 8),
+        rent: String(data[i][4] || ''),
+        risk: String(data[i][11] || ''),
+        adminReview: String(data[i][12] || '').trim().toLowerCase(),
+        auditStatus: String(data[i][15] || ''),
+        missingData: String(data[i][16] || ''),
+        row: startRow + i,
+      });
+    }
   }
 
   if (users.length === 0) return { error: 'No valid user IDs found. Make sure you selected data rows (not headers).' };
@@ -287,23 +312,42 @@ function _buildUserSummary(users, maxShow) {
  * Cols: 3=Status, 13=Admin Review
  */
 function _updateSheetStatus(userIds, newReview) {
+  var idSet = {};
+  for (var i = 0; i < userIds.length; i++) idSet[userIds[i]] = true;
+  var statusMap = { 'approved': 'approved', 'rejected': 'not_eligible' };
+  var newStatus = statusMap[newReview] || newReview;
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+
+  // Update Users sheet
   try {
-    var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Users');
-    if (!sheet) return;
-    var data = sheet.getRange(2, 1, sheet.getLastRow() - 1, ADMIN_REVIEW_COL).getValues();
-    var statusMap = { 'approved': 'approved', 'rejected': 'not_eligible' };
-    var newStatus = statusMap[newReview] || newReview;
-    var idSet = {};
-    for (var i = 0; i < userIds.length; i++) idSet[userIds[i]] = true;
-    for (var r = 0; r < data.length; r++) {
-      var rowId = String(data[r][0] || '').trim();
-      if (idSet[rowId]) {
-        sheet.getRange(r + 2, 3).setValue(newStatus);       // Status col
-        sheet.getRange(r + 2, ADMIN_REVIEW_COL).setValue(newReview); // Admin Review col
+    var usersSheet = ss.getSheetByName('Users');
+    if (usersSheet && usersSheet.getLastRow() > 1) {
+      var data = usersSheet.getRange(2, 1, usersSheet.getLastRow() - 1, ADMIN_REVIEW_COL).getValues();
+      for (var r = 0; r < data.length; r++) {
+        if (idSet[String(data[r][0] || '').trim()]) {
+          usersSheet.getRange(r + 2, 3).setValue(newStatus);
+          usersSheet.getRange(r + 2, ADMIN_REVIEW_COL).setValue(newReview);
+        }
       }
     }
   } catch (e) {
-    Logger.log('_updateSheetStatus error: ' + e.message);
+    Logger.log('_updateSheetStatus Users error: ' + e.message);
+  }
+
+  // Update Review sheet
+  try {
+    var reviewSheet = ss.getSheetByName('Review');
+    if (reviewSheet && reviewSheet.getLastRow() > 1) {
+      var rData = reviewSheet.getRange(2, 1, reviewSheet.getLastRow() - 1, REVIEW_SHEET_ADMIN_COL).getValues();
+      for (var r = 0; r < rData.length; r++) {
+        if (idSet[String(rData[r][0] || '').trim()]) {
+          reviewSheet.getRange(r + 2, 4).setValue(newStatus); // Status col 4 on Review
+          reviewSheet.getRange(r + 2, REVIEW_SHEET_ADMIN_COL).setValue(newReview);
+        }
+      }
+    }
+  } catch (e) {
+    Logger.log('_updateSheetStatus Review error: ' + e.message);
   }
 }
 
@@ -574,14 +618,18 @@ function rejectSelectedUsers() {
 
 var ADMIN_REVIEW_COL = 13; // Admin Review is column 13 on Users sheet
 
+var REVIEW_SHEET_ADMIN_COL = 10; // Admin Review is column 10 on Review sheet
+
 function onAdminReviewEdit(e) {
   try {
     var sheet = e.range.getSheet();
-    if (sheet.getName() !== 'Users') return;
+    var sheetName = sheet.getName();
+    if (sheetName !== 'Users' && sheetName !== 'Review') return;
 
     var col = e.range.getColumn();
     var row = e.range.getRow();
-    if (col !== ADMIN_REVIEW_COL || row <= 1) return;
+    var targetCol = sheetName === 'Review' ? REVIEW_SHEET_ADMIN_COL : ADMIN_REVIEW_COL;
+    if (col !== targetCol || row <= 1) return;
 
     var newValue = String(e.value || '').trim().toLowerCase();
     var oldValue = String(e.oldValue || '').trim().toLowerCase();
@@ -590,24 +638,42 @@ function onAdminReviewEdit(e) {
 
     // Read context for all edited rows in one batch
     var numRows = e.range.getNumRows();
-    var rowData = sheet.getRange(row, 1, numRows, 15).getValues(); // cols 1-15
+    var maxCols = sheetName === 'Review' ? REVIEW_SHEET_ADMIN_COL : 15;
+    var rowData = sheet.getRange(row, 1, numRows, maxCols).getValues();
     var users = [];
     for (var i = 0; i < rowData.length; i++) {
       var userId = String(rowData[i][0] || '').trim();
       if (!userId || userId.length < 30) continue;
-      var currentReview = String(rowData[i][12] || '').trim().toLowerCase();
-      // For single-cell edit, rowData[i][12] is the NEW value; use oldValue for row 0
+      // Column mapping differs between Users (col 13) and Review (col 10)
+      var reviewIdx = sheetName === 'Review' ? REVIEW_SHEET_ADMIN_COL - 1 : 12;
+      var currentReview = String(rowData[i][reviewIdx] || '').trim().toLowerCase();
+      // For single-cell edit, rowData[i][reviewIdx] is the NEW value; use oldValue for row 0
       if (i === 0) currentReview = oldValue;
-      users.push({
-        userId: userId,
-        name: String(rowData[i][3] || '') || userId.substring(0, 8),
-        phone: String(rowData[i][1] || ''),
-        rent: String(rowData[i][4] || ''),
-        risk: String(rowData[i][11] || ''),
-        auditStatus: String(rowData[i][13] || ''),
-        missingData: String(rowData[i][14] || ''),
-        currentReview: currentReview,
-      });
+      if (sheetName === 'Review') {
+        // Review cols: 0=ID, 1=Phone, 2=Name, 3=Status, 4=Rent, 5=City, 6=Risk, 7=Audit, 8=Missing, 9=AdminReview
+        users.push({
+          userId: userId,
+          name: String(rowData[i][2] || '') || userId.substring(0, 8),
+          phone: String(rowData[i][1] || ''),
+          rent: String(rowData[i][4] || ''),
+          risk: String(rowData[i][6] || ''),
+          auditStatus: String(rowData[i][7] || ''),
+          missingData: String(rowData[i][8] || ''),
+          currentReview: currentReview,
+        });
+      } else {
+        // Users cols: 0=ID, 1=Phone, 3=Name, 4=Rent, 11=Risk, 12=AdminReview, 13=AuditStatus, 14=MissingData
+        users.push({
+          userId: userId,
+          name: String(rowData[i][3] || '') || userId.substring(0, 8),
+          phone: String(rowData[i][1] || ''),
+          rent: String(rowData[i][4] || ''),
+          risk: String(rowData[i][11] || ''),
+          auditStatus: String(rowData[i][13] || ''),
+          missingData: String(rowData[i][14] || ''),
+          currentReview: currentReview,
+        });
+      }
     }
     if (users.length === 0) return;
 
@@ -769,17 +835,25 @@ function setupUsersProtection() {
       p.remove();
     });
 
-    var protection = sheet.protect().setDescription(name + ' — locked');
+    var protection = sheet.protect().setDescription(name + ' \u2014 locked');
     protection.setWarningOnly(false);
 
-    // Users sheet: unprotect Admin Review column only
+    // Users sheet: owner can edit Admin Review column
     if (name === 'Users') {
       var lastRow = Math.max(sheet.getLastRow(), 500);
       protection.setUnprotectedRanges([sheet.getRange(2, ADMIN_REVIEW_COL, lastRow, 1)]);
-      protection.setDescription('Users — Admin Review editable');
+      protection.setDescription('Users \u2014 Admin Review editable (owner only)');
     }
 
-    // Add reviewers as editors (they can only edit unprotected ranges)
+    // Review sheet: reviewers can edit Admin Review column (col 10)
+    if (name === 'Review') {
+      var lastRow = Math.max(sheet.getLastRow(), 500);
+      protection.setUnprotectedRanges([sheet.getRange(2, REVIEW_SHEET_ADMIN_COL, lastRow, 1)]);
+      protection.setDescription('Review \u2014 Admin Review editable');
+    }
+
+    // Add reviewers as editors on ALL sheet protections
+    // They can view all sheets but only edit unprotected ranges (Review's Admin Review)
     if (reviewerEmails.length > 0) {
       protection.addEditors(reviewerEmails);
     }
@@ -789,9 +863,9 @@ function setupUsersProtection() {
 
   Logger.log('Protected ' + protectedCount + ' sheets. Reviewers: ' + (reviewerEmails.length || 'none'));
   SpreadsheetApp.getUi().alert('Protection set on all ' + protectedCount + ' sheets.\n\n' +
-    'Only the "Admin Review" column on the Users sheet is editable by reviewers.\n' +
-    'All other sheets and columns are fully locked.\n\n' +
-    'Reviewers: ' + (reviewerEmails.length > 0 ? reviewerEmails.join(', ') : 'none — use "Add Reviewer Access" to add.'));
+    'Reviewers can ONLY edit the "Admin Review" column on the Review sheet.\n' +
+    'All other sheets and columns are locked.\n\n' +
+    'Reviewers: ' + (reviewerEmails.length > 0 ? reviewerEmails.join(', ') : 'none \u2014 use "Add Reviewer Access" to add.'));
 }
 
 /**
@@ -813,26 +887,17 @@ function addReviewerAccess() {
   }
 
   var ss = SpreadsheetApp.getActiveSpreadsheet();
-  var sheet = ss.getSheetByName('Users');
-  if (!sheet) { ui.alert('Users sheet not found.'); return; }
+  var reviewSheet = ss.getSheetByName('Review');
+  if (!reviewSheet) { ui.alert('Review sheet not found. Run Sync first.'); return; }
 
-  // 1. Share the spreadsheet as viewer (so they can open it)
+  // 1. Share the spreadsheet as editor (required for Google Sheets protection to work)
   try {
-    ss.addViewer(email);
+    ss.addEditor(email);
   } catch (e) {
     // May already have access — fine
   }
 
-  // 2. Add as editor to the sheet protection (so they can edit Admin Review)
-  var protections = sheet.getProtections(SpreadsheetApp.ProtectionType.SHEET);
-  if (protections.length === 0) {
-    ui.alert('No protection found on Users sheet.\n\nRun "Setup Column Protection" first.');
-    return;
-  }
-
-  protections[0].addEditor(email);
-
-  // 3. Save to Script Properties for persistence across protection resets
+  // 2. Save to Script Properties for persistence across protection resets
   try {
     var props = PropertiesService.getScriptProperties();
     var existing = props.getProperty('REVIEWER_EMAILS') || '';
@@ -841,12 +906,15 @@ function addReviewerAccess() {
     props.setProperty('REVIEWER_EMAILS', emails.join(','));
   } catch (e) { /* non-critical */ }
 
+  // 3. Re-run protection setup to lock reviewers out of everything except Review's Admin Review
+  setupUsersProtection();
+
   ui.alert('Access Granted',
     email + ' can now:\n' +
-    '  • View the Users sheet\n' +
-    '  • Edit the Admin Review dropdown\n' +
-    '  • Trigger approve/reject via the dropdown\n\n' +
-    'They cannot edit any other columns.',
+    '  \u2022 View all sheets (read-only)\n' +
+    '  \u2022 Edit the Admin Review dropdown on the Review sheet\n' +
+    '  \u2022 Trigger approve/reject via the dropdown\n\n' +
+    'All other sheets and columns are locked.',
     ui.ButtonSet.OK);
 }
 
@@ -871,15 +939,6 @@ function removeReviewerAccess() {
   var email = resp.getResponseText().trim().toLowerCase();
   if (!email) return;
 
-  var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Users');
-  if (!sheet) return;
-
-  // Remove from protection
-  var protections = sheet.getProtections(SpreadsheetApp.ProtectionType.SHEET);
-  if (protections.length > 0) {
-    protections[0].removeEditor(email);
-  }
-
   // Remove from saved list
   try {
     var props = PropertiesService.getScriptProperties();
@@ -888,6 +947,9 @@ function removeReviewerAccess() {
       .filter(function(e) { return e && e !== email; });
     props.setProperty('REVIEWER_EMAILS', emails.join(','));
   } catch (e) {}
+
+  // Re-run protection setup to remove from all sheet protections
+  setupUsersProtection();
 
   ui.alert('Removed', email + ' can no longer edit Admin Review.', ui.ButtonSet.OK);
 }
@@ -952,6 +1014,7 @@ function fetchAllViews() {
     payments: parseResp(payResp, 'admin-payment-data'),
     m360: views.m360 || [],
     verifications: views.verifications || [],
+    riskDetail: views.risk_detail || [],
   };
 }
 
@@ -1098,7 +1161,7 @@ function mergeAuditResults(users, auditResults) {
 function writeUsersSheet(data, tenantMap) {
   var sheet = getOrCreateSheet('Users');
   var headers = ['ID', 'Phone', 'Status', 'Name', 'Rent (\u20B9)', 'Address', 'Google Maps',
-                 'Security Deposit (\u20B9)', 'Sign Up', 'Hours Since', 'SLA', 'Risk', 'Admin Review',
+                 'Security Deposit (\u20B9)', 'Sign Up', 'Wait Hours', 'SLA', 'Risk', 'Admin Review',
                  'Extraction', 'Queue #', 'Audit Status', 'Missing Data', 'Flent Tenant'];
   var widths = [50, 130, 110, 200, 100, 280, 100, 140, 170, 90, 70, 90, 120, 100, 60, 100, 200, 180];
   var mapsUrls = [];
@@ -1124,13 +1187,12 @@ function writeUsersSheet(data, tenantMap) {
       }
     }
 
-    // Hours since sign-up
+    // Wait hours — SLA only for waitlisted users pending review
     var hoursSince = '';
     var slaBreach = '';
-    if (r.signed_up_at) {
-      var signedUp = new Date(r.signed_up_at);
-      var nowMs = Date.now();
-      var diffHours = Math.round((nowMs - signedUp.getTime()) / (1000 * 60 * 60));
+    if (r.user_status === 'waitlisted' && r.admin_review === 'due' && r.waitlist_joined_at) {
+      var joinedAt = new Date(r.waitlist_joined_at);
+      var diffHours = Math.round((Date.now() - joinedAt.getTime()) / (1000 * 60 * 60));
       hoursSince = diffHours;
       slaBreach = diffHours > 24 ? 'BREACHED' : 'OK';
     }
@@ -1147,6 +1209,7 @@ function writeUsersSheet(data, tenantMap) {
     if (!r.property_city) missingData.push('City');
     if (!r.risk_level || r.risk_level === 'PENDING') missingData.push('Risk Score');
     if (!r.waitlist_position && r.waitlist_position !== 0) missingData.push('Waitlist');
+    if (r.user_status === 'waitlisted' && !r.extraction_id) missingData.push('Extraction Link');
     // Prefer server audit status if available, else compute locally
     var auditStatus = r._audit_status || (missingData.length === 0 ? 'READY' : 'BLOCKED');
 
@@ -1237,6 +1300,254 @@ function writeUsersSheet(data, tenantMap) {
 
   sheet.setFrozenRows(1);
   sheet.setFrozenColumns(2); // Freeze Phone column (ID is hidden col 1)
+}
+
+// ============================================================================
+// REVIEW SHEET — Simplified view for external reviewers (approve/reject only)
+// ============================================================================
+
+function writeReviewSheet(data) {
+  var sheet = getOrCreateSheet('Review');
+  // Only show review candidates (waitlisted or agreement_confirmed)
+  var filtered = data.filter(function(r) {
+    return r.user_status === 'waitlisted' || r.user_status === 'agreement_confirmed';
+  });
+
+  var headers = ['ID', 'Phone', 'Name', 'Status', 'Rent (\u20B9)', 'City', 'Risk', 'Audit Status', 'Missing Data', 'Admin Review'];
+  var widths = [50, 130, 200, 110, 100, 120, 90, 100, 220, 120];
+
+  var rows = filtered.map(function(r) {
+    var name = r.m360_full_name || r.name || '';
+    var rent = r.monthly_rent_paise ? Math.round(r.monthly_rent_paise / 100) : '';
+
+    // Compute audit status + missing data (same logic as Users sheet)
+    var missingData = [];
+    if (r.extraction_status !== 'completed') missingData.push('Agreement');
+    if (!r.property_address) missingData.push('Address');
+    if (!r.landlord_display_name && !r.landlord_name) missingData.push('Landlord');
+    if (!r.monthly_rent_paise || r.monthly_rent_paise === 0) missingData.push('Rent');
+    if (!r.lease_start_date) missingData.push('Lease Start');
+    if (!r.lease_end_date) missingData.push('Lease End');
+    if (r.m360_status !== 'SUCCESS' && !r.m360_full_name) missingData.push('M360 Identity');
+    if (!r.risk_level || r.risk_level === 'PENDING') missingData.push('Risk Score');
+    var auditStatus = r._audit_status || (missingData.length === 0 ? 'READY' : 'BLOCKED');
+
+    return [
+      r.user_id || '',
+      displayPhone(r.phone),
+      name,
+      r.user_status || '',
+      rent,
+      r.property_city || '',
+      r.risk_level || '',
+      auditStatus,
+      missingData.join(', '),
+      r.admin_review || '',
+    ];
+  });
+
+  writeSheetData(sheet, headers, rows, widths);
+  sheet.hideColumns(1); // Hide user_id column
+
+  var rc = rows.length;
+  if (rc > 0) {
+    applyStatusColors(sheet, 4, rc, statusRules());       // Status col 4
+    sheet.getRange(2, 5, rc, 1).setNumberFormat('\u20B9#,##0'); // Rent col 5
+    applyStatusColors(sheet, 7, rc, riskRules());          // Risk col 7
+    // Audit Status col 8
+    applyStatusColors(sheet, 8, rc, {
+      'ready': { bg: C.GREEN_BG, fg: C.GREEN },
+      'READY': { bg: C.GREEN_BG, fg: C.GREEN },
+      'warning': { bg: C.AMBER_BG, fg: C.AMBER },
+      'WARNING': { bg: C.AMBER_BG, fg: C.AMBER },
+      'blocked': { bg: C.RED_BG, fg: C.RED },
+      'BLOCKED': { bg: C.RED_BG, fg: C.RED },
+    });
+    // Missing Data col 9
+    sheet.getRange(2, 9, rc, 1).setWrap(true).setFontSize(9).setFontColor(C.MUTED);
+    // Admin Review dropdown col 10
+    applyStatusColors(sheet, 10, rc, reviewRules());
+    var reviewValidation = SpreadsheetApp.newDataValidation()
+      .requireValueInList(['due', 'in_progress', 'approved', 'rejected'], true)
+      .setAllowInvalid(false)
+      .setHelpText('Select: due, in_progress, approved, or rejected')
+      .build();
+    sheet.getRange(2, REVIEW_SHEET_ADMIN_COL, rc, 1).setDataValidation(reviewValidation);
+  }
+
+  sheet.setFrozenRows(1);
+  sheet.setFrozenColumns(1); // Freeze ID col (hidden)
+}
+
+// ============================================================================
+// RISK SHEET — Verification match statuses and agreement quality
+// ============================================================================
+
+function writeRiskSheet(data) {
+  var sheet = getOrCreateSheet('Risk');
+
+  var headers = [
+    'Phone', 'Name', 'Status', 'Risk Level', 'Admin Review',
+    'Tenant Name', 'M360 Name', 'Agreement Tenant', 'Name Score',
+    'Penny Drop', 'Bank Holder', 'Agreement Landlord', 'Bank Score',
+    'Utility', 'Landlord', 'Agreement Status',
+    'Confidence', 'Manual Review?', 'Lease End', 'Expired?'
+  ];
+  var widths = [
+    130, 200, 110, 90, 100,
+    100, 200, 200, 80,
+    110, 200, 200, 80,
+    100, 110, 120,
+    80, 90, 110, 70
+  ];
+
+  var verdictRules = {
+    'match': { bg: C.GREEN_BG, fg: C.GREEN },
+    'MATCH': { bg: C.GREEN_BG, fg: C.GREEN },
+    'verified': { bg: C.GREEN_BG, fg: C.GREEN },
+    'VERIFIED': { bg: C.GREEN_BG, fg: C.GREEN },
+    'ok': { bg: C.GREEN_BG, fg: C.GREEN },
+    'OK': { bg: C.GREEN_BG, fg: C.GREEN },
+    'partial': { bg: C.AMBER_BG, fg: C.AMBER },
+    'PARTIAL': { bg: C.AMBER_BG, fg: C.AMBER },
+    'pending': { bg: C.AMBER_BG, fg: C.AMBER },
+    'PENDING': { bg: C.AMBER_BG, fg: C.AMBER },
+    'pending_response': { bg: C.AMBER_BG, fg: C.AMBER },
+    'PENDING_RESPONSE': { bg: C.AMBER_BG, fg: C.AMBER },
+    'low_confidence': { bg: C.AMBER_BG, fg: C.AMBER },
+    'LOW_CONFIDENCE': { bg: C.AMBER_BG, fg: C.AMBER },
+    'no_match': { bg: C.RED_BG, fg: C.RED },
+    'NO_MATCH': { bg: C.RED_BG, fg: C.RED },
+    'failed': { bg: C.RED_BG, fg: C.RED },
+    'FAILED': { bg: C.RED_BG, fg: C.RED },
+    'expired': { bg: C.RED_BG, fg: C.RED },
+    'EXPIRED': { bg: C.RED_BG, fg: C.RED },
+    'manual_review': { bg: C.RED_BG, fg: C.RED },
+    'MANUAL_REVIEW': { bg: C.RED_BG, fg: C.RED },
+    'incomplete': { bg: C.RED_BG, fg: C.RED },
+    'INCOMPLETE': { bg: C.RED_BG, fg: C.RED },
+    'no_agreement': { bg: C.RED_BG, fg: C.RED },
+    'NO_AGREEMENT': { bg: C.RED_BG, fg: C.RED },
+    'not_attempted': { bg: C.MUTED_BG, fg: C.MUTED },
+    'NOT_ATTEMPTED': { bg: C.MUTED_BG, fg: C.MUTED },
+    'not_invited': { bg: C.MUTED_BG, fg: C.MUTED },
+    'NOT_INVITED': { bg: C.MUTED_BG, fg: C.MUTED },
+  };
+
+  var rows = data.map(function(r) {
+    // Tenant name verdict
+    var tenantVerdict = 'PENDING';
+    if (r.tenant_match_score !== null && r.tenant_match_score !== undefined) {
+      if (r.tenant_match_score >= 70) tenantVerdict = 'MATCH';
+      else if (r.tenant_match_score >= 40) tenantVerdict = 'PARTIAL';
+      else tenantVerdict = 'NO_MATCH';
+    }
+
+    // Penny drop verdict
+    var pennyVerdict = 'NOT_ATTEMPTED';
+    if (r.bank_verified) {
+      pennyVerdict = 'MATCH';
+    } else if (r.penny_drop_status === 'FAILED') {
+      pennyVerdict = 'FAILED';
+    } else if (r.penny_drop_status === 'SUCCESS' || r.penny_drop_status === 'PENDING') {
+      pennyVerdict = 'PENDING';
+    } else if (r.bank_holder_name) {
+      // Penny drop returned a name but no match yet
+      pennyVerdict = r.bank_name_match_score >= 40 ? 'PARTIAL' : 'NO_MATCH';
+    }
+
+    // Utility verdict
+    var utilityVerdict = 'NOT_ATTEMPTED';
+    if (r.tenancy_utility_verified) {
+      utilityVerdict = 'MATCH';
+    } else if (r.utility_status === 'success') {
+      utilityVerdict = r.utility_address_verified ? 'MATCH' : 'PARTIAL';
+    } else if (r.utility_status === 'failed') {
+      utilityVerdict = 'FAILED';
+    } else if (r.utility_status === 'pending') {
+      utilityVerdict = 'PENDING';
+    }
+
+    // Landlord verdict
+    var landlordVerdict = 'NOT_INVITED';
+    if (r.landlord_approved) {
+      landlordVerdict = 'VERIFIED';
+    } else if (r.landlord_status === 'invited') {
+      landlordVerdict = 'PENDING_RESPONSE';
+    } else if (r.landlord_status === 'rejected') {
+      landlordVerdict = 'FAILED';
+    }
+
+    // Agreement expired check
+    var expired = '';
+    if (r.lease_end_date) {
+      var endDate = new Date(r.lease_end_date);
+      if (!isNaN(endDate.getTime()) && endDate < new Date()) expired = 'YES';
+      else expired = 'No';
+    }
+
+    // Confidence as percentage
+    var confidence = '';
+    if (r.extraction_confidence !== null && r.extraction_confidence !== undefined) {
+      var pct = r.extraction_confidence > 1 ? r.extraction_confidence : Math.round(r.extraction_confidence * 100);
+      confidence = pct + '%';
+    }
+
+    return [
+      displayPhone(r.phone),
+      r.name || '',
+      r.user_status || '',
+      r.risk_level || '',
+      r.admin_review || '',
+      tenantVerdict,
+      r.m360_full_name || '',
+      r.agreement_tenant_name || '',
+      r.tenant_match_score !== null && r.tenant_match_score !== undefined ? r.tenant_match_score : '',
+      pennyVerdict,
+      r.bank_holder_name || '',
+      r.agreement_landlord_name || '',
+      r.bank_name_match_score !== null && r.bank_name_match_score !== undefined ? r.bank_name_match_score : '',
+      utilityVerdict,
+      landlordVerdict,
+      r.agreement_verdict || '',
+      confidence,
+      r.needs_manual_review ? 'YES' : '',
+      r.lease_end_date || '',
+      expired,
+    ];
+  });
+
+  writeSheetData(sheet, headers, rows, widths);
+
+  var rc = rows.length;
+  if (rc > 0) {
+    applyStatusColors(sheet, 3, rc, statusRules());         // Status col 3
+    applyStatusColors(sheet, 4, rc, riskRules());            // Risk Level col 4
+    applyStatusColors(sheet, 5, rc, reviewRules());          // Admin Review col 5
+    applyStatusColors(sheet, 6, rc, verdictRules);           // Tenant Name verdict col 6
+    sheet.getRange(2, 9, rc, 1).setHorizontalAlignment('center'); // Name Score col 9
+    applyStatusColors(sheet, 10, rc, verdictRules);          // Penny Drop verdict col 10
+    sheet.getRange(2, 13, rc, 1).setHorizontalAlignment('center'); // Bank Score col 13
+    applyStatusColors(sheet, 14, rc, verdictRules);          // Utility verdict col 14
+    applyStatusColors(sheet, 15, rc, verdictRules);          // Landlord verdict col 15
+    applyStatusColors(sheet, 16, rc, verdictRules);          // Agreement Status col 16
+    sheet.getRange(2, 17, rc, 1).setHorizontalAlignment('center'); // Confidence col 17
+    // Manual Review col 18
+    applyStatusColors(sheet, 18, rc, {
+      'yes': { bg: C.RED_BG, fg: C.RED },
+      'YES': { bg: C.RED_BG, fg: C.RED },
+    });
+    // Expired col 20
+    applyStatusColors(sheet, 20, rc, {
+      'yes': { bg: C.RED_BG, fg: C.RED },
+      'YES': { bg: C.RED_BG, fg: C.RED },
+      'no': { bg: C.GREEN_BG, fg: C.GREEN },
+      'No': { bg: C.GREEN_BG, fg: C.GREEN },
+    });
+  }
+
+  sheet.setFrozenRows(1);
+  sheet.setFrozenColumns(2); // Freeze Phone + Name
 }
 
 // ============================================================================
