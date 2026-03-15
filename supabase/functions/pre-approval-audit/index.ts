@@ -159,7 +159,13 @@ serve(async (req: Request) => {
 
     const extractionMap = new Map<string, Row>();
     for (const row of extractionsResult.data ?? []) {
-      if (!extractionMap.has(row.user_id)) extractionMap.set(row.user_id, row);
+      const existing = extractionMap.get(row.user_id);
+      if (!existing) {
+        extractionMap.set(row.user_id, row);
+      } else if (row.extraction_status === "completed" && existing.extraction_status !== "completed") {
+        // Prefer completed extraction over failed/pending/processing
+        extractionMap.set(row.user_id, row);
+      }
     }
 
     const tenancyMap = new Map<string, Row>();
