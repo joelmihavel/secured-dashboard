@@ -1195,14 +1195,20 @@ function writeUsersSheet(data, tenantMap) {
       }
     }
 
-    // Wait hours — SLA only for waitlisted users pending review
+    // Wait hours + SLA — show for all users who entered the waitlist
     var hoursSince = '';
     var slaBreach = '';
-    if (r.user_status === 'waitlisted' && r.admin_review === 'due' && r.waitlist_joined_at) {
+    if (r.waitlist_joined_at) {
       var joinedAt = new Date(r.waitlist_joined_at);
       var diffHours = Math.round((Date.now() - joinedAt.getTime()) / (1000 * 60 * 60));
       hoursSince = diffHours;
-      slaBreach = diffHours > 24 ? 'BREACHED' : 'OK';
+      if (r.user_status === 'waitlisted' && r.admin_review === 'due') {
+        // Actively waiting for review — track SLA breach
+        slaBreach = diffHours > 24 ? 'BREACHED' : 'OK';
+      } else {
+        // Already reviewed (approved/rejected) or no longer waitlisted
+        slaBreach = 'OK';
+      }
     }
 
     // Audit: ready-to-approve check + missing data
