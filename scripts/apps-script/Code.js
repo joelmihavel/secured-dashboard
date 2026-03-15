@@ -1228,8 +1228,13 @@ function writeUsersSheet(data, tenantMap) {
     if (!r.risk_level || r.risk_level === 'PENDING') missingData.push('Risk Score');
     if (!r.waitlist_position && r.waitlist_position !== 0) missingData.push('Waitlist');
     if (r.user_status === 'waitlisted' && !r.extraction_id) missingData.push('Extraction Link');
-    // Prefer server audit status if available, else compute locally
-    var auditStatus = r._audit_status || (missingData.length === 0 ? 'READY' : 'BLOCKED');
+    // Audit status only for users past signed_up (in waitlist pipeline or beyond)
+    var auditStatus = '';
+    var missingDisplay = '';
+    if (r.user_status !== 'signed_up') {
+      auditStatus = r._audit_status || (missingData.length === 0 ? 'READY' : 'BLOCKED');
+      missingDisplay = missingData.join(', ');
+    }
 
     return [
       r.user_id || '',
@@ -1248,7 +1253,7 @@ function writeUsersSheet(data, tenantMap) {
       r.extraction_status || '',
       r.waitlist_position || '',
       auditStatus,
-      missingData.join(', '),
+      missingDisplay,
       tenantLabel,
     ];
   });
@@ -1305,8 +1310,8 @@ function writeUsersSheet(data, tenantMap) {
       'READY': { bg: C.GREEN_BG, fg: C.GREEN },
       'warning': { bg: C.AMBER_BG, fg: C.AMBER },
       'WARNING': { bg: C.AMBER_BG, fg: C.AMBER },
-      'blocked': { bg: C.RED_BG, fg: C.RED },
-      'BLOCKED': { bg: C.RED_BG, fg: C.RED },
+      'blocked': { bg: C.AMBER_BG, fg: C.AMBER },
+      'BLOCKED': { bg: C.AMBER_BG, fg: C.AMBER },
     });
     // Missing Data col 17
     sheet.getRange(2, 17, rc, 1).setWrap(true).setFontSize(9).setFontColor(C.MUTED);
@@ -1382,8 +1387,8 @@ function writeReviewSheet(data) {
       'READY': { bg: C.GREEN_BG, fg: C.GREEN },
       'warning': { bg: C.AMBER_BG, fg: C.AMBER },
       'WARNING': { bg: C.AMBER_BG, fg: C.AMBER },
-      'blocked': { bg: C.RED_BG, fg: C.RED },
-      'BLOCKED': { bg: C.RED_BG, fg: C.RED },
+      'blocked': { bg: C.AMBER_BG, fg: C.AMBER },
+      'BLOCKED': { bg: C.AMBER_BG, fg: C.AMBER },
     });
     // Missing Data col 9
     sheet.getRange(2, 9, rc, 1).setWrap(true).setFontSize(9).setFontColor(C.MUTED);
@@ -1746,13 +1751,13 @@ function writeUserDetailsSheet(data) {
       auditRange.setBackgrounds(auditVals.map(function(v) {
         if (v[0] === 'READY') return [C.GREEN_BG];
         if (v[0] === 'WARNING') return [C.AMBER_BG];
-        if (v[0] === 'BLOCKED') return [C.RED_BG];
+        if (v[0] === 'BLOCKED') return [C.AMBER_BG];
         return [C.MUTED_BG];
       }));
       auditRange.setFontColors(auditVals.map(function(v) {
         if (v[0] === 'READY') return [C.GREEN];
         if (v[0] === 'WARNING') return [C.AMBER];
-        if (v[0] === 'BLOCKED') return [C.RED];
+        if (v[0] === 'BLOCKED') return [C.AMBER];
         return [C.MUTED];
       }));
       auditRange.setFontWeight('bold').setHorizontalAlignment('center');
