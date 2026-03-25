@@ -92,20 +92,15 @@ export function EnterAmountContent({
     requestAnimationFrame(() => inputRef.current?.focus());
   }, []);
 
-  // Parsed amount
+  // Parsed amount (whole rupees only)
   const parsedAmount = useMemo(() => {
-    const n = parseFloat(rawValue);
+    const n = parseInt(rawValue, 10);
     return isNaN(n) ? 0 : n;
   }, [rawValue]);
 
   // Display value with Indian number formatting
   const displayValue = useMemo(() => {
     if (rawValue === '' || rawValue === '0') return '';
-    if (rawValue.includes('.')) {
-      const [intPart, decPart] = rawValue.split('.');
-      const intNum = parseInt(intPart || '0', 10);
-      return `${intNum.toLocaleString('en-IN')}.${decPart}`;
-    }
     const intNum = parseInt(rawValue, 10);
     if (isNaN(intNum)) return '';
     return intNum.toLocaleString('en-IN');
@@ -127,8 +122,14 @@ export function EnterAmountContent({
 
   // Validation
   const validation = useMemo((): ValidationBubble | null => {
+    if (alreadyPaid) {
+      return { severity: 'error', message: 'Rent for this month is already paid' };
+    }
     if (parsedAmount <= 0) return null;
 
+    if (parsedAmount > MAX_AMOUNT) {
+      return { severity: 'error', message: `Amount cannot exceed ₹${MAX_AMOUNT.toLocaleString('en-IN')}` };
+    }
     if (parsedAmount < monthlyRent && monthlyRent > 0) {
       return { severity: 'warning', message: 'Cashback will apply on reduced rent' };
     }
@@ -136,22 +137,20 @@ export function EnterAmountContent({
       return { severity: 'info', message: 'Cashback will be accumulated' };
     }
     return null;
-  }, [parsedAmount, monthlyRent, isAllVerified]);
+  }, [alreadyPaid, parsedAmount, monthlyRent, isAllVerified]);
 
-  // Can proceed?
-  const canContinue = parsedAmount > 0;
+  // Can proceed? Block if already paid or amount exceeds gateway limits
+  const MAX_AMOUNT = 10_00_000; // Rs 10 lakh — PayU gateway limit
+  const canContinue = parsedAmount > 0 && !alreadyPaid && parsedAmount <= MAX_AMOUNT;
 
   // Default pill (when no validation message)
   const showDefaultPill = !validation && parsedAmount > 0;
 
   // Handlers
   const handleChangeText = useCallback((text: string) => {
-    const cleaned = text.replace(/[^0-9.]/g, '');
-    const parts = cleaned.split('.');
-    const sanitized = parts.length > 2
-      ? `${parts[0]}.${parts.slice(1).join('')}`
-      : cleaned;
-    setRawValue(sanitized);
+    // Only allow digits — no decimals (rent is whole rupees)
+    const cleaned = text.replace(/[^0-9]/g, '');
+    setRawValue(cleaned);
   }, []);
 
   const handleProceed = useCallback(() => {
