@@ -284,7 +284,7 @@ export function ConfirmPaymentContent({
             title={`Pay \u20B9 ${fmt(payableAmount)} now`}
             onPress={onPay}
             loading={isPaying}
-            disabled={isPaying}
+            disabled={isPaying || alreadyPaid}
             showDivider
           />
           <RNText style={s.footerText}>
