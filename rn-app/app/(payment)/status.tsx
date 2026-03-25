@@ -459,6 +459,10 @@ export default function PaymentStatusScreen() {
   const isConnectedRef = useRef(isConnected);
   isConnectedRef.current = isConnected;
 
+  // -- Ref for pendingSub to avoid stale closures in recursive setTimeout
+  const pendingSubRef = useRef(state.pendingSub);
+  pendingSubRef.current = state.pendingSub;
+
   // -- Realtime acceleration: immediately trigger pollStatus on DB event
   const pollStatusRef = useRef<(() => void) | null>(null);
   useRealtimeQuery({
@@ -540,7 +544,7 @@ export default function PaymentStatusScreen() {
 
       if (data) {
         // Transition from verifying to processing after first successful poll
-        if (state.pendingSub === 'verifying') {
+        if (pendingSubRef.current === 'verifying') {
           dispatch({ type: 'SET_PENDING_SUB', sub: 'processing' });
         }
 
@@ -556,7 +560,7 @@ export default function PaymentStatusScreen() {
         }
       }
 
-      if (error && state.pendingSub === 'verifying') {
+      if (error && pendingSubRef.current === 'verifying') {
         dispatch({ type: 'SET_PENDING_SUB', sub: 'processing' });
       }
 
@@ -572,7 +576,7 @@ export default function PaymentStatusScreen() {
       if (__DEV__) {
         console.error('Payment verification error:', err);
       }
-      if (state.pendingSub === 'verifying') {
+      if (pendingSubRef.current === 'verifying') {
         dispatch({ type: 'SET_PENDING_SUB', sub: 'processing' });
       }
       if (attemptsRef.current < maxVerificationAttempts) {
@@ -586,7 +590,7 @@ export default function PaymentStatusScreen() {
     } finally {
       isPollingRef.current = false;
     }
-  }, [paymentId, state.pendingSub, maxVerificationAttempts, resolveStatus]);
+  }, [paymentId, maxVerificationAttempts, resolveStatus]);
 
   // Wire ref so realtime onEvent can trigger immediate poll
   pollStatusRef.current = pollStatus;
