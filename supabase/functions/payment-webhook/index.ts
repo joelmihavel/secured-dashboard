@@ -211,10 +211,9 @@ serve(async (req: Request) => {
         additional_charges: payload.additional_charges ?? "(none)",
         received_hash_first16: payload.hash?.slice(0, 16),
       });
-      // NON-BLOCKING: Continue processing — amount/txnid verification provides security.
-      // PayU webhook hash mismatches can occur due to Salt v1/v2 differences.
-      // TODO: Get SALT2 from PayU dashboard and implement dual-salt verification.
-      console.warn("[webhook] Proceeding despite hash mismatch — relying on amount + txnid verification");
+      // SECURITY: Reject webhook with invalid hash — forged webhooks must not be processed.
+      // If Salt v1/v2 mismatch occurs, implement dual-salt verification rather than bypassing.
+      throw new PaymentError("Webhook hash verification failed", "HASH_VERIFICATION_FAILED");
     }
 
     // Initialize audit logger (no user auth, system action)
@@ -236,7 +235,7 @@ serve(async (req: Request) => {
       throw new PaymentError("Payment not found", "PAYMENT_NOT_FOUND");
     }
 
-    // S9: Cross-validate UDFs against payment record
+    // S9: Cross-validate UDFs against payment record — reject on mismatch
     if (payload.udf1 && payload.udf1 !== payment.tenancy_id) {
       console.error(`[SECURITY] UDF1 mismatch: payload=${payload.udf1}, payment=${payment.tenancy_id}`);
       await audit.logFailure(
@@ -247,6 +246,7 @@ serve(async (req: Request) => {
         "payment",
         payment.id
       );
+      throw new PaymentError("Webhook tenancy cross-validation failed", "UDF_MISMATCH");
     }
 
     // Map PayU status early so we can validate the transition
