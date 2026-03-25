@@ -186,11 +186,23 @@ export async function callEdgeFunction<T = unknown>(
   body: Record<string, unknown> | object = {},
   requireAuth = false,
   method: 'GET' | 'POST' = 'POST',
-  timeoutMs: number = EDGE_FUNCTION_TIMEOUT_MS
+  timeoutMs: number = EDGE_FUNCTION_TIMEOUT_MS,
+  externalSignal?: AbortSignal
 ): Promise<{ data: T | null; error: string | null; errorBody?: Record<string, unknown> }> {
+  // Abort if caller already cancelled before we start
+  if (externalSignal?.aborted) {
+    return { data: null, error: 'Aborted' };
+  }
+
   // AbortController for timeout enforcement
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+  // Link external signal to our internal controller
+  if (externalSignal) {
+    const onAbort = () => controller.abort();
+    externalSignal.addEventListener('abort', onAbort, { once: true });
+  }
   const startTime = Date.now();
 
   try {

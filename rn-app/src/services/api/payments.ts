@@ -1188,13 +1188,16 @@ export interface CheckPaymentStatusResponse {
  * Unlike direct DB polling, this also verifies with PayU if the payment is stale.
  */
 export async function checkPaymentStatus(
-  paymentId: string
+  paymentId: string,
+  signal?: AbortSignal
 ): Promise<{ data: CheckPaymentStatusResponse | null; error: string | null }> {
   const { data, error, errorBody } = await callEdgeFunction<{ data: CheckPaymentStatusResponse }>(
     `check-payment-status?payment_id=${encodeURIComponent(paymentId)}`,
     {},
     true,
-    'GET'  // S19: Changed from POST to GET - server expects GET
+    'GET',  // S19: Changed from POST to GET - server expects GET
+    undefined,
+    signal
   );
 
   if (error) return { data: null, error: mapPaymentError(error, errorBody).message };

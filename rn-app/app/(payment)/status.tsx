@@ -540,7 +540,7 @@ export default function PaymentStatusScreen() {
     abortControllerRef.current = new AbortController();
 
     try {
-      const { data, error } = await checkPaymentStatus(paymentId);
+      const { data, error } = await checkPaymentStatus(paymentId, abortControllerRef.current?.signal);
 
       if (data) {
         // Transition from verifying to processing after first successful poll
