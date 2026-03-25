@@ -287,9 +287,10 @@ async function getCorePgPostData(
     }
   }
 
-  // Log the keys being sent (no sensitive values)
-  console.log('[PayU] Core PG params keys:', Object.keys(corePgParams).join(', '));
-  console.log('[PayU] Core PG paymentType:', corePgParams.paymentType, 'txnId:', corePgParams.txnId, 'transactionID:', corePgParams.transactionID);
+  if (__DEV__) {
+    console.log('[PayU] Core PG params keys:', Object.keys(corePgParams).join(', '));
+    console.log('[PayU] Core PG paymentType:', corePgParams.paymentType, 'txnId:', corePgParams.txnId, 'transactionID:', corePgParams.transactionID);
+  }
 
   return new Promise((resolve) => {
     const timeoutId = setTimeout(() => {
@@ -482,10 +483,10 @@ export async function launchCorePayment(
     postData = instrumentParts.length > 0
       ? `${serverPostData}&${instrumentParts.join('&')}`
       : serverPostData;
-    console.log('[PayU] Using SERVER-built POST data (verified encoding)');
+    if (__DEV__) console.log('[PayU] Using SERVER-built POST data (verified encoding)');
   } else {
     postData = buildPostDataFallback(mode, sessionParams, instrumentParams);
-    console.log('[PayU] Using CLIENT-built POST data (server post_data not available)');
+    if (__DEV__) console.log('[PayU] Using CLIENT-built POST data (server post_data not available)');
   }
 
   // 10-minute timeout
@@ -499,7 +500,7 @@ export async function launchCorePayment(
     const finish = (outcome: CorePaymentOutcome) => {
       if (resolved) return;
       resolved = true;
-      console.log('[PayU] Payment outcome:', outcome.status, outcome.error ?? '');
+      if (__DEV__) console.log('[PayU] Payment outcome:', outcome.status, outcome.error ?? '');
       if (cbListenerSub) { cbListenerSub.remove(); cbListenerSub = null; }
       if (timeoutId !== null) { clearTimeout(timeoutId); timeoutId = null; }
       resolve(outcome);
@@ -517,7 +518,7 @@ export async function launchCorePayment(
     const emitter = getEventEmitter();
     cbListenerSub = emitter.addListener('CBListener', (event) => {
       const eventType: string = event.eventType ?? event.eveneType ?? '';
-      console.log('[PayU] CBListener event:', eventType);
+      if (__DEV__) console.log('[PayU] CBListener event:', eventType);
 
       switch (eventType) {
         case 'onPaymentSuccess': {
@@ -601,20 +602,22 @@ export async function launchCorePayment(
       ...instrumentParams,
     };
 
-    // Diagnostic logging (no sensitive data — card numbers/CVV are NOT logged)
-    console.log('[PayU] Opening CBWrapper — mode:', mode, 'pg:', pgValue, 'env:', sdkEnvironment, 'url:', paymentUrl);
-    console.log('[PayU] Hash-relevant fields:', {
-      key: sessionParams.key,
-      txnid: sessionParams.txnid,
-      amount: sessionParams.amount,
-      productinfo: sessionParams.productinfo,
-      firstname: sessionParams.firstname,
-      email: sessionParams.email,
-      udf1: sessionParams.udf1 ?? '',
-      udf2: sessionParams.udf2 ?? '',
-      udf3: sessionParams.udf3 ?? '',
-      hash: sessionParams.hash ? 'present' : 'missing',
-    });
+    if (__DEV__) {
+      // Diagnostic logging — contains PII (firstname, email), dev-only
+      console.log('[PayU] Opening CBWrapper — mode:', mode, 'pg:', pgValue, 'env:', sdkEnvironment, 'url:', paymentUrl);
+      console.log('[PayU] Hash-relevant fields:', {
+        key: sessionParams.key,
+        txnid: sessionParams.txnid,
+        amount: sessionParams.amount,
+        productinfo: sessionParams.productinfo,
+        firstname: sessionParams.firstname,
+        email: sessionParams.email,
+        udf1: sessionParams.udf1 ?? '',
+        udf2: sessionParams.udf2 ?? '',
+        udf3: sessionParams.udf3 ?? '',
+        hash: sessionParams.hash ? 'present' : 'missing',
+      });
+    }
 
     try {
       CBWrapper!.openCB(
