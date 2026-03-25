@@ -135,5 +135,6 @@ export function useErrorNavigation(): void {
     });
 
     return unsubscribe;
-  }, [router, segments]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- segments read via ref, not closure
+  }, [router]);
 }
