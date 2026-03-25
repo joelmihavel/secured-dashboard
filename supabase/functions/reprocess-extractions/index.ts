@@ -197,6 +197,8 @@ Deno.serve(async (req) => {
             stamp_duty_paid_by: merged.stamp_duty_paid_by,
             consideration_price_paise: merged.consideration_price_paise,
             stamp_duty_amount_paise: merged.stamp_duty_amount_paise,
+            rooms_in_agreement: merged.rooms_in_agreement,
+            property_bhk_type: merged.property_bhk_type,
             confidence_score: merged.confidence_score,
             gemini_verification_score: merged.gemini_verification_score,
             fields_extracted: merged.fields_extracted,
@@ -323,6 +325,8 @@ Extract and return a JSON object with these exact fields (use null for fields yo
   "stamp_duty_paid_by": "who paid stamp duty",
   "consideration_price": "consideration amount in rupees (number only)",
   "stamp_duty_amount": "stamp duty in rupees (number only)",
+  "rooms_in_agreement": "number of rooms/bedrooms covered by this agreement (e.g., 1 for single room, 2 for 2BHK, 3 for 3BHK). If only a portion is rented, return the rented portion count. null if not determinable.",
+  "property_bhk_type": "BHK type of the FULL property (e.g., '1BHK', '2BHK', '3BHK', 'Studio', 'Independent House'). null if not mentioned.",
   "confidence": "your confidence 0-100"
 }
 
@@ -332,6 +336,7 @@ IMPORTANT:
 - For dates, convert to YYYY-MM-DD format
 - For property_state: infer from city if not explicitly mentioned
 - MUMBAI: GRN or Transaction ID IS the Stamp Certificate ID
+- For rooms_in_agreement: Look for "one room", "single bedroom", "2BHK", "3BHK", "entire flat", "portion of premises". Partial rent = count rented rooms only.
 - Return ONLY the JSON object, no other text.`;
 }
 
@@ -449,6 +454,8 @@ function mergeGeminiResults(gemini: any): any {
     stamp_duty_paid_by: gemini.stamp_duty_paid_by || null,
     consideration_price_paise: gemini.consideration_price ? parseInt(String(gemini.consideration_price)) * 100 : null,
     stamp_duty_amount_paise: gemini.stamp_duty_amount ? parseInt(String(gemini.stamp_duty_amount)) * 100 : null,
+    rooms_in_agreement: gemini.rooms_in_agreement != null ? Number(gemini.rooms_in_agreement) : null,
+    property_bhk_type: gemini.property_bhk_type || null,
     gemini_verification_score: gemini.confidence || null,
     confidence_score: gemini.confidence != null ? Number(gemini.confidence) : 0,
     agreement_date: null,

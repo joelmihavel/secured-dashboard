@@ -130,18 +130,24 @@ function statusToTarget(userStatus: string): JourneyTarget | null {
 }
 
 /**
- * Check if the current user has a completed extraction awaiting backend review.
- * Used by the journey router to route signed_up users to waitlist instead of upload.
+ * Check if the current user has a completed extraction that should prevent re-upload.
+ * Routes signed_up users to waitlist instead of upload when they already have a
+ * pending extraction (user_review, manual_review, or unsupported city).
+ *
+ * This is a SAFETY NET for cases where finalizeExtractionForOnboarding failed to
+ * update user_status from signed_up → waitlisted (e.g., ensureWaitlistState threw).
+ * In the normal flow, user_status is already 'waitlisted' and statusToTarget()
+ * handles routing before this function is ever called.
  *
  * Also checks dismissedExtractionId from the upload store — if the user clicked
  * "Re-upload Agreement", the old extraction is dismissed and should NOT cause
  * routing to waitlist/review (prevents the re-upload loop).
  */
-async function checkManualReviewExtraction(userId: string): Promise<boolean> {
+async function checkPendingExtraction(userId: string): Promise<boolean> {
   try {
     const { data } = await supabase
       .from('extracted_rental_info')
-      .select('id, needs_manual_review, is_city_supported')
+      .select('id')
       .eq('user_id', userId)
       .eq('extraction_status', 'completed')
       .eq('user_verified', false)
@@ -157,7 +163,9 @@ async function checkManualReviewExtraction(userId: string): Promise<boolean> {
     const dismissed = useUploadStore.getState().dismissedExtractionId;
     if (dismissed && rowId === dismissed) return false;
 
-    return (row.needs_manual_review as boolean) || !(row.is_city_supported as boolean);
+    // Any completed, unverified extraction means the user should be on waitlist,
+    // not re-uploading. This covers user_review, manual_review, and unsupported city.
+    return true;
   } catch {
     return false;
   }
@@ -300,7 +308,7 @@ export default function Index() {
         // signed_up — need to check extraction state to route correctly
         // First: check if there's a completed extraction awaiting backend review.
         // If so, the upload is done — route to waitlist, not back to upload.
-        const manualReview = await checkManualReviewExtraction(userId);
+        const manualReview = await checkPendingExtraction(userId);
         if (manualReview) {
           setTarget('/(waitlist)');
         } else {

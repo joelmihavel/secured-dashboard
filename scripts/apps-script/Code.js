@@ -1195,19 +1195,19 @@ function writeUsersSheet(data, tenantMap) {
       }
     }
 
-    // Wait hours + SLA — show for all users who entered the waitlist
+    // Hours since sign-up — SLA only relevant for users pending admin review
     var hoursSince = '';
     var slaBreach = '';
-    if (r.waitlist_joined_at) {
-      var joinedAt = new Date(r.waitlist_joined_at);
-      var diffHours = Math.round((Date.now() - joinedAt.getTime()) / (1000 * 60 * 60));
+    var isPendingReview = r.admin_review === 'due' || r.admin_review === 'pending_review';
+    if (r.signed_up_at) {
+      var signedUp = new Date(r.signed_up_at);
+      var nowMs = Date.now();
+      var diffHours = Math.round((nowMs - signedUp.getTime()) / (1000 * 60 * 60));
       hoursSince = diffHours;
-      if (r.user_status === 'waitlisted' && r.admin_review === 'due') {
-        // Actively waiting for review — track SLA breach
+      if (isPendingReview) {
         slaBreach = diffHours > 24 ? 'BREACHED' : 'OK';
       } else {
-        // Already reviewed (approved/rejected) or no longer waitlisted
-        slaBreach = 'OK';
+        slaBreach = '';
       }
     }
 
@@ -1609,6 +1609,8 @@ function writeUserDetailsSheet(data) {
       { key: 'property_pincode', header: 'Pincode' },
       { key: 'monthly_rent_paise', header: 'Rent (\u20B9)', fmt: 'paise' },
       { key: 'maintenance_paise', header: 'Maint (\u20B9)', fmt: 'paise' },
+      { key: 'rooms_in_agreement', header: 'Rooms' },
+      { key: 'property_bhk_type', header: 'BHK Type' },
       { key: '_maps', header: 'Google Maps' },
     ]},
     { label: 'Landlord', color: C.SUBHEADER, cols: [
@@ -2643,7 +2645,7 @@ function computeKPIs(users, payments) {
     byStatus[st] = (byStatus[st] || 0) + 1;
 
     if (u.admin_review === 'approved') approved++;
-    if (u.user_status === 'waitlisted' && u.admin_review !== 'approved' && u.admin_review !== 'rejected') pending++;
+    if (u.admin_review === 'due' || u.admin_review === 'pending_review') pending++;
     if (u.successful_payments > 0) paid++;
 
     totalRevenue += (u.total_paid_paise || 0);

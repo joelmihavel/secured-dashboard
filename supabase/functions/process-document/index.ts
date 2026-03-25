@@ -462,6 +462,9 @@ Deno.serve(async (req) => {
         stamp_duty_paid_by: extractedData.stamp_duty_paid_by,
         consideration_price_paise: extractedData.consideration_price_paise,
         stamp_duty_amount_paise: extractedData.stamp_duty_amount_paise,
+        // Room/BHK fields
+        rooms_in_agreement: (extractedData as any).rooms_in_agreement || null,
+        property_bhk_type: (extractedData as any).property_bhk_type || null,
         // Quality metrics
         confidence_score: extractedData.confidence_score,
         gemini_verification_score: extractedData.gemini_verification_score,
@@ -478,8 +481,8 @@ Deno.serve(async (req) => {
         gemini_raw_response: extractedData.raw_gemini_data || (extractedData as any).gemini_debug || null,
         // Raw data for debugging (without duplicated fields)
         raw_extraction_data: extractedData.raw_doc_ai_data,
-        // Update extraction status
-        extraction_status: "completed",
+        // Update extraction status — mark as extraction_failed if Gemini returned 0 fields
+        extraction_status: extractedData.fields_extracted > 0 ? "completed" : "extraction_failed",
         // Persist evaluation results for client-side polling (useExtractionStatus)
         contract_status: evaluationResult.contract_status,
         needs_manual_review: evaluationResult.needs_manual_review,
@@ -538,9 +541,12 @@ Deno.serve(async (req) => {
       }
     }
 
+    const resolvedExtractionStatus = extractedData.fields_extracted > 0 ? "completed" : "extraction_failed";
+
     const shouldAutoFinalize =
-      evaluationResult.contract_status === "user_review"
-      || evaluationResult.contract_status === "manual_review";
+      extractedData.fields_extracted > 0
+      && (evaluationResult.contract_status === "user_review"
+        || evaluationResult.contract_status === "manual_review");
 
     if (shouldAutoFinalize && rentalInfo?.user_id) {
       await finalizeExtractionForOnboarding({
@@ -549,14 +555,14 @@ Deno.serve(async (req) => {
         extractionId: extraction_id,
         confirmedRole: "tenant",
         syncWaitlistFields: {
-          extraction_status: "completed",
+          extraction_status: resolvedExtractionStatus,
           contract_status: evaluationResult.contract_status,
         },
         autoApproveDemo: true,
       });
     } else {
       await updateWaitlistEntries(supabase, rentalInfo?.user_id, {
-        extraction_status: "completed",
+        extraction_status: resolvedExtractionStatus,
         contract_status: evaluationResult.contract_status,
       });
     }
@@ -570,7 +576,7 @@ Deno.serve(async (req) => {
       contract_status: evaluationResult.contract_status,
       is_city_supported: isCitySupported,
       // Fields expected by iOS app (matching CodingKeys)
-      extraction_status: "completed",
+      extraction_status: resolvedExtractionStatus,
       requires_manual_review: evaluationResult.needs_manual_review,
       manual_review_reason: evaluationResult.review_reason,
       fields_extracted: extractedData.fields_extracted,
@@ -706,6 +712,21 @@ async function processWithDocumentAI(
       } catch (vertexError: any) {
         geminiDebug.vertex_ai_error = vertexError.message || String(vertexError);
         console.error("[process-document] Vertex AI Gemini failed:", vertexError.message || vertexError);
+        // Retry once on "No JSON found" (likely safety filter flakiness on PII-heavy docs)
+        if (vertexError.message?.includes("No JSON found")) {
+          console.log("[process-document] Retrying Vertex AI after 2s (possible safety filter flake)...");
+          await new Promise(r => setTimeout(r, 2000));
+          try {
+            const retryToken = await getGCPAccessToken(vertexCredentialsJson);
+            geminiResult = await extractWithVertexAIGemini(documentText, retryToken, vertexAiProjectId, "global");
+            geminiDebug.vertex_ai_success = true;
+            geminiDebug.vertex_ai_retried = true;
+            geminiDebug.final_result_keys = geminiResult ? Object.keys(geminiResult).length : 0;
+          } catch (retryError: any) {
+            geminiDebug.vertex_ai_retry_error = retryError.message || String(retryError);
+            console.error("[process-document] Vertex AI retry also failed:", retryError.message);
+          }
+        }
       }
     } else {
       geminiDebug.vertex_ai_error = "No VERTEX_AI_CREDENTIALS configured";
@@ -729,6 +750,20 @@ async function processWithDocumentAI(
       } catch (apiKeyError: any) {
         geminiDebug.api_key_error = apiKeyError.message || String(apiKeyError);
         console.error("[process-document] API key Gemini failed:", apiKeyError.message || apiKeyError);
+        // Retry once on "No JSON found" (safety filter flakiness)
+        if (apiKeyError.message?.includes("No JSON found")) {
+          console.log("[process-document] Retrying API key Gemini after 2s...");
+          await new Promise(r => setTimeout(r, 2000));
+          try {
+            geminiResult = await verifyWithGemini(documentText, extractedData, geminiApiKey);
+            geminiDebug.api_key_success = true;
+            geminiDebug.api_key_retried = true;
+            geminiDebug.final_result_keys = geminiResult ? Object.keys(geminiResult).length : 0;
+          } catch (retryError: any) {
+            geminiDebug.api_key_retry_error = retryError.message || String(retryError);
+            console.error("[process-document] API key retry also failed:", retryError.message);
+          }
+        }
       }
     } else if (!geminiResult) {
       geminiDebug.api_key_error = "No GEMINI_API_KEY_SECURED set";
@@ -889,6 +924,8 @@ Extract and return a JSON object with these exact fields (use null for fields yo
   "stamp_duty_paid_by": "who paid the stamp duty (tenant/landlord/both)",
   "consideration_price": "consideration amount in rupees (numeric value only)",
   "stamp_duty_amount": "stamp duty paid in rupees (numeric value only)",
+  "rooms_in_agreement": "number of rooms/bedrooms covered by this agreement as a number (e.g., 1 for single room, 2 for 2BHK, 3 for 3BHK). If the agreement covers only a portion of a larger property (e.g., 'one room in a 3BHK flat'), return only the rented portion count. If unclear or full property, infer from BHK type mentioned (1BHK=1, 2BHK=2, 3BHK=3). null if not determinable.",
+  "property_bhk_type": "the BHK type of the FULL property (e.g., '1BHK', '2BHK', '3BHK', '4BHK', 'Studio', 'Independent House'). This is the total property size, not just the rented portion. null if not mentioned.",
   "confidence": "your confidence 0-100 that extraction is accurate"
 }
 
@@ -900,6 +937,7 @@ IMPORTANT:
 - For e-stamp fields, look in the stamp/e-stamp section of the document (usually at top or bottom with certificate details)
 - For property_state: infer from city if not explicitly mentioned (Bangalore→Karnataka, Mumbai→Maharashtra, Delhi→Delhi NCT)
 - MUMBAI EDGE CASE: For Mumbai/Maharashtra agreements, the GRN (Government Receipt Number) or Transaction ID/Transaction No. IS the Stamp Certificate ID. If you detect the city is Mumbai/Maharashtra and see a GRN or Transaction ID, use that value as certificate_no.
+- For rooms_in_agreement: Look for phrases like "one room", "single bedroom", "2BHK", "3BHK", "entire flat", "portion of the premises". If tenant is renting only a room in a shared flat, return 1. If renting entire 2BHK, return 2.
 - Return ONLY the JSON object, no other text.`;
 
   // Use Vertex AI Gemini endpoint — global endpoint for provisioned throughput
@@ -923,6 +961,12 @@ IMPORTANT:
         maxOutputTokens: 8192,
         responseMimeType: "application/json",
       },
+      safetySettings: [
+        { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_ONLY_HIGH" },
+        { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_ONLY_HIGH" },
+        { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_ONLY_HIGH" },
+        { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_ONLY_HIGH" },
+      ],
     }),
   });
 
@@ -933,12 +977,16 @@ IMPORTANT:
   }
 
   const result = await response.json();
+  const finishReason = result.candidates?.[0]?.finishReason;
   const textContent = result.candidates?.[0]?.content?.parts?.[0]?.text || "";
 
   console.log("[process-document] Vertex AI Gemini response:", textContent.substring(0, 500));
+  if (finishReason && finishReason !== "STOP") {
+    console.error(`[process-document] Vertex AI finishReason: ${finishReason} (candidates: ${JSON.stringify(result.candidates?.map((c: any) => ({ finishReason: c.finishReason, safetyRatings: c.safetyRatings })))})`);
+  }
 
   if (!textContent || textContent === "{}") {
-    throw new Error("Vertex AI Gemini returned empty response");
+    throw new Error(`Vertex AI Gemini returned empty response (finishReason: ${finishReason || 'unknown'})`);
   }
 
   // Parse JSON from response (handle markdown code blocks if present)
@@ -952,7 +1000,8 @@ IMPORTANT:
     return parsed;
   }
 
-  throw new Error("No JSON found in Vertex AI Gemini response");
+  console.error(`[process-document] No JSON in Vertex AI response. finishReason: ${finishReason}. textContent (first 500): ${textContent.substring(0, 500)}`);
+  throw new Error(`No JSON found in Vertex AI Gemini response (finishReason: ${finishReason || 'unknown'})`);
 }
 
 // ============================================
@@ -1013,6 +1062,8 @@ Please extract and return a JSON object with these exact fields:
   "stamp_duty_paid_by": "who paid stamp duty",
   "consideration_price": "consideration amount in rupees (number only)",
   "stamp_duty_amount": "stamp duty in rupees (number only)",
+  "rooms_in_agreement": "number of rooms/bedrooms covered by this agreement (e.g., 1 for single room, 2 for 2BHK, 3 for 3BHK). If only a portion is rented (e.g., 'one room in a 3BHK'), return the rented portion count. null if not determinable.",
+  "property_bhk_type": "BHK type of the FULL property (e.g., '1BHK', '2BHK', '3BHK', 'Studio', 'Independent House'). null if not mentioned.",
   "confidence": "your confidence 0-100 that extraction is accurate"
 }
 
@@ -1020,6 +1071,7 @@ IMPORTANT:
 - FIRST: Determine is_rental_agreement. Set to true ONLY for rental agreements, lease deeds, leave and license agreements, or tenancy agreements. Set to false for anything else. If false, set all extraction fields to null.
 - Look for e-stamp fields in the stamp/e-stamp section (usually at top or bottom).
 - MUMBAI EDGE CASE: For Mumbai/Maharashtra agreements, the GRN or Transaction ID IS the Stamp Certificate ID.
+- For rooms_in_agreement: Look for "one room", "single bedroom", "2BHK", "3BHK", "entire flat", "portion of premises". Partial rent = count rented rooms only.
 - Return ONLY the JSON object, no other text.`;
 
   try {
@@ -1038,6 +1090,12 @@ IMPORTANT:
             maxOutputTokens: 8192,
             responseMimeType: "application/json",
           },
+          safetySettings: [
+            { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_ONLY_HIGH" },
+            { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_ONLY_HIGH" },
+            { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_ONLY_HIGH" },
+            { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_ONLY_HIGH" },
+          ],
         }),
       }
     );
@@ -1051,12 +1109,16 @@ IMPORTANT:
     }
 
     const result = await response.json();
+    const finishReason = result.candidates?.[0]?.finishReason;
     console.log("[process-document] Gemini API raw response:", JSON.stringify(result).substring(0, 1000));
     const textContent = result.candidates?.[0]?.content?.parts?.[0]?.text || "";
     console.log("[process-document] Gemini text content:", textContent.substring(0, 500));
+    if (finishReason && finishReason !== "STOP") {
+      console.error(`[process-document] Gemini API finishReason: ${finishReason} (candidates: ${JSON.stringify(result.candidates?.map((c: any) => ({ finishReason: c.finishReason, safetyRatings: c.safetyRatings })))})`);
+    }
 
     if (!textContent) {
-      throw new Error("Gemini API returned empty text content");
+      throw new Error(`Gemini API returned empty text content (finishReason: ${finishReason || 'unknown'})`);
     }
 
     // Parse JSON from response (handle markdown code blocks)
@@ -1070,7 +1132,8 @@ IMPORTANT:
       }
       return parsed;
     }
-    throw new Error("No JSON found in Gemini API response");
+    console.error(`[process-document] No JSON in Gemini API response. finishReason: ${finishReason}. textContent (first 500): ${textContent.substring(0, 500)}`);
+    throw new Error(`No JSON found in Gemini API response (finishReason: ${finishReason || 'unknown'})`);
   } catch (error) {
     console.error("[process-document] Gemini verification error:", error);
     throw error; // Re-throw to trigger proper error handling
@@ -1132,6 +1195,9 @@ function mergeGeminiResults(docAI: ExtractedData, gemini: any): ExtractedData {
     stamp_duty_amount_paise: gemini.stamp_duty_amount
       ? parseInt(String(gemini.stamp_duty_amount)) * 100
       : docAI.stamp_duty_amount_paise,
+    // Room/BHK fields
+    rooms_in_agreement: gemini.rooms_in_agreement != null ? Number(gemini.rooms_in_agreement) : (docAI as any).rooms_in_agreement || null,
+    property_bhk_type: gemini.property_bhk_type || (docAI as any).property_bhk_type || null,
     gemini_verification_score: gemini.confidence || null,
     // Use Gemini's confidence if available (since Document AI OCR doesn't provide entity confidence)
     confidence_score: gemini.confidence != null ? Number(gemini.confidence) : docAI.confidence_score,
