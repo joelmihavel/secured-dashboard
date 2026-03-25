@@ -438,11 +438,19 @@ serve(async (req: Request) => {
       if (paidAt > cutoffDate) {
         console.warn(`[payment-webhook] Payment ${payment.id} completed past cutoff (paid: ${paidAt.toISOString()}, cutoff: ${cutoffDate.toISOString()}). Zeroing cashback.`);
         cashbackBlockedByCutoff = true;
-        // Zero out cashback on the payment record
-        updateData.cashback_applied_paise = 0;
-        updateData.cashback_earned_paise = 0;
-        updateData.intended_cashback_paise = 0;
-        updateData.accumulated_redeemed_paise = 0;
+        // Persist zeroed cashback — main update already ran, so issue a second update
+        const { error: cutoffErr } = await supabase
+          .from("payments")
+          .update({
+            cashback_applied_paise: 0,
+            cashback_earned_paise: 0,
+            intended_cashback_paise: 0,
+            accumulated_redeemed_paise: 0,
+          })
+          .eq("id", payment.id);
+        if (cutoffErr) {
+          console.error(`[payment-webhook] Failed to zero cashback for payment ${payment.id}:`, cutoffErr);
+        }
       }
     }
 
