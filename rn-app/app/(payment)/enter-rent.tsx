@@ -24,10 +24,12 @@ export default function EnterRentScreen() {
   const rentMonth = upcomingPayment?.rent_month
     ?? `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}`;
 
-  // Open modal immediately — the BottomSheet handles its own animation
+  // Open modal once tenancy data is available — prevents empty tenancyId
   useEffect(() => {
-    setShowModal(true);
-  }, []);
+    if (tenancy?.id) {
+      setShowModal(true);
+    }
+  }, [tenancy?.id]);
 
   const handleClose = useCallback(() => {
     setShowModal(false);
