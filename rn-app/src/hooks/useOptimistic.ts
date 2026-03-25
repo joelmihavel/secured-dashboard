@@ -42,14 +42,19 @@ export function useOptimisticPaymentMethod() {
   const store = usePaymentStore();
   const queryClient = useQueryClient();
   const previousMethod = useRef(store.selectedMethod);
+  const isInFlight = useRef(false);
 
   const selectMethodOptimistic = useCallback(
     async (
       method: Parameters<typeof store.selectMethod>[0],
       serverCall: () => Promise<void>
     ) => {
-      // Save previous state
-      previousMethod.current = store.selectedMethod;
+      // Only save previous state if no call is in flight — prevents
+      // double-tap from overwriting the original rollback target
+      if (!isInFlight.current) {
+        previousMethod.current = store.selectedMethod;
+      }
+      isInFlight.current = true;
 
       // Optimistic update
       store.selectMethod(method);
@@ -65,10 +70,12 @@ export function useOptimisticPaymentMethod() {
         }
 
         await serverCall();
+        isInFlight.current = false;
         // Invalidate methods cache to reflect server state
         queryClient.invalidateQueries({ queryKey: profileKeys.paymentMethods() });
         addBreadcrumb('Payment method selected optimistically (confirmed)', 'optimistic');
       } catch (error) {
+        isInFlight.current = false;
         // Revert on failure
         if (previousMethod.current) {
           store.selectMethod(previousMethod.current);
