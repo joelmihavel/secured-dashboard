@@ -38,6 +38,8 @@ const CASHFREE_STATUS_MAP: Record<string, string> = {
   PAID: "success",
   ACTIVE: "processing",
   EXPIRED: "failed",
+  TERMINATED: "failed",
+  TERMINATION_REQUESTED: "failed",
 };
 
 // PayU status mapping (same as payment-webhook)
@@ -98,7 +100,7 @@ serve(async (req: Request) => {
       .from("payments")
       .select(`
         id, tenancy_id, user_id, status, rent_amount_paise,
-        cashback_applied_paise, cashback_earned_paise,
+        cashback_applied_paise, cashback_earned_paise, accumulated_redeemed_paise,
         pg_fee_paise, total_amount_paise, landlord_payout_paise,
         landlord_payout_status, payu_txn_id, payu_mihpayid,
         payu_status, payu_settlement_status, payu_settlement_utr,
