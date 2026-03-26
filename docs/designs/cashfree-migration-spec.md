@@ -116,7 +116,15 @@ ALTER TABLE payments DROP CONSTRAINT IF EXISTS payments_status_check;
 ALTER TABLE payments ADD CONSTRAINT payments_status_check
   CHECK (status IN ('initiated', 'processing', 'success', 'failed', 'refunded', 'expired'));
 
--- New columns for Cashfree integration (from dev branch migration, combined here)
+-- FIXME: Migration 20260226000001 ALREADY added gateway_order_id, gateway_payment_id,
+-- gateway_metadata, processed_webhooks table, cf_beneficiary columns, and 'expired' status.
+-- The dev branch ALSO added cf_order_id (separate column from gateway_order_id).
+-- DECISION NEEDED: Use gateway_order_id (already exists on main) as the Cashfree order ID,
+-- OR add cf_order_id as a separate column? Dev branch code references cf_order_id.
+-- RISK: If we use gateway_order_id, dev branch code must be updated everywhere.
+-- If we add cf_order_id, we have two columns storing the same thing.
+
+-- Easy Split specific columns (NOT on main, from dev branch)
 ALTER TABLE payments ADD COLUMN IF NOT EXISTS cf_order_id TEXT;
 ALTER TABLE payments ADD COLUMN IF NOT EXISTS cf_split_posted BOOLEAN DEFAULT FALSE;
 ALTER TABLE payments ADD COLUMN IF NOT EXISTS split_retry_count INTEGER DEFAULT 0;
@@ -386,9 +394,17 @@ call this function with User B's payment_session_id.
     failed     → success    (late webhook — race condition edge case)
 
   FORBIDDEN:
-    success  → anything (terminal)
-    expired  → anything (terminal — user must start new payment)
-    failed   → processing (ambiguous; only failed→success allowed)
+    success  → anything except refunded (terminal for payment, refund is separate flow)
+    failed   → processing (ambiguous; only failed→success allowed via late webhook)
+
+  FIXME: expired→success MUST be allowed (late webhook after cleanup-stale-payments).
+  Existing PayU webhook allows expired→success and expired→failed. Cashfree webhook
+  must match this — a payment can be marked expired by cron, then a late Cashfree
+  webhook arrives with PAYMENT_SUCCESS. The webhook should override expired→success.
+
+  MISSING: partially_refunded state. Existing PayU webhook supports it. Cashfree
+  refund webhooks (PAYMENT_REFUND_STATUS) may need this. Defer to Phase 2 if
+  Cashfree refunds aren't in scope, but note the gap.
 ```
 
 ### Landlord Payout Status (Easy Split)
