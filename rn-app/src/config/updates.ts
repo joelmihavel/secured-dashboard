@@ -237,7 +237,42 @@ export function setupAutoUpdateCheck(): () => void {
 // ==============================================
 
 /**
+ * Stabilize the auth session before destroying the JS context.
+ *
+ * Problem: reloadAsync() kills JS immediately. If the Supabase SDK's
+ * autoRefreshToken was mid-rotation (sent old refresh token, received new
+ * tokens, but hasn't written to SecureStore yet), the new tokens are lost.
+ * On restart, the old (consumed) refresh token → 401 → SIGNED_OUT.
+ *
+ * Fix: pause auto-refresh, wait for any in-flight refresh to settle,
+ * then reload. The SDK re-starts auto-refresh on the new JS context.
+ */
+async function stabilizeSessionBeforeReload(): Promise<void> {
+  try {
+    // Dynamic import to avoid circular dependency
+    const { supabase } = require('../services/supabase/client');
+
+    // stopAutoRefresh() prevents the SDK from starting a NEW refresh.
+    // Any in-flight refresh will still complete and write to SecureStore.
+    supabase.auth.stopAutoRefresh();
+
+    // Give any in-flight refresh time to complete its write to SecureStore.
+    // Token refresh round-trip is typically <500ms; 1.5s is generous.
+    await new Promise(resolve => setTimeout(resolve, 1500));
+
+    // Read session to ensure SecureStore has the latest tokens persisted.
+    // getSession() returns the in-memory session (which includes any
+    // tokens from a just-completed refresh).
+    await supabase.auth.getSession();
+  } catch {
+    // Non-fatal — proceed with reload even if stabilization fails.
+    // Worst case: user has to log in again (same as before this fix).
+  }
+}
+
+/**
  * Trigger an immediate app reload to apply a downloaded update.
+ * Stabilizes the auth session first to prevent logout-on-reload.
  * Returns false if Updates module is not available.
  */
 export async function reloadApp(): Promise<boolean> {
@@ -245,6 +280,7 @@ export async function reloadApp(): Promise<boolean> {
 
   try {
     trackEvent('ota_reload');
+    await stabilizeSessionBeforeReload();
     await Updates.reloadAsync();
     return true;
   } catch {

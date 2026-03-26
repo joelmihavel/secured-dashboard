@@ -178,20 +178,26 @@ export async function createOrder(params: {
   customerId: string;
   customerPhone: string;
   notifyUrl: string;
+  paymentMethods?: string;
+  returnUrl?: string;
 }): Promise<CashfreeOrder> {
-  const { amountPaise, orderId, customerId, customerPhone, notifyUrl } = params;
+  const { amountPaise, orderId, customerId, customerPhone, notifyUrl, paymentMethods, returnUrl } = params;
+
+  const orderMeta: Record<string, string> = {
+    notify_url: notifyUrl,
+  };
+  if (paymentMethods) orderMeta.payment_methods = paymentMethods;
+  if (returnUrl) orderMeta.return_url = returnUrl;
 
   const body = {
     order_id: orderId,
-    order_amount: (amountPaise / 100).toFixed(2),
+    order_amount: parseFloat((amountPaise / 100).toFixed(2)),
     order_currency: "INR",
     customer_details: {
       customer_id: customerId,
       customer_phone: customerPhone,
     },
-    order_meta: {
-      notify_url: notifyUrl,
-    },
+    order_meta: orderMeta,
   };
 
   const result = await cfFetch("POST", "/pg/orders", body, orderId) as CashfreeOrder;

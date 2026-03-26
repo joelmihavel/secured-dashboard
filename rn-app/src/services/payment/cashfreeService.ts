@@ -46,7 +46,8 @@ export function isCashfreeAvailable(): boolean {
 // ENVIRONMENT
 // ==============================================
 
-const ENV = CFEnvironment ? (__DEV__ ? CFEnvironment.SANDBOX : CFEnvironment.PRODUCTION) : null;
+const IS_SANDBOX = process.env.EXPO_PUBLIC_CASHFREE_ENV?.toLowerCase() === 'sandbox';
+const ENV = CFEnvironment ? (IS_SANDBOX ? CFEnvironment.SANDBOX : CFEnvironment.PRODUCTION) : null;
 
 // ==============================================
 // THEME — matches app design system
@@ -118,4 +119,21 @@ export function launchUPIIntent(paymentSessionId: string, orderId: string) {
   const theme = buildTheme();
   const payment = new CFUPIIntentCheckoutPayment(session, theme);
   CFPaymentGatewayService.doUPIPayment(payment);
+}
+
+// ==============================================
+// WEB CHECKOUT (Card / Debit Card / Net Banking)
+// ==============================================
+
+const CF_WEB_CHECKOUT_BASE = IS_SANDBOX
+  ? 'https://sandbox.cashfree.com/pg/order/#'
+  : 'https://payments.cashfree.com/order/#';
+
+/**
+ * Get the Cashfree Web Checkout URL for a payment session.
+ * The order's `payment_methods` restriction (set server-side) ensures
+ * only the selected method (cc/dc/nb) is shown.
+ */
+export function getWebCheckoutUrl(paymentSessionId: string): string {
+  return `${CF_WEB_CHECKOUT_BASE}/${paymentSessionId}`;
 }

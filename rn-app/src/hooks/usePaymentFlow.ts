@@ -27,6 +27,7 @@ import {
   launchCardPayment,
   launchUPIIntent,
   isCashfreeAvailable,
+  getWebCheckoutUrl,
 } from '@/src/services/payment/cashfreeService';
 import { callEdgeFunction } from '@/src/services/supabase';
 import * as WebBrowser from 'expo-web-browser';
@@ -240,9 +241,9 @@ export function usePaymentFlow(): UsePaymentFlowReturn {
         return { status: 'blocked' };
       }
 
-      // SDK availability check — matches PayU pattern in launchCorePayment
-      if ((paymentMethod === 'card' || paymentMethod === 'debit_card' || paymentMethod === 'upi') && !isCashfreeAvailable()) {
-        console.error('[Cashfree] SDK not available for', paymentMethod);
+      // SDK availability check — only needed for UPI Intent (native SDK)
+      if (paymentMethod === 'upi' && !upiVpa && !isCashfreeAvailable()) {
+        console.error('[Cashfree] SDK not available for UPI Intent');
         return { status: 'failure', error: 'Cashfree SDK not available. Please update the app.' };
       }
 
@@ -250,32 +251,30 @@ export function usePaymentFlow(): UsePaymentFlowReturn {
       setIsExecuting(true);
 
       try {
-        if (paymentMethod === 'card' || paymentMethod === 'debit_card') {
-          // Card: Launch Cashfree Drop Checkout SDK
-          return new Promise<PaymentFlowOutcome>((resolve) => {
-            setupCashfreeCallbacks(
-              (orderId) => {
-                // onVerify — navigate to status screen (webhook determines final state)
-                Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-                setLastPayment(paymentId);
-                router.replace({
-                  pathname: '/(payment)/status',
-                  params: { paymentId, method: 'card', initialStatus: 'pending' },
-                } as never);
-                resolve({ status: 'navigating' });
-              },
-              (_error, orderId) => {
-                // onError — STILL navigate to status (SDK is not authoritative)
-                setLastPayment(paymentId);
-                router.replace({
-                  pathname: '/(payment)/status',
-                  params: { paymentId, method: 'card', initialStatus: 'pending' },
-                } as never);
-                resolve({ status: 'navigating' });
-              },
-            );
-            launchCardPayment(cashfreeSessionId, cfOrderId);
+        if (paymentMethod === 'card' || paymentMethod === 'debit_card' || paymentMethod === 'netbanking') {
+          // Card / Debit Card / Net Banking: Open Cashfree Web Checkout
+          // The order's payment_methods restriction (set server-side) ensures
+          // only the selected method is shown in the checkout page.
+          const checkoutUrl = getWebCheckoutUrl(cashfreeSessionId);
+          console.log('[Cashfree] Opening web checkout for', paymentMethod, '→', checkoutUrl);
+
+          await WebBrowser.openBrowserAsync(checkoutUrl, {
+            dismissButtonStyle: 'close',
+            presentationStyle: WebBrowser.WebBrowserPresentationStyle.FULL_SCREEN,
           });
+
+          // After browser closes (user completed or dismissed), navigate to status.
+          // Webhook determines the actual payment outcome.
+          setLastPayment(paymentId);
+          router.replace({
+            pathname: '/(payment)/status',
+            params: {
+              paymentId,
+              method: paymentMethod === 'netbanking' ? 'netbanking' : 'card',
+              initialStatus: 'pending',
+            },
+          } as never);
+          return { status: 'navigating' };
         } else if (paymentMethod === 'upi' && !upiVpa) {
           // UPI Intent: Launch Cashfree UPI Intent SDK
           return new Promise<PaymentFlowOutcome>((resolve) => {
@@ -320,34 +319,6 @@ export function usePaymentFlow(): UsePaymentFlowReturn {
           router.replace({
             pathname: '/(payment)/status',
             params: { paymentId, method: 'upi', initialStatus: 'pending' },
-          } as never);
-          return { status: 'navigating' };
-        } else if (paymentMethod === 'netbanking') {
-          // Net Banking: API-driven -> redirect URL
-          const { data: payData, error: payError } = await callEdgeFunction<{
-            success: boolean;
-            data: { action: string; data?: { url?: string } };
-          }>('cashfree-pay-order', {
-            payment_session_id: cashfreeSessionId,
-            cf_order_id: cfOrderId,
-            payment_method: { netbanking: { channel: 'link', netbanking_bank_code: bankCode ?? 3003 } },
-          }, true);
-
-          if (payError || !payData?.data?.data?.url) {
-            return { status: 'failure', error: payError ?? 'No redirect URL received' };
-          }
-
-          // Open bank login in InAppBrowser
-          await WebBrowser.openBrowserAsync(payData.data.data.url, {
-            dismissButtonStyle: 'close',
-            presentationStyle: WebBrowser.WebBrowserPresentationStyle.FULL_SCREEN,
-          });
-
-          // After browser closes, navigate to status screen
-          setLastPayment(paymentId);
-          router.replace({
-            pathname: '/(payment)/status',
-            params: { paymentId, method: 'netbanking', initialStatus: 'pending' },
           } as never);
           return { status: 'navigating' };
         }

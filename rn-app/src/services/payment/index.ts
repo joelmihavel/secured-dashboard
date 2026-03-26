@@ -239,6 +239,11 @@ export async function initiatePayment(params: {
 
   const d = data.data;
   const raw = d as Record<string, unknown>;
+  // DEBUG: show Supabase URL + server response to diagnose DB routing
+  const { Alert } = require('react-native');
+  const sbUrl = process.env.EXPO_PUBLIC_SUPABASE_URL ?? 'UNSET';
+  const dbId = sbUrl.includes('zqlow') ? 'DEV-DB' : sbUrl.includes('uowjt') ? 'MAIN-DB' : 'UNKNOWN';
+  Alert.alert('DEBUG', `DB: ${dbId}\nURL: ...${sbUrl.slice(-30)}\nBUILD: ${raw._build ?? 'OLD'}\nGW: ${raw._gw_debug ?? 'NONE'}\ngateway: ${raw.gateway ?? 'MISSING'}\ncashfree: ${!!raw.cashfree}`);
   return {
     data: {
       paymentId: d.payment_id,

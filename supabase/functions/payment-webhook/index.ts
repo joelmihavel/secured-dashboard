@@ -136,9 +136,9 @@ async function verifyCashfreeSignature(
   receivedSignature: string,
   secretKey: string
 ): Promise<boolean> {
-  // Cashfree signs: timestamp + "." + rawBody (dot separator per Cashfree docs)
-  // Confirmed by dev branch commit 550ce387
-  const signedPayload = timestamp + "." + rawBody;
+  // Cashfree signs: timestamp + rawBody (NO separator per Cashfree docs)
+  // See: https://docs.cashfree.com/docs/webhooks — "concatenate timestamp and raw body"
+  const signedPayload = timestamp + rawBody;
   const expectedSignature = await hmacSha256Base64(signedPayload, secretKey);
   return timingSafeCompare(expectedSignature, receivedSignature);
 }

@@ -55,8 +55,14 @@ serve(async (req) => {
       return errorResponse("Missing payment_session_id or payment_method", 400);
     }
 
+    // Client sends payment_method as an object: { upi: { channel: 'collect', upi_id: '...' } }
+    // or { netbanking: { channel: 'link', netbanking_bank_code: '...' } }
+    // Validate the top-level key, not the object itself
     const VALID_METHODS = ["upi", "netbanking"];
-    if (!VALID_METHODS.includes(payment_method)) {
+    const methodKey = typeof payment_method === "object" && payment_method !== null
+      ? Object.keys(payment_method)[0]
+      : String(payment_method);
+    if (!VALID_METHODS.includes(methodKey)) {
       return errorResponse(`Invalid payment_method: must be one of ${VALID_METHODS.join(", ")}`, 400);
     }
 
@@ -94,20 +100,34 @@ serve(async (req) => {
       );
     }
 
-    // Proxy to Cashfree Order Pay API
-    const cfResponse = await fetch(`${CF_BASE_URL}/pg/orders/pay`, {
-      method: "POST",
-      headers: {
-        "x-client-id": CF_APP_ID,
-        "x-client-secret": CF_SECRET_KEY,
-        "x-api-version": CF_API_VERSION,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        payment_session_id,
-        payment_method,
-      }),
-    });
+    // Proxy to Cashfree Order Pay API (sessions endpoint)
+    // See: https://docs.cashfree.com/reference/pg-pay-order
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 15000);
+    let cfResponse: Response;
+    try {
+      cfResponse = await fetch(`${CF_BASE_URL}/pg/orders/sessions`, {
+        method: "POST",
+        headers: {
+          "x-client-id": CF_APP_ID,
+          "x-client-secret": CF_SECRET_KEY,
+          "x-api-version": CF_API_VERSION,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          payment_session_id,
+          payment_method,
+        }),
+        signal: controller.signal,
+      });
+    } catch (err) {
+      if ((err as Error).name === "AbortError") {
+        return errorResponse("Cashfree API timed out", 504);
+      }
+      throw err;
+    } finally {
+      clearTimeout(timeout);
+    }
 
     const cfData = await cfResponse.json();
 

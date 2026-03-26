@@ -185,6 +185,14 @@ export function PaymentMethodModal({
         }
 
         // Store gateway-specific session data
+        console.log('[PaymentMethodModal] initiate response:', JSON.stringify({
+          paymentId: data.paymentId,
+          hasCashfree: !!(data.cashfreeSessionId && data.cfOrderId),
+          hasPayu: !!data.payuParams,
+          cashfreeSessionId: data.cashfreeSessionId?.slice(0, 20),
+          cfOrderId: data.cfOrderId?.slice(0, 20),
+          demoMode: data.demoMode,
+        }));
         if (data.cashfreeSessionId && data.cfOrderId) {
           setCashfreeSession(data.cashfreeSessionId, data.cfOrderId);
         } else if (data.payuParams) {
@@ -260,6 +268,16 @@ export function PaymentMethodModal({
 
       // Check which gateway to use
       const storeState = usePaymentStore.getState();
+      const gatewayRoute = (storeState.cashfreeSessionId && storeState.cfOrderId) ? 'CASHFREE' : 'PAYU';
+      console.log('[PaymentMethodModal] Gateway decision:', JSON.stringify({
+        hasCashfreeSession: !!storeState.cashfreeSessionId,
+        hasCfOrderId: !!storeState.cfOrderId,
+        hasPayuParams: !!storeState.payuSessionParams,
+        route: gatewayRoute,
+        paymentId: currentPaymentId,
+      }));
+      // DEBUG: temporary visible alert — remove after confirming Cashfree works
+      Alert.alert('DEBUG Gateway', `Route: ${gatewayRoute}\nCF Session: ${storeState.cashfreeSessionId ? 'YES' : 'NO'}\nCF Order: ${storeState.cfOrderId ? 'YES' : 'NO'}\nPayU: ${storeState.payuSessionParams ? 'YES' : 'NO'}`);
       if (storeState.cashfreeSessionId && storeState.cfOrderId) {
         // Cashfree path
         const outcome = await executeCashfreePayment(
@@ -393,6 +411,8 @@ export function PaymentMethodModal({
           }
 
           // Store gateway-specific session data
+          // DEBUG: temporary visible alert — remove after confirming Cashfree works
+          Alert.alert('DEBUG Initiate', `CF Session: ${data.cashfreeSessionId ? 'YES' : 'NO'}\nCF Order: ${data.cfOrderId ? 'YES' : 'NO'}\nPayU: ${data.payuParams ? 'YES' : 'NO'}\nDemo: ${data.demoMode}`);
           if (data.cashfreeSessionId && data.cfOrderId) {
             setCashfreeSession(data.cashfreeSessionId, data.cfOrderId);
           } else if (data.payuParams) {
@@ -402,7 +422,24 @@ export function PaymentMethodModal({
           setLastPayment(data.paymentId);
           setPaymentId(data.paymentId);
 
-          // Navigate to add-method form
+          // Cashfree Web Checkout: skip card/bank form — Cashfree handles the input UI.
+          // Go straight to confirm screen which has the correct gateway routing.
+          if (data.cashfreeSessionId && data.cfOrderId) {
+            const methodLabel = methodType === 'card' ? 'Credit Card'
+              : methodType === 'debit_card' ? 'Debit Card'
+              : methodType === 'netbanking' ? 'Net Banking'
+              : methodType;
+            pendingInstrumentRef.current = {
+              methodType,
+              corePaymentMode: methodType,
+              params: {},
+              methodLabel,
+            };
+            setModalView('confirm-payment');
+            return;
+          }
+
+          // PayU: navigate to add-method form for card/bank input
           const viewMap: Record<Exclude<PaymentMethodType, 'upi'>, ModalView> = {
             card: 'add-card',
             debit_card: 'add-debit-card',

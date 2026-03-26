@@ -195,7 +195,7 @@ serve(async (req: Request) => {
 
     // Parse and validate request body
     const body = await req.json();
-    console.log("[initiate-payment] Request for tenancy:", body.tenancy_id, "method:", body.payment_method);
+    console.log("[initiate-payment] Request for tenancy:", body.tenancy_id, "method:", body.payment_method, "gateway_version:", body.gateway_version, "checkout_mode:", body.checkout_mode, "ALL_KEYS:", Object.keys(body).join(","));
     const validatedBody = validateSchema<InitiatePaymentRequest>(
       body,
       requestSchema,
@@ -215,8 +215,10 @@ serve(async (req: Request) => {
     const checkout_mode = (validatedBody as Record<string, unknown>).checkout_mode as string | undefined;
 
     // Dual-gateway routing: client sends gateway_version to opt into Cashfree
+    // BUILD_MARKER: 2026-03-27T00:30:00Z — if you see this in logs, deployment is fresh
     const gateway_version = body.gateway_version as string | undefined;
     const useCashfree = gateway_version === 'cashfree';
+    console.log("[initiate-payment] BUILD_MARKER=2026-03-27T00:30 GATEWAY ROUTING: gateway_version=", JSON.stringify(gateway_version), "useCashfree=", useCashfree, "typeof=", typeof gateway_version, "RAW_BODY_KEYS=", Object.keys(body).join(","));
 
     // Normalize payment method (iOS sends net_banking, credit_card, debit_card)
     const payment_method = normalizePaymentMethod(rawPaymentMethod);
@@ -657,6 +659,19 @@ serve(async (req: Request) => {
     // ── CASHFREE PATH ──────────────────────────────────────────────
     if (useCashfree) {
       const WEBHOOK_URL = `${SUPABASE_URL}/functions/v1/payment-webhook`;
+      // Map payment method to Cashfree payment_methods restriction for Web Checkout
+      // UPI uses native SDK intent — no restriction needed (order supports all methods)
+      const CF_METHOD_MAP: Record<string, string> = {
+        card: 'cc',
+        credit_card: 'cc',
+        CC: 'cc',
+        debit_card: 'dc',
+        DC: 'dc',
+        netbanking: 'nb',
+        NB: 'nb',
+      };
+      const cfPaymentMethods = CF_METHOD_MAP[payment_method] ?? undefined;
+
       let cfOrder;
       try {
         cfOrder = await createOrder({
@@ -665,6 +680,10 @@ serve(async (req: Request) => {
           customerId: userId,
           customerPhone: userProfile?.phone ?? '',
           notifyUrl: WEBHOOK_URL,
+          paymentMethods: cfPaymentMethods,
+          // No returnUrl for native app — expo-web-browser handles the close.
+          // Cashfree's return_url redirects the browser, but our in-app browser
+          // dismisses on close. Webhook (notifyUrl) handles the actual outcome.
         });
       } catch (cfErr) {
         // Mark payment as failed so it doesn't stay orphaned in 'initiated'
@@ -694,6 +713,8 @@ serve(async (req: Request) => {
       const cfResponseData = {
         payment_id: payment.id,
         txn_id: txnId,
+        _build: "2026-03-27T00:30",
+        _gw_debug: `gv=${gateway_version}|cf=${useCashfree}`,
         total_amount_paise: totalAmountPaise,
         original_rent_paise: originalRentPaise,
         cashback_applied_paise: cashbackDiscountPaise,
@@ -743,6 +764,8 @@ serve(async (req: Request) => {
       payment_id: payment.id,
       txn_id: txnId,
       gateway: "payu" as const,
+      _build: "2026-03-27T00:30",
+      _gw_debug: `gv=${gateway_version}|cf=${useCashfree}`,
       original_rent_paise: originalRentPaise,
       cashback_applied_paise: cashbackDiscountPaise,
       cashback_earned_paise: cashbackEarnedPaise,

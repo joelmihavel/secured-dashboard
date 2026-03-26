@@ -263,14 +263,6 @@ export function ConfirmPaymentContent({
               )}
             </View>
 
-            {/* Method indicator pill */}
-            {methodLabel ? (
-              <View style={s.methodSection}>
-                <View style={s.methodPill}>
-                  <RNText style={s.methodPillText}>{methodLabel}</RNText>
-                </View>
-              </View>
-            ) : null}
 
             {/* Side notches — Figma 799:3444, 799:3445 */}
             <View style={[s.sideNotch, s.sideNotchLeft]} />
@@ -464,26 +456,9 @@ const s = StyleSheet.create({
     fontSize: 12,
     lineHeight: 20,
     color: '#DDDDDD',
+    textAlign: 'center',
   },
 
-  // ── Method indicator ────────────────────────────────────────────────────
-  methodSection: {
-    paddingHorizontal: 24,
-    paddingBottom: 20,
-    alignItems: 'center',
-  },
-  methodPill: {
-    backgroundColor: '#1A1A1A',
-    borderRadius: 200,
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-  },
-  methodPillText: {
-    fontFamily: 'PlusJakartaSans-Medium',
-    fontSize: 12,
-    lineHeight: 20,
-    color: '#FF9A6D',
-  },
 
   // ── Button Section ──────────────────────────────────────────────────────
   buttonSection: {
