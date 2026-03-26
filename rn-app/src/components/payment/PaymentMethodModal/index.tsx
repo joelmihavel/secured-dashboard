@@ -267,6 +267,8 @@ export function PaymentMethodModal({
           currentPaymentId,
           storeState.cashfreeSessionId,
           storeState.cfOrderId,
+          undefined, // upiVpa — UPI Intent uses native picker, no VPA needed
+          pending.params?.bankcode, // bankCode for netbanking
         );
 
         if (outcome.status === 'cancelled' || outcome.status === 'blocked') {

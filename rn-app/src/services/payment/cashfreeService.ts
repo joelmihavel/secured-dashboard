@@ -9,28 +9,51 @@
  * Card data never touches our code — zero PCI scope.
  */
 
-import { CFPaymentGatewayService } from 'react-native-cashfree-pg-sdk';
-import {
-  CFEnvironment,
-  CFSession,
-  CFDropCheckoutPayment,
-  CFUPIIntentCheckoutPayment,
-  CFPaymentComponentBuilder,
-  CFPaymentModes,
-  CFThemeBuilder,
-} from 'cashfree-pg-api-contract';
+let CFPaymentGatewayService: typeof import('react-native-cashfree-pg-sdk').CFPaymentGatewayService | null = null;
+let CFEnvironment: typeof import('cashfree-pg-api-contract').CFEnvironment | null = null;
+let CFSession: typeof import('cashfree-pg-api-contract').CFSession | null = null;
+let CFDropCheckoutPayment: typeof import('cashfree-pg-api-contract').CFDropCheckoutPayment | null = null;
+let CFUPIIntentCheckoutPayment: typeof import('cashfree-pg-api-contract').CFUPIIntentCheckoutPayment | null = null;
+let CFPaymentComponentBuilder: typeof import('cashfree-pg-api-contract').CFPaymentComponentBuilder | null = null;
+let CFPaymentModes: typeof import('cashfree-pg-api-contract').CFPaymentModes | null = null;
+let CFThemeBuilder: typeof import('cashfree-pg-api-contract').CFThemeBuilder | null = null;
+
+try {
+  const sdk = require('react-native-cashfree-pg-sdk');
+  CFPaymentGatewayService = sdk.CFPaymentGatewayService;
+} catch (e) {
+  console.warn('[Cashfree] SDK not available:', (e as Error).message);
+}
+
+try {
+  const contract = require('cashfree-pg-api-contract');
+  CFEnvironment = contract.CFEnvironment;
+  CFSession = contract.CFSession;
+  CFDropCheckoutPayment = contract.CFDropCheckoutPayment;
+  CFUPIIntentCheckoutPayment = contract.CFUPIIntentCheckoutPayment;
+  CFPaymentComponentBuilder = contract.CFPaymentComponentBuilder;
+  CFPaymentModes = contract.CFPaymentModes;
+  CFThemeBuilder = contract.CFThemeBuilder;
+} catch (e) {
+  console.warn('[Cashfree] API contract not available:', (e as Error).message);
+}
+
+export function isCashfreeAvailable(): boolean {
+  return CFPaymentGatewayService != null && CFSession != null;
+}
 
 // ==============================================
 // ENVIRONMENT
 // ==============================================
 
-const ENV = __DEV__ ? CFEnvironment.SANDBOX : CFEnvironment.PRODUCTION;
+const ENV = CFEnvironment ? (__DEV__ ? CFEnvironment.SANDBOX : CFEnvironment.PRODUCTION) : null;
 
 // ==============================================
 // THEME — matches app design system
 // ==============================================
 
 function buildTheme() {
+  if (!CFThemeBuilder) return null;
   return new CFThemeBuilder()
     .setNavigationBarBackgroundColor('#131313')
     .setNavigationBarTextColor('#FFFFFF')
@@ -49,11 +72,15 @@ export function setupCallbacks(
   onVerify: (orderId: string) => void,
   onError: (error: unknown, orderId: string) => void,
 ) {
+  if (!CFPaymentGatewayService) {
+    console.error('[Cashfree] SDK not available — cannot set callbacks');
+    return;
+  }
   CFPaymentGatewayService.setCallback({ onVerify, onError });
 }
 
 export function removeCallbacks() {
-  CFPaymentGatewayService.removeCallback();
+  CFPaymentGatewayService?.removeCallback();
 }
 
 // ==============================================
@@ -66,6 +93,9 @@ export function removeCallbacks() {
  * PCI scope: ZERO — card data stays within SDK.
  */
 export function launchCardPayment(paymentSessionId: string, orderId: string) {
+  if (!CFPaymentGatewayService || !CFSession || !CFPaymentComponentBuilder || !CFPaymentModes || !CFDropCheckoutPayment || !ENV) {
+    throw new Error('Cashfree SDK not available. Please update the app.');
+  }
   const session = new CFSession(paymentSessionId, orderId, ENV);
   const components = new CFPaymentComponentBuilder()
     .add(CFPaymentModes.CARD)
@@ -81,6 +111,9 @@ export function launchCardPayment(paymentSessionId: string, orderId: string) {
  * User selects app -> approves in the UPI app -> returns.
  */
 export function launchUPIIntent(paymentSessionId: string, orderId: string) {
+  if (!CFPaymentGatewayService || !CFSession || !CFUPIIntentCheckoutPayment || !ENV) {
+    throw new Error('Cashfree SDK not available. Please update the app.');
+  }
   const session = new CFSession(paymentSessionId, orderId, ENV);
   const theme = buildTheme();
   const payment = new CFUPIIntentCheckoutPayment(session, theme);

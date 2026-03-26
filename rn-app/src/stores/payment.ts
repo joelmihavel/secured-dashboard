@@ -302,6 +302,7 @@ export const usePaymentStore = create<PaymentStore>()(
         set((state) => {
           state.cashfreeSessionId = null;
           state.cfOrderId = null;
+          state.paymentGateway = null;
         }),
 
       setPaymentGateway: (gateway) =>
