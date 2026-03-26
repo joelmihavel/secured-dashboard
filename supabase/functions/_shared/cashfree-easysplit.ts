@@ -5,7 +5,7 @@
  *   - createOrder()           POST /pg/orders
  *   - createVendor()          POST /pg/easy-split/vendors
  *   - getVendor()             GET  /pg/easy-split/vendors/{vendor_id}
- *   - postSplit()             POST /pg/easy-split/orders/{order_id}/split
+ *   - onDemandTransfer()      POST /pg/easy-split/vendors/{vendor_id}/transfer
  *   - getOrderPaymentStatus() GET  /pg/orders/{order_id}
  *
  * Auth: x-client-id + x-client-secret (same as Cashfree PG credentials)
@@ -19,7 +19,7 @@
 const CF_APP_ID = Deno.env.get("CASHFREE_PG_APP_ID")!;
 const CF_SECRET_KEY = Deno.env.get("CASHFREE_PG_APP_SECRET") ?? Deno.env.get("CASHFREE_PG_SECRET_KEY")!;
 const CF_BASE_URL = (Deno.env.get("CASHFREE_PG_BASE_URL") ?? "https://sandbox.cashfree.com").replace(/\/$/, "");
-const CF_API_VERSION = "2023-08-01";
+const CF_API_VERSION = "2025-01-01";
 const FETCH_TIMEOUT_MS = 10000;
 
 // ==============================================
@@ -64,14 +64,9 @@ export interface CashfreeVendorInput {
   schedule_option?: number; // 1=T+1, 2=T+2, 7=weekly. Default: 1
 }
 
-export interface CashfreeSplitResult {
-  status: string;
-  message: string;
-}
-
 export interface CashfreeOrderStatus {
   order_id: string;
-  order_status: "ACTIVE" | "PAID" | "EXPIRED" | string;
+  order_status: "ACTIVE" | "PAID" | "EXPIRED" | "TERMINATED" | "TERMINATION_REQUESTED" | string;
   order_amount: number;
   cf_order_id?: string;
 }
@@ -261,50 +256,79 @@ export async function getVendor(vendorId: string): Promise<CashfreeVendor> {
 }
 
 // ==============================================
-// 4. POST SPLIT
+// 4. ON-DEMAND TRANSFER (MERCHANT → VENDOR)
 // ==============================================
 
 /**
- * Posts the split configuration for a paid order.
- * Tells Cashfree how much to settle to the landlord (vendor).
+ * Transfers funds from merchant's unsettled balance to a vendor.
+ * Not tied to any specific order — draws from aggregate merchant balance.
  *
- * Must be called within 2 days of payment capture.
- * Idempotent: x-idempotency-key prevents duplicate splits.
+ * Use case: Landlord receives full rent even when customer paid a discounted amount.
+ * Merchant tops up Cashfree balance manually to cover the difference.
  *
- * @param cfOrderId      - Cashfree order_id from createOrder()
- * @param vendorId       - Cashfree vendor_id (bank_accounts.cf_beneficiary_id)
- * @param amountPaise    - Amount to settle to landlord (full rent)
- * @param paymentId      - Our payment UUID (used as idempotency key)
+ * Requires: vendor status = ACTIVE, sufficient merchant balance.
+ *
+ * @param vendorId    - Cashfree vendor_id (bank_accounts.cf_beneficiary_id)
+ * @param amountPaise - Full rent amount to transfer to landlord
+ * @param paymentId   - Our payment UUID (used as idempotency key)
+ * @param remark      - Optional description for the transfer
  */
-export async function postSplit(params: {
-  cfOrderId: string;
+export interface OnDemandTransferResult {
+  settlement_id: number;
+  transfer_details?: {
+    vendor_id: string;
+    transfer_from: string;
+    transfer_type: string;
+    transfer_amount: number;
+    remark?: string;
+    tags?: Record<string, string>;
+  };
+  balances?: {
+    merchant_id: number;
+    vendor_id: string;
+    merchant_unsettled: number;
+    vendor_unsettled: number;
+  };
+  charges?: {
+    service_charges: number;
+    service_tax: number;
+    amount: number;
+    billed_to: string;
+    is_postpaid: boolean;
+  };
+}
+
+export async function onDemandTransfer(params: {
   vendorId: string;
   amountPaise: number;
   paymentId: string;
-}): Promise<CashfreeSplitResult> {
-  const { cfOrderId, vendorId, amountPaise, paymentId } = params;
+  remark?: string;
+}): Promise<OnDemandTransferResult> {
+  const { vendorId, amountPaise, paymentId, remark } = params;
+
+  if (amountPaise <= 0) {
+    throw new CashfreeError("Transfer amount must be greater than 0", 0);
+  }
 
   const body = {
-    split: [
-      {
-        vendor_id: vendorId,
-        amount: parseFloat((amountPaise / 100).toFixed(2)),
-      },
-    ],
+    transfer_from: "MERCHANT",
+    transfer_type: "ON_DEMAND",
+    transfer_amount: parseFloat((amountPaise / 100).toFixed(2)),
+    remark: remark ?? `Rent settlement - ${paymentId}`,
   };
 
   const result = await cfFetch(
     "POST",
-    `/pg/easy-split/orders/${encodeURIComponent(cfOrderId)}/split`,
+    `/pg/easy-split/vendors/${encodeURIComponent(vendorId)}/transfer`,
     body,
-    `split-${paymentId}`, // deterministic idempotency key
-  ) as CashfreeSplitResult;
+    `odt-${paymentId}`, // deterministic idempotency key
+  ) as OnDemandTransferResult;
 
   return result;
 }
 
 // ==============================================
-// 5. GET ORDER PAYMENT STATUS
+// 6. GET ORDER PAYMENT STATUS
 // ==============================================
 
 /**

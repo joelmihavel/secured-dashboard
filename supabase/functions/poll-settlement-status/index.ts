@@ -9,7 +9,7 @@
  *      payments are older than 24h
  *
  * Tier 1 (PayU → Flent settlement tracking) is removed — Cashfree Easy Split
- * auto-settles after postSplit() is called. No separate settlement tracking needed.
+ * on-demand transfer handles landlord settlement via settle-to-landlord cron.
  *
  * Endpoint: POST /functions/v1/poll-settlement-status
  * Auth: Service role only (called by pg_cron every 30 min)
@@ -185,7 +185,7 @@ async function reconcileStuckPayments(
         let newStatus: string | null = null;
         if (orderStatus.order_status === "PAID") {
           newStatus = "success";
-        } else if (orderStatus.order_status === "EXPIRED") {
+        } else if (orderStatus.order_status === "EXPIRED" || orderStatus.order_status === "TERMINATED" || orderStatus.order_status === "TERMINATION_REQUESTED") {
           newStatus = "failed";
         } else {
           // ACTIVE = still pending — leave as-is

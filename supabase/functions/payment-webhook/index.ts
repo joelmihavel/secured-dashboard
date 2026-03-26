@@ -172,12 +172,24 @@ serve(async (req: Request) => {
         return errorResponse('Invalid signature', 400, 'CF_SIGNATURE_FAILED');
       }
 
-      const event = JSON.parse(rawBody);
+      let event;
+      try {
+        event = JSON.parse(rawBody);
+      } catch {
+        return jsonResponse({ status: 'ignored', reason: 'invalid json' });
+      }
+
       const cfOrderId = event.data?.order?.order_id;
       const cfPaymentId = event.data?.payment?.cf_payment_id;
       const cfStatus = event.data?.payment?.payment_status; // SUCCESS, FAILED, etc.
       const cfAmount = event.data?.order?.order_amount; // in rupees (decimal)
-      const eventId = event.data?.payment?.cf_payment_id ?? `cf-${Date.now()}`;
+      // Include event type in dedup key to allow different events for same payment
+      const eventId = `cf-${cfPaymentId ?? cfOrderId ?? Date.now()}-${event.type ?? 'unknown'}`;
+
+      if (!cfOrderId) {
+        console.warn('[webhook] Cashfree event missing order_id, ignoring');
+        return jsonResponse({ status: 'ignored', reason: 'missing order_id' });
+      }
 
       console.log('[webhook] Cashfree event received:', {
         type: event.type,
@@ -205,8 +217,8 @@ serve(async (req: Request) => {
         const { data, error: cfLookupErr } = await supabase
           .from('payments')
           .select('*, tenancy:tenancies(user_id, monthly_rent_paise, bank_verified, utility_verified, landlord_approved, cashback_cutoff_day, rent_due_day)')
-          .eq('cf_order_id', cfOrderId)
-          .single();
+          .or(`cf_order_id.eq.${cfOrderId},gateway_order_id.eq.${cfOrderId}`)
+          .maybeSingle();
 
         if (data) {
           cfPayment = data;
@@ -221,7 +233,9 @@ serve(async (req: Request) => {
       }
 
       if (!cfPayment) {
-        return errorResponse('Payment not found', 404, 'PAYMENT_NOT_FOUND');
+        console.error(`[OPS_ALERT] Cashfree webhook for unknown order ${cfOrderId} — may be orphaned`);
+        // Return 200 to prevent Cashfree infinite retries
+        return jsonResponse({ status: 'ignored', reason: 'payment_not_found' });
       }
 
       // Amount validation (convert CF rupees to paise)
@@ -269,6 +283,7 @@ serve(async (req: Request) => {
         cfUpdateData.paid_at = new Date().toISOString();
         cfUpdateData.landlord_payout_status = 'pending';
         cfUpdateData.landlord_payout_paise = cfPayment.rent_amount_paise;
+        cfUpdateData.cf_split_posted = false; // Signal for settle-to-landlord cron
       }
 
       // Optimistic lock — only update if status hasn't changed concurrently
@@ -311,18 +326,9 @@ serve(async (req: Request) => {
         raw_payload: event,
       });
 
-      // On success: mark split pending for cron settlement
+      // On success: handle cashback and notifications
       if (newCfStatus === 'success') {
-        try {
-          await supabase
-            .from('payments')
-            .update({ cf_split_posted: false })
-            .eq('id', cfPayment.id);
-          console.log(`[webhook] Cashfree payment ${cfPayment.id} marked success, split pending`);
-        } catch (splitErr) {
-          console.error(`[webhook] Split scheduling error:`, splitErr);
-          // Non-fatal — cron will retry
-        }
+        console.log(`[webhook] Cashfree payment ${cfPayment.id} marked success, settlement pending`);
 
         // Cashback handling — reuse same logic as PayU path
         const cfTenancyData = cfPayment.tenancy as Record<string, any> | null;
