@@ -198,11 +198,11 @@ call this function with User B's payment_session_id.
 ### Frontend — Modified files
 | File | Changes |
 |------|---------|
-| `rn-app/src/services/payment/index.ts` | Add `gateway_version: 'cashfree'` to initiate call, parse Cashfree response |
+| `rn-app/src/services/payment/index.ts` | RISK: `UnifiedInitiateResult` interface has `payuParams` but no Cashfree fields. Must add `cashfreeSessionId?: string`, `cfOrderId?: string` to the interface. The `callEdgeFunction` response type (line 159) must include Cashfree response shape. Add `gateway_version: 'cashfree'` to request body. The `PAYU_FEE_RATES` hardcoded fallback stays for old path; add `CASHFREE_FEE_RATES` fallback alongside (or dynamic fetch). |
 | `rn-app/src/services/payment/payuCoreService.ts` | Keep for backward compat (old builds), add `@deprecated` |
 | `rn-app/src/hooks/usePaymentFlow.ts` | RISK: Hook is tightly coupled to PayU types (`CorePaymentMode`, `InstrumentParams`, `launchCorePayment`). Must add gateway-conditional routing: if Cashfree → call `cashfreeService.launchX()`, else → existing PayU path. Do NOT remove PayU imports — both paths must coexist. The hook's `executePayment()` signature will need a `gateway` param or read it from the store. |
 | `rn-app/src/stores/payment.ts` | Add `cashfreeSessionId`, `cfOrderId` fields ALONGSIDE `payuSessionParams` (RISK: do NOT remove PayU fields — old code paths still reference them). Add `setCashfreeSession()` / `clearCashfreeSession()` actions. |
-| `rn-app/src/components/payment/PaymentMethodModal/index.tsx` | Wire Cashfree SDK callbacks |
+| `rn-app/src/components/payment/PaymentMethodModal/index.tsx` | RISK: Modal calls `initiatePayment()` at 2 locations (lines ~152, ~327) and reads `payuSessionParams` from store (line ~254). For Cashfree: after `initiatePayment()` returns, must branch on gateway: store `cashfreeSessionId`/`cfOrderId` instead of `payuSessionParams`, then call appropriate Cashfree SDK method instead of `executePayment()`. Wire `CFPaymentGatewayService.setCallback({ onVerify, onError })` in useEffect. |
 | `rn-app/src/components/payment/PaymentMethodModal/MethodSelectorContent.tsx` | UPI Intent app list (Cashfree SDK provides installed apps) |
 | `rn-app/app/(payment)/status.tsx` | Poll using Cashfree order ID instead of PayU mihpayid |
 | `rn-app/app.json` | Add `LSApplicationQueriesSchemes` for UPI apps |
