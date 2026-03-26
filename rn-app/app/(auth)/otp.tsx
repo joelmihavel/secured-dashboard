@@ -44,6 +44,8 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { View, StyleSheet, BackHandler, Text as RNText, Keyboard } from 'react-native';
 import { useRouter } from 'expo-router';
+import * as SplashScreen from 'expo-splash-screen';
+import * as SecureStore from 'expo-secure-store';
 import { Screen, Text, PrimaryButton, OTPInput, BottomSheet } from '@/src/components';
 import { colors, typography } from '@/src/theme';
 import { s, sf, sv } from '@/src/theme/scale';
@@ -52,6 +54,45 @@ import { useAuthStore } from '@/src/stores/auth';
 import { supabase } from '@/src/services/supabase/client';
 import { isReviewMode } from '@/src/review/reviewMode';
 import { isJourneyMode } from '@/src/review/journeyMode';
+import { addBreadcrumb } from '@/src/config/sentry';
+
+const LAST_ROUTE_KEY = 'flent_last_journey_target';
+
+/**
+ * Resolve the correct navigation target after OTP verification.
+ * Queries user_status via PostgREST and maps to a route, avoiding the
+ * full journey router in index.tsx (which causes a 1-3s SkeletonLoader flash).
+ */
+async function resolvePostOtpTarget(userId: string): Promise<string> {
+  try {
+    const { data, error } = await supabase
+      .from('users')
+      .select('user_status')
+      .eq('id', userId)
+      .single();
+
+    if (error || !data?.user_status) {
+      // New user row may not exist yet (RLS delay) — default to upload
+      return '/(agreement)/upload';
+    }
+
+    switch (data.user_status) {
+      case 'approved':
+        return '/(setup)';
+      case 'active':
+        return '/(main)';
+      case 'agreement_confirmed':
+      case 'waitlisted':
+      case 'not_eligible':
+        return '/(waitlist)';
+      case 'signed_up':
+      default:
+        return '/(agreement)/upload';
+    }
+  } catch {
+    return '/(agreement)/upload';
+  }
+}
 
 // Exact Figma color values mapped to theme tokens (verified from all 4 blueprint JSONs)
 const FIGMA_COLORS = {
@@ -225,15 +266,29 @@ export default function OTPScreen() {
     }
   }, [phoneNumber, router]);
 
-  // Navigate on auth state change — single source of truth (no Zustand race)
+  // Navigate on auth state change — resolve target directly to avoid
+  // re-triggering the full journey router in index.tsx (SkeletonLoader flash).
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (event === "SIGNED_IN" && session && !isNavigating) {
         setIsNavigating(true);
         Keyboard.dismiss();
         setIsVisible(false);
+
+        const userId = session.user.id;
+        const target = await resolvePostOtpTarget(userId);
+        addBreadcrumb('OTP verified — navigating directly', 'navigation', { target });
+
+        // Cache for fast-path on next cold start
+        if (target === '/(main)' || target === '/(setup)' || target === '/(waitlist)') {
+          SecureStore.setItemAsync(LAST_ROUTE_KEY, target).catch(() => {});
+        }
+
+        // Ensure native splash is hidden (may still be visible on fresh install)
+        SplashScreen.hideAsync().catch(() => {});
+
         setTimeout(() => {
-          router.replace('/');
+          router.replace(target as never);
         }, 300);
       }
     });
@@ -248,7 +303,9 @@ export default function OTPScreen() {
       setIsNavigating(true);
       Keyboard.dismiss();
       setIsVisible(false);
+      SplashScreen.hideAsync().catch(() => {});
       setTimeout(() => {
+        // Review/journey mode — index.tsx handles routing via isReviewMode()/isJourneyMode()
         router.replace('/');
       }, 300);
     }
