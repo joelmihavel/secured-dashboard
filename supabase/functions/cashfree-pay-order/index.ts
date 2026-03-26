@@ -55,6 +55,11 @@ serve(async (req) => {
       return errorResponse("Missing payment_session_id or payment_method", 400);
     }
 
+    const VALID_METHODS = ["upi", "netbanking"];
+    if (!VALID_METHODS.includes(payment_method)) {
+      return errorResponse(`Invalid payment_method: must be one of ${VALID_METHODS.join(", ")}`, 400);
+    }
+
     if (!cf_order_id) {
       return errorResponse("Missing cf_order_id", 400);
     }

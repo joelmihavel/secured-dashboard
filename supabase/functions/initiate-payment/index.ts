@@ -614,13 +614,29 @@ serve(async (req: Request) => {
     // ── CASHFREE PATH ──────────────────────────────────────────────
     if (useCashfree) {
       const WEBHOOK_URL = `${SUPABASE_URL}/functions/v1/payment-webhook`;
-      const cfOrder = await createOrder({
-        amountPaise: totalAmountPaise,
-        orderId: `flent-${payment.id.slice(0, 8)}`,
-        customerId: userId,
-        customerPhone: userProfile?.phone ?? '',
-        notifyUrl: WEBHOOK_URL,
-      });
+      let cfOrder;
+      try {
+        cfOrder = await createOrder({
+          amountPaise: totalAmountPaise,
+          orderId: `flent-${payment.id.slice(0, 8)}`,
+          customerId: userId,
+          customerPhone: userProfile?.phone ?? '',
+          notifyUrl: WEBHOOK_URL,
+        });
+      } catch (cfErr) {
+        // Mark payment as failed so it doesn't stay orphaned in 'initiated'
+        await supabase.from('payments').update({ status: 'failed' }).eq('id', payment.id);
+        console.error('[initiate-payment] Cashfree createOrder failed:', cfErr);
+        throw new PaymentError(
+          cfErr instanceof CashfreeError ? cfErr.message : 'Failed to create Cashfree order',
+        );
+      }
+
+      if (!cfOrder.order_id || !cfOrder.payment_session_id) {
+        await supabase.from('payments').update({ status: 'failed' }).eq('id', payment.id);
+        console.error('[initiate-payment] Cashfree returned incomplete order:', cfOrder);
+        throw new PaymentError('Cashfree returned incomplete order response');
+      }
 
       // Update payment record with Cashfree order details
       await supabase
