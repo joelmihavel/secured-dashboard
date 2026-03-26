@@ -26,6 +26,7 @@ import {
   removeCallbacks as removeCashfreeCallbacks,
   launchCardPayment,
   launchUPIIntent,
+  isCashfreeAvailable,
 } from '@/src/services/payment/cashfreeService';
 import { callEdgeFunction } from '@/src/services/supabase';
 import * as WebBrowser from 'expo-web-browser';
@@ -238,6 +239,13 @@ export function usePaymentFlow(): UsePaymentFlowReturn {
       if (isExecutingRef.current) {
         return { status: 'blocked' };
       }
+
+      // SDK availability check — matches PayU pattern in launchCorePayment
+      if ((paymentMethod === 'card' || paymentMethod === 'debit_card' || paymentMethod === 'upi') && !isCashfreeAvailable()) {
+        console.error('[Cashfree] SDK not available for', paymentMethod);
+        return { status: 'failure', error: 'Cashfree SDK not available. Please update the app.' };
+      }
+
       isExecutingRef.current = true;
       setIsExecuting(true);
 
