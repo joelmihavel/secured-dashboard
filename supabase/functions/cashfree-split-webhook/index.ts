@@ -144,7 +144,7 @@ serve(async (req: Request) => {
       const { data } = await supabase
         .from("payments")
         .select("id, user_id, rent_amount_paise, landlord_payout_status, tenancy_id, payment_month")
-        .eq("cf_settlement_id", settlementId)
+        .eq("gateway_payout_id", settlementId)
         .in("landlord_payout_status", ["pending", "processing"])
         .maybeSingle();
       payment = data;
