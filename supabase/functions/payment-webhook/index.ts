@@ -198,15 +198,29 @@ serve(async (req: Request) => {
         return jsonResponse({ success: true, message: 'Already processed' });
       }
 
-      // Find payment by cf_order_id
-      const { data: cfPayment, error: cfLookupErr } = await supabase
-        .from('payments')
-        .select('*, tenancy:tenancies(user_id, monthly_rent_paise, bank_verified, utility_verified, landlord_approved, cashback_cutoff_day, rent_due_day)')
-        .eq('cf_order_id', cfOrderId)
-        .single();
+      // Find payment by cf_order_id (with retry for rare race condition where
+      // webhook arrives before initiate-payment stores cf_order_id)
+      let cfPayment = null;
+      for (let attempt = 0; attempt < 3; attempt++) {
+        const { data, error: cfLookupErr } = await supabase
+          .from('payments')
+          .select('*, tenancy:tenancies(user_id, monthly_rent_paise, bank_verified, utility_verified, landlord_approved, cashback_cutoff_day, rent_due_day)')
+          .eq('cf_order_id', cfOrderId)
+          .single();
+
+        if (data) {
+          cfPayment = data;
+          break;
+        }
+        if (attempt < 2) {
+          console.warn(`[webhook] Payment not found for cf_order_id=${cfOrderId}, retry ${attempt + 1}/2`);
+          await new Promise((r) => setTimeout(r, 1000)); // 1s backoff
+        } else {
+          console.error(`[webhook] Payment not found after 3 attempts for cf_order_id=${cfOrderId}`, cfLookupErr);
+        }
+      }
 
       if (!cfPayment) {
-        console.error(`[webhook] Payment not found for cf_order_id=${cfOrderId}`, cfLookupErr);
         return errorResponse('Payment not found', 404, 'PAYMENT_NOT_FOUND');
       }
 
