@@ -288,7 +288,7 @@ export function ConfirmPaymentContent({
             showDivider
           />
           <RNText style={s.footerText}>
-            Secured by PayU. Your payment details are encrypted.
+            Settlement to your landlord's bank account will take less than 24 hours.
           </RNText>
         </View>
       </ScrollView>

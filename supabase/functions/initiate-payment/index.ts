@@ -272,9 +272,9 @@ serve(async (req: Request) => {
       throw new PaymentError("Tenancy is not active", "TENANCY_INACTIVE");
     }
 
-    if (!tenancy.bank_verified) {
-      throw new PaymentError("Landlord bank account not verified yet", "BANK_NOT_VERIFIED");
-    }
+    // Bank verification is NOT a hard gate for payments — tenants should be able
+    // to pay rent even while landlord bank details are being verified.
+    // bank_verified only affects: (a) 1% discount eligibility, (b) settlement routing.
 
     // Cashfree: Landlord vendor must be ACTIVE before accepting payment
     // On-demand transfer requires an active vendor to settle funds
