@@ -26,7 +26,7 @@ import { notifyUser } from "../_shared/notifications.ts";
 // CONFIGURATION
 // ==============================================
 
-const CF_SPLIT_WEBHOOK_SECRET = Deno.env.get("CASHFREE_PG_APP_SECRET")!;
+const CF_SPLIT_WEBHOOK_SECRET = Deno.env.get("CASHFREE_PG_APP_SECRET") ?? Deno.env.get("CASHFREE_PG_SECRET_KEY")!;
 
 // ==============================================
 // TYPES

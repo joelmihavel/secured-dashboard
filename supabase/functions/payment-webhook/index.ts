@@ -164,7 +164,7 @@ serve(async (req: Request) => {
 
     // ── CASHFREE WEBHOOK PATH ──────────────────────────────────────
     if (cfTimestamp && cfSignature) {
-      const CF_WEBHOOK_SECRET = Deno.env.get('CASHFREE_PG_APP_SECRET') ?? '';
+      const CF_WEBHOOK_SECRET = Deno.env.get('CASHFREE_PG_APP_SECRET') ?? Deno.env.get('CASHFREE_PG_SECRET_KEY') ?? '';
 
       const isValid = await verifyCashfreeSignature(cfTimestamp, rawBody, cfSignature, CF_WEBHOOK_SECRET);
       if (!isValid) {
