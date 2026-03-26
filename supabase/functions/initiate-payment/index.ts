@@ -253,7 +253,7 @@ serve(async (req: Request) => {
     const { data: tenancy, error: tenancyError } = await supabase
       .from("tenancies")
       .select(`
-        id, user_id, status, monthly_rent_paise, landlord_name,
+        id, user_id, landlord_user_id, status, monthly_rent_paise, landlord_name,
         bank_verified, utility_verified, landlord_approved,
         cashback_cutoff_day, rent_due_day
       `)
@@ -274,6 +274,34 @@ serve(async (req: Request) => {
 
     if (!tenancy.bank_verified) {
       throw new PaymentError("Landlord bank account not verified yet", "BANK_NOT_VERIFIED");
+    }
+
+    // Cashfree: Landlord vendor must be ACTIVE before accepting payment
+    // On-demand transfer requires an active vendor to settle funds
+    if (useCashfree) {
+      // Bank accounts for landlords are stored under the tenant's user_id
+      // with party_type='landlord' (tenant adds landlord's bank details)
+      const { data: landlordBank } = await supabase
+        .from("bank_accounts")
+        .select("cf_beneficiary_id, cf_beneficiary_status")
+        .eq("user_id", userId)
+        .eq("party_type", "landlord")
+        .eq("is_primary", true)
+        .eq("verified", true)
+        .maybeSingle();
+
+      if (!landlordBank?.cf_beneficiary_id) {
+        throw new PaymentError(
+          "Landlord bank account is being registered with our payment partner. Please try again in a few hours.",
+          "VENDOR_NOT_REGISTERED",
+        );
+      }
+      if (landlordBank.cf_beneficiary_status !== "ACTIVE") {
+        throw new PaymentError(
+          "Landlord bank account verification is in progress. Please try again shortly.",
+          "VENDOR_NOT_ACTIVE",
+        );
+      }
     }
 
     // Amount guardrail: minimum INR 10
@@ -304,17 +332,27 @@ serve(async (req: Request) => {
     // Check for in-progress payment this month (prevent simultaneous double-charge)
     const rentMonthDate = `${rent_month}-01`;
 
-    // Expire abandoned initiated payments that never reached PayU SDK.
-    // Uses payu_mihpayid IS NULL instead of time-based expiry so that
-    // backing out of confirm-payment and re-proceeding works immediately.
-    // Payments that reached PayU (have mihpayid) are handled by the webhook.
+    // Expire abandoned initiated payments that never reached the payment gateway.
+    // PayU: uses payu_mihpayid IS NULL (no SDK interaction yet)
+    // Cashfree: uses cf_order_id IS NULL (createOrder never succeeded)
+    // Payments that reached the gateway are handled by the webhook.
     await supabase
       .from("payments")
       .update({ status: "failed", payu_status: "expired_stale" })
       .eq("tenancy_id", tenancy_id)
       .eq("payment_month", rentMonthDate)
       .eq("status", "initiated")
+      .eq("payment_gateway", "payu")
       .is("payu_mihpayid", null);
+
+    await supabase
+      .from("payments")
+      .update({ status: "failed" })
+      .eq("tenancy_id", tenancy_id)
+      .eq("payment_month", rentMonthDate)
+      .eq("status", "initiated")
+      .eq("payment_gateway", "cashfree")
+      .is("cf_order_id", null);
 
     // Block only if a payment is actively in progress (prevent double-charge).
     // Multiple successful payments per month are allowed.
@@ -574,7 +612,7 @@ serve(async (req: Request) => {
           upi_vpa,
           bank_code,
         },
-        payu_initiation_params: {
+        payu_initiation_params: useCashfree ? null : {
           key: PAYU_MERCHANT_KEY,
           txnid: txnId,
           amount: amountStr,
