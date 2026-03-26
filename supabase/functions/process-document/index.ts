@@ -477,8 +477,8 @@ Deno.serve(async (req) => {
         extraction_method: extractedData.extraction_method,
         is_city_supported: isCitySupported,
         gemini_raw_response: extractedData.raw_gemini_data || (extractedData as any).gemini_debug || null,
-        // Raw data for debugging (without duplicated fields)
-        raw_extraction_data: extractedData.raw_doc_ai_data,
+        // Raw data for debugging (slimmed to avoid statement timeouts on large docs)
+        raw_extraction_data: slimDocAiData(extractedData.raw_doc_ai_data),
         // Update extraction status — mark as extraction_failed if Gemini returned 0 fields
         extraction_status: extractedData.fields_extracted > 0 ? "completed" : "extraction_failed",
         // Persist evaluation results for client-side polling (useExtractionStatus)
@@ -650,6 +650,14 @@ async function processWithDocumentAI(
         rawDocument: {
           content: base64Content,
           mimeType: mimeType,
+        },
+        // Bug 2 fix: Enable imageless mode (raises page limit from 15 to 30)
+        // and cap at first 30 pages to avoid PAGE_LIMIT_EXCEEDED for large docs
+        processOptions: {
+          ocrConfig: {
+            premiumFeatures: { computeStyleInfo: false },
+          },
+          fromStart: 30,
         },
       }),
     }
@@ -1558,6 +1566,30 @@ function evaluateExtraction(
     review_reason: `Some information couldn't be extracted clearly (${fieldsExtracted}/${totalFields} fields, ${confidenceScore}% confidence).`,
     contract_status: 'manual_review',
   };
+}
+
+/**
+ * Strip heavy fields from Document AI response to prevent statement timeouts.
+ * Removes base64 page images and caps document text at 100K chars.
+ */
+function slimDocAiData(raw: object): object {
+  try {
+    const data = raw as any;
+    if (!data?.document) return raw;
+    return {
+      ...data,
+      document: {
+        ...data.document,
+        text: data.document.text?.substring(0, 100_000),
+        pages: data.document.pages?.map((p: any) => {
+          const { image, ...rest } = p;
+          return rest;
+        }),
+      },
+    };
+  } catch {
+    return raw;
+  }
 }
 
 function categorizeError(message: string): string {
