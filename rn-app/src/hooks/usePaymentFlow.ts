@@ -21,6 +21,14 @@ import {
   type CorePaymentOutcome,
   type InstrumentParams,
 } from '@/src/services/payment/payuCoreService';
+import {
+  setupCallbacks as setupCashfreeCallbacks,
+  removeCallbacks as removeCashfreeCallbacks,
+  launchCardPayment,
+  launchUPIIntent,
+} from '@/src/services/payment/cashfreeService';
+import { callEdgeFunction } from '@/src/services/supabase';
+import * as WebBrowser from 'expo-web-browser';
 import { addCardToken, addUpiVpa, saveBankPreference } from '@/src/services/api/payments';
 import { paymentKeys } from '@/src/hooks/usePayments';
 import { dashboardKeys } from '@/src/hooks/useDashboard';
@@ -40,6 +48,14 @@ interface UsePaymentFlowReturn {
     paymentId: string,
     onClearSensitiveData: () => void,
   ) => Promise<PaymentFlowOutcome>;
+  executeCashfreePayment: (
+    paymentMethod: 'upi' | 'card' | 'debit_card' | 'netbanking',
+    paymentId: string,
+    cashfreeSessionId: string,
+    cfOrderId: string,
+    upiVpa?: string,
+    bankCode?: string,
+  ) => Promise<PaymentFlowOutcome>;
   isExecuting: boolean;
 }
 
@@ -49,7 +65,7 @@ export function usePaymentFlow(): UsePaymentFlowReturn {
   const [isExecuting, setIsExecuting] = useState(false);
   // Ref mirrors state for synchronous guard checks inside the async callback
   const isExecutingRef = useRef(false);
-  const { setLastPayment, clearPayuSessionParams } = usePaymentStore();
+  const { setLastPayment, clearPayuSessionParams, clearCashfreeSession } = usePaymentStore();
 
   const executePayment = useCallback(
     async (
@@ -210,8 +226,147 @@ export function usePaymentFlow(): UsePaymentFlowReturn {
     [router, setLastPayment, clearPayuSessionParams, queryClient],
   );
 
+  const executeCashfreePayment = useCallback(
+    async (
+      paymentMethod: 'upi' | 'card' | 'debit_card' | 'netbanking',
+      paymentId: string,
+      cashfreeSessionId: string,
+      cfOrderId: string,
+      upiVpa?: string,
+      bankCode?: string,
+    ): Promise<PaymentFlowOutcome> => {
+      if (isExecutingRef.current) {
+        return { status: 'blocked' };
+      }
+      isExecutingRef.current = true;
+      setIsExecuting(true);
+
+      try {
+        if (paymentMethod === 'card' || paymentMethod === 'debit_card') {
+          // Card: Launch Cashfree Drop Checkout SDK
+          return new Promise<PaymentFlowOutcome>((resolve) => {
+            setupCashfreeCallbacks(
+              (orderId) => {
+                // onVerify — navigate to status screen (webhook determines final state)
+                Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                setLastPayment(paymentId);
+                router.replace({
+                  pathname: '/(payment)/status',
+                  params: { paymentId, method: 'card', initialStatus: 'pending' },
+                } as never);
+                resolve({ status: 'navigating' });
+              },
+              (_error, orderId) => {
+                // onError — STILL navigate to status (SDK is not authoritative)
+                setLastPayment(paymentId);
+                router.replace({
+                  pathname: '/(payment)/status',
+                  params: { paymentId, method: 'card', initialStatus: 'pending' },
+                } as never);
+                resolve({ status: 'navigating' });
+              },
+            );
+            launchCardPayment(cashfreeSessionId, cfOrderId);
+          });
+        } else if (paymentMethod === 'upi' && !upiVpa) {
+          // UPI Intent: Launch Cashfree UPI Intent SDK
+          return new Promise<PaymentFlowOutcome>((resolve) => {
+            setupCashfreeCallbacks(
+              (orderId) => {
+                Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                setLastPayment(paymentId);
+                router.replace({
+                  pathname: '/(payment)/status',
+                  params: { paymentId, method: 'upi', initialStatus: 'pending' },
+                } as never);
+                resolve({ status: 'navigating' });
+              },
+              (_error, orderId) => {
+                setLastPayment(paymentId);
+                router.replace({
+                  pathname: '/(payment)/status',
+                  params: { paymentId, method: 'upi', initialStatus: 'pending' },
+                } as never);
+                resolve({ status: 'navigating' });
+              },
+            );
+            launchUPIIntent(cashfreeSessionId, cfOrderId);
+          });
+        } else if (paymentMethod === 'upi' && upiVpa) {
+          // UPI Collect: API-driven via cashfree-pay-order
+          const { data: payData, error: payError } = await callEdgeFunction<{
+            success: boolean;
+            data: { action: string };
+          }>('cashfree-pay-order', {
+            payment_session_id: cashfreeSessionId,
+            cf_order_id: cfOrderId,
+            payment_method: { upi: { channel: 'collect', upi_id: upiVpa } },
+          }, true);
+
+          if (payError) {
+            return { status: 'failure', error: payError };
+          }
+
+          // Navigate to status screen — poll for result
+          setLastPayment(paymentId);
+          router.replace({
+            pathname: '/(payment)/status',
+            params: { paymentId, method: 'upi', initialStatus: 'pending' },
+          } as never);
+          return { status: 'navigating' };
+        } else if (paymentMethod === 'netbanking') {
+          // Net Banking: API-driven -> redirect URL
+          const { data: payData, error: payError } = await callEdgeFunction<{
+            success: boolean;
+            data: { action: string; data?: { url?: string } };
+          }>('cashfree-pay-order', {
+            payment_session_id: cashfreeSessionId,
+            cf_order_id: cfOrderId,
+            payment_method: { netbanking: { channel: 'link', netbanking_bank_code: bankCode ?? 3003 } },
+          }, true);
+
+          if (payError || !payData?.data?.data?.url) {
+            return { status: 'failure', error: payError ?? 'No redirect URL received' };
+          }
+
+          // Open bank login in InAppBrowser
+          await WebBrowser.openBrowserAsync(payData.data.data.url, {
+            dismissButtonStyle: 'close',
+            presentationStyle: WebBrowser.WebBrowserPresentationStyle.FULL_SCREEN,
+          });
+
+          // After browser closes, navigate to status screen
+          setLastPayment(paymentId);
+          router.replace({
+            pathname: '/(payment)/status',
+            params: { paymentId, method: 'netbanking', initialStatus: 'pending' },
+          } as never);
+          return { status: 'navigating' };
+        }
+
+        return { status: 'failure', error: 'Unknown payment method' };
+      } catch (err) {
+        captureError(
+          err instanceof Error ? err : new Error(String(err)),
+          { flow: 'cashfree_payment', paymentMethod, paymentId }
+        );
+        return {
+          status: 'failure',
+          error: err instanceof Error ? err.message : 'Payment error',
+        };
+      } finally {
+        removeCashfreeCallbacks();
+        clearCashfreeSession();
+        isExecutingRef.current = false;
+        setIsExecuting(false);
+      }
+    },
+    [router, setLastPayment, clearCashfreeSession, queryClient],
+  );
+
   return {
     executePayment,
+    executeCashfreePayment,
     isExecuting,
   };
 }

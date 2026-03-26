@@ -26,6 +26,7 @@ import { AuditLogger, AuditActions } from "../_shared/audit.ts";
 import { IdempotencyManager, getIdempotencyKey } from "../_shared/idempotency.ts";
 import { generatePayUHash, generateTransactionId, sha512, hmacSha256 } from "../_shared/crypto.ts";
 import { isTestUser } from "../_shared/demo-helpers.ts";
+import { createOrder, CashfreeError } from "../_shared/cashfree-easysplit.ts";
 import {
   PAYU_MERCHANT_KEY,
   PAYU_MERCHANT_SALT,
@@ -212,6 +213,10 @@ serve(async (req: Request) => {
       rent_month,
     } = validatedBody;
     const checkout_mode = (validatedBody as Record<string, unknown>).checkout_mode as string | undefined;
+
+    // Dual-gateway routing: client sends gateway_version to opt into Cashfree
+    const gateway_version = body.gateway_version as string | undefined;
+    const useCashfree = gateway_version === 'cashfree';
 
     // Normalize payment method (iOS sends net_banking, credit_card, debit_card)
     const payment_method = normalizePaymentMethod(rawPaymentMethod);
@@ -556,10 +561,10 @@ serve(async (req: Request) => {
         net_rent_paise: netRentPaise,
         flent_subsidy_paise: cashbackDiscountPaise,
         status: "initiated",
-        payu_txn_id: txnId,
-        payment_gateway: "payu",
-        gateway_order_id: txnId,
-        gateway_metadata: { key: PAYU_MERCHANT_KEY, txnid: txnId, amount: amountStr },
+        payu_txn_id: useCashfree ? null : txnId,
+        payment_gateway: useCashfree ? "cashfree" : "payu",
+        gateway_order_id: useCashfree ? null : txnId,
+        gateway_metadata: useCashfree ? {} : { key: PAYU_MERCHANT_KEY, txnid: txnId, amount: amountStr },
         payment_method,
         idempotency_key: idempotencyKey,
         payment_month: rentMonthDate,
@@ -606,6 +611,66 @@ serve(async (req: Request) => {
       rent_month,
     });
 
+    // ── CASHFREE PATH ──────────────────────────────────────────────
+    if (useCashfree) {
+      const WEBHOOK_URL = `${SUPABASE_URL}/functions/v1/payment-webhook`;
+      const cfOrder = await createOrder({
+        amountPaise: totalAmountPaise,
+        orderId: `flent-${payment.id.slice(0, 8)}`,
+        customerId: userId,
+        customerPhone: userProfile?.phone ?? '',
+        notifyUrl: WEBHOOK_URL,
+      });
+
+      // Update payment record with Cashfree order details
+      await supabase
+        .from('payments')
+        .update({
+          payment_gateway: 'cashfree',
+          cf_order_id: cfOrder.order_id,
+          gateway_order_id: cfOrder.order_id,
+        })
+        .eq('id', payment.id);
+
+      const cfResponseData = {
+        payment_id: payment.id,
+        txn_id: txnId,
+        total_amount_paise: totalAmountPaise,
+        original_rent_paise: originalRentPaise,
+        cashback_applied_paise: cashbackDiscountPaise,
+        cashback_earned_paise: cashbackEarnedPaise,
+        accumulated_redeemed_paise: accumulatedRedeemed,
+        net_rent_paise: netRentPaise,
+        pg_fee_paise: 0,
+        estimated_pg_fee_paise: estimatedPgFeePaise,
+        landlord_payout_paise: landlordPayoutPaise,
+        payment_method,
+        gateway: "cashfree" as const,
+        cashback_discount: {
+          discount_paise: cashbackDiscountPaise,
+          discount_rupees: cashbackDiscountPaise / 100,
+          verification_complete: verificationComplete,
+          past_cutoff: isPastCutoff,
+          cutoff_day: cutoffDay,
+          reason: getCashbackBlockerReason(tenancy, verificationComplete, isPastCutoff, cutoffDay, cashbackAlreadyApplied),
+        },
+        verification_complete: verificationComplete,
+        cashfree: {
+          payment_session_id: cfOrder.payment_session_id,
+          cf_order_id: cfOrder.order_id,
+        },
+      };
+
+      await idempotencyManager.complete(idempotencyKey, 200, cfResponseData);
+
+      return jsonResponse({
+        success: true,
+        data: cfResponseData,
+      });
+    }
+    // ── END CASHFREE PATH ────────────────────────────────────────
+
+    // ── PAYU PATH ────────────────────────────────────────────────
     // Build response based on payment method
     const surl = `${SUPABASE_URL}/functions/v1/payment-webhook`;
     const furl = `${SUPABASE_URL}/functions/v1/payment-webhook`;
@@ -712,6 +777,7 @@ serve(async (req: Request) => {
       success: true,
       data: responseData,
     });
+    // ── END PAYU PATH ────────────────────────────────────────────
   } catch (error) {
     // Mark idempotency as failed
     if (idempotencyKey) {

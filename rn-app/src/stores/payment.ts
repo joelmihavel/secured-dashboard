@@ -84,6 +84,11 @@ interface PaymentState {
   // Core SDK fields (in-memory only, never persisted)
   payuSessionParams: PayUSessionParams | null;
   selectedInstrument: { type: PaymentMethodType; bankCode?: string } | null;
+  // Cashfree SDK fields (in-memory only, never persisted)
+  cashfreeSessionId: string | null;
+  cfOrderId: string | null;
+  /** Which gateway this payment uses */
+  paymentGateway: 'payu' | 'cashfree' | null;
   // Verification flow state (in-memory only)
   verificationSkipped: boolean;
   pendingPaymentReturn: boolean;
@@ -112,6 +117,10 @@ interface PaymentActions {
   setPayuSessionParams: (params: PayUSessionParams) => void;
   clearPayuSessionParams: () => void;
   setSelectedInstrument: (instrument: { type: PaymentMethodType; bankCode?: string } | null) => void;
+  // Cashfree SDK actions
+  setCashfreeSession: (sessionId: string, orderId: string) => void;
+  clearCashfreeSession: () => void;
+  setPaymentGateway: (gateway: 'payu' | 'cashfree') => void;
   // Verification flow actions
   setVerificationSkipped: (skipped: boolean) => void;
   setPendingPaymentReturn: (pending: boolean) => void;
@@ -139,6 +148,10 @@ const initialState: PaymentState = {
   // Core SDK fields — never persisted (card data security)
   payuSessionParams: null,
   selectedInstrument: null,
+  // Cashfree SDK fields — never persisted
+  cashfreeSessionId: null,
+  cfOrderId: null,
+  paymentGateway: null,
   // Verification flow state
   verificationSkipped: false,
   pendingPaymentReturn: false,
@@ -277,6 +290,25 @@ export const usePaymentStore = create<PaymentStore>()(
           state.payuSessionParams = null;
         }),
 
+      // Cashfree SDK actions — memory only, never persisted
+      setCashfreeSession: (sessionId, orderId) =>
+        set((state) => {
+          state.cashfreeSessionId = sessionId;
+          state.cfOrderId = orderId;
+          state.paymentGateway = 'cashfree';
+        }),
+
+      clearCashfreeSession: () =>
+        set((state) => {
+          state.cashfreeSessionId = null;
+          state.cfOrderId = null;
+        }),
+
+      setPaymentGateway: (gateway) =>
+        set((state) => {
+          state.paymentGateway = gateway;
+        }),
+
       setSelectedInstrument: (instrument) =>
         set((state) => {
           state.selectedInstrument = instrument;
@@ -334,3 +366,6 @@ export const selectVerificationSkipped = (state: PaymentStore) => state.verifica
 export const selectPendingPaymentReturn = (state: PaymentStore) => state.pendingPaymentReturn;
 export const selectRentMonth = (state: PaymentStore) => state.rentMonth;
 export const selectEnteredAmount = (state: PaymentStore) => state.enteredAmount;
+export const selectCashfreeSessionId = (state: PaymentStore) => state.cashfreeSessionId;
+export const selectCfOrderId = (state: PaymentStore) => state.cfOrderId;
+export const selectPaymentGateway = (state: PaymentStore) => state.paymentGateway;

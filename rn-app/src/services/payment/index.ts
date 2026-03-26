@@ -10,6 +10,7 @@ import type { PayUSessionParams } from '@/src/stores/payment';
 export * from './storageService';
 export { launchCorePayment, isCoreSdkAvailable } from './payuCoreService';
 export type { CorePaymentMode, CorePaymentOutcome, InstrumentParams } from './payuCoreService';
+export * from './cashfreeService';
 
 // ==============================================
 // TYPES
@@ -30,6 +31,10 @@ export interface GatewayFeeRates {
 export interface UnifiedInitiateResult {
   paymentId: string;
   payuParams?: Record<string, unknown>;
+  /** Cashfree payment session ID for SDK initialization */
+  cashfreeSessionId?: string;
+  /** Cashfree order ID for status polling and webhooks */
+  cfOrderId?: string;
   totalAmountPaise: number;
   cashbackAppliedPaise: number;
   demoMode?: boolean;
@@ -48,8 +53,15 @@ const PAYU_FEE_RATES: GatewayFeeRates = {
   netbanking: { rate: 1500, fee_type: 'flat_paise' },
 };
 
-export function getGatewayFeeRates(): GatewayFeeRates {
-  return PAYU_FEE_RATES;
+const CASHFREE_FEE_RATES: GatewayFeeRates = {
+  upi: { rate: 0, fee_type: 'percentage' },
+  credit_card: { rate: 0.02, fee_type: 'percentage' },
+  debit_card: { rate: 0.009, fee_type: 'percentage' },
+  netbanking: { rate: 1500, fee_type: 'flat_paise' },
+};
+
+export function getGatewayFeeRates(gateway?: 'payu' | 'cashfree'): GatewayFeeRates {
+  return gateway === 'cashfree' ? CASHFREE_FEE_RATES : PAYU_FEE_RATES;
 }
 
 /** Compute fee in rupees for a given rate config and amount in rupees */
@@ -149,6 +161,7 @@ export async function initiatePayment(params: {
     card_type: params.cardType,
     rent_month: params.rentMonth.slice(0, 7),
     checkout_mode: 'sdk',
+    gateway_version: 'cashfree',
   };
   if (params.amountPaise) {
     body.amount_paise = params.amountPaise;
@@ -164,6 +177,10 @@ export async function initiatePayment(params: {
       total_amount_paise: number;
       cashback_applied_paise: number;
       payu?: Record<string, unknown>;
+      cashfree?: {
+        payment_session_id: string;
+        cf_order_id: string;
+      };
     };
   }>('initiate-payment', body, true);
 
@@ -226,6 +243,8 @@ export async function initiatePayment(params: {
     data: {
       paymentId: d.payment_id,
       payuParams: d.payu,
+      cashfreeSessionId: d.cashfree?.payment_session_id,
+      cfOrderId: d.cashfree?.cf_order_id,
       totalAmountPaise: d.total_amount_paise,
       cashbackAppliedPaise: d.cashback_applied_paise,
       demoMode: raw.demo_mode === true,

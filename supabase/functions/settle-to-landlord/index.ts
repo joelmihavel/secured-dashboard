@@ -1,13 +1,21 @@
 /**
  * Flent Secured v2 - Settle to Landlord Edge Function
  *
- * Processes landlord payouts for successfully collected payments.
- * Flent collects from user via PayU, then separately transfers to landlord.
+ * Retry cron for failed postSplit() calls.
+ * Easy Split settlement is automatic after a successful split config is posted —
+ * this function exists only to retry payments where the inline postSplit()
+ * in payment-webhook failed.
  *
- * Logs payout details for manual processing via PayU dashboard.
+ * Query: status=success AND cf_split_posted=false AND split_retry_count < 3
+ *        AND paid_at < now() - 5 min (grace period for in-flight webhook)
+ *
+ * On postSplit() success: cf_split_posted=true, landlord_payout_status=processing
+ * On postSplit() failure: split_retry_count += 1
+ *   If split_retry_count reaches 3: landlord_payout_status=failed + ops alert
  *
  * Endpoint: POST /functions/v1/settle-to-landlord
- * Auth: Service role only (called by cron or admin)
+ * Auth: Service role only (called by pg_cron every 30 min)
+ * Cron: '15 * * * *'
  */
 
 import { serve } from "https://deno.land/std@0.208.0/http/server.ts";
@@ -17,19 +25,14 @@ import { AppError, handleError } from "../_shared/errors.ts";
 import { AuditLogger } from "../_shared/audit.ts";
 import { getSystemTransferFlag } from "../_shared/transfer-flags.ts";
 import { notifyUser } from "../_shared/notifications.ts";
+import { postSplit, CashfreeError } from "../_shared/cashfree-easysplit.ts";
 
-// ==============================================
-// CONFIGURATION
-// ==============================================
-
-const BATCH_SIZE = 10; // Max payments to process per invocation (payout fraud control)
-
-// ==============================================
-// MAIN HANDLER
-// ==============================================
+const BATCH_SIZE = 10;
+const MAX_RETRY_COUNT = 3;
+// Grace period: skip payments paid in the last 5 min (give payment-webhook time to run first)
+const GRACE_PERIOD_MINUTES = 5;
 
 serve(async (req: Request) => {
-  // Handle CORS preflight
   const corsResponse = handleCors(req);
   if (corsResponse) return corsResponse;
 
@@ -40,9 +43,7 @@ serve(async (req: Request) => {
   const supabase = createServiceClient();
 
   try {
-    // Verify service role authorization
-    const authHeader = req.headers.get("Authorization");
-    verifyServiceRole(authHeader);
+    verifyServiceRole(req.headers.get("Authorization"));
 
     const audit = new AuditLogger(supabase, {
       actorType: "service",
@@ -53,296 +54,157 @@ serve(async (req: Request) => {
     // System flag early return
     const systemFlag = await getSystemTransferFlag(supabase);
     if (!systemFlag.enabled) {
-      await audit.logSuccess(
-        "LANDLORD_SETTLEMENT_SKIPPED",
-        "system",
-        undefined,
-        undefined,
-        { reason: systemFlag.reason ?? "System transfers disabled" },
-      );
       return jsonResponse({
         success: true,
-        data: {
-          processed: 0,
-          message: "Landlord transfers disabled",
-          reason: systemFlag.reason,
-        },
+        data: { processed: 0, message: "Landlord transfers disabled", reason: systemFlag.reason },
       });
     }
 
-    // Query payments ready for landlord payout:
-    // - Payment successful (user paid via PayU)
-    // - PayU settlement confirmed (money reached Flent's account)
-    // - Landlord payout status is 'ready' (not 'pending' — that transition belongs to Tier 1)
-    // - Not individually held (transfer_hold = false)
+    // Grace period: ignore payments paid within the last 5 minutes
+    const graceCutoff = new Date(Date.now() - GRACE_PERIOD_MINUTES * 60 * 1000).toISOString();
+
+    // Find payments that need a postSplit() retry
     const { data: payments, error: queryError } = await supabase
       .from("payments")
       .select(`
-        id, tenancy_id, user_id, rent_amount_paise, landlord_payout_paise,
-        total_amount_paise, flent_subsidy_paise,
-        landlord_payout_status, payu_settlement_status, payu_txn_id,
-        payment_gateway, gateway_order_id, gateway_settlement_status,
-        transfer_hold, transfer_hold_reason,
-        payment_month, paid_at,
-        tenancy:tenancies(
-          id, landlord_name, landlord_phone, property_address,
-          landlord_user_id
-        )
+        id, user_id, tenancy_id, rent_amount_paise, landlord_payout_paise,
+        cf_order_id, gateway_order_id, split_retry_count, paid_at,
+        tenancy:tenancies(landlord_user_id, landlord_name)
       `)
       .eq("status", "success")
-      .eq("landlord_payout_status", "ready")
-      .eq("transfer_hold", false)
-      .or("payu_settlement_status.eq.settled,gateway_settlement_status.eq.settled")
+      .eq("payment_gateway", "cashfree")
+      .eq("cf_split_posted", false)
+      .lt("split_retry_count", MAX_RETRY_COUNT)
+      .lt("paid_at", graceCutoff)
       .order("paid_at", { ascending: true })
       .limit(BATCH_SIZE);
 
     if (queryError) {
-      console.error("Failed to query payments for settlement:", queryError);
       throw new AppError("Failed to query payments", "DB_ERROR", 500);
     }
 
     if (!payments || payments.length === 0) {
-      return jsonResponse({
-        success: true,
-        data: {
-          processed: 0,
-          message: "No payments pending landlord payout",
-        },
-      });
+      return jsonResponse({ success: true, data: { processed: 0, message: "No split retries needed" } });
     }
 
-    const results: Array<{
-      payment_id: string;
-      status: "processing" | "failed";
-      amount_paise: number;
-      landlord_name: string;
-      error?: string;
-    }> = [];
+    const results = { total: payments.length, posted: 0, retried: 0, failed_final: 0, errors: 0 };
 
     for (const payment of payments) {
-      const tenancy = payment.tenancy as {
-        id: string;
-        landlord_name: string;
-        landlord_phone: string | null;
-        property_address: string;
-        landlord_user_id: string | null;
-      } | null;
+      const tenancy = payment.tenancy as { landlord_user_id: string | null; landlord_name: string } | null;
+      const cfOrderId = payment.cf_order_id ?? payment.gateway_order_id;
 
-      if (!tenancy) {
-        results.push({
-          payment_id: payment.id,
-          status: "failed",
-          amount_paise: payment.landlord_payout_paise ?? payment.rent_amount_paise,
-          landlord_name: "Unknown",
-          error: "Tenancy not found",
-        });
+      if (!cfOrderId) {
+        console.error(`[settle-to-landlord] No cf_order_id for payment ${payment.id}`);
+        results.errors++;
         continue;
       }
 
-      // Defense-in-depth: per-payment hold check (catches TOCTOU race)
-      if (payment.transfer_hold) {
-        await audit.logSuccess(
-          "LANDLORD_TRANSFER_HELD",
-          "payment",
-          "payment",
-          payment.id,
-          {
-            reason: payment.transfer_hold_reason ?? "Payment held",
-            source: "settle-to-landlord-loop",
-          },
-        );
+      // Fetch landlord's active vendor
+      const landlordUserId = tenancy?.landlord_user_id;
+      if (!landlordUserId) {
+        console.error(`[settle-to-landlord] No landlord_user_id for payment ${payment.id}`);
+        results.errors++;
         continue;
       }
 
-      // Fetch landlord bank details via landlord_user_id -> bank_accounts (party_type='landlord', primary)
-      let bankAccount = null;
-      if (tenancy.landlord_user_id) {
-        const { data: bank } = await supabase
-          .from("bank_accounts")
-          .select("id, account_holder_name, account_number_masked, ifsc_code, verified")
-          .eq("user_id", tenancy.landlord_user_id)
-          .eq("party_type", "landlord")
-          .eq("is_primary", true)
-          .maybeSingle();
-        bankAccount = bank;
+      const { data: bankAccount } = await supabase
+        .from("bank_accounts")
+        .select("cf_beneficiary_id, cf_beneficiary_status")
+        .eq("user_id", landlordUserId)
+        .eq("party_type", "landlord")
+        .eq("is_primary", true)
+        .eq("verified", true)
+        .maybeSingle();
+
+      if (!bankAccount?.cf_beneficiary_id || bankAccount.cf_beneficiary_status !== "ACTIVE") {
+        console.warn(`[settle-to-landlord] Landlord vendor not ACTIVE for payment ${payment.id} — skipping this cycle`);
+        results.errors++;
+        continue;
       }
 
       const payoutAmountPaise = payment.landlord_payout_paise ?? payment.rent_amount_paise;
 
-      // Security check: payout must not exceed the original rent amount.
-      // With instant discount, total_amount_paise (net_rent + pg_fee) can be less than
-      // landlord_payout_paise (full rent), so we compare against rent_amount_paise instead.
-      const maxAllowedPayout = payment.rent_amount_paise;
-      if (payoutAmountPaise > maxAllowedPayout) {
-        console.error(
-          `[SECURITY] Payout ${payoutAmountPaise} exceeds rent amount ${maxAllowedPayout} for payment ${payment.id}`
-        );
-        await audit.logFailure(
-          "LANDLORD_PAYOUT_FAILED",
-          "security",
-          "PAYOUT_EXCEEDS_RENT",
-          `Payout ${payoutAmountPaise} exceeds rent amount ${maxAllowedPayout}`,
-          "payment",
-          payment.id,
-          { tenancy_id: tenancy?.id, payout_paise: payoutAmountPaise, rent_paise: maxAllowedPayout },
-        );
-        // Notify user of settlement failure
-        notifyUser(getSupabaseUrl(), (Deno.env.get("SB_SECRET_KEY") || Deno.env.get("SUPABASE_SERVICE_ROLE_KEY"))!, {
-          user_id: payment.user_id,
-          notification_type: "settlement_failed",
-          template_vars: { amount: (payoutAmountPaise / 100).toLocaleString("en-IN") },
-          related_entity_type: "payment",
-          related_entity_id: payment.id,
-        }).catch((e) => console.error("Failed to notify user of settlement failure:", e));
-
-        results.push({
-          payment_id: payment.id,
-          status: "failed",
-          amount_paise: payoutAmountPaise,
-          landlord_name: tenancy?.landlord_name ?? "Unknown",
-          error: "Payout exceeds rent amount",
+      try {
+        await postSplit({
+          cfOrderId,
+          vendorId: bankAccount.cf_beneficiary_id,
+          amountPaise: payoutAmountPaise,
+          paymentId: payment.id,
         });
-        continue;
-      }
 
-      if (!bankAccount || !bankAccount.verified) {
-        // Cannot process — bank not verified
-        const { error: updateError } = await supabase
+        await supabase
           .from("payments")
           .update({
-            landlord_payout_status: "failed",
-            landlord_payout_error: "Landlord bank account not verified",
+            cf_split_posted: true,
+            landlord_payout_status: "processing",
           })
           .eq("id", payment.id);
 
-        if (updateError) {
-          console.error(`Failed to update payment ${payment.id}:`, updateError);
-        }
-
-        await audit.logFailure(
-          "LANDLORD_PAYOUT_FAILED",
+        await audit.logSuccess(
+          "SPLIT_POSTED_RETRY",
           "payment",
-          "BANK_NOT_VERIFIED",
-          "Landlord bank account not verified",
           "payment",
           payment.id,
-          { tenancy_id: tenancy.id, amount_paise: payoutAmountPaise },
+          { cf_order_id: cfOrderId, vendor_id: bankAccount.cf_beneficiary_id, retry_count: payment.split_retry_count },
         );
 
-        // Notify user of settlement failure
-        notifyUser(getSupabaseUrl(), (Deno.env.get("SB_SECRET_KEY") || Deno.env.get("SUPABASE_SERVICE_ROLE_KEY"))!, {
-          user_id: payment.user_id,
-          notification_type: "settlement_failed",
-          template_vars: { amount: (payoutAmountPaise / 100).toLocaleString("en-IN") },
-          related_entity_type: "payment",
-          related_entity_id: payment.id,
-        }).catch((e) => console.error("Failed to notify user of settlement failure:", e));
+        console.log(`[settle-to-landlord] Split posted (retry ${payment.split_retry_count + 1}) for payment ${payment.id}`);
+        results.posted++;
+      } catch (err) {
+        const newRetryCount = (payment.split_retry_count ?? 0) + 1;
+        const isFinal = newRetryCount >= MAX_RETRY_COUNT;
+        const msg = err instanceof CashfreeError
+          ? `HTTP ${(err as CashfreeError).statusCode}: ${err.message}`
+          : (err as Error).message;
 
-        results.push({
-          payment_id: payment.id,
-          status: "failed",
-          amount_paise: payoutAmountPaise,
-          landlord_name: tenancy.landlord_name,
-          error: "Landlord bank account not verified",
-        });
-        continue;
+        console.error(`[settle-to-landlord] postSplit failed (attempt ${newRetryCount}/${MAX_RETRY_COUNT}) for payment ${payment.id}:`, msg);
+
+        const updatePayload: Record<string, unknown> = { split_retry_count: newRetryCount };
+        if (isFinal) {
+          updatePayload.landlord_payout_status = "failed";
+        }
+
+        await supabase.from("payments").update(updatePayload).eq("id", payment.id);
+
+        if (isFinal) {
+          results.failed_final++;
+          console.error(`[OPS_ALERT] Split failed after ${MAX_RETRY_COUNT} retries for payment ${payment.id} — manual intervention required`);
+
+          await audit.logFailure(
+            "SPLIT_FAILED_MAX_RETRIES",
+            "payment",
+            "SPLIT_FAILED",
+            `postSplit failed after ${MAX_RETRY_COUNT} retries: ${msg}`,
+            "payment",
+            payment.id,
+            { cf_order_id: cfOrderId, vendor_id: bankAccount.cf_beneficiary_id },
+          );
+
+          // Notify tenant
+          if (payment.user_id) {
+            const supabaseUrl = getSupabaseUrl();
+            const serviceKey = Deno.env.get("SB_SECRET_KEY") || Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+            notifyUser(supabaseUrl, serviceKey, {
+              user_id: payment.user_id,
+              notification_type: "settlement_failed",
+              template_vars: { amount: (payoutAmountPaise / 100).toLocaleString("en-IN") },
+              related_entity_type: "payment",
+              related_entity_id: payment.id,
+            }).catch((e) => console.error("[settle-to-landlord] Notify failed:", e));
+          }
+        } else {
+          results.retried++;
+        }
       }
-
-      // PayU manual-logging payout path
-      const payoutRef = `PAYOUT-${payment.id.slice(0, 8)}-${Date.now().toString(36)}`;
-
-      console.log("[LANDLORD_PAYOUT] Ready for manual processing:", {
-        payout_ref: payoutRef,
-        payment_id: payment.id,
-        payu_txn_id: payment.payu_txn_id,
-        amount_paise: payoutAmountPaise,
-        amount_rupees: (payoutAmountPaise / 100).toFixed(2),
-        landlord_name: tenancy.landlord_name,
-        landlord_phone: tenancy.landlord_phone,
-        bank_holder: bankAccount.account_holder_name,
-        bank_account_masked: bankAccount.account_number_masked,
-        bank_ifsc: bankAccount.ifsc_code,
-        property: tenancy.property_address,
-        payment_month: payment.payment_month,
-      });
-
-      // Update payment status to processing (optimistic lock on 'ready' prevents double-processing)
-      const { data: updatedRow, error: updateError } = await supabase
-        .from("payments")
-        .update({
-          landlord_payout_status: "processing",
-          landlord_payout_ref: payoutRef,
-          landlord_payout_initiated_at: new Date().toISOString(),
-        })
-        .eq("id", payment.id)
-        .eq("landlord_payout_status", "ready")
-        .select("id")
-        .maybeSingle();
-
-      if (updateError || !updatedRow) {
-        console.error(`Failed to update payment ${payment.id} to processing:`, updateError ?? "optimistic lock failed (no longer ready)");
-        results.push({
-          payment_id: payment.id,
-          status: "failed",
-          amount_paise: payoutAmountPaise,
-          landlord_name: tenancy.landlord_name,
-          error: updateError ? "Failed to update status" : "Payment already picked up by another process",
-        });
-        continue;
-      }
-
-      await audit.logSuccess(
-        "LANDLORD_PAYOUT_INITIATED",
-        "payment",
-        "payment",
-        payment.id,
-        {
-          payout_ref: payoutRef,
-          amount_paise: payoutAmountPaise,
-          landlord_name: tenancy.landlord_name,
-          bank_ifsc: bankAccount.ifsc_code,
-        },
-      );
-
-      results.push({
-        payment_id: payment.id,
-        status: "processing",
-        amount_paise: payoutAmountPaise,
-        landlord_name: tenancy.landlord_name,
-      });
     }
 
-    const processed = results.filter((r) => r.status === "processing").length;
-    const failed = results.filter((r) => r.status === "failed").length;
-
-    // Alert ops if there are failures
-    if (failed > 0) {
-      console.error(`[OPS_ALERT] ${failed} landlord payouts failed out of ${results.length} attempted`);
-
-      // Queue notification to ops
-      await supabase.from("notification_queue").insert({
-        notification_type: "internal",
-        payload: {
-          channel: "ops",
-          title: "Landlord Payout Failures",
-          body: `${failed} out of ${results.length} landlord payouts failed. Check settle-to-landlord logs.`,
-          failures: results.filter((r) => r.status === "failed"),
-        },
-        status: "pending",
-      });
+    if (results.failed_final > 0) {
+      console.error(`[OPS_ALERT] ${results.failed_final} payment(s) failed split after max retries — require manual intervention`);
     }
 
-    return jsonResponse({
-      success: true,
-      data: {
-        total: results.length,
-        processed,
-        failed,
-        results,
-      },
-    });
+    return jsonResponse({ success: true, data: results });
   } catch (error) {
-    console.error("Settle to landlord error:", error);
+    console.error("[settle-to-landlord] Fatal error:", error);
     return handleError(error, req.headers.get("x-request-id") ?? undefined);
   }
 });
