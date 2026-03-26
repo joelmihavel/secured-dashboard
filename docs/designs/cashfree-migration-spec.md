@@ -214,7 +214,7 @@ call this function with User B's payment_session_id.
 | `rn-app/src/components/payment/PaymentMethodModal/MethodSelectorContent.tsx` | UPI Intent app list (Cashfree SDK provides installed apps) |
 | `rn-app/app/(payment)/status.tsx` | Poll using Cashfree order ID instead of PayU mihpayid |
 | `rn-app/app.json` | Add `LSApplicationQueriesSchemes` for UPI apps |
-| `rn-app/package.json` | Add `react-native-cashfree-pg-sdk`, `cashfree-pg-api-contract` |
+| `rn-app/package.json` | Add `react-native-cashfree-pg-sdk`, `cashfree-pg-api-contract`, `expo-web-browser` |
 
 ### Frontend — No changes needed
 | File | Reason |
@@ -359,11 +359,12 @@ call this function with User B's payment_session_id.
       NOTE: Triple-slash is Expo Router convention. Route matches app/(payment)/status.tsx
        │
        ▼
-  [Client] Deep link handler (useDeepLink) catches flentsecured://payment-callback
+  [Client] Deep link handler (useDeepLink) catches flentsecured:///(payment)/status?order_id=...
     → Extracts order_id from query params
     → Navigates to status screen with paymentId
     → If user closes browser without completing: no deep link fires
       → App returns to confirm screen → user can retry or check status
+    FIXED: Was incorrectly referencing flentsecured://payment-callback (old PayU scheme)
   [Edge] Cashfree webhook → same flow as above
 ```
 
@@ -465,8 +466,12 @@ function verifyCashfreeWebhook(
 ```json
 {
   "react-native-cashfree-pg-sdk": "^2.3.0",
-  "cashfree-pg-api-contract": "^2.1.0"
+  "cashfree-pg-api-contract": "^2.1.0",
+  "expo-web-browser": "~14.0.2"
 }
+// MISSING-DEP: expo-web-browser is NOT in rn-app/package.json but is required
+// for Net Banking redirect flow (Section 4D). Must `npx expo install expo-web-browser`.
+// It is NOT a native module — no prebuild needed for this dep alone.
 ```
 
 ### Expo Config
@@ -777,7 +782,7 @@ chain (PayU) for webhook verification. The `processed_webhooks` dedup is a net i
 ### Phase 2: Frontend (Expo Preview)
 ```
   Step 1: Install Cashfree SDK
-    cd rn-app && npx expo install react-native-cashfree-pg-sdk cashfree-pg-api-contract
+    cd rn-app && npx expo install react-native-cashfree-pg-sdk cashfree-pg-api-contract expo-web-browser
 
   Step 2: Regenerate native dirs
     npx expo prebuild --clean
