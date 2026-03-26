@@ -28,9 +28,17 @@ import {
   PAYU_INFO_URL,
   fetchWithTimeout,
 } from "../_shared/payu-config.ts";
+import { getOrderPaymentStatus } from "../_shared/cashfree-easysplit.ts";
 
-// How old a payment must be (in ms) before we check PayU directly
+// How old a payment must be (in ms) before we check gateway directly
 const STALE_THRESHOLD_MS = 2 * 60 * 1000; // 2 minutes
+
+// Cashfree order_status → our internal status
+const CASHFREE_STATUS_MAP: Record<string, string> = {
+  PAID: "success",
+  ACTIVE: "processing",
+  EXPIRED: "failed",
+};
 
 // PayU status mapping (same as payment-webhook)
 const PAYU_STATUS_MAP: Record<string, string> = {
@@ -94,7 +102,7 @@ serve(async (req: Request) => {
         pg_fee_paise, total_amount_paise, landlord_payout_paise,
         landlord_payout_status, payu_txn_id, payu_mihpayid,
         payu_status, payu_settlement_status, payu_settlement_utr,
-        payment_gateway, gateway_order_id, gateway_payment_id, gateway_status,
+        payment_gateway, cf_order_id, gateway_order_id, gateway_payment_id, gateway_status,
         gateway_settlement_status, gateway_settlement_utr,
         payment_method, payment_month, created_at, paid_at,
         tenancy:tenancies(user_id)
@@ -113,6 +121,7 @@ serve(async (req: Request) => {
     }
 
     // Check if payment is stuck and needs gateway verification
+    let gatewayVerified = false;
     let payuVerified = false;
     let payuVerifyResult: Record<string, unknown> | null = null;
 
@@ -122,8 +131,124 @@ serve(async (req: Request) => {
     const isStale = ageMs > STALE_THRESHOLD_MS;
 
     const isDemoPayment = payment.payment_gateway === "demo";
+    const isCashfree = payment.payment_gateway === "cashfree";
 
-    if (isStuck && isStale && payment.payu_txn_id && !isDemoPayment) {
+    // --- Cashfree verification path ---
+    if (isStuck && isStale && isCashfree && payment.cf_order_id && !isDemoPayment) {
+      try {
+        const cfStatus = await getOrderPaymentStatus(payment.cf_order_id);
+        gatewayVerified = true;
+
+        const mappedStatus = CASHFREE_STATUS_MAP[cfStatus.order_status] ?? "failed";
+
+        if (mappedStatus !== payment.status && ["success", "failed"].includes(mappedStatus)) {
+          const updateData: Record<string, unknown> = {
+            status: mappedStatus,
+            gateway_status: cfStatus.order_status,
+          };
+
+          if (mappedStatus === "success") {
+            updateData.paid_at = new Date().toISOString();
+            updateData.landlord_payout_status = "pending";
+            updateData.landlord_payout_paise = payment.rent_amount_paise;
+          }
+
+          const { data: lockResult } = await supabase
+            .from("payments")
+            .update(updateData)
+            .eq("id", payment.id)
+            .eq("status", payment.status) // optimistic lock
+            .select("id")
+            .maybeSingle();
+
+          if (lockResult && mappedStatus === "success") {
+            // Cashback ledger entries (same logic as PayU reconciliation)
+            if (payment.cashback_applied_paise > 0) {
+              try {
+                await supabase.from("cashback_ledger").insert({
+                  user_id: userId,
+                  transaction_type: "discount",
+                  amount_paise: payment.cashback_applied_paise,
+                  balance_after_paise: 0,
+                  payment_id: payment.id,
+                  tenancy_id: payment.tenancy_id,
+                  reference_type: "payment",
+                  reference_id: payment.id,
+                  description: "1% instant discount on rent payment (reconciliation)",
+                });
+                const accumulatedUsed = payment.accumulated_redeemed_paise ?? 0;
+                if (accumulatedUsed > 0) {
+                  await supabase.from("cashback_ledger").insert({
+                    user_id: userId,
+                    transaction_type: "applied",
+                    amount_paise: accumulatedUsed,
+                    balance_after_paise: 0,
+                    payment_id: payment.id,
+                    tenancy_id: payment.tenancy_id,
+                    reference_type: "payment",
+                    reference_id: payment.id,
+                    description: "Accumulated cashback redeemed (reconciliation)",
+                  });
+                  await supabase.rpc("decrement_cashback_balance", {
+                    p_user_id: userId,
+                    p_amount: accumulatedUsed,
+                  });
+                }
+              } catch (e) {
+                console.error("Failed to log cashback discount on reconciliation:", e);
+              }
+            }
+
+            if (payment.cashback_earned_paise > 0) {
+              try {
+                await supabase.from("cashback_ledger").insert({
+                  user_id: userId,
+                  transaction_type: "earned",
+                  amount_paise: payment.cashback_earned_paise,
+                  balance_after_paise: 0,
+                  payment_id: payment.id,
+                  tenancy_id: payment.tenancy_id,
+                  reference_type: "payment",
+                  reference_id: payment.id,
+                  description: "1% cashback earned (reconciliation)",
+                });
+                await supabase.rpc("increment_cashback_balance", {
+                  p_user_id: userId,
+                  p_amount: payment.cashback_earned_paise,
+                });
+              } catch (e) {
+                console.error("Failed to credit earned cashback on reconciliation:", e);
+              }
+            }
+          }
+
+          // Update local payment object for response
+          payment.status = mappedStatus;
+          payment.gateway_status = cfStatus.order_status;
+          if (mappedStatus === "success") {
+            payment.landlord_payout_status = "pending";
+          }
+
+          await audit.logSuccess(
+            "PAYMENT_STATUS_RECONCILED",
+            "payment",
+            "payment",
+            payment.id,
+            {
+              old_status: "initiated/processing",
+              new_status: mappedStatus,
+              source: "cashfree_verify",
+            }
+          );
+        }
+      } catch (verifyError) {
+        console.error("Cashfree getOrderPaymentStatus failed:", verifyError);
+        // Non-fatal — return DB status
+      }
+    }
+
+    // --- PayU verification path ---
+    if (isStuck && isStale && payment.payu_txn_id && !isDemoPayment && !isCashfree) {
       try {
         // PayU verification path
         payuVerifyResult = await verifyWithPayU(payment.payu_txn_id);
@@ -266,7 +391,7 @@ serve(async (req: Request) => {
         payment_month: payment.payment_month,
         created_at: payment.created_at,
         paid_at: payment.paid_at,
-        gateway_verified: payuVerified,
+        gateway_verified: gatewayVerified || payuVerified,
         payu_verified: payuVerified, // backward compat
       },
     });
