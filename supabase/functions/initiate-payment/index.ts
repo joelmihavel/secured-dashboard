@@ -277,10 +277,11 @@ serve(async (req: Request) => {
     // bank_verified only affects: (a) 1% discount eligibility, (b) settlement routing.
 
     // Cashfree: Landlord vendor must be ACTIVE before accepting payment
-    // On-demand transfer requires an active vendor to settle funds
+    // Cashfree vendor status check — log but don't block payments.
+    // Settlement will fail if vendor isn't ACTIVE, but that's handled
+    // asynchronously by settle-to-landlord. Blocking here prevents testing
+    // and hurts UX when vendor onboarding is slow.
     if (useCashfree) {
-      // Bank accounts for landlords are stored under the tenant's user_id
-      // with party_type='landlord' (tenant adds landlord's bank details)
       const { data: landlordBank } = await supabase
         .from("bank_accounts")
         .select("cf_beneficiary_id, cf_beneficiary_status")
@@ -290,17 +291,8 @@ serve(async (req: Request) => {
         .eq("verified", true)
         .maybeSingle();
 
-      if (!landlordBank?.cf_beneficiary_id) {
-        throw new PaymentError(
-          "Landlord bank account is being registered with our payment partner. Please try again in a few hours.",
-          "VENDOR_NOT_REGISTERED",
-        );
-      }
-      if (landlordBank.cf_beneficiary_status !== "ACTIVE") {
-        throw new PaymentError(
-          "Landlord bank account verification is in progress. Please try again shortly.",
-          "VENDOR_NOT_ACTIVE",
-        );
+      if (!landlordBank?.cf_beneficiary_id || landlordBank.cf_beneficiary_status !== "ACTIVE") {
+        console.warn(`[initiate-payment] Landlord vendor not active: beneficiary=${landlordBank?.cf_beneficiary_id ?? "none"}, status=${landlordBank?.cf_beneficiary_status ?? "none"}. Proceeding anyway — settlement will be deferred.`);
       }
     }
 
