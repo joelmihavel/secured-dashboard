@@ -13,7 +13,7 @@ import { createServiceClient } from "../_shared/supabase.ts";
 import { handleCors, jsonResponse, errorResponse } from "../_shared/cors.ts";
 import { AppError, PaymentError, handleError } from "../_shared/errors.ts";
 import { AuditLogger, AuditActions } from "../_shared/audit.ts";
-import { verifyPayUWebhookHashWithCharges, sha512, hmacSha256Base64 } from "../_shared/crypto.ts";
+import { verifyPayUWebhookHashWithCharges, sha512, hmacSha256Base64, timingSafeCompare } from "../_shared/crypto.ts";
 import {
   PAYU_MERCHANT_KEY,
   PAYU_MERCHANT_SALT,
@@ -136,9 +136,11 @@ async function verifyCashfreeSignature(
   receivedSignature: string,
   secretKey: string
 ): Promise<boolean> {
-  const signedPayload = timestamp + rawBody;
+  // Cashfree signs: timestamp + "." + rawBody (dot separator per Cashfree docs)
+  // Confirmed by dev branch commit 550ce387
+  const signedPayload = timestamp + "." + rawBody;
   const expectedSignature = await hmacSha256Base64(signedPayload, secretKey);
-  return expectedSignature === receivedSignature;
+  return timingSafeCompare(expectedSignature, receivedSignature);
 }
 
 serve(async (req: Request) => {
