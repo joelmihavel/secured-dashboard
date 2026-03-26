@@ -200,8 +200,8 @@ call this function with User B's payment_session_id.
 |------|---------|
 | `rn-app/src/services/payment/index.ts` | Add `gateway_version: 'cashfree'` to initiate call, parse Cashfree response |
 | `rn-app/src/services/payment/payuCoreService.ts` | Keep for backward compat (old builds), add `@deprecated` |
-| `rn-app/src/hooks/usePaymentFlow.ts` | Route to cashfreeService instead of payuCoreService |
-| `rn-app/src/stores/payment.ts` | Add `paymentSessionId`, `cfOrderId` fields (replace `payuSessionParams`) |
+| `rn-app/src/hooks/usePaymentFlow.ts` | RISK: Hook is tightly coupled to PayU types (`CorePaymentMode`, `InstrumentParams`, `launchCorePayment`). Must add gateway-conditional routing: if Cashfree → call `cashfreeService.launchX()`, else → existing PayU path. Do NOT remove PayU imports — both paths must coexist. The hook's `executePayment()` signature will need a `gateway` param or read it from the store. |
+| `rn-app/src/stores/payment.ts` | Add `cashfreeSessionId`, `cfOrderId` fields ALONGSIDE `payuSessionParams` (RISK: do NOT remove PayU fields — old code paths still reference them). Add `setCashfreeSession()` / `clearCashfreeSession()` actions. |
 | `rn-app/src/components/payment/PaymentMethodModal/index.tsx` | Wire Cashfree SDK callbacks |
 | `rn-app/src/components/payment/PaymentMethodModal/MethodSelectorContent.tsx` | UPI Intent app list (Cashfree SDK provides installed apps) |
 | `rn-app/app/(payment)/status.tsx` | Poll using Cashfree order ID instead of PayU mihpayid |
