@@ -40,6 +40,7 @@ interface SplitWebhookPayload {
     };
     settlement?: {
       vendor_id?: string;
+      settlement_id?: number | string;
       cf_payment_id?: string | number;
       amount_settled?: number;
       service_charge?: number;
@@ -93,15 +94,19 @@ serve(async (req: Request) => {
     const eventType = payload.type;
     const orderId = payload.data?.order?.order_id;
     const cfPaymentId = String(payload.data?.settlement?.cf_payment_id ?? "");
+    const settlementId = String(payload.data?.settlement?.settlement_id ?? "");
+    const vendorId = payload.data?.settlement?.vendor_id ?? "";
 
-    console.log("[cashfree-split-webhook] Event:", eventType, "order_id:", orderId, "cf_payment_id:", cfPaymentId);
+    console.log("[cashfree-split-webhook] Event:", eventType, "order_id:", orderId,
+      "cf_payment_id:", cfPaymentId, "settlement_id:", settlementId, "vendor_id:", vendorId);
 
-    if (!orderId) {
-      return jsonResponse({ status: "ignored", reason: "missing order_id" });
+    // On-demand transfers may not have an order_id — require at least one identifier
+    if (!orderId && !settlementId && !vendorId) {
+      return jsonResponse({ status: "ignored", reason: "no identifiers" });
     }
 
-    // Dedup check — event_id format: cf-split-{cfPaymentId|orderId}-{eventType}
-    const dedupKey = `cf-split-${cfPaymentId || orderId}-${eventType}`;
+    // Dedup check — event_id format: cf-split-{identifier}-{eventType}
+    const dedupKey = `cf-split-${cfPaymentId || settlementId || orderId}-${eventType}`;
     const { data: existing } = await supabase
       .from("processed_webhooks")
       .select("event_id")
@@ -119,16 +124,34 @@ serve(async (req: Request) => {
       requestId: req.headers.get("x-request-id") ?? crypto.randomUUID(),
     });
 
-    // Find the payment by cf_order_id or gateway_order_id
-    const { data: payment } = await supabase
-      .from("payments")
-      .select("id, user_id, rent_amount_paise, landlord_payout_status, tenancy_id, payment_month")
-      .or(`cf_order_id.eq.${orderId},gateway_order_id.eq.${orderId}`)
-      .in("landlord_payout_status", ["pending", "processing"])
-      .maybeSingle();
+    // Find the payment — try multiple strategies:
+    // 1. By cf_order_id/gateway_order_id (order-level splits)
+    // 2. By cf_settlement_id (on-demand transfers — stored by settle-to-landlord)
+    // 3. By vendor_id match (fallback for on-demand transfers)
+    let payment = null;
+
+    if (orderId) {
+      const { data } = await supabase
+        .from("payments")
+        .select("id, user_id, rent_amount_paise, landlord_payout_status, tenancy_id, payment_month")
+        .or(`cf_order_id.eq.${orderId},gateway_order_id.eq.${orderId}`)
+        .in("landlord_payout_status", ["pending", "processing"])
+        .maybeSingle();
+      payment = data;
+    }
+
+    if (!payment && settlementId) {
+      const { data } = await supabase
+        .from("payments")
+        .select("id, user_id, rent_amount_paise, landlord_payout_status, tenancy_id, payment_month")
+        .eq("cf_settlement_id", settlementId)
+        .in("landlord_payout_status", ["pending", "processing"])
+        .maybeSingle();
+      payment = data;
+    }
 
     if (!payment) {
-      console.warn(`[cashfree-split-webhook] No eligible payment found for order_id ${orderId} (event: ${eventType})`);
+      console.warn(`[cashfree-split-webhook] No eligible payment found (order_id=${orderId}, settlement_id=${settlementId}, event=${eventType})`);
       // Insert dedup record and return 200 to prevent Cashfree retries
       await supabase
         .from("processed_webhooks")
@@ -138,8 +161,26 @@ serve(async (req: Request) => {
 
     const settlement = payload.data?.settlement ?? {};
 
+    // ── VENDOR_SETTLEMENT_INITIATED ──────────────────────────────────
+    if (eventType === "VENDOR_SETTLEMENT_INITIATED") {
+      await supabase
+        .from("payments")
+        .update({ landlord_payout_status: "processing" })
+        .eq("id", payment.id)
+        .eq("landlord_payout_status", "pending");
+
+      await audit.logSuccess(
+        "VENDOR_SETTLEMENT_INITIATED",
+        "payment",
+        "payment",
+        payment.id,
+        { vendor_id: settlement.vendor_id },
+      );
+
+      console.log(`[cashfree-split-webhook] Settlement initiated for payment ${payment.id}`);
+
     // ── VENDOR_SETTLEMENT_SUCCESS ─────────────────────────────────────
-    if (eventType === "VENDOR_SETTLEMENT_SUCCESS") {
+    } else if (eventType === "VENDOR_SETTLEMENT_SUCCESS") {
       const amountSettled = settlement.amount_settled ?? 0;
       const serviceCharge = settlement.service_charge ?? 0;
 
@@ -214,6 +255,21 @@ serve(async (req: Request) => {
         `[OPS_ALERT] ${eventType} for payment ${payment.id}`,
         isReversed ? "— requires manual review" : "",
       );
+
+      // Notify tenant about settlement failure
+      if (payment.user_id) {
+        const supabaseUrl = getSupabaseUrl();
+        const serviceKey = Deno.env.get("SB_SECRET_KEY") || Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+        notifyUser(supabaseUrl, serviceKey, {
+          user_id: payment.user_id,
+          notification_type: "settlement_failed",
+          template_vars: {
+            amount: ((payment.rent_amount_paise as number) / 100).toLocaleString("en-IN"),
+          },
+          related_entity_type: "payment",
+          related_entity_id: payment.id,
+        }).catch((e) => console.error("[cashfree-split-webhook] Notify failed:", e));
+      }
 
     } else {
       console.log(`[cashfree-split-webhook] Unhandled event type: ${eventType}`);

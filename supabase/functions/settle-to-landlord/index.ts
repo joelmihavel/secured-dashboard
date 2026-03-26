@@ -128,6 +128,7 @@ serve(async (req: Request) => {
           .update({
             cf_split_posted: true,
             landlord_payout_status: "processing",
+            cf_settlement_id: transferResult.settlement_id ? String(transferResult.settlement_id) : null,
           })
           .eq("id", payment.id);
 
