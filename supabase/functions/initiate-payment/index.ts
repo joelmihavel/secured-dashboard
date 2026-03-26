@@ -536,47 +536,56 @@ serve(async (req: Request) => {
     const productinfo = `Rent payment for ${rent_month}`;
     const amountStr = (totalAmountPaise / 100).toFixed(2); // PayU expects amount in rupees
 
-    const payuParams = {
-      key: PAYU_MERCHANT_KEY,
-      txnid: txnId,
-      amount: amountStr,
-      productinfo,
-      firstname,
-      email,
-      salt: PAYU_MERCHANT_SALT,
-      udf1: tenancy_id,
-      udf2: rent_month,
-      udf3: userId,
-    };
+    // PayU-specific hash computation — skip for Cashfree path
+    let payuParams: Record<string, string> | null = null;
+    let payuHash = "";
+    let payuHashV2 = "";
+    let vasHash = "";
+    let paymentRelatedHash = "";
 
-    // PayU hash generation — compute both v1 (SHA-512) and v2 (HMAC-SHA256) for diagnostics
-    const userCredential = `${PAYU_MERCHANT_KEY}:${email}`;
-    const hashInputStr = `${PAYU_MERCHANT_KEY}|${txnId}|${amountStr}|${productinfo}|${firstname}|${email}|${payuParams.udf1 ?? ""}|${payuParams.udf2 ?? ""}|${payuParams.udf3 ?? ""}|${payuParams.udf4 ?? ""}|${payuParams.udf5 ?? ""}||||||`;
-    // Salt v1 hash: sha512(hashString + salt)
-    const payuHashV1 = await sha512(hashInputStr + PAYU_MERCHANT_SALT);
-    // Salt v2 hash: hmac-sha256(hashString WITHOUT trailing salt, key=salt)
-    const hashInputStrV2 = `${PAYU_MERCHANT_KEY}|${txnId}|${amountStr}|${productinfo}|${firstname}|${email}|${payuParams.udf1 ?? ""}|${payuParams.udf2 ?? ""}|${payuParams.udf3 ?? ""}|${payuParams.udf4 ?? ""}|${payuParams.udf5 ?? ""}||||||`;
-    const payuHashV2 = await hmacSha256(hashInputStrV2, PAYU_MERCHANT_SALT);
-    // Use v1 by default, log both for diagnostics
-    const payuHash = payuHashV1;
-    const vasHash = await sha512(`${PAYU_MERCHANT_KEY}|vas_for_mobile_sdk|default|${PAYU_MERCHANT_SALT}`);
-    const paymentRelatedHash = await sha512(`${PAYU_MERCHANT_KEY}|payment_related_details_for_mobile_sdk|${userCredential}|${PAYU_MERCHANT_SALT}`);
+    if (!useCashfree) {
+      payuParams = {
+        key: PAYU_MERCHANT_KEY,
+        txnid: txnId,
+        amount: amountStr,
+        productinfo,
+        firstname,
+        email,
+        salt: PAYU_MERCHANT_SALT,
+        udf1: tenancy_id,
+        udf2: rent_month,
+        udf3: userId,
+      };
 
-    // Diagnostic: log hash input for debugging (salt masked)
-    const maskedSalt = PAYU_MERCHANT_SALT.slice(0, 4) + "****" + PAYU_MERCHANT_SALT.slice(-4);
-    console.log("[initiate-payment] Hash diagnostic:", {
-      hashInput: hashInputStr + maskedSalt,
-      hashV1_sha512: payuHashV1.slice(0, 16) + "...",
-      hashV2_hmac256: payuHashV2.slice(0, 16) + "...",
-      usingHash: "v1",
-      environment: PAYU_SDK_ENVIRONMENT,
-      baseUrl: PAYU_BASE_URL,
-      isSandbox: IS_SANDBOX,
-      keyLen: PAYU_MERCHANT_KEY.length,
-      saltLen: PAYU_MERCHANT_SALT.length,
-      amount: amountStr,
-      txnid: txnId,
-    });
+      // PayU hash generation — compute both v1 (SHA-512) and v2 (HMAC-SHA256) for diagnostics
+      const userCredential = `${PAYU_MERCHANT_KEY}:${email}`;
+      const hashInputStr = `${PAYU_MERCHANT_KEY}|${txnId}|${amountStr}|${productinfo}|${firstname}|${email}|${payuParams.udf1 ?? ""}|${payuParams.udf2 ?? ""}|${payuParams.udf3 ?? ""}|${payuParams.udf4 ?? ""}|${payuParams.udf5 ?? ""}||||||`;
+      // Salt v1 hash: sha512(hashString + salt)
+      const payuHashV1 = await sha512(hashInputStr + PAYU_MERCHANT_SALT);
+      // Salt v2 hash: hmac-sha256(hashString WITHOUT trailing salt, key=salt)
+      const hashInputStrV2 = `${PAYU_MERCHANT_KEY}|${txnId}|${amountStr}|${productinfo}|${firstname}|${email}|${payuParams.udf1 ?? ""}|${payuParams.udf2 ?? ""}|${payuParams.udf3 ?? ""}|${payuParams.udf4 ?? ""}|${payuParams.udf5 ?? ""}||||||`;
+      payuHashV2 = await hmacSha256(hashInputStrV2, PAYU_MERCHANT_SALT);
+      // Use v1 by default, log both for diagnostics
+      payuHash = payuHashV1;
+      vasHash = await sha512(`${PAYU_MERCHANT_KEY}|vas_for_mobile_sdk|default|${PAYU_MERCHANT_SALT}`);
+      paymentRelatedHash = await sha512(`${PAYU_MERCHANT_KEY}|payment_related_details_for_mobile_sdk|${userCredential}|${PAYU_MERCHANT_SALT}`);
+
+      // Diagnostic: log hash input for debugging (salt masked)
+      const maskedSalt = PAYU_MERCHANT_SALT.slice(0, 4) + "****" + PAYU_MERCHANT_SALT.slice(-4);
+      console.log("[initiate-payment] Hash diagnostic:", {
+        hashInput: hashInputStr + maskedSalt,
+        hashV1_sha512: payuHashV1.slice(0, 16) + "...",
+        hashV2_hmac256: payuHashV2.slice(0, 16) + "...",
+        usingHash: "v1",
+        environment: PAYU_SDK_ENVIRONMENT,
+        baseUrl: PAYU_BASE_URL,
+        isSandbox: IS_SANDBOX,
+        keyLen: PAYU_MERCHANT_KEY.length,
+        saltLen: PAYU_MERCHANT_SALT.length,
+        amount: amountStr,
+        txnid: txnId,
+      });
+    }
 
     // Calculate due date (5th of the rent month, or next month if already past)
     const dueDate = calculateDueDate(rent_month);
@@ -631,6 +640,10 @@ serve(async (req: Request) => {
       .single();
 
     if (paymentError || !payment) {
+      // Unique constraint violation = concurrent duplicate (TOCTOU race)
+      if (paymentError?.code === "23505") {
+        throw new PaymentError("Payment already in progress for this month", "PAYMENT_IN_PROGRESS");
+      }
       console.error("Failed to create payment:", paymentError);
       throw new PaymentError("Failed to initiate payment", "DB_ERROR");
     }
