@@ -95,32 +95,62 @@ async function callGemini(prompt: string, jsonMode = true): Promise<string> {
     },
   };
 
-  const response = await fetch(`${GEMINI_API_URL}?key=${GEMINI_API_KEY}`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(requestBody),
-  });
+  const MAX_RETRIES = 3;
+  const TIMEOUT_MS = 30_000; // 30s per attempt
 
-  if (!response.ok) {
-    const error = await response.text();
-    console.error("Gemini API error:", error);
-    throw new Error(`Gemini API error: ${response.status} - ${error}`);
+  for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), TIMEOUT_MS);
+
+      const response = await fetch(`${GEMINI_API_URL}?key=${GEMINI_API_KEY}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(requestBody),
+        signal: controller.signal,
+      });
+
+      clearTimeout(timeoutId);
+
+      if (!response.ok) {
+        const error = await response.text();
+        // 429 (rate limit) and 503 (overloaded) are retryable
+        if ((response.status === 429 || response.status === 503) && attempt < MAX_RETRIES) {
+          const backoffMs = Math.min(1000 * Math.pow(2, attempt - 1), 8000);
+          console.warn(`Gemini API ${response.status} (attempt ${attempt}/${MAX_RETRIES}), retrying in ${backoffMs}ms`);
+          await new Promise((r) => setTimeout(r, backoffMs));
+          continue;
+        }
+        console.error("Gemini API error:", error);
+        throw new Error(`Gemini API error: ${response.status} - ${error}`);
+      }
+
+      const data: GeminiResponse = await response.json();
+
+      if (data.error) {
+        throw new Error(`Gemini API error: ${data.error.code} - ${data.error.message}`);
+      }
+
+      const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+      if (!text) {
+        throw new Error("No response from Gemini API");
+      }
+
+      return text;
+    } catch (err: unknown) {
+      const isAbort = err instanceof DOMException && err.name === "AbortError";
+      const isNetwork = err instanceof TypeError && (err.message.includes("fetch") || err.message.includes("network"));
+      if ((isAbort || isNetwork) && attempt < MAX_RETRIES) {
+        const backoffMs = Math.min(1000 * Math.pow(2, attempt - 1), 8000);
+        console.warn(`Gemini API ${isAbort ? "timeout" : "network error"} (attempt ${attempt}/${MAX_RETRIES}), retrying in ${backoffMs}ms`);
+        await new Promise((r) => setTimeout(r, backoffMs));
+        continue;
+      }
+      throw err;
+    }
   }
 
-  const data: GeminiResponse = await response.json();
-
-  if (data.error) {
-    throw new Error(`Gemini API error: ${data.error.code} - ${data.error.message}`);
-  }
-
-  const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
-  if (!text) {
-    throw new Error("No response from Gemini API");
-  }
-
-  return text;
+  throw new Error("Gemini API: max retries exhausted");
 }
 
 // ==============================================

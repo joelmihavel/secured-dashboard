@@ -409,7 +409,7 @@ export async function processDocument(
     body,
     true, // requireAuth
     'POST',
-    120_000 // 2 minute timeout (OCR + AI can be slow)
+    600_000 // 10 min — Document AI (300s) + Gemini (300s) each have independent timeouts on backend
   );
 
   if (error) {

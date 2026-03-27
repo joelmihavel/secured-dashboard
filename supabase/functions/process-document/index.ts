@@ -362,14 +362,13 @@ Deno.serve(async (req) => {
 
     let extractedData: ExtractedData;
 
-    // ENH 2: 300s timeout around Document AI + Gemini calls.
-    // Large/complex PDFs can take 2-3 min for Document AI + Gemini.
-    // Edge function wall clock is 400s on paid plan; keep internal timeout below that.
-    const PROCESSING_TIMEOUT_MS = 300_000;
+    // Each API call (Document AI, Gemini) has its own 300s timeout via AbortController
+    // inside processWithDocumentAI, so no outer Promise.race needed.
+    // This allows large documents to use the full budget for each step independently.
 
     if (gcpCredentials && gcpProcessorId) {
       // Production: Use GCP Document AI + Vertex AI Gemini
-      const processingPromise = processWithDocumentAI(
+      extractedData = await processWithDocumentAI(
         base64Content,
         "application/pdf",
         gcpCredentials,
@@ -380,12 +379,6 @@ Deno.serve(async (req) => {
         vertexAiProjectId,
         geminiApiKey
       );
-
-      const timeoutPromise = new Promise<never>((_, reject) => {
-        setTimeout(() => reject(new Error("Processing timed out after 300 seconds")), PROCESSING_TIMEOUT_MS);
-      });
-
-      extractedData = await Promise.race([processingPromise, timeoutPromise]);
     } else if (!gcpCredentials) {
       return new Response(
         JSON.stringify({ error: "Document processing not configured", code: "SERVICE_UNAVAILABLE" }),
@@ -635,33 +628,46 @@ async function processWithDocumentAI(
   // Get access token for Document AI
   const accessToken = await getGCPAccessToken(credentialsJson);
 
-  // Step 1: Call Document AI for OCR
-  // Note: Relies on Edge Function timeout (150s default, 400s on paid plans)
+  // Step 1: Call Document AI for OCR — 300s independent timeout
   console.log("[process-document] Calling GCP Document AI...");
-  const docAIResponse = await fetch(
-    `https://${location}-documentai.googleapis.com/v1/projects/${projectId}/locations/${location}/processors/${processorId}:process`,
-    {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        rawDocument: {
-          content: base64Content,
-          mimeType: mimeType,
+  const DOC_AI_TIMEOUT_MS = 300_000;
+  const docAIController = new AbortController();
+  const docAITimeout = setTimeout(() => docAIController.abort(), DOC_AI_TIMEOUT_MS);
+  let docAIResponse: Response;
+  try {
+    docAIResponse = await fetch(
+      `https://${location}-documentai.googleapis.com/v1/projects/${projectId}/locations/${location}/processors/${processorId}:process`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          "Content-Type": "application/json",
         },
-        // Bug 2 fix: Enable imageless mode (raises page limit from 15 to 30)
-        // and cap at first 30 pages to avoid PAGE_LIMIT_EXCEEDED for large docs
-        processOptions: {
-          ocrConfig: {
-            premiumFeatures: { computeStyleInfo: false },
+        body: JSON.stringify({
+          rawDocument: {
+            content: base64Content,
+            mimeType: mimeType,
           },
-          fromStart: 30,
-        },
-      }),
+          // Bug 2 fix: Enable imageless mode (raises page limit from 15 to 30)
+          // and cap at first 30 pages to avoid PAGE_LIMIT_EXCEEDED for large docs
+          processOptions: {
+            ocrConfig: {
+              premiumFeatures: { computeStyleInfo: false },
+            },
+            fromStart: 30,
+          },
+        }),
+        signal: docAIController.signal,
+      }
+    );
+  } catch (err: unknown) {
+    clearTimeout(docAITimeout);
+    if (err instanceof DOMException && err.name === "AbortError") {
+      throw new Error(`Document AI timed out after ${DOC_AI_TIMEOUT_MS / 1000}s — document may be too large`);
     }
-  );
+    throw err;
+  }
+  clearTimeout(docAITimeout);
 
   if (!docAIResponse.ok) {
     const errorText = await docAIResponse.text();
@@ -954,27 +960,43 @@ IMPORTANT:
     : `${location}-aiplatform.googleapis.com`;
   const endpoint = `https://${host}/v1/projects/${projectId}/locations/${location}/publishers/google/models/gemini-3-flash-preview:generateContent`;
 
-  const response = await fetch(endpoint, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      contents: [{ role: "user", parts: [{ text: prompt }] }],
-      generationConfig: {
-        temperature: 0.1,
-        maxOutputTokens: 8192,
-        responseMimeType: "application/json",
+  // 300s timeout — large agreements can produce 50K+ chars of document text
+  const GEMINI_TIMEOUT_MS = 300_000;
+  const geminiController = new AbortController();
+  const geminiTimeout = setTimeout(() => geminiController.abort(), GEMINI_TIMEOUT_MS);
+
+  let response: Response;
+  try {
+    response = await fetch(endpoint, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/json",
       },
-      safetySettings: [
-        { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_ONLY_HIGH" },
-        { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_ONLY_HIGH" },
-        { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_ONLY_HIGH" },
-        { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_ONLY_HIGH" },
-      ],
-    }),
-  });
+      body: JSON.stringify({
+        contents: [{ role: "user", parts: [{ text: prompt }] }],
+        generationConfig: {
+          temperature: 0.1,
+          maxOutputTokens: 8192,
+          responseMimeType: "application/json",
+        },
+        safetySettings: [
+          { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_ONLY_HIGH" },
+          { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_ONLY_HIGH" },
+          { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_ONLY_HIGH" },
+          { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_ONLY_HIGH" },
+        ],
+      }),
+      signal: geminiController.signal,
+    });
+  } catch (err: unknown) {
+    clearTimeout(geminiTimeout);
+    if (err instanceof DOMException && err.name === "AbortError") {
+      throw new Error(`Vertex AI Gemini timed out after ${GEMINI_TIMEOUT_MS / 1000}s`);
+    }
+    throw err;
+  }
+  clearTimeout(geminiTimeout);
 
   if (!response.ok) {
     const errorText = await response.text();
@@ -1083,28 +1105,43 @@ IMPORTANT:
   try {
     console.log("[process-document] Calling Gemini API with key prefix:", apiKey.substring(0, 10) + "...");
 
-    // Note: Relies on Edge Function timeout (150s default, 400s on paid plans)
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: {
-            temperature: 0.1,
-            maxOutputTokens: 8192,
-            responseMimeType: "application/json",
-          },
-          safetySettings: [
-            { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_ONLY_HIGH" },
-            { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_ONLY_HIGH" },
-            { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_ONLY_HIGH" },
-            { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_ONLY_HIGH" },
-          ],
-        }),
+    // 300s independent timeout for API key fallback Gemini call
+    const FALLBACK_TIMEOUT_MS = 300_000;
+    const fallbackController = new AbortController();
+    const fallbackTimeout = setTimeout(() => fallbackController.abort(), FALLBACK_TIMEOUT_MS);
+
+    let response: Response;
+    try {
+      response = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: prompt }] }],
+            generationConfig: {
+              temperature: 0.1,
+              maxOutputTokens: 8192,
+              responseMimeType: "application/json",
+            },
+            safetySettings: [
+              { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_ONLY_HIGH" },
+              { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_ONLY_HIGH" },
+              { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_ONLY_HIGH" },
+              { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_ONLY_HIGH" },
+            ],
+          }),
+          signal: fallbackController.signal,
+        }
+      );
+    } catch (err: unknown) {
+      clearTimeout(fallbackTimeout);
+      if (err instanceof DOMException && err.name === "AbortError") {
+        throw new Error(`Gemini API key fallback timed out after ${FALLBACK_TIMEOUT_MS / 1000}s`);
       }
-    );
+      throw err;
+    }
+    clearTimeout(fallbackTimeout);
 
     console.log("[process-document] Gemini API response status:", response.status);
 
