@@ -432,6 +432,19 @@ async function extractWithGeminiApiKey(
 // DATA MERGING (mirrors process-document logic)
 // ============================================
 
+/** Split joint names like "RAMESH AND SEEMA JOSHI" into individual names */
+function splitJointNames(names: string[]): string[] {
+  const result: string[] = [];
+  for (const name of names) {
+    const parts = name.split(/\s+(?:AND|&|\/)\s+/i);
+    for (const part of parts) {
+      const trimmed = part.trim();
+      if (trimmed.length > 0) result.push(trimmed);
+    }
+  }
+  return result;
+}
+
 function mergeGeminiResults(gemini: any): any {
   const merged: any = {
     property_name: gemini.property_name || null,
@@ -449,8 +462,8 @@ function mergeGeminiResults(gemini: any): any {
     lease_end_date: gemini.contract_end_date || null,
     contract_length_months: gemini.contract_length_months != null ? Number(gemini.contract_length_months) : null,
     rent_due_day: gemini.rent_due_day != null ? Number(gemini.rent_due_day) : null,
-    tenant_names: gemini.tenant_names?.length > 0 ? gemini.tenant_names : [],
-    landlord_names: gemini.landlord_names?.length > 0 ? gemini.landlord_names : [],
+    tenant_names: gemini.tenant_names?.length > 0 ? splitJointNames(gemini.tenant_names) : [],
+    landlord_names: gemini.landlord_names?.length > 0 ? splitJointNames(gemini.landlord_names) : [],
     // E-stamp fields
     certificate_no: gemini.certificate_no || null,
     certificate_issued_date: gemini.certificate_issued_date || null,

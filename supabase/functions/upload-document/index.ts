@@ -171,10 +171,11 @@ serve(async (req) => {
     console.log("[upload-document] Existing extraction check:", JSON.stringify({ found: !!existingExtraction, status: existingExtraction?.extraction_status, error: existingError?.message }));
 
     if (existingExtraction && existingExtraction.extraction_status === "processing") {
-      // Check if the processing record is stale (older than 5 minutes)
+      // Check if the processing record is stale (older than 15 minutes)
+      // Backend has 300s Document AI + 300s Gemini = 10 min max. 15 min adds safety margin.
       const updatedAt = new Date(existingExtraction.updated_at || 0);
       const now = new Date();
-      const staleThresholdMs = 5 * 60 * 1000; // 5 minutes
+      const staleThresholdMs = 15 * 60 * 1000;
       const isStale = (now.getTime() - updatedAt.getTime()) > staleThresholdMs;
 
       if (isStale) {

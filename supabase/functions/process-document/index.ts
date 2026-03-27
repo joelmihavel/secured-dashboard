@@ -945,7 +945,7 @@ IMPORTANT:
 - FIRST: Determine is_rental_agreement. Set to true ONLY if the document is a rental agreement, lease deed, leave and license agreement, or tenancy agreement. Set to false for sale deeds, bank statements, invoices, resumes, or any other non-rental document. If false, set all extraction fields to null.
 - For amounts, extract only the numeric value (60000 not "Rs. 60,000")
 - For dates, convert to YYYY-MM-DD format
-- For names, include all parties mentioned in the agreement
+- For names, include all parties mentioned in the agreement. IMPORTANT: Each person must be a SEPARATE array element. If a clause says "RAMESH AND SEEMA JOSHI", return ["RAMESH JOSHI", "SEEMA JOSHI"] as two separate entries, not one combined string.
 - For e-stamp fields, look in the stamp/e-stamp section of the document (usually at top or bottom with certificate details)
 - For property_state: infer from city if not explicitly mentioned (Bangalore→Karnataka, Mumbai→Maharashtra, Delhi→Delhi NCT)
 - MUMBAI EDGE CASE: For Mumbai/Maharashtra agreements, the GRN (Government Receipt Number) or Transaction ID/Transaction No. IS the Stamp Certificate ID. If you detect the city is Mumbai/Maharashtra and see a GRN or Transaction ID, use that value as certificate_no.
@@ -1076,6 +1076,7 @@ Please extract and return a JSON object with these exact fields:
   "security_deposit": "number in rupees",
   "rent_escalation_percent": "annual escalation % (e.g., 5 for 5%)",
   "contract_start_date": "YYYY-MM-DD format",
+  "contract_end_date": "YYYY-MM-DD format",
   "contract_length_months": "number of months",
   "rent_due_day": "day of month when rent is due (e.g., 1, 5, 10)",
   "tenant_names": ["array of tenant names"],
@@ -1097,6 +1098,7 @@ Please extract and return a JSON object with these exact fields:
 
 IMPORTANT:
 - FIRST: Determine is_rental_agreement. Set to true ONLY for rental agreements, lease deeds, leave and license agreements, or tenancy agreements. Set to false for anything else. If false, set all extraction fields to null.
+- For names: Each person must be a SEPARATE array element. "RAMESH AND SEEMA JOSHI" → ["RAMESH JOSHI", "SEEMA JOSHI"]. Never combine multiple people into one string.
 - Look for e-stamp fields in the stamp/e-stamp section (usually at top or bottom).
 - MUMBAI EDGE CASE: For Mumbai/Maharashtra agreements, the GRN or Transaction ID IS the Stamp Certificate ID.
 - For rooms_in_agreement: Look for "one room", "single bedroom", "2BHK", "3BHK", "entire flat", "portion of premises". Partial rent = count rented rooms only.
@@ -1183,6 +1185,20 @@ IMPORTANT:
   }
 }
 
+/** Split joint names like "RAMESH AND SEEMA JOSHI" into individual names */
+function splitJointNames(names: string[]): string[] {
+  const result: string[] = [];
+  for (const name of names) {
+    // Split on " AND ", " & ", " / " (case-insensitive, surrounded by spaces)
+    const parts = name.split(/\s+(?:AND|&|\/)\s+/i);
+    for (const part of parts) {
+      const trimmed = part.trim();
+      if (trimmed.length > 0) result.push(trimmed);
+    }
+  }
+  return result;
+}
+
 function mergeGeminiResults(docAI: ExtractedData, gemini: any): ExtractedData {
   // Merge results, preferring Gemini for missing fields or corrections
   const merged: ExtractedData = {
@@ -1214,13 +1230,15 @@ function mergeGeminiResults(docAI: ExtractedData, gemini: any): ExtractedData {
     rent_due_day: gemini.rent_due_day != null
       ? Number(gemini.rent_due_day)
       : docAI.rent_due_day,
-    tenant_names: gemini.tenant_names?.length > 0 ? gemini.tenant_names : docAI.tenant_names,
-    landlord_names: gemini.landlord_names?.length > 0 ? gemini.landlord_names : docAI.landlord_names,
+    tenant_names: gemini.tenant_names?.length > 0
+      ? splitJointNames(gemini.tenant_names) : docAI.tenant_names,
+    landlord_names: gemini.landlord_names?.length > 0
+      ? splitJointNames(gemini.landlord_names) : docAI.landlord_names,
     tenants: gemini.tenant_names?.length > 0
-      ? gemini.tenant_names.map((name: string) => ({ name }))
+      ? splitJointNames(gemini.tenant_names).map((name: string) => ({ name }))
       : docAI.tenants,
     landlords: gemini.landlord_names?.length > 0
-      ? gemini.landlord_names.map((name: string) => ({ name }))
+      ? splitJointNames(gemini.landlord_names).map((name: string) => ({ name }))
       : docAI.landlords,
     // E-stamp fields
     certificate_no: gemini.certificate_no || docAI.certificate_no,
