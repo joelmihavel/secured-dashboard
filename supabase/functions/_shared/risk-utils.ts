@@ -10,7 +10,7 @@
  * 3. m360_data_available (weight 3) — from identity_verifications.status
  * 4. credit_score (weight 3) — from identity_verifications.m360_credit_score
  * 5. agreement_confidence (weight 2) — from extracted_rental_info.extraction_confidence
- * 6. agreement_expiry (weight 4) — from extracted_rental_info.lease_end_date (RED if past)
+ * 6. agreement_expiry (weight 4) — from extracted_rental_info.lease_end_date (RED if past, YELLOW if missing)
  */
 
 // ==============================================
@@ -221,6 +221,13 @@ export async function computeRisk(
           detail: `Agreement expired on ${leaseEndDate}`,
         });
       }
+    } else {
+      factors.push({
+        factor: "agreement_expiry",
+        signal: "YELLOW",
+        weight: 4,
+        detail: "Lease end date not extracted — cannot verify agreement validity",
+      });
     }
 
     // --- Compute overall risk level ---
