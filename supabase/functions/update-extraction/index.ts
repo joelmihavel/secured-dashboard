@@ -208,7 +208,8 @@ serve(async (req: Request) => {
     };
     modificationHistory.push(historyEntry);
 
-    // Update the extraction record
+    // Update the extraction record with optimistic lock on updated_at
+    // to prevent concurrent modifications from overwriting each other
     const { data: updatedExtraction, error: updateError } = await supabase
       .from("extracted_rental_info")
       .update({
@@ -217,10 +218,19 @@ serve(async (req: Request) => {
         last_modified_at: new Date().toISOString(),
       })
       .eq("id", extraction_id)
+      .eq("updated_at", extraction.updated_at) // optimistic lock
       .select()
       .single();
 
     if (updateError) {
+      // PGRST116 = no rows returned (optimistic lock failed — concurrent modification)
+      if (updateError.code === "PGRST116") {
+        throw new AppError(
+          "This record was modified by another request. Please refresh and try again.",
+          "CONFLICT",
+          409
+        );
+      }
       console.error("[update-extraction] Update error:", updateError);
       throw new Error(`Failed to update extraction: ${updateError.message}`);
     }

@@ -441,10 +441,12 @@ export async function finalizeExtractionForOnboarding(
     ...syncWaitlistFields,
   };
 
+  // Target specific waitlist entry (not all of user's entries) to prevent
+  // overwriting data on older entries if user has multiple extractions
   await supabase
     .from("waitlist_entries")
     .update(waitlistPayload)
-    .eq("user_id", userId);
+    .eq("id", waitlistState.entryId);
 
   let finalUserStatus = waitlistState.finalUserStatus;
   let autoApproved = false;

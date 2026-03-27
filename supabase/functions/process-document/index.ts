@@ -1056,7 +1056,7 @@ async function verifyWithGemini(
   const prompt = `You are analyzing a document that the user claims is an Indian rental/lease agreement. First determine if it actually IS a rental/lease agreement, then extract and verify information.
 
 DOCUMENT TEXT:
-${documentText.substring(0, 30000)}
+${documentText.substring(0, 50000)}
 
 INITIAL EXTRACTION (verify and correct if needed):
 ${JSON.stringify(extractedFields, null, 2)}
