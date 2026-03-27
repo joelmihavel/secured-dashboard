@@ -88,7 +88,7 @@ const BADGE_CONFIGS: Record<
     bg: '#FF9A6D', // colours/brand/500
     ringStroke: '#4D4D4D', // Figma Ellipse 21915/21916
     textFill: '#000000',
-    label: 'you did it | ',
+    label: 'paid | ',
     centerType: 'logo',
     centerColor: '#000000',
   },
@@ -96,7 +96,7 @@ const BADGE_CONFIGS: Record<
     bg: '#202020', // colours/black/500
     ringStroke: '#797979',
     textFill: '#878787',
-    label: 'upcoming payment | ',
+    label: 'due soon | ',
     centerType: 'count', // Figma 694:6667: shows number, not logo
     centerColor: '#878787', // colours/neutral/600
   },
@@ -104,7 +104,7 @@ const BADGE_CONFIGS: Record<
     bg: '#892B2E', // colour/icons/error/default-3
     ringStroke: '#EF9194',
     textFill: '#EF9194',
-    label: 'late payment | ',
+    label: 'late | ',
     centerType: 'count',
     centerColor: '#EF9194', // colour/icons/error/default-2
   },
@@ -112,14 +112,17 @@ const BADGE_CONFIGS: Record<
     bg: '#FFC04D', // colours/warning/400
     ringStroke: '#332306',
     textFill: '#332306',
-    label: 'missed payment | ',
+    label: 'missed | ',
     centerType: 'count',
     centerColor: '#332306', // colours/warning/900
   },
 };
 
-// Circular path d-string: clockwise circle starting at top
-const TEXT_PATH_D = `M ${CX},${CY - TEXT_R} a ${TEXT_R},${TEXT_R} 0 1,1 0,${TEXT_R * 2} a ${TEXT_R},${TEXT_R} 0 1,1 0,${-TEXT_R * 2}`;
+// Circular path d-string: clockwise circle starting at BOTTOM center.
+// Text overflows and clips at the path endpoint (= start = bottom).
+// At the bottom, text is upside-down so any partial-word clip artifact
+// is unreadable — readers focus on the right-side-up text at the top.
+const TEXT_PATH_D = `M ${CX},${CY + TEXT_R} a ${TEXT_R},${TEXT_R} 0 1,1 0,${-TEXT_R * 2} a ${TEXT_R},${TEXT_R} 0 1,1 0,${TEXT_R * 2}`;
 
 // Scale the logo to fit ~32px wide within the badge center
 const LOGO_SCALE = 1.0;
@@ -132,10 +135,10 @@ function PaymentBadgeComponent({
   const cfg = BADGE_CONFIGS[variant];
   const pathId = `badge-text-${variant}`;
 
-  // Repeat label enough times to fill the full circumference (~314 units).
-  // At fontSize 9, avg char width ≈ 5 → each repeat ≈ 70-100 units.
-  // 6 repeats guarantees full coverage; TextPath clips at path end.
-  const fullLabel = cfg.label.repeat(5);
+  // Repeat label generously so text fills the entire circumference (~314 units).
+  // Overflow is clipped by TextPath at the path endpoint (bottom of circle),
+  // where text is upside-down and any partial-word artifact goes unnoticed.
+  const fullLabel = cfg.label.repeat(8);
 
   return (
     <Svg width={size} height={size} viewBox={`0 0 ${VB} ${VB}`}>

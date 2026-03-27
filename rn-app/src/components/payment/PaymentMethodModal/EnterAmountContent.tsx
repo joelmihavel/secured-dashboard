@@ -225,7 +225,7 @@ export function EnterAmountContent({
         {/* CTA Button */}
         <View style={styles.buttonContainer}>
           <PrimaryButton
-            title="Select Payment Method →"
+            title="Proceed →"
             onPress={handleProceed}
             disabled={!canContinue}
             showDivider
