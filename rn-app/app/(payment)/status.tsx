@@ -353,7 +353,9 @@ const SuccessContent = memo(({
   date,
   method,
   landlordName,
-  utr,
+  panCard,
+  agreementId,
+  transactionId,
   payableRent,
 }: SuccessContentProps) => {
   return (
@@ -368,7 +370,7 @@ const SuccessContent = memo(({
       <DashedDivider color={FIGMA_COLORS.dividerColor} style={styles.divider} />
       <ReceiptRow label="Landlord" value={landlordName} />
       <DashedDivider color={FIGMA_COLORS.dividerColor} style={styles.divider} />
-      <ReceiptRow label="UTR" value={utr} />
+      <ReceiptRow label="Transaction ID" value={transactionId} />
       <View style={styles.secondSection}>
         <DashedDivider color={FIGMA_COLORS.dividerColor} style={styles.divider} />
         <ReceiptRow label="Rent Paid" value={`\u20B9  ${payableRent}`} isPayableRent />
