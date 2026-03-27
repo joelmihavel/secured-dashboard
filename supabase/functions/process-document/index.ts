@@ -563,7 +563,7 @@ Deno.serve(async (req) => {
       requires_manual_review: evaluationResult.needs_manual_review,
       manual_review_reason: evaluationResult.review_reason,
       fields_extracted: extractedData.fields_extracted,
-      total_fields: extractedData.total_fields,
+      // total_fields omitted — column doesn't exist in DB, value is constant (24)
       // Debug fields
       _debug: {
         extraction_method: extractedData.extraction_method,

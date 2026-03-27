@@ -215,7 +215,7 @@ serve(async (req: Request) => {
       .update({
         user_modified_data: mergedModifications,
         modification_history: modificationHistory,
-        last_modified_at: new Date().toISOString(),
+        // updated_at is auto-set by trigger — no need to set manually
       })
       .eq("id", extraction_id)
       .eq("updated_at", extraction.updated_at) // optimistic lock
@@ -268,7 +268,7 @@ serve(async (req: Request) => {
         user_modifications: mergedModifications,
         merged_data: mergedData,
         modification_count: modificationHistory.length,
-        last_modified_at: updatedExtraction.last_modified_at,
+        last_modified_at: updatedExtraction.updated_at,
         can_confirm: true, // User can now confirm with modifications
       },
     });
