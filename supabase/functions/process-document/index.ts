@@ -1242,11 +1242,34 @@ function mergeGeminiResults(docAI: ExtractedData, gemini: any): ExtractedData {
     rooms_in_agreement: gemini.rooms_in_agreement != null ? Number(gemini.rooms_in_agreement) : (docAI as any).rooms_in_agreement || null,
     property_bhk_type: gemini.property_bhk_type || (docAI as any).property_bhk_type || null,
     gemini_verification_score: gemini.confidence || null,
-    // Use Gemini's confidence if available (since Document AI OCR doesn't provide entity confidence)
-    confidence_score: gemini.confidence != null ? Number(gemini.confidence) : docAI.confidence_score,
+    // Use Gemini's confidence if it's meaningful (>0), otherwise keep Document AI's score.
+    // Gemini sometimes returns 0 confidence due to safety filters or empty responses.
+    confidence_score: gemini.confidence != null && Number(gemini.confidence) > 0
+      ? Number(gemini.confidence)
+      : docAI.confidence_score,
     raw_gemini_data: gemini,
     fields_extracted: 0, // Will be recalculated below
   };
+
+  // Sanity-check financial amounts — Gemini can hallucinate negative values or astronomical amounts
+  const MAX_RENT_PAISE = 50_00_000_00; // ₹50 lakh max rent (covers luxury properties)
+  const MAX_DEPOSIT_PAISE = 500_00_000_00; // ₹5 crore max deposit
+  if (merged.monthly_rent_paise != null && (merged.monthly_rent_paise <= 0 || merged.monthly_rent_paise > MAX_RENT_PAISE)) {
+    console.warn(`[process-document] Invalid monthly_rent_paise=${merged.monthly_rent_paise}, clearing`);
+    merged.monthly_rent_paise = undefined;
+  }
+  if (merged.security_deposit_paise != null && (merged.security_deposit_paise < 0 || merged.security_deposit_paise > MAX_DEPOSIT_PAISE)) {
+    console.warn(`[process-document] Invalid security_deposit_paise=${merged.security_deposit_paise}, clearing`);
+    merged.security_deposit_paise = undefined;
+  }
+  // Sanity-check rooms/BHK
+  if (merged.rooms_in_agreement != null && (merged.rooms_in_agreement < 1 || merged.rooms_in_agreement > 20)) {
+    merged.rooms_in_agreement = null;
+  }
+  // Sanity-check rent_due_day (1-28)
+  if (merged.rent_due_day != null && (merged.rent_due_day < 1 || merged.rent_due_day > 28)) {
+    merged.rent_due_day = undefined;
+  }
 
   // Recalculate fields extracted
   merged.fields_extracted = countExtractedFields(merged);

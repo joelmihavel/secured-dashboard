@@ -376,10 +376,15 @@ async function extractWithVertexAIGemini(
 
   if (!textContent) throw new Error("Empty Vertex AI response");
 
-  const jsonMatch = textContent.match(/\{[\s\S]*\}/);
-  if (!jsonMatch) throw new Error("No JSON in Vertex AI response");
-
-  return JSON.parse(jsonMatch[0]);
+  // Try direct JSON.parse first (responseMimeType=application/json gives clean JSON),
+  // fall back to regex for markdown-wrapped responses
+  try {
+    return JSON.parse(textContent);
+  } catch {
+    const jsonMatch = textContent.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) throw new Error("No JSON in Vertex AI response");
+    return JSON.parse(jsonMatch[0]);
+  }
 }
 
 async function extractWithGeminiApiKey(
@@ -414,10 +419,13 @@ async function extractWithGeminiApiKey(
 
   if (!textContent) throw new Error("Empty Gemini API response");
 
-  const jsonMatch = textContent.match(/\{[\s\S]*\}/);
-  if (!jsonMatch) throw new Error("No JSON in Gemini API response");
-
-  return JSON.parse(jsonMatch[0]);
+  try {
+    return JSON.parse(textContent);
+  } catch {
+    const jsonMatch = textContent.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) throw new Error("No JSON in Gemini API response");
+    return JSON.parse(jsonMatch[0]);
+  }
 }
 
 // ============================================
