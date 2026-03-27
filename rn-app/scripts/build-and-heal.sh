@@ -7,10 +7,9 @@
 # Steps:
 #   1. npx expo prebuild --clean
 #   2. Run fix-spaces-in-path.js (Node patch script)
-#   3. Write ios/.xcode.env.local with SENTRY_DISABLE_AUTO_UPLOAD=true
-#   4. cd ios && pod install
-#   5. xcodebuild verify compilation
-#   6. On failure: capture error, attempt known fix patterns, retry once
+#   3. cd ios && pod install
+#   4. xcodebuild verify compilation
+#   5. On failure: capture error, attempt known fix patterns, retry once
 #
 # Usage:
 #   bash scripts/build-and-heal.sh [--skip-prebuild] [--skip-pods] [--verbose]
@@ -190,29 +189,7 @@ if [ -f "$FIX_IOS_SPACES_SH" ]; then
 fi
 
 # -------------------------------------------------------------------------
-# Step 3: Write ios/.xcode.env.local
-# -------------------------------------------------------------------------
-
-step "Write ios/.xcode.env.local"
-
-XCODE_ENV_LOCAL="$IOS_DIR/.xcode.env.local"
-
-if [ -d "$IOS_DIR" ]; then
-  # Preserve existing content but ensure SENTRY_DISABLE_AUTO_UPLOAD is set
-  if [ -f "$XCODE_ENV_LOCAL" ] && grep -q 'SENTRY_DISABLE_AUTO_UPLOAD=true' "$XCODE_ENV_LOCAL"; then
-    ok "SENTRY_DISABLE_AUTO_UPLOAD already set"
-  else
-    # Write or append
-    echo 'export SENTRY_DISABLE_AUTO_UPLOAD=true' >> "$XCODE_ENV_LOCAL"
-    ok "Wrote SENTRY_DISABLE_AUTO_UPLOAD=true to .xcode.env.local"
-  fi
-else
-  fail "ios/ directory does not exist -- prebuild may have failed"
-  exit 1
-fi
-
-# -------------------------------------------------------------------------
-# Step 4: Pod Install
+# Step 3: Pod Install
 # -------------------------------------------------------------------------
 
 if [ "$SKIP_PODS" = true ]; then
@@ -249,7 +226,7 @@ else
 fi
 
 # -------------------------------------------------------------------------
-# Step 5: Xcode Build
+# Step 4: Xcode Build
 # -------------------------------------------------------------------------
 
 run_xcodebuild() {
