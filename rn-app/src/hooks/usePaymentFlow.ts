@@ -24,12 +24,9 @@ import {
 import {
   setupCallbacks as setupCashfreeCallbacks,
   removeCallbacks as removeCashfreeCallbacks,
-  launchCardPayment,
-  launchNetbanking,
-  launchUPIIntent,
+  launchCheckout,
   isCashfreeAvailable,
 } from '@/src/services/payment/cashfreeService';
-import { callEdgeFunction } from '@/src/services/supabase';
 import { addCardToken, addUpiVpa, saveBankPreference } from '@/src/services/api/payments';
 import { paymentKeys } from '@/src/hooks/usePayments';
 import { dashboardKeys } from '@/src/hooks/useDashboard';
@@ -240,19 +237,15 @@ export function usePaymentFlow(): UsePaymentFlowReturn {
         return { status: 'blocked' };
       }
 
-      // SDK availability check — only needed for UPI Intent (native SDK)
-      if (paymentMethod === 'upi' && !upiVpa && !isCashfreeAvailable()) {
-        console.error('[Cashfree] SDK not available for UPI Intent');
+      if (!isCashfreeAvailable()) {
         return { status: 'failure', error: 'Cashfree SDK not available. Please update the app.' };
       }
 
       isExecutingRef.current = true;
       setIsExecuting(true);
 
-      // Cleanup helper — called after SDK callback fires or on timeout/error.
-      // NOT in a finally block, because the SDK callback fires asynchronously
-      // after the Promise is returned. A finally block would kill callbacks
-      // before the SDK has a chance to fire them.
+      // Cleanup helper — called inside callbacks, NOT in finally.
+      // The SDK callback fires asynchronously after the Promise returns.
       const cleanup = () => {
         removeCashfreeCallbacks();
         clearCashfreeSession();
@@ -260,51 +253,39 @@ export function usePaymentFlow(): UsePaymentFlowReturn {
         setIsExecuting(false);
       };
 
+      const methodParam = paymentMethod === 'netbanking' ? 'netbanking'
+        : paymentMethod === 'upi' ? 'upi' : 'card';
+
       try {
-        if (paymentMethod === 'card' || paymentMethod === 'debit_card' || paymentMethod === 'netbanking') {
-          // Card / Debit Card / Net Banking: Drop Checkout with method-specific restriction.
-          // Server-side order_meta.payment_methods (cc/dc/nb) + client-side CFPaymentModes
-          // provides defense-in-depth — user sees only the selected payment method.
-          console.log('[Cashfree] Launching drop checkout for', paymentMethod);
-          const methodParam = paymentMethod === 'netbanking' ? 'netbanking' : 'card';
-          return await Promise.race([
-            new Promise<PaymentFlowOutcome>((resolve) => {
-              setupCashfreeCallbacks(
-                (orderId) => {
-                  cleanup();
-                  Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-                  setLastPayment(paymentId);
-                  router.replace({
-                    pathname: '/(payment)/status',
-                    params: { paymentId, method: methodParam, initialStatus: 'success' },
-                  } as never);
-                  resolve({ status: 'navigating' });
-                },
-                (_error, orderId) => {
-                  cleanup();
-                  setLastPayment(paymentId);
-                  // Navigate to status — webhook will confirm actual outcome.
-                  // User may have cancelled, or bank may still be processing.
-                  router.replace({
-                    pathname: '/(payment)/status',
-                    params: { paymentId, method: methodParam, initialStatus: 'pending' },
-                  } as never);
-                  resolve({ status: 'navigating' });
-                },
-              );
-              // Launch method-specific Drop Checkout
-              if (paymentMethod === 'netbanking') {
-                launchNetbanking(cashfreeSessionId, cfOrderId);
-              } else {
-                launchCardPayment(cashfreeSessionId, cfOrderId);
-              }
-            }),
-            // Timeout safety net: 5 min for bank OTP/3DS flows.
-            // If SDK never fires a callback, navigate to status screen
-            // which polls the backend for the webhook-confirmed result.
-            new Promise<PaymentFlowOutcome>((resolve) =>
-              setTimeout(() => {
-                console.warn('[Cashfree] SDK callback timeout — navigating to status');
+        // Web Checkout for ALL methods — server-side order_meta.payment_methods
+        // restricts which methods appear (cc, dc, nb, upi).
+        console.log('[Cashfree] Launching web checkout for', paymentMethod);
+        return await Promise.race([
+          new Promise<PaymentFlowOutcome>((resolve) => {
+            setupCashfreeCallbacks(
+              (orderId) => {
+                cleanup();
+                Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                setLastPayment(paymentId);
+                router.replace({
+                  pathname: '/(payment)/status',
+                  // Always 'pending' — onVerify means SDK completed, NOT payment confirmed.
+                  // Status screen polls the backend; webhook confirms actual outcome.
+                  params: { paymentId, method: methodParam, initialStatus: 'pending' },
+                } as never);
+                resolve({ status: 'navigating' });
+              },
+              (sdkError, orderId) => {
+                try {
+                  const e = sdkError as any;
+                  console.error('[Cashfree] onError:', JSON.stringify({
+                    status: e?.getStatus?.() ?? e?.status,
+                    message: e?.getMessage?.() ?? e?.message,
+                    code: e?.getCode?.() ?? e?.code,
+                    orderId,
+                  }));
+                } catch { console.error('[Cashfree] onError (raw):', sdkError); }
+
                 cleanup();
                 setLastPayment(paymentId);
                 router.replace({
@@ -312,76 +293,24 @@ export function usePaymentFlow(): UsePaymentFlowReturn {
                   params: { paymentId, method: methodParam, initialStatus: 'pending' },
                 } as never);
                 resolve({ status: 'navigating' });
-              }, 300_000),
-            ),
-          ]);
-        } else if (paymentMethod === 'upi' && !upiVpa) {
-          // UPI Intent: Launch Cashfree UPI Intent SDK
-          return await Promise.race([
-            new Promise<PaymentFlowOutcome>((resolve) => {
-              setupCashfreeCallbacks(
-                (orderId) => {
-                  cleanup();
-                  Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-                  setLastPayment(paymentId);
-                  router.replace({
-                    pathname: '/(payment)/status',
-                    params: { paymentId, method: 'upi', initialStatus: 'success' },
-                  } as never);
-                  resolve({ status: 'navigating' });
-                },
-                (_error, orderId) => {
-                  cleanup();
-                  setLastPayment(paymentId);
-                  router.replace({
-                    pathname: '/(payment)/status',
-                    params: { paymentId, method: 'upi', initialStatus: 'pending' },
-                  } as never);
-                  resolve({ status: 'navigating' });
-                },
-              );
-              launchUPIIntent(cashfreeSessionId, cfOrderId);
-            }),
-            new Promise<PaymentFlowOutcome>((resolve) =>
-              setTimeout(() => {
-                console.warn('[Cashfree] UPI Intent callback timeout');
-                cleanup();
-                setLastPayment(paymentId);
-                router.replace({
-                  pathname: '/(payment)/status',
-                  params: { paymentId, method: 'upi', initialStatus: 'pending' },
-                } as never);
-                resolve({ status: 'navigating' });
-              }, 300_000),
-            ),
-          ]);
-        } else if (paymentMethod === 'upi' && upiVpa) {
-          // UPI Collect: API-driven via cashfree-pay-order
-          const { data: payData, error: payError } = await callEdgeFunction<{
-            success: boolean;
-            data: { action: string };
-          }>('cashfree-pay-order', {
-            payment_session_id: cashfreeSessionId,
-            cf_order_id: cfOrderId,
-            payment_method: { upi: { channel: 'collect', upi_id: upiVpa } },
-          }, true);
-
-          cleanup();
-
-          if (payError) {
-            return { status: 'failure', error: payError };
-          }
-
-          setLastPayment(paymentId);
-          router.replace({
-            pathname: '/(payment)/status',
-            params: { paymentId, method: 'upi', initialStatus: 'pending' },
-          } as never);
-          return { status: 'navigating' };
-        }
-
-        cleanup();
-        return { status: 'failure', error: 'Unknown payment method' };
+              },
+            );
+            launchCheckout(cashfreeSessionId, cfOrderId);
+          }),
+          // 5-min timeout for bank OTP / 3DS / UPI approval flows
+          new Promise<PaymentFlowOutcome>((resolve) =>
+            setTimeout(() => {
+              console.warn('[Cashfree] SDK timeout — navigating to status');
+              cleanup();
+              setLastPayment(paymentId);
+              router.replace({
+                pathname: '/(payment)/status',
+                params: { paymentId, method: methodParam, initialStatus: 'pending' },
+              } as never);
+              resolve({ status: 'navigating' });
+            }, 300_000),
+          ),
+        ]);
       } catch (err) {
         cleanup();
         captureError(

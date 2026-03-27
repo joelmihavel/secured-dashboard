@@ -161,7 +161,7 @@ export async function initiatePayment(params: {
 
   const body: Record<string, unknown> = {
     tenancy_id: params.tenancyId,
-    payment_method: params.paymentMethod === 'debit_card' ? 'card' : params.paymentMethod,
+    payment_method: params.paymentMethod,
     card_type: params.cardType,
     rent_month: params.rentMonth.slice(0, 7),
     checkout_mode: 'sdk',

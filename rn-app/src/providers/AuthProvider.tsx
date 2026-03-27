@@ -141,6 +141,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
         }
 
         const { data: { session: initialSession } } = await supabase.auth.getSession();
+        if (!initialSession) {
+          // No session found. This can happen normally (first launch) or due to a
+          // Supabase URL mismatch: the SDK stores sessions under a key derived from
+          // the project URL (sb-<ref>-auth-token). If an OTA changed the URL (e.g.,
+          // stale Metro cache shipped Main DB URL instead of Dev DB), the session
+          // stored under the old key becomes invisible. The user must sign in again.
+          console.log('[AuthProvider] No session found — user needs to sign in');
+        }
         if (initialSession) {
           // Server-validate the cached session immediately on cold start.
           // A deleted/banned user may still have a valid JWT in SecureStore.
