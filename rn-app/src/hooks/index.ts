@@ -41,8 +41,6 @@ export {
 // Profile
 export {
   useUpdateProfile,
-  useUploadAvatar,
-  usePixelateAvatar,
   useDeleteAccount,
   useProfilePaymentMethods,
   useProfile,

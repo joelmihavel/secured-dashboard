@@ -241,7 +241,7 @@ export default function ProfileScreen() {
                 accessibilityRole="button"
                 accessibilityLabel={`View profile for ${fullName}`}
               >
-                <Avatar uri={user?.avatar_url} userId={user?.id} name={fullName} size="md" />
+                <Avatar userId={user?.id} name={fullName} size="md" />
                 {/* User details (41:8833): column, gap=4, flex=1 */}
                 <View style={styles.userDetails}>
                   <Text style={styles.userName}>{fullName}</Text>

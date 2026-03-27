@@ -483,19 +483,6 @@ const reviewResponses: Record<string, unknown> = {
     updated_at: new Date().toISOString(),
   },
 
-  'upload-avatar': {
-    upload_url: 'https://example.com/review-avatar-upload',
-    avatar_url: 'https://example.com/review-avatar.jpg',
-    file_path: 'avatars/review-user-id.jpg',
-    expires_at: '2026-03-02T00:00:00Z',
-    max_file_size: 5242880,
-  },
-
-  'pixelate-avatar': {
-    avatarUrl: 'https://example.com/review-avatar-pixel.png',
-    thumbnailUrl: 'https://example.com/review-avatar-pixel-thumb.png',
-  },
-
   // ─── Profile: Delete Account ───
   'delete-account': {
     message: 'Your account has been deleted successfully.',

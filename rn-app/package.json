@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@expo/metro-runtime": "~6.1.2",
+    "@mealection/react-native-boring-avatars": "^1.1.2",
     "@react-native-community/netinfo": "11.4.1",
     "@supabase/supabase-js": "~2.46.0",
     "@tanstack/react-query": "~5.60.0",

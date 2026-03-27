@@ -1094,10 +1094,6 @@ export const MOCK_PROFILE_ERRORS: Record<string, MockProfileError> = {
     code: 'SAVE_FAILED',
     message: 'Failed to save profile changes. Please try again.',
   },
-  avatar_upload_failed: {
-    code: 'AVATAR_UPLOAD_FAILED',
-    message: 'Failed to upload profile photo. File may be too large.',
-  },
   email_invalid: {
     code: 'VALIDATION_ERROR',
     message: 'Please enter a valid email address.',

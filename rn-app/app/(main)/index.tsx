@@ -722,7 +722,7 @@ export default function HomeScreen() {
         {/* Header: Logo + "Hi, [Name]" + Avatar */}
         {/* Figma: HomeHeader handles its own paddingHorizontal: 32 */}
         <Animated.View entering={FadeInDown.duration(350)}>
-          <HomeHeader userName={userName} avatarUrl={user?.avatar_url} userId={user?.id} unreadCount={unreadCount} />
+          <HomeHeader userName={userName} userId={user?.id} unreadCount={unreadCount} />
         </Animated.View>
 
         <Animated.View entering={FadeInDown.delay(80).duration(350)} style={styles.mainContent}>

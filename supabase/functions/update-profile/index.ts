@@ -1,7 +1,7 @@
 /**
  * Flent Secured v2 - Update Profile Edge Function
  *
- * Updates user profile information (name, email, avatar).
+ * Updates user profile information (name, email).
  * Includes full audit logging of changes.
  *
  * Endpoint: POST /functions/v1/update-profile
@@ -27,7 +27,6 @@ interface UpdateProfileRequest {
   first_name?: string;
   last_name?: string;
   email?: string;
-  avatar_url?: string;
 }
 
 interface UpdateProfileResponse {
@@ -75,11 +74,6 @@ const requestSchema = {
       if (!isValidEmail(v)) return "Invalid email format";
       return true;
     },
-  },
-  avatar_url: {
-    required: false,
-    type: "string" as const,
-    maxLength: 500,
   },
 };
 
@@ -140,12 +134,6 @@ serve(async (req: Request) => {
 
     if (validatedBody.email !== undefined) {
       updateFields.email = validatedBody.email.toLowerCase().trim();
-    }
-
-    if (validatedBody.avatar_url !== undefined) {
-      updateFields.avatar_url = validatedBody.avatar_url;
-      // Also sync to profile_image_url for V1 compatibility
-      updateFields.profile_image_url = validatedBody.avatar_url;
     }
 
     // Ensure at least one field is being updated

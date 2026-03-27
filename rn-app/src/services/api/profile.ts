@@ -1,23 +1,18 @@
 /**
  * Profile API Service
  *
- * Handles profile operations: update profile, avatar upload, and payment methods.
+ * Handles profile operations: update profile and payment methods.
  * Maps edge function response shapes to the RN app UI contract.
  *
  * Edge function contracts:
- * - update-profile: POST { full_name?, first_name?, last_name?, email?, avatar_url? }
+ * - update-profile: POST { full_name?, first_name?, last_name?, email? }
  *   Returns: { success, data: { user_id, full_name, first_name, last_name, email, avatar_url, updated_at } }
- *
- * - upload-avatar: POST { content_type }
- *   Returns: { success, data: { upload_url, avatar_url, file_path, expires_at, max_file_size } }
  *
  * - get-saved-payment-methods: GET
  *   Returns: { success, data: { payment_methods[], primary_method_id, grouped_methods, total_count } }
  */
 
-import { callEdgeFunction, getFunctionsUrl } from '../supabase';
-import { getSessionSafe } from '../supabase/client';
-import { addBreadcrumb } from '@/src/config/sentry';
+import { callEdgeFunction } from '../supabase';
 
 // ==============================================
 // TYPES -- RN App UI Contract
@@ -28,7 +23,6 @@ export interface UpdateProfileRequest {
   firstName?: string;
   lastName?: string;
   email?: string;
-  avatarUrl?: string;
 }
 
 export interface ProfileData {
@@ -39,14 +33,6 @@ export interface ProfileData {
   email: string | null;
   avatarUrl: string | null;
   updatedAt: string;
-}
-
-export interface AvatarUploadData {
-  uploadUrl: string;
-  avatarUrl: string;
-  filePath: string;
-  expiresAt: string;
-  maxFileSize: number;
 }
 
 export interface SavedPaymentMethod {
@@ -93,7 +79,6 @@ export type ProfileErrorCode =
   | 'NOT_AUTHENTICATED'
   | 'VALIDATION_ERROR'
   | 'UPDATE_FAILED'
-  | 'UPLOAD_FAILED'
   | 'DELETE_FAILED'
   | 'ARCHIVE_ERROR'
   | 'NETWORK_ERROR'
@@ -127,18 +112,6 @@ interface RawUpdateProfileResponse {
     email: string | null;
     avatar_url: string | null;
     updated_at: string;
-  };
-}
-
-/** Raw response from upload-avatar edge function */
-interface RawUploadAvatarResponse {
-  success: boolean;
-  data: {
-    upload_url: string;
-    avatar_url: string;
-    file_path: string;
-    expires_at: string;
-    max_file_size: number;
   };
 }
 
@@ -263,7 +236,6 @@ export async function updateProfile(
   if (request.firstName !== undefined) body.first_name = request.firstName;
   if (request.lastName !== undefined) body.last_name = request.lastName;
   if (request.email !== undefined) body.email = request.email;
-  if (request.avatarUrl !== undefined) body.avatar_url = request.avatarUrl;
 
   const { data, error, errorBody } = await callEdgeFunction<RawUpdateProfileResponse>(
     'update-profile',
@@ -283,191 +255,6 @@ export async function updateProfile(
   }
 
   return { data: mapRawProfile(data.data), error: null };
-}
-
-/**
- * Request a presigned URL for avatar upload.
- *
- * Flow:
- * 1. Call this function to get a presigned upload URL
- * 2. PUT the image file to the upload_url
- * 3. Call updateProfile({ avatarUrl }) with the returned avatar_url
- */
-export async function requestAvatarUpload(
-  contentType: string
-): Promise<{ data: AvatarUploadData | null; error: ProfileError | null }> {
-  const { data, error, errorBody } = await callEdgeFunction<RawUploadAvatarResponse>(
-    'upload-avatar',
-    { content_type: contentType },
-    true // requireAuth
-  );
-
-  if (error) {
-    return { data: null, error: mapProfileError(error, errorBody) };
-  }
-
-  if (!data?.success) {
-    return {
-      data: null,
-      error: { code: 'UPLOAD_FAILED', message: 'Failed to generate upload URL' },
-    };
-  }
-
-  return {
-    data: {
-      uploadUrl: data.data.upload_url,
-      avatarUrl: data.data.avatar_url,
-      filePath: data.data.file_path,
-      expiresAt: data.data.expires_at,
-      maxFileSize: data.data.max_file_size,
-    },
-    error: null,
-  };
-}
-
-/**
- * Upload an avatar image file to the presigned URL.
- *
- * @param uploadUrl - The presigned URL from requestAvatarUpload
- * @param fileUri - The local file URI from ImagePicker
- * @param contentType - MIME type (image/jpeg, image/png, etc.)
- * @returns The public avatar URL to pass to updateProfile
- */
-export async function uploadAvatarFile(
-  uploadUrl: string,
-  fileUri: string,
-  contentType: string
-): Promise<{ success: boolean; error: string | null }> {
-  try {
-    // Fetch the local file as a blob
-    const response = await fetch(fileUri);
-    const blob = await response.blob();
-
-    // Upload to presigned URL
-    const uploadResponse = await fetch(uploadUrl, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': contentType,
-      },
-      body: blob,
-    });
-
-    if (!uploadResponse.ok) {
-      return {
-        success: false,
-        error: `Upload failed with status ${uploadResponse.status}`,
-      };
-    }
-
-    return { success: true, error: null };
-  } catch (err) {
-    return {
-      success: false,
-      error: err instanceof Error ? err.message : 'Failed to upload avatar',
-    };
-  }
-}
-
-/**
- * Pixelate a user photo into orange-tinted pixel art.
- *
- * Sends the image to the pixelate-avatar edge function which:
- * 1. Validates the image
- * 2. Downscales to 32×32
- * 3. Applies orange tint (#FF9A6D at 40% blend)
- * 4. Upscales to 64×64 + 256×256 with nearest-neighbor
- * 5. Updates avatar_url in the user profile
- *
- * @param fileUri - Local file URI from ImagePicker
- * @param contentType - MIME type (image/jpeg, image/png)
- * @returns Avatar URLs (256px main + 64px thumbnail)
- */
-export async function pixelateAvatar(
-  fileUri: string,
-  contentType: string
-): Promise<{
-  data: { avatarUrl: string; thumbnailUrl: string } | null;
-  error: ProfileError | null;
-}> {
-  try {
-    // Review mode: return mock pixelated avatar URLs
-    const { isReviewMode } = await import('@/src/review/reviewMode');
-    if (isReviewMode()) {
-      return {
-        data: {
-          avatarUrl: 'https://example.com/review-avatar-pixel.png',
-          thumbnailUrl: 'https://example.com/review-avatar-pixel-thumb.png',
-        },
-        error: null,
-      };
-    }
-
-    // Build FormData
-    const response = await fetch(fileUri);
-    const blob = await response.blob();
-
-    const formData = new FormData();
-    formData.append('image', blob, `avatar.${contentType === 'image/png' ? 'png' : 'jpg'}`);
-
-    // Raw fetch required: callEdgeFunction hardcodes Content-Type: application/json
-    // and JSON.stringify(body), which is incompatible with FormData uploads.
-    // We still use getSessionSafe (deduplicating), AbortController timeout, and breadcrumbs.
-    const { data: { session } } = await getSessionSafe();
-    const token = session?.access_token;
-
-    if (!token) {
-      return { data: null, error: { code: 'NOT_AUTHENTICATED', message: 'Please sign in to continue' } };
-    }
-
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 15_000);
-
-    addBreadcrumb('API call: POST pixelate-avatar', 'api', { method: 'POST', requireAuth: true });
-
-    let uploadResponse: Response;
-    try {
-      uploadResponse = await fetch(
-        `${getFunctionsUrl()}/pixelate-avatar`,
-        {
-          method: 'POST',
-          headers: {
-            Authorization: `Bearer ${token}`,
-            apikey: process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? '',
-            'x-region': 'ap-south-1',
-          },
-          body: formData,
-          signal: controller.signal,
-        }
-      );
-    } finally {
-      clearTimeout(timeoutId);
-    }
-
-    const result = await uploadResponse.json();
-
-    if (!uploadResponse.ok || !result.success) {
-      return {
-        data: null,
-        error: mapProfileError(result.message || 'Pixelation failed'),
-      };
-    }
-
-    return {
-      data: {
-        avatarUrl: result.data.avatarUrl,
-        thumbnailUrl: result.data.thumbnailUrl,
-      },
-      error: null,
-    };
-  } catch (err) {
-    return {
-      data: null,
-      error: {
-        code: 'UPLOAD_FAILED',
-        message: err instanceof Error ? err.message : 'Failed to pixelate avatar',
-      },
-    };
-  }
 }
 
 /**
@@ -544,8 +331,6 @@ function mapProfileError(errorMessage: string, errorBody?: Record<string, unknow
         return { code: 'VALIDATION_ERROR', message: (errorBody?.message as string) ?? errorMessage };
       case 'AUTH_ERROR':
         return { code: 'NOT_AUTHENTICATED', message: 'Please sign in to continue' };
-      case 'UPLOAD_FAILED':
-        return { code: 'UPLOAD_FAILED', message: (errorBody?.message as string) ?? 'Failed to upload file' };
       case 'DELETE_FAILED':
         return { code: 'DELETE_FAILED', message: (errorBody?.message as string) ?? 'Failed to delete account' };
       case 'ARCHIVE_ERROR':
@@ -564,10 +349,6 @@ function mapProfileError(errorMessage: string, errorBody?: Record<string, unknow
 
   if (lower.includes('validation') || lower.includes('invalid') || lower.includes('at least one field')) {
     return { code: 'VALIDATION_ERROR', message: errorMessage };
-  }
-
-  if (lower.includes('upload') || lower.includes('storage')) {
-    return { code: 'UPLOAD_FAILED', message: 'Failed to upload file' };
   }
 
   if (lower.includes('network') || lower.includes('fetch') || lower.includes('timed out')) {
