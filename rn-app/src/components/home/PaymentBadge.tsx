@@ -118,11 +118,8 @@ const BADGE_CONFIGS: Record<
   },
 };
 
-// Circular path d-string: clockwise circle starting at BOTTOM center.
-// Text overflows and clips at the path endpoint (= start = bottom).
-// At the bottom, text is upside-down so any partial-word clip artifact
-// is unreadable — readers focus on the right-side-up text at the top.
-const TEXT_PATH_D = `M ${CX},${CY + TEXT_R} a ${TEXT_R},${TEXT_R} 0 1,1 0,${-TEXT_R * 2} a ${TEXT_R},${TEXT_R} 0 1,1 0,${TEXT_R * 2}`;
+// Circular path d-string: clockwise circle starting at top
+const TEXT_PATH_D = `M ${CX},${CY - TEXT_R} a ${TEXT_R},${TEXT_R} 0 1,1 0,${TEXT_R * 2} a ${TEXT_R},${TEXT_R} 0 1,1 0,${-TEXT_R * 2}`;
 
 // Scale the logo to fit ~32px wide within the badge center
 const LOGO_SCALE = 1.0;
@@ -135,10 +132,12 @@ function PaymentBadgeComponent({
   const cfg = BADGE_CONFIGS[variant];
   const pathId = `badge-text-${variant}`;
 
-  // Repeat label generously so text fills the entire circumference (~314 units).
-  // Overflow is clipped by TextPath at the path endpoint (bottom of circle),
-  // where text is upside-down and any partial-word artifact goes unnoticed.
-  const fullLabel = cfg.label.repeat(8);
+  // Use exact repeat count so text fills the circle without overflowing mid-word.
+  // Circumference ≈ 314 units. At fontSize 12, avg char width ≈ 6.8 units → ~46 chars fit.
+  // floor() ensures the last repeat completes fully — small gap beats partial "mi".
+  const maxChars = Math.floor((2 * Math.PI * TEXT_R) / 6.8); // ~46
+  const repeatCount = Math.max(Math.floor(maxChars / cfg.label.length), 3);
+  const fullLabel = cfg.label.repeat(repeatCount);
 
   return (
     <Svg width={size} height={size} viewBox={`0 0 ${VB} ${VB}`}>
