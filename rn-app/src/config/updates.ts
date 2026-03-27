@@ -12,6 +12,7 @@
  */
 
 import { AppState, AppStateStatus } from 'react-native';
+import * as SecureStore from 'expo-secure-store';
 import { addBreadcrumb } from './sentry';
 import { trackEvent } from './analytics';
 
@@ -52,6 +53,45 @@ let lastCheckTime = 0;
 const MIN_CHECK_INTERVAL = 5 * 60 * 1000; // 5 minutes (reduced from 30m for payment app)
 
 // ==============================================
+// OTA RELOAD MARKER (for extended auth debounce)
+// ==============================================
+// Written before Updates.reloadAsync(). AuthProvider reads this after
+// restart to extend the SIGNED_OUT debounce from 3s to 5s, giving the
+// SDK more time to recover the session from SecureStore.
+
+export const OTA_RELOAD_MARKER_KEY = 'flent_ota_reload_ts';
+
+// ==============================================
+// TOKEN REFRESH TRACKING (for safe OTA reloads)
+// ==============================================
+// Promise-based tracking resolved by AuthProvider when TOKEN_REFRESHED fires.
+// reloadApp() awaits this promise (with timeout) to ensure the SDK finishes
+// persisting tokens to SecureStore before killing the JS runtime.
+//
+// Why not a boolean flag: booleans can get stuck if TOKEN_REFRESHED is missed.
+// The Promise is always resolved via timeout in reloadApp() as a safety net.
+
+let _tokenRefreshPromise: Promise<void> | null = null;
+let _tokenRefreshResolve: (() => void) | null = null;
+
+/** Called by AuthProvider when a token refresh is expected (JWT near-expiry on cold start). */
+export function beginTokenRefreshTracking(): void {
+  if (_tokenRefreshPromise) return; // already tracking
+  _tokenRefreshPromise = new Promise<void>((resolve) => {
+    _tokenRefreshResolve = resolve;
+  });
+}
+
+/** Called by AuthProvider on TOKEN_REFRESHED, SIGNED_OUT, or SIGNED_IN to clear the wait. */
+export function endTokenRefreshTracking(): void {
+  if (_tokenRefreshResolve) {
+    _tokenRefreshResolve();
+    _tokenRefreshResolve = null;
+  }
+  _tokenRefreshPromise = null;
+}
+
+// ==============================================
 // COLD-START OTA GATE (for splash-aware reload)
 // ==============================================
 // index.tsx calls waitForColdStartOTA() before hiding the splash screen.
@@ -76,20 +116,41 @@ export function notifyUpdateDownloaded(): void {
 }
 
 /**
- * Check whether a cold-start OTA download already completed.
- * Returns true if an update was downloaded and a reload is recommended.
- * Returns false immediately otherwise -- never waits for in-progress
- * downloads. Updates that haven't finished will apply on next launch or
- * when the user backgrounds the app for 5+ minutes (useOTAUpdates).
+ * Check whether a cold-start OTA download completed (or wait briefly for one).
  *
- * Called by index.tsx before SplashScreen.hideAsync() to allow
- * reloading behind the native splash (single splash experience).
+ * Returns true if an update was downloaded and a reload is recommended.
+ * The native splash is still visible when this runs, so waiting adds no
+ * visual delay — the user just sees the splash icon a bit longer.
+ *
+ * @param maxWaitMs - Maximum time to wait for an in-progress download (default 2s).
+ *   Caller (index.tsx) passes a dynamically capped value to stay under the
+ *   6s safety timeout. On Indian 4G (5-15 Mbps), a JS bundle delta
+ *   (100-500KB) typically downloads in 0.5-2s.
  */
-export async function waitForColdStartOTA(): Promise<boolean> {
+export async function waitForColdStartOTA(maxWaitMs: number = 2000): Promise<boolean> {
   if (__DEV__ || !Updates) return false;
-  // Only reload if the download already completed during auth resolution.
-  // Don't wait for in-progress downloads -- that blocks cold start.
-  return _otaUpdateDownloaded;
+
+  // Already downloaded — reload immediately
+  if (_otaUpdateDownloaded) return true;
+
+  // No update detected — don't wait
+  if (!_otaUpdateDetected) return false;
+
+  // Update detected but still downloading — wait with bounded timeout.
+  // The native splash is still covering the screen, so this is invisible.
+  return new Promise<boolean>((resolve) => {
+    _otaWaiters.push(resolve);
+
+    setTimeout(() => {
+      // If notifyUpdateDownloaded() already resolved us, the array was replaced
+      // with a new empty one — indexOf returns -1, nothing happens.
+      const idx = _otaWaiters.indexOf(resolve);
+      if (idx !== -1) {
+        _otaWaiters.splice(idx, 1);
+        resolve(false); // Timed out — apply on next launch
+      }
+    }, maxWaitMs);
+  });
 }
 
 // ==============================================
@@ -182,6 +243,10 @@ export async function checkForUpdates(): Promise<UpdateCheckResult> {
       return { status: 'no_update', isCritical: false };
     }
 
+    // Signal cold-start gate immediately — don't wait for the React hook to
+    // react to isUpdateAvailable. If waitForColdStartOTA() runs before the hook,
+    // without this the function returns false and misses the update entirely.
+    notifyUpdateDetected();
     // Download and UI are handled by useOTAUpdates hook
     addBreadcrumb('OTA update available, hook will handle download', 'updates');
     return { status: 'downloading', isCritical: false };
@@ -237,53 +302,65 @@ export function setupAutoUpdateCheck(): () => void {
 // ==============================================
 
 /**
- * Stabilize the auth session before destroying the JS context.
- *
- * Problem: reloadAsync() kills JS immediately. If the Supabase SDK's
- * autoRefreshToken was mid-rotation (sent old refresh token, received new
- * tokens, but hasn't written to SecureStore yet), the new tokens are lost.
- * On restart, the old (consumed) refresh token → 401 → SIGNED_OUT.
- *
- * Fix: pause auto-refresh, wait for any in-flight refresh to settle,
- * then reload. The SDK re-starts auto-refresh on the new JS context.
- */
-async function stabilizeSessionBeforeReload(): Promise<void> {
-  try {
-    // Dynamic import to avoid circular dependency
-    const { supabase } = require('../services/supabase/client');
-
-    // stopAutoRefresh() prevents the SDK from starting a NEW refresh.
-    // Any in-flight refresh will still complete and write to SecureStore.
-    supabase.auth.stopAutoRefresh();
-
-    // Give any in-flight refresh time to complete its write to SecureStore.
-    // Token refresh round-trip is typically <500ms; 1.5s is generous.
-    await new Promise(resolve => setTimeout(resolve, 1500));
-
-    // Read session to ensure SecureStore has the latest tokens persisted.
-    // getSession() returns the in-memory session (which includes any
-    // tokens from a just-completed refresh).
-    await supabase.auth.getSession();
-  } catch {
-    // Non-fatal — proceed with reload even if stabilization fails.
-    // Worst case: user has to log in again (same as before this fix).
-  }
-}
-
-/**
  * Trigger an immediate app reload to apply a downloaded update.
- * Stabilizes the auth session first to prevent logout-on-reload.
- * Returns false if Updates module is not available.
+ *
+ * Token safety protocol:
+ * 1. Stop the SDK's auto-refresh timer (prevents starting NEW refreshes)
+ * 2. If a refresh is in-flight (tracked via beginTokenRefreshTracking),
+ *    wait up to 3s for TOKEN_REFRESHED to fire — the SDK persists tokens
+ *    to SecureStore internally via _saveSession() on that event.
+ * 3. Write an OTA reload marker so AuthProvider extends the SIGNED_OUT
+ *    debounce from 3s to 5s after restart.
+ * 4. Reload.
+ *
+ * IMPORTANT: Does NOT call getSession() or setSession(). In auth-js v2.65.1:
+ * - getSession() calls _callRefreshToken() when JWT is expired → race with autoRefresh
+ * - setSession() calls _callRefreshToken() (expired) or _getUser() (valid) → side effects
+ * Both trigger the exact race conditions that cause spurious SIGNED_OUT events.
  */
 export async function reloadApp(): Promise<boolean> {
   if (!Updates) return false;
 
   try {
+    // Step 1: Stop auto-refresh timer. Prevents the SDK from starting a NEW
+    // refresh between now and reloadAsync(). Any in-flight refresh continues.
+    // The SDK restarts auto-refresh on the new JS context (constructor calls _initialize).
+    try {
+      const { supabase } = require('../services/supabase/client');
+      supabase.auth.stopAutoRefresh();
+    } catch {
+      // Non-fatal — proceed without stopping (same risk as before this fix)
+    }
+
+    // Step 2: Wait for in-flight token refresh to complete and persist.
+    // The Promise is created by beginTokenRefreshTracking() in AuthProvider
+    // and resolved by endTokenRefreshTracking() on TOKEN_REFRESHED/SIGNED_OUT.
+    if (_tokenRefreshPromise) {
+      trackEvent('ota_reload_deferred_token_refresh');
+      addBreadcrumb('OTA reload waiting for token refresh', 'updates');
+      await Promise.race([
+        _tokenRefreshPromise,
+        new Promise<void>(resolve => setTimeout(resolve, 3000)),
+      ]);
+    }
+
+    // Step 3: Write OTA reload marker. AuthProvider reads this after restart
+    // to extend SIGNED_OUT debounce (3s → 5s), giving more recovery time.
+    await SecureStore.setItemAsync(OTA_RELOAD_MARKER_KEY, String(Date.now())).catch(() => {});
+
     trackEvent('ota_reload');
-    await stabilizeSessionBeforeReload();
     await Updates.reloadAsync();
     return true;
   } catch {
+    // Restart auto-refresh if we stopped it but reload failed.
+    // Without this, the SDK's periodic token refresh stays stopped for the
+    // rest of the session → tokens expire → 401 → user effectively logged out.
+    try {
+      const { supabase } = require('../services/supabase/client');
+      supabase.auth.startAutoRefresh();
+    } catch {
+      // Non-fatal
+    }
     return false;
   }
 }

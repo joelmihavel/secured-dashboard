@@ -2,7 +2,7 @@
  * Entry Point — Journey-Aware Router
  *
  * Determines the correct screen based on auth + waitlist state:
- *  1. Not authenticated -> auth flow (beta-splash)
+ *  1. Not authenticated -> auth flow (splash/get-started)
  *  2. Authenticated, waitlist pending/rejected -> waitlist screen
  *  3. Authenticated, waitlist approved -> setup
  *  4. Authenticated, active -> main dashboard
@@ -44,7 +44,7 @@ const LAST_ROUTE_KEY = 'flent_last_journey_target';
 export const SCREENSHOT_PARAMS: Record<string, string> | null = null;
 
 type JourneyTarget =
-  | '/(auth)/beta-splash'
+  | '/(auth)/splash'
   | '/(agreement)/upload'
   | '/(waitlist)'
   | '/(setup)'
@@ -180,6 +180,9 @@ export default function Index() {
   const [target, setTarget] = useState<JourneyTarget | string | null>(null);
   const hasNavigatedRef = useRef(false);
   const isResolvingRef = useRef(false); // Guard against concurrent journey resolutions
+  // Track when this component mounts so the OTA bounded wait can be dynamically
+  // capped to stay under the 6s safety timeout. Uses a ref to capture mount time once.
+  const _mountTimestamp = useRef(Date.now()).current;
 
   const resolveAuthenticatedJourney = useCallback(async (userId: string) => {
     // Prevent re-entry: multiple auth events (INITIAL_SESSION, SIGNED_IN,
@@ -361,7 +364,7 @@ export default function Index() {
 
   // Reset journey state when user signs out so the router re-evaluates.
   // Without this, journeyResolved stays true after sign-out, and the router
-  // never re-fires to redirect to beta-splash. AuthProvider navigates on
+  // never re-fires to redirect to splash. AuthProvider navigates on
   // user-initiated sign-out, but this handles edge cases (OTA reload after
   // sign-out, transient SIGNED_OUT → recovery → genuine sign-out later).
   const wasAuthenticatedRef = useRef(isAuthenticated);
@@ -411,7 +414,7 @@ export default function Index() {
     }
 
     if (!isAuthenticated) {
-      setTarget('/(auth)/beta-splash');
+      setTarget('/(auth)/splash');
       setJourneyResolved(true);
       return;
     }
@@ -450,20 +453,35 @@ export default function Index() {
   useEffect(() => {
     if (!journeyResolved || !target || hasNavigatedRef.current) return;
     if (!rootNavigationState?.key) return;
+    // Don't navigate if force update modal should be showing — the render
+    // returns ForceUpdateModal instead. Without this guard, the navigation
+    // effect can race with the force update check on the same render cycle.
+    if (forceUpdateRequired) return;
     hasNavigatedRef.current = true;
     router.replace(target as never);
     // Cache the route for instant navigation on next app launch
     if (target === '/(main)' || target === '/(setup)' || target === '/(waitlist)') {
       SecureStore.setItemAsync(LAST_ROUTE_KEY, target).catch(() => {});
-    } else if (target === '/(auth)/beta-splash') {
+    } else if (target === '/(auth)/splash') {
       // User signed out — clear cached route
       SecureStore.deleteItemAsync(LAST_ROUTE_KEY).catch(() => {});
     }
-    // If an OTA update finished downloading during auth resolution, reload
-    // behind the still-visible splash for a seamless update. Don't WAIT for
-    // in-progress downloads -- waitForColdStartOTA() returns immediately now.
-    // Updates still downloading will apply on next launch or background return.
-    waitForColdStartOTA().then(async (shouldReload) => {
+    // Skip OTA reload for payment recovery — don't interrupt active payment flow.
+    // clearLastPayment() was already called, and a reload would lose the real-time
+    // polling view. The update will apply on next launch or background return.
+    const isPaymentRecovery = typeof target === 'string' && target.startsWith('/(payment)/');
+    if (isPaymentRecovery) {
+      setTimeout(() => SplashScreen.hideAsync().catch(() => {}), 300);
+      return;
+    }
+    // If an OTA update finished downloading (or is close to finishing) during
+    // auth resolution, reload behind the still-visible splash for a seamless
+    // update. The bounded wait (default 2s) keeps the native splash visible
+    // a bit longer — invisible to the user. Dynamically cap to stay well
+    // under the 6s safety timeout that hides splash unconditionally.
+    const navTimestamp = Date.now();
+    const maxOtaWait = Math.max(0, 5000 - (navTimestamp - _mountTimestamp));
+    waitForColdStartOTA(maxOtaWait).then(async (shouldReload) => {
       if (shouldReload) {
         console.log('[journey-router] OTA update ready — reloading behind splash');
         const reloaded = await reloadApp();
@@ -473,7 +491,7 @@ export default function Index() {
       // No OTA update (or reload failed) -- hide splash after brief delay
       setTimeout(() => SplashScreen.hideAsync().catch(() => {}), 300);
     });
-  }, [journeyResolved, target, router, rootNavigationState?.key]);
+  }, [journeyResolved, target, router, rootNavigationState?.key, forceUpdateRequired]);
 
   // Force update blocks ALL navigation — user must update from App Store
   if (forceUpdateRequired) {

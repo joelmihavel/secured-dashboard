@@ -125,7 +125,7 @@ export function useDeleteAccount() {
       // (not after 3s transient-failure debounce). AuthProvider handles navigation.
       markUserInitiatedSignOut();
       clearUserContext();
-      // SDK signOut fires SIGNED_OUT → AuthProvider navigates to beta-splash
+      // SDK signOut fires SIGNED_OUT → AuthProvider navigates to splash
       await apiSignOut().catch(() => {});
       // Nuclear cleanup: all stores, SecureStore keys, query cache, realtime channels
       await clearAllStores();

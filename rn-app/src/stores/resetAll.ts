@@ -7,6 +7,7 @@
  */
 
 import * as SecureStore from 'expo-secure-store';
+import { OTA_RELOAD_MARKER_KEY } from '@/src/config/updates';
 import { useAuthStore } from './auth';
 import { useUploadStore } from './upload';
 import { useWaitlistStore } from './waitlist';
@@ -29,6 +30,7 @@ const PERSISTED_SECURE_STORE_KEYS = [
   'flent-upload-state',       // Upload store (Zustand persist)
   'payment-recovery',          // Payment store (Zustand persist)
   'flent_last_journey_target', // Cached journey route
+  OTA_RELOAD_MARKER_KEY,       // OTA reload marker (prevents stale extended debounce)
 ];
 
 /**
