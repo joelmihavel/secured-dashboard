@@ -341,7 +341,9 @@ interface SuccessContentProps {
   date: string;
   method: string;
   landlordName: string;
-  utr: string;
+  panCard: string;
+  agreementId: string;
+  transactionId: string;
   payableRent: string;
 }
 
@@ -1000,7 +1002,9 @@ export default function PaymentStatusScreen() {
             date={displayData.date}
             method={displayData.method}
             landlordName={displayData.landlordName}
-            utr={displayData.utr}
+            panCard={displayData.panCard}
+            agreementId={displayData.agreementId}
+            transactionId={displayData.transactionId}
             payableRent={displayData.payableRent}
           />
         );
@@ -1138,13 +1142,16 @@ export default function PaymentStatusScreen() {
     content = (
       <ScrollView
         style={styles.scrollContainer}
-        contentContainerStyle={!isSuccessState ? styles.nonSuccessScrollContent : undefined}
+        contentContainerStyle={[
+          !isSuccessState && styles.nonSuccessScrollContent,
+          // Extra bottom padding so scroll content doesn't hide behind the fixed button
+          isSuccessState && { paddingBottom: sv(120) },
+        ]}
         bounces={isSuccessState}
         showsVerticalScrollIndicator={false}
       >
         {backButton}
         {card}
-        {buttons}
       </ScrollView>
     );
   } catch (err) {
@@ -1166,6 +1173,8 @@ export default function PaymentStatusScreen() {
         <OfflineBanner message="No internet connection. Polling paused." />
       )}
       {content}
+      {/* Figma: Button fixed at bottom of viewport (y=921), NOT inside ScrollView */}
+      {buttons}
     </Screen>
   );
 }
@@ -1304,16 +1313,18 @@ const styles = StyleSheet.create({
     fontSize: sf(12),
     lineHeight: sf(20),
     color: '#FF9A6D', // brand.500
+    textAlign: 'center', // Figma: textAlign CENTER
   },
 
-  // -- Button container
+  // -- Button container — Figma: fixed at bottom of viewport (y=921 out of 1083)
   buttonContainer: {
     width: '100%',
-    alignSelf: 'center',
+    paddingHorizontal: s(24),
     gap: sv(16),
     alignItems: 'center',
     paddingBottom: sv(24),
-    marginTop: sv(24),
+    paddingTop: sv(16),
+    backgroundColor: FIGMA_COLORS.background, // Solid bg so it covers receipt overflow
   },
   contactSupportText: {
     fontFamily: 'PlusJakartaSans-Regular',
