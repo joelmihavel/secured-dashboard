@@ -265,19 +265,8 @@ function useMountDiscovery(enabled: boolean) {
               return;
             }
 
-            // Don't restore completed extractions flagged for manual review.
-            // These are awaiting admin review — the journey router will route
-            // to waitlist. Restoring them causes a "Join Waitlist" button to
-            // appear on the upload screen without the user having uploaded.
-            if (
-              status.extractionStatus === 'completed' &&
-              (status.needsManualReview || !status.isCitySupported)
-            ) {
-              currentStore.reset();
-              return;
-            }
-
             // Record exists and is active — resume tracking
+            // (manual_review / unsupported city no longer blocks user — admin handles in background)
             if (currentStore.uploadPhase !== 'completed') {
               currentStore.setPhase('server_processing');
             }
@@ -325,16 +314,8 @@ function useMountDiscovery(enabled: boolean) {
         // Skip stale processing records (completed records are always resumable)
         if (status === 'processing' && ageMs > DISCOVERY_MAX_AGE_MS) return;
 
-        // Don't restore completed extractions flagged for manual review.
-        // These are awaiting admin action — the journey router routes to waitlist.
-        if (
-          status === 'completed' &&
-          ((row.needs_manual_review as boolean) || !(row.is_city_supported as boolean))
-        ) {
-          return;
-        }
-
         // Found active extraction — set in store so query picks it up
+        // (manual_review / unsupported city no longer blocks — admin handles in background)
         const currentStore = useUploadStore.getState();
         currentStore.setExtractionId(rowId);
         currentStore.setPhase('server_processing');
