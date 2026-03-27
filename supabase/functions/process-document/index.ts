@@ -504,33 +504,9 @@ Deno.serve(async (req) => {
 
     completedExtractionPersisted = true;
 
-    // Store rental parties
-    const partyInserts = [
-      ...extractedData.tenants.map((t) => ({
-        extracted_rental_info_id: extraction_id,
-        party_type: "tenant",
-        name: t.name,
-        phone_number: t.phone,
-        email: t.email,
-      })),
-      ...extractedData.landlords.map((l) => ({
-        extracted_rental_info_id: extraction_id,
-        party_type: "landlord",
-        name: l.name,
-        phone_number: l.phone,
-        email: l.email,
-      })),
-    ];
-
-    if (partyInserts.length > 0) {
-      // Delete existing parties first
-      await supabase
-        .from("rental_parties")
-        .delete()
-        .eq("extracted_rental_info_id", extraction_id);
-
-      await supabase.from("rental_parties").insert(partyInserts);
-    }
+    // NOTE: rental_parties is a VIEW (UNION ALL on extracted_rental_info tenant/landlord columns),
+    // not a table. Party data is already stored in tenant_names/landlord_names arrays and
+    // tenant_name/landlord_name singular columns on extracted_rental_info. No separate insert needed.
 
     // Geocode the property address (non-blocking - errors don't fail extraction)
     const googleMapsApiKey = Deno.env.get("GOOGLE_MAPS_API_KEY");

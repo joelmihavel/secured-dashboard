@@ -218,27 +218,7 @@ Deno.serve(async (req) => {
           result.status = "update_failed";
           result.reason = updateError.message;
         } else {
-          // Also update rental_parties
-          const partyInserts = [
-            ...(merged.tenant_names || []).map((name: string) => ({
-              extracted_rental_info_id: extraction.id,
-              party_type: "tenant",
-              name,
-            })),
-            ...(merged.landlord_names || []).map((name: string) => ({
-              extracted_rental_info_id: extraction.id,
-              party_type: "landlord",
-              name,
-            })),
-          ];
-
-          if (partyInserts.length > 0) {
-            await supabase
-              .from("rental_parties")
-              .delete()
-              .eq("extracted_rental_info_id", extraction.id);
-            await supabase.from("rental_parties").insert(partyInserts);
-          }
+          // rental_parties is a VIEW — party data derived from extraction columns automatically.
 
           // Update waitlist_entries for V1 compatibility
           if (extraction.user_id) {
