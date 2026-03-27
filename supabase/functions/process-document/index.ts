@@ -422,6 +422,22 @@ Deno.serve(async (req) => {
       extractedData  // Pass full extracted data for minimum fields validation
     );
 
+    // Structured quality log for operator visibility
+    console.log("[process-document] Extraction quality:", JSON.stringify({
+      extraction_id,
+      fields: `${extractedData.fields_extracted}/${extractedData.total_fields}`,
+      confidence: extractedData.confidence_score,
+      contract_status: evaluationResult.contract_status,
+      needs_manual_review: evaluationResult.needs_manual_review,
+      city_supported: isCitySupported,
+      has_rent: !!extractedData.monthly_rent_paise,
+      has_deposit: !!extractedData.security_deposit_paise,
+      has_tenant: (extractedData.tenant_names?.length ?? 0) > 0,
+      has_landlord: (extractedData.landlord_names?.length ?? 0) > 0,
+      has_lease_end: !!extractedData.lease_end_date,
+      missing: evaluationResult.missing_fields ?? [],
+    }));
+
     // Store extracted data - update the existing extraction record
     const { data: rentalInfo, error: insertError } = await supabase
       .from("extracted_rental_info")
@@ -724,19 +740,27 @@ async function processWithDocumentAI(
       } catch (vertexError: any) {
         geminiDebug.vertex_ai_error = vertexError.message || String(vertexError);
         console.error("[process-document] Vertex AI Gemini failed:", vertexError.message || vertexError);
-        // Retry once on "No JSON found" (likely safety filter flakiness on PII-heavy docs)
-        if (vertexError.message?.includes("No JSON found")) {
-          console.log("[process-document] Retrying Vertex AI after 2s (possible safety filter flake)...");
-          await new Promise(r => setTimeout(r, 2000));
-          try {
-            const retryToken = await getGCPAccessToken(vertexCredentialsJson);
-            geminiResult = await extractWithVertexAIGemini(documentText, retryToken, vertexAiProjectId, "global");
-            geminiDebug.vertex_ai_success = true;
-            geminiDebug.vertex_ai_retried = true;
-            geminiDebug.final_result_keys = geminiResult ? Object.keys(geminiResult).length : 0;
-          } catch (retryError: any) {
-            geminiDebug.vertex_ai_retry_error = retryError.message || String(retryError);
-            console.error("[process-document] Vertex AI retry also failed:", retryError.message);
+        // Retry up to 2 times on "No JSON found" / empty response (safety filter flakiness on PII-heavy docs)
+        if (vertexError.message?.includes("No JSON found") || vertexError.message?.includes("empty response")) {
+          const maxRetries = 2;
+          for (let attempt = 1; attempt <= maxRetries; attempt++) {
+            console.log(`[process-document] Retrying Vertex AI (attempt ${attempt}/${maxRetries}) after 3s (possible safety filter flake)...`);
+            await new Promise(r => setTimeout(r, 3000));
+            try {
+              const retryToken = await getGCPAccessToken(vertexCredentialsJson);
+              geminiResult = await extractWithVertexAIGemini(documentText, retryToken, vertexAiProjectId, "global");
+              geminiDebug.vertex_ai_success = true;
+              geminiDebug.vertex_ai_retried = true;
+              geminiDebug.vertex_ai_retry_attempt = attempt;
+              geminiDebug.final_result_keys = geminiResult ? Object.keys(geminiResult).length : 0;
+              break; // Success — exit retry loop
+            } catch (retryError: any) {
+              geminiDebug.vertex_ai_retry_error = retryError.message || String(retryError);
+              console.error(`[process-document] Vertex AI retry attempt ${attempt} failed:`, retryError.message);
+              if (attempt === maxRetries) {
+                console.error("[process-document] Vertex AI exhausted all retry attempts");
+              }
+            }
           }
         }
       }
@@ -762,18 +786,26 @@ async function processWithDocumentAI(
       } catch (apiKeyError: any) {
         geminiDebug.api_key_error = apiKeyError.message || String(apiKeyError);
         console.error("[process-document] API key Gemini failed:", apiKeyError.message || apiKeyError);
-        // Retry once on "No JSON found" (safety filter flakiness)
-        if (apiKeyError.message?.includes("No JSON found")) {
-          console.log("[process-document] Retrying API key Gemini after 2s...");
-          await new Promise(r => setTimeout(r, 2000));
-          try {
-            geminiResult = await verifyWithGemini(documentText, extractedData, geminiApiKey);
-            geminiDebug.api_key_success = true;
-            geminiDebug.api_key_retried = true;
-            geminiDebug.final_result_keys = geminiResult ? Object.keys(geminiResult).length : 0;
-          } catch (retryError: any) {
-            geminiDebug.api_key_retry_error = retryError.message || String(retryError);
-            console.error("[process-document] API key retry also failed:", retryError.message);
+        // Retry up to 2 times on "No JSON found" / empty response (safety filter flakiness)
+        if (apiKeyError.message?.includes("No JSON found") || apiKeyError.message?.includes("empty response")) {
+          const maxRetries = 2;
+          for (let attempt = 1; attempt <= maxRetries; attempt++) {
+            console.log(`[process-document] Retrying API key Gemini (attempt ${attempt}/${maxRetries}) after 3s...`);
+            await new Promise(r => setTimeout(r, 3000));
+            try {
+              geminiResult = await verifyWithGemini(documentText, extractedData, geminiApiKey);
+              geminiDebug.api_key_success = true;
+              geminiDebug.api_key_retried = true;
+              geminiDebug.api_key_retry_attempt = attempt;
+              geminiDebug.final_result_keys = geminiResult ? Object.keys(geminiResult).length : 0;
+              break; // Success — exit retry loop
+            } catch (retryError: any) {
+              geminiDebug.api_key_retry_error = retryError.message || String(retryError);
+              console.error(`[process-document] API key retry attempt ${attempt} failed:`, retryError.message);
+              if (attempt === maxRetries) {
+                console.error("[process-document] API key Gemini exhausted all retry attempts");
+              }
+            }
           }
         }
       }
@@ -1671,9 +1703,12 @@ function slimDocAiData(raw: object): object {
 }
 
 function categorizeError(message: string): string {
+  const msg = message.toLowerCase();
   if (message.includes('PDF') || message.includes('file type')) return 'INVALID_FILE_TYPE';
   if (message.includes('download')) return 'FILE_NOT_FOUND';
-  if (message.includes('timed out')) return 'PROCESSING_TIMEOUT';
+  if (msg.includes('timed out') || msg.includes('abort')) return 'PROCESSING_TIMEOUT';
+  if (msg.includes('safety') || msg.includes('blocked')) return 'SAFETY_FILTER_BLOCKED';
+  if (message.includes('RESOURCE_EXHAUSTED') || message.includes('429')) return 'RATE_LIMITED';
   if (message.includes('Document AI')) return 'OCR_FAILED';
   if (message.includes('Gemini')) return 'VERIFICATION_FAILED';
   if (message.includes('store') || message.includes('database')) return 'DATABASE_ERROR';

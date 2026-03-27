@@ -171,6 +171,37 @@ serve(async (req) => {
     }
 
     // ==============================================
+    // VALIDATE USER CORRECTIONS
+    // ==============================================
+
+    const validationErrors: Record<string, string> = {};
+    const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+
+    if (body.tenant_name !== undefined && body.tenant_name.trim() === "") {
+      validationErrors.tenant_name = "Cannot be empty";
+    }
+    if (body.landlord_name !== undefined && body.landlord_name.trim() === "") {
+      validationErrors.landlord_name = "Cannot be empty";
+    }
+    if (body.monthly_rent_paise !== undefined) {
+      if (body.monthly_rent_paise <= 0 || body.monthly_rent_paise > 5000000000) {
+        // 50,00,000 rupees = 5,000,000,000 paise
+        validationErrors.monthly_rent_paise = "Must be > 0 and < 50,00,000 rupees (in paise)";
+      }
+    }
+    if (body.lease_start_date !== undefined && body.lease_start_date !== "" && !dateRegex.test(body.lease_start_date)) {
+      validationErrors.lease_start_date = "Must be YYYY-MM-DD format";
+    }
+    if (body.lease_end_date !== undefined && body.lease_end_date !== "" && !dateRegex.test(body.lease_end_date)) {
+      validationErrors.lease_end_date = "Must be YYYY-MM-DD format";
+    }
+
+    if (Object.keys(validationErrors).length > 0) {
+      console.log("[confirm-extraction] Validation failed:", JSON.stringify(validationErrors));
+      throw new ValidationError("Invalid user corrections", validationErrors);
+    }
+
+    // ==============================================
     // UPDATE EXTRACTED INFO - MARK AS VERIFIED + USER CORRECTIONS
     // ==============================================
     // iOS sends user-corrected data that should update the extraction
@@ -180,13 +211,13 @@ serve(async (req) => {
       verified_at: new Date().toISOString(),
     };
 
-    // Apply user corrections from iOS if provided
-    if (body.tenant_name) {
-      updateData.tenant_name = body.tenant_name;
+    // Apply user corrections from iOS if provided (already validated above)
+    if (body.tenant_name && body.tenant_name.trim()) {
+      updateData.tenant_name = body.tenant_name.trim();
       // Don't wipe tenant_names array — preserve all names from extraction.
     }
-    if (body.landlord_name) {
-      updateData.landlord_name = body.landlord_name;
+    if (body.landlord_name && body.landlord_name.trim()) {
+      updateData.landlord_name = body.landlord_name.trim();
       // Don't wipe landlord_names array — it contains all names from extraction.
       // The singular landlord_name serves as the "primary" landlord for invite flow.
     }

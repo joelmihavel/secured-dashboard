@@ -719,6 +719,12 @@ function mapAgreementError(errorMessage: string, errorBody?: Record<string, unkn
         return { code: 'ALREADY_CONFIRMED', message: (errorBody?.message as string) ?? 'This extraction has already been confirmed' };
       case 'PROCESSING_IN_PROGRESS':
         return { code: 'PROCESSING_IN_PROGRESS', message: (errorBody?.message as string) ?? 'A document is already being processed. Please wait.' };
+      case 'PROCESSING_TIMEOUT':
+        return { code: 'UNKNOWN_ERROR', message: 'Processing took too long. Please try uploading again.' };
+      case 'SAFETY_FILTER_BLOCKED':
+        return { code: 'UNKNOWN_ERROR', message: "We couldn't process this document. Please try a different copy." };
+      case 'RATE_LIMITED':
+        return { code: 'UNKNOWN_ERROR', message: 'Too many requests. Please wait a moment and try again.' };
       case 'INVALID_FILE_TYPE':
         return { code: 'INVALID_FILE_TYPE', message: 'Please upload a PDF file' };
       case 'FILE_TOO_LARGE':
@@ -749,6 +755,15 @@ function mapAgreementError(errorMessage: string, errorBody?: Record<string, unkn
   }
   if (lower.includes('already confirmed') || lower.includes('already_confirmed')) {
     return { code: 'ALREADY_CONFIRMED', message: 'This extraction has already been confirmed' };
+  }
+  if (lower.includes('processing') && (lower.includes('timeout') || lower.includes('timed out'))) {
+    return { code: 'UNKNOWN_ERROR', message: 'Processing took too long. Please try uploading again.' };
+  }
+  if (lower.includes('rate limit') || lower.includes('rate_limited') || lower.includes('too many requests')) {
+    return { code: 'UNKNOWN_ERROR', message: 'Too many requests. Please wait a moment and try again.' };
+  }
+  if (lower.includes('safety') || lower.includes('safety_filter')) {
+    return { code: 'UNKNOWN_ERROR', message: "We couldn't process this document. Please try a different copy." };
   }
   if (lower.includes('network') || lower.includes('fetch') || lower.includes('timed out')) {
     return { code: 'NETWORK_ERROR', message: 'Please check your internet connection' };

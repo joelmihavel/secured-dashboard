@@ -62,6 +62,36 @@ interface UploadActions {
 type UploadStore = UploadState & UploadActions;
 
 // ==============================================
+// PHASE TRANSITION VALIDATION
+// ==============================================
+
+/** Ordered forward phases — index determines valid forward transitions */
+const PHASE_ORDER: readonly UploadPhase[] = [
+  'idle',
+  'requesting_url',
+  'uploading_file',
+  'processing',
+  'server_processing',
+  'completed',
+] as const;
+
+/**
+ * Check whether a phase transition is valid.
+ * Rules:
+ * - Forward transitions only (idle -> requesting_url -> ... -> completed)
+ * - Any phase -> failed (errors can happen anytime)
+ * - Any phase -> idle (reset)
+ */
+function isValidPhaseTransition(from: UploadPhase, to: UploadPhase): boolean {
+  if (to === 'failed' || to === 'idle') return true;
+  const fromIdx = PHASE_ORDER.indexOf(from);
+  const toIdx = PHASE_ORDER.indexOf(to);
+  // Both must be recognized phases, and target must be strictly ahead
+  if (fromIdx === -1 || toIdx === -1) return false;
+  return toIdx > fromIdx;
+}
+
+// ==============================================
 // CONSTANTS
 // ==============================================
 
@@ -140,6 +170,12 @@ export const useUploadStore = create<UploadStore>()(
 
       setPhase: (phase) =>
         set((state) => {
+          if (!isValidPhaseTransition(state.uploadPhase, phase)) {
+            console.warn(
+              `[UploadStore] Invalid phase transition: ${state.uploadPhase} -> ${phase}. Ignoring.`
+            );
+            return;
+          }
           state.uploadPhase = phase;
           state.lastUpdatedAt = Date.now();
           // Clear error when advancing to a non-failed phase
