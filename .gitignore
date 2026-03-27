@@ -1,1 +1,24 @@
 node_modules
+.DS_Store
+
+# Environment files (secrets)
+.env
+.env.local
+.env.*.local
+
+# Claude Code memory (may contain secrets/keys)
+.claude/
+
+# Supabase temp files
+supabase/.temp/
+
+# Rejected patches
+*.rej
+*.orig
+
+# Fix scripts (temp dev tools)
+fix-*.js
+test-*.js
+
+# IDE / tool configs
+.serena/

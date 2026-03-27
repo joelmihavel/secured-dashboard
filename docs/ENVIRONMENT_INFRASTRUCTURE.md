@@ -93,7 +93,7 @@ The `verifyServiceRole()` function in `_shared/supabase.ts` compares against `De
 curl -H "Authorization: Bearer sb_secret_<key>" ...
 ```
 
-For the branch: `sb_secret_F9RFPyanPWbSHy5cjBEpaA_gjonTXGE`
+Retrieve the key via: `supabase projects api-keys --project-ref <ref>` or check Supabase dashboard.
 
 ## Deployment Workflows
 
@@ -169,7 +169,7 @@ They are completely independent auth sessions. No cross-contamination.
 
 ### "Unauthorized - service role required"
 - **Cause**: Passing legacy JWT instead of opaque `sb_secret_*` key
-- **Fix**: Use `Authorization: Bearer sb_secret_F9RFPyanPWbSHy5cjBEpaA_gjonTXGE`
+- **Fix**: Use `Authorization: Bearer <sb_secret_key>` (retrieve via Supabase dashboard or `supabase projects api-keys`)
 
 ### OTA not applying
 - **Cause**: Needs 2 app restarts (1st downloads, 2nd applies)
