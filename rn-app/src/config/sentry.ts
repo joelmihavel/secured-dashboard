@@ -1,104 +1,49 @@
 /**
- * Sentry Configuration
+ * Sentry Stubs
  *
- * Error tracking and performance monitoring.
- * DSN must be set via EXPO_PUBLIC_SENTRY_DSN env var or in app.json extra.
+ * The @sentry/react-native package has been fully removed from this project.
+ * These no-op stubs preserve the same export surface so that every file
+ * importing from this module continues to compile without changes.
  *
- * Uses dynamic import to gracefully handle Expo Go where native module may not be available.
+ * If Sentry is re-added in the future, replace these stubs with real
+ * initialisation logic.
  */
 
-// DISABLED: Sentry native SDK triggers TurboModule void method crash in release builds.
-// React Native ships as a prebuilt xcframework — the RCTTurboModule.mm patch cannot fix it.
-// The Sentry native init (SentryFileManager, SentryScopePersistentStore) runs during startup
-// and a concurrent TurboModule void method throws an NSException → SIGABRT.
-// Re-enable once RN 0.82+ ships with the upstream fix (RN #53960).
-const Sentry: typeof import('@sentry/react-native') | null = null;
-const SENTRY_DSN = '';
+export const Sentry: null = null;
 
-// Lazy-init navigation integration to avoid TurboModule access at module scope
-let navigation: ReturnType<typeof import('@sentry/react-native').reactNavigationIntegration> | null = null;
-
-function getNavigationIntegration() {
-  if (!Sentry) return null;
-  if (!navigation) {
-    navigation = Sentry.reactNavigationIntegration({
-      enableTimeToInitialDisplay: true,
-    });
-  }
-  return navigation;
+export function initSentry(): void {
+  // no-op
 }
 
-export function initSentry() {
-  if (!Sentry) {
-    if (__DEV__) {
-      console.log('[Sentry] Native module not available — skipping initialization');
-    }
-    return;
-  }
-
-  if (!SENTRY_DSN) {
-    if (__DEV__) {
-      console.log('[Sentry] No DSN configured — skipping initialization');
-    }
-    return;
-  }
-
-  Sentry.init({
-    dsn: SENTRY_DSN,
-    debug: __DEV__,
-    environment: __DEV__ ? 'development' : 'production',
-    tracesSampleRate: __DEV__ ? 1.0 : 0.2,
-    enableAutoSessionTracking: true,
-    sessionTrackingIntervalMillis: 30000,
-    attachStacktrace: true,
-    enableNativeCrashHandling: true,
-    integrations: getNavigationIntegration() ? [getNavigationIntegration()!] : [],
-  });
+export function registerNavigationContainer(_ref: unknown): void {
+  // no-op
 }
 
-export function registerNavigationContainer(ref: unknown) {
-  getNavigationIntegration()?.registerNavigationContainer(ref as any);
+export function captureError(_error: Error, _context?: Record<string, unknown>): void {
+  // no-op
 }
 
-export function captureError(error: Error, context?: Record<string, unknown>) {
-  if (!Sentry) return;
-  const S = Sentry;
-  if (context) {
-    S.withScope((scope) => {
-      Object.entries(context).forEach(([key, value]) => {
-        scope.setExtra(key, value);
-      });
-      S.captureException(error);
-    });
-  } else {
-    S.captureException(error);
-  }
+export function setUserContext(_userId: string, _phone?: string): void {
+  // no-op
 }
 
-export function setUserContext(userId: string, phone?: string) {
-  if (!Sentry) return;
-  Sentry.setUser({ id: userId, ...(phone ? { phone } : {}) });
+export function clearUserContext(): void {
+  // no-op
 }
 
-export function clearUserContext() {
-  if (!Sentry) return;
-  Sentry.setUser(null);
-}
-
-export function addBreadcrumb(message: string, category: string, data?: Record<string, unknown>) {
-  if (!Sentry) return;
-  Sentry.addBreadcrumb({ message, category, data, level: 'info' });
+export function addBreadcrumb(
+  _message: string,
+  _category: string,
+  _data?: Record<string, unknown>,
+): void {
+  // no-op
 }
 
 /**
- * Wraps a React component with Sentry performance monitoring.
- * Returns the component unwrapped if Sentry is not available (Expo Go).
+ * Identity function -- returns the component unchanged.
  */
 export function wrapWithSentry<P extends Record<string, unknown>>(
-  component: React.ComponentType<P>
+  component: React.ComponentType<P>,
 ): React.ComponentType<P> {
-  if (!Sentry) return component;
-  return Sentry.wrap(component);
+  return component;
 }
-
-export { Sentry };

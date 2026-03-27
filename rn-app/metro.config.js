@@ -1,6 +1,5 @@
 const path = require('path');
 const { getDefaultConfig } = require('expo/metro-config');
-const { withSentryConfig } = require('@sentry/react-native/metro');
 const config = getDefaultConfig(__dirname);
 
 // Empty module shim for Node.js built-ins that don't exist in React Native.
@@ -30,10 +29,4 @@ config.resolver.extraNodeModules = {
   'utf-8-validate': emptyModule,
 };
 
-// Sentry Metro serializer wraps the bundler to inject Debug IDs into bundles/source maps.
-// Currently crashing with "Cannot read properties of undefined (reading 'match')" in
-// @sentry/react-native@7.2.0 sentryMetroSerializer.ts — likely incompatible with current
-// Metro version. Sentry error tracking still works without this; only source map upload
-// for symbolicated stack traces is affected.
-// TODO: Re-enable after upgrading @sentry/react-native or confirming fix.
 module.exports = config;
