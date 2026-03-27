@@ -75,7 +75,7 @@ export async function computeRisk(
         .maybeSingle(),
       supabase
         .from("extracted_rental_info")
-        .select("extraction_confidence, lease_end_date")
+        .select("confidence_score, lease_end_date")
         .eq("user_id", userId)
         .order("created_at", { ascending: false })
         .limit(1)
@@ -183,7 +183,7 @@ export async function computeRisk(
     factors.push({ factor: "credit_score", signal: creditSignal, weight: 3, detail: creditDetail });
 
     // --- Signal 5: agreement_confidence (weight 2) ---
-    const confidence = extraction?.extraction_confidence as number | null;
+    const confidence = extraction?.confidence_score as number | null;
     let confSignal: Signal;
     let confDetail: string;
 
@@ -191,8 +191,8 @@ export async function computeRisk(
       confSignal = "YELLOW";
       confDetail = "No extraction data available";
     } else {
-      // extraction_confidence is stored as 0-1 float, convert to percentage
-      const pct = confidence > 1 ? confidence : Math.round(confidence * 100);
+      // confidence_score is stored as 0-100 integer by process-document
+      const pct = confidence;
       if (pct >= 80) {
         confSignal = "GREEN";
         confDetail = `High extraction confidence (${pct}%)`;
