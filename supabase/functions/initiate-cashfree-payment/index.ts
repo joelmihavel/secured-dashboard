@@ -455,16 +455,14 @@ serve(async (req: Request) => {
 
     // ── CASHFREE ORDER CREATION ──
     const WEBHOOK_URL = `${SUPABASE_URL}/functions/v1/payment-webhook`;
-    // Map raw (pre-normalization) method to Cashfree payment_methods restriction.
-    // Uses rawPaymentMethod (not normalized) so debit_card → dc, card → cc.
+    // Map raw (pre-normalization) method to Cashfree order_meta.payment_methods.
+    // Short codes: cc, dc, nb, upi (confirmed working with API v2025-01-01).
     const CF_METHOD_MAP: Record<string, string> = {
-      card: 'cc',              // Credit card only
+      card: 'cc',
       credit_card: 'cc',
-      debit_card: 'dc',       // Debit card only
+      debit_card: 'dc',
       netbanking: 'nb',
       upi: 'upi',
-      upi_intent: 'upi',
-      upi_collect: 'upi',
     };
     const cfPaymentMethods = CF_METHOD_MAP[rawPaymentMethod] ?? undefined;
 

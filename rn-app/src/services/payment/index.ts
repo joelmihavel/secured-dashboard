@@ -1,5 +1,9 @@
 /**
- * Payment Services — Core SDK Only
+ * Payment Services — Gateway-Aware
+ *
+ * Supports both Cashfree (new) and PayU (legacy) payment gateways.
+ * The active gateway is determined by EXPO_PUBLIC_PAYMENT_GATEWAY env var.
+ * Default: 'cashfree' for dev/preview, 'payu' for production (until Cashfree goes live).
  */
 
 import { callEdgeFunction } from '../supabase';
@@ -11,6 +15,31 @@ export * from './storageService';
 export { launchCorePayment, isCoreSdkAvailable } from './payuCoreService';
 export type { CorePaymentMode, CorePaymentOutcome, InstrumentParams } from './payuCoreService';
 export * from './cashfreeService';
+
+// ==============================================
+// GATEWAY SELECTION
+// ==============================================
+
+export type PaymentGateway = 'cashfree' | 'payu';
+
+/**
+ * Returns the active payment gateway.
+ *
+ * Decision chain:
+ * 1. EXPO_PUBLIC_PAYMENT_GATEWAY env var (explicit: 'cashfree' or 'payu')
+ * 2. Default: 'payu' (backward compatible for old builds without Cashfree SDK)
+ *
+ * For new builds: set EXPO_PUBLIC_PAYMENT_GATEWAY=cashfree in EAS env.
+ * For old builds: env var is unset → defaults to PayU. Even if an OTA sets
+ * the var to 'cashfree', isCashfreeAvailable() will be false (no native SDK
+ * in the binary), so the Cashfree path will fail gracefully.
+ */
+export function getPaymentGateway(): PaymentGateway {
+  const env = process.env.EXPO_PUBLIC_PAYMENT_GATEWAY?.toLowerCase();
+  if (env === 'cashfree') return 'cashfree';
+  if (env === 'payu') return 'payu';
+  return 'payu';
+}
 
 // ==============================================
 // TYPES
@@ -155,13 +184,16 @@ export async function initiatePayment(params: {
   /** UPI VPA for S2S collect flow — when provided, backend sends collect request directly */
   upiVpa?: string;
 }): Promise<{ data: UnifiedInitiateResult | null; error: string | null }> {
-  // Use dedicated Cashfree function — isolated from PayU path
-  const useCashfree = true;
-  const functionName = useCashfree ? 'initiate-cashfree-payment' : 'initiate-payment';
+  const gateway = getPaymentGateway();
+  const functionName = gateway === 'cashfree' ? 'initiate-cashfree-payment' : 'initiate-payment';
+
+  // PayU expects 'card' for both credit/debit; Cashfree uses the raw method for server-side restriction
+  const paymentMethod = gateway === 'payu' && params.paymentMethod === 'debit_card'
+    ? 'card' : params.paymentMethod;
 
   const body: Record<string, unknown> = {
     tenancy_id: params.tenancyId,
-    payment_method: params.paymentMethod,
+    payment_method: paymentMethod,
     card_type: params.cardType,
     rent_month: params.rentMonth.slice(0, 7),
     checkout_mode: 'sdk',

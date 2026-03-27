@@ -307,8 +307,6 @@ const ReceiptRow = memo(({ label, value, isPayableRent, isCashback, isPositive }
         styles.valueText,
         styles.valueMaxWidth,
       ]}
-      numberOfLines={1}
-      ellipsizeMode="tail"
     >
       {value}
     </Text>
@@ -339,28 +337,28 @@ PendingContent.displayName = 'PendingContent';
 
 interface SuccessContentProps {
   amount: string;
+  cashbackApplied: string;
   date: string;
   method: string;
   landlordName: string;
-  panCard: string;
-  agreementId: string;
-  transactionId: string;
+  utr: string;
   payableRent: string;
 }
 
 const SuccessContent = memo(({
   amount,
+  cashbackApplied,
   date,
   method,
   landlordName,
-  panCard,
-  agreementId,
-  transactionId,
+  utr,
   payableRent,
 }: SuccessContentProps) => {
   return (
     <View style={styles.receiptDetails}>
       <ReceiptRow label="Amount paid" value={`\u20B9  ${amount}`} />
+      <DashedDivider color={FIGMA_COLORS.dividerColor} style={styles.divider} />
+      <ReceiptRow label="Cashback Applied" value={`- \u20B9  ${cashbackApplied}`} isCashback />
       <DashedDivider color={FIGMA_COLORS.dividerColor} style={styles.divider} />
       <ReceiptRow label="Date" value={date} />
       <DashedDivider color={FIGMA_COLORS.dividerColor} style={styles.divider} />
@@ -368,14 +366,16 @@ const SuccessContent = memo(({
       <DashedDivider color={FIGMA_COLORS.dividerColor} style={styles.divider} />
       <ReceiptRow label="Landlord" value={landlordName} />
       <DashedDivider color={FIGMA_COLORS.dividerColor} style={styles.divider} />
-      <ReceiptRow label="PAN Card" value={panCard} />
-      <DashedDivider color={FIGMA_COLORS.dividerColor} style={styles.divider} />
-      <ReceiptRow label="Agreement ID" value={agreementId} />
-      <DashedDivider color={FIGMA_COLORS.dividerColor} style={styles.divider} />
-      <ReceiptRow label="Transaction ID" value={transactionId} />
+      <ReceiptRow label="UTR" value={utr} />
       <View style={styles.secondSection}>
         <DashedDivider color={FIGMA_COLORS.dividerColor} style={styles.divider} />
-        <ReceiptRow label="Payable Rent" value={`\u20B9  ${payableRent}`} isPayableRent />
+        <ReceiptRow label="Rent Paid" value={`\u20B9  ${payableRent}`} isPayableRent />
+      </View>
+      {/* Figma 2095586455: Settlement info box — bg:#1a1a1a r:8 p:8/12 */}
+      <View style={styles.settlementInfoBox}>
+        <Text style={styles.settlementInfoText}>
+          {'\u2139\uFE0F'} Settlement would be processed within 24 hrs
+        </Text>
       </View>
     </View>
   );
@@ -429,7 +429,9 @@ export default function PaymentStatusScreen() {
   // -- Route params
   const params = useLocalSearchParams() as unknown as StatusParams;
   const paymentId = params.paymentId ?? '';
-  const amount = params.amount ?? '32,175';
+  const storeAmount = usePaymentStore((s) => s.amount);
+  const amount = params.amount
+    ?? (storeAmount ? String(storeAmount) : '0');
   const method = (params.method ?? '') as string;
   const cashback = params.cashback ?? '0';
   const transactionId = params.transactionId ?? `SEC${Date.now().toString().slice(-8)}`;
@@ -865,7 +867,7 @@ export default function PaymentStatusScreen() {
       htmlData = buildFallbackReceiptData({
         amount,
         method,
-        transactionId,
+        transactionId: transactionId,
         landlordName: params.landlordName,
         agreementId: params.agreementId,
         paymentId,
@@ -956,31 +958,31 @@ export default function PaymentStatusScreen() {
 
   const displayData = React.useMemo(() => {
     if (receiptData) {
-      const { payment: rp, landlord, agreement } = receiptData;
+      const { payment: rp, landlord } = receiptData;
+      const cbAmount = Number(cashback) || 0;
       return {
         amount: rp.amount.toLocaleString('en-IN'),
+        cashbackApplied: cbAmount.toLocaleString('en-IN'),
         date: formatDisplayDate(rp.paidAt),
         method: rp.paymentMethod ?? method.toUpperCase(),
         landlordName: landlord.name,
-        panCard: landlord.panMasked ?? 'N/A',
-        agreementId: agreement.certId ? `#${agreement.certId}` : 'N/A',
-        transactionId: rp.utr ?? rp.transactionId ?? transactionId,
+        utr: rp.utr || 'Pending',
         payableRent: rp.amount.toLocaleString('en-IN'),
       };
     }
 
     const formatted = Number(amount) ? Number(amount).toLocaleString('en-IN') : amount;
+    const cbAmount = Number(cashback) || 0;
     return {
       amount: formatted,
+      cashbackApplied: cbAmount.toLocaleString('en-IN'),
       date: formatDisplayDate(new Date().toISOString()),
       method: method ? method.toUpperCase() : '\u2014',
       landlordName: params.landlordName || 'N/A',
-      panCard: 'N/A',
-      agreementId: params.agreementId ? `#${params.agreementId}` : 'N/A',
-      transactionId: transactionId,
+      utr: 'Pending',
       payableRent: formatted,
     };
-  }, [receiptData, amount, method, transactionId, params.landlordName, params.agreementId]);
+  }, [receiptData, amount, cashback, method, params.landlordName]);
 
   // ============================================
   // RENDER CARD CONTENT
@@ -994,12 +996,11 @@ export default function PaymentStatusScreen() {
         return (
           <SuccessContent
             amount={displayData.amount}
+            cashbackApplied={displayData.cashbackApplied}
             date={displayData.date}
             method={displayData.method}
             landlordName={displayData.landlordName}
-            panCard={displayData.panCard}
-            agreementId={displayData.agreementId}
-            transactionId={displayData.transactionId}
+            utr={displayData.utr}
             payableRent={displayData.payableRent}
           />
         );
@@ -1069,16 +1070,16 @@ export default function PaymentStatusScreen() {
         return (
           <>
             <PrimaryButton
-              title="Try Again"
-              onPress={handleTryAgain}
+              title="Contact Support"
+              onPress={handleContactSupport}
               showDivider={true}
-              testID="try-again-button"
+              testID="contact-support-button"
             />
             <TouchableOpacity
-              onPress={handleContactSupport}
+              onPress={handleTryAgain}
               hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             >
-              <Text style={styles.contactSupportText}>Contact Support</Text>
+              <Text style={styles.contactSupportText}>Try Again</Text>
             </TouchableOpacity>
           </>
         );
@@ -1226,7 +1227,7 @@ const styles = StyleSheet.create({
   },
   receiptRow: {
     width: FIGMA_CARD_INNER_WIDTH,
-    height: sv(20),
+    minHeight: sv(20),
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
@@ -1289,6 +1290,20 @@ const styles = StyleSheet.create({
   secondSection: {
     marginTop: sv(8),
     gap: sv(16),
+  },
+  // Figma 2095586455: Settlement info box — bg:#1a1a1a r:8 p:8/12
+  settlementInfoBox: {
+    marginTop: sv(16),
+    backgroundColor: '#1A1A1A',
+    borderRadius: 8,
+    paddingVertical: sv(8),
+    paddingHorizontal: s(12),
+  },
+  settlementInfoText: {
+    fontFamily: 'PlusJakartaSans-Regular',
+    fontSize: sf(12),
+    lineHeight: sf(20),
+    color: '#FF9A6D', // brand.500
   },
 
   // -- Button container

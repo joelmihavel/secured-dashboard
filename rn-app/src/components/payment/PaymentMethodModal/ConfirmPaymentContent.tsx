@@ -280,7 +280,7 @@ export function ConfirmPaymentContent({
             showDivider
           />
           <RNText style={s.footerText}>
-            Settlement to your landlord's bank account will take less than 24 hours.
+            Settlement will be processed in less than 24 hours.
           </RNText>
         </View>
       </ScrollView>

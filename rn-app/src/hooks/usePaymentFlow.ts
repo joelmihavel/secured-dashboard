@@ -308,7 +308,7 @@ export function usePaymentFlow(): UsePaymentFlowReturn {
                 params: { paymentId, method: methodParam, initialStatus: 'pending' },
               } as never);
               resolve({ status: 'navigating' });
-            }, 300_000),
+            }, 120_000),
           ),
         ]);
       } catch (err) {

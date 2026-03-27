@@ -32,7 +32,7 @@ import * as Haptics from 'expo-haptics';
 
 import { usePaymentStore } from '@/src/stores';
 import { useDashboard } from '@/src/hooks';
-import { initiatePayment, buildSessionParams } from '@/src/services/payment';
+import { initiatePayment, buildSessionParams, getPaymentGateway } from '@/src/services/payment';
 import { sanitizeErrorForUI } from '@/src/services/api/payments';
 import { useNetworkStatus } from '@/src/hooks/useNetworkStatus';
 import { BottomSheet } from '@/src/components/ui';
@@ -245,7 +245,10 @@ export function PaymentMethodModal({
       // Initiate payment if not yet done (UPI, new methods via confirm)
       if (!currentPaymentId) {
         const result = await handleInitiateForChild(pending.methodType);
-        if (!result) return; // demo mode handled navigation
+        if (!result) {
+          pendingInstrumentRef.current = null; // clean up before demo navigation
+          return;
+        }
         currentPaymentId = result.paymentId;
       }
 
@@ -348,15 +351,32 @@ export function PaymentMethodModal({
           return;
         }
 
-        setIsInitiating(true);
         setConfirming();
 
         // Determine card type for CC/DC routing
         const resolvedCardType: 'credit' | 'debit' = methodType === 'debit_card' ? 'debit' : 'credit';
         setCardType(resolvedCardType);
 
-        // UPI: no form needed — go straight to confirm screen
-        // Payment will be initiated when user taps "Pay" on confirm screen
+        const gateway = getPaymentGateway();
+        const methodLabel = methodType === 'card' ? 'Credit Card'
+          : methodType === 'debit_card' ? 'Debit Card'
+          : methodType === 'netbanking' ? 'Net Banking'
+          : 'UPI';
+
+        if (gateway === 'cashfree') {
+          // Cashfree: all methods go straight to confirm — SDK handles input UI.
+          // Payment is initiated when user taps "Pay" on confirm screen.
+          pendingInstrumentRef.current = {
+            methodType,
+            corePaymentMode: methodType,
+            params: {},
+            methodLabel,
+          };
+          setModalView('confirm-payment');
+          return;
+        }
+
+        // PayU: UPI goes to confirm, card/netbanking need form screens first.
         if (methodType === 'upi') {
           pendingInstrumentRef.current = {
             methodType: 'upi',
@@ -365,12 +385,12 @@ export function PaymentMethodModal({
             methodLabel: 'UPI',
           };
           setModalView('confirm-payment');
-          setIsInitiating(false);
           return;
         }
 
+        // PayU card/netbanking: initiate payment early (need session params for form)
+        setIsInitiating(true);
         try {
-          // Read the user-entered amount from the store (rupees → paise)
           const storeEnteredAmount = usePaymentStore.getState().enteredAmount;
           const amountPaise = storeEnteredAmount > 0 ? Math.round(storeEnteredAmount * 100) : undefined;
 
@@ -386,56 +406,26 @@ export function PaymentMethodModal({
             throw new Error(error ?? 'Failed to initiate payment');
           }
 
-          // Demo mode: route through confirm screen so Apple reviewers see the full flow
           if (data.demoMode) {
             setProcessing(data.paymentId);
             setLastPayment(data.paymentId);
             setPaymentId(data.paymentId);
             isDemoRef.current = true;
-
-            const methodLabel = methodType === 'card' ? 'Credit Card'
-              : methodType === 'debit_card' ? 'Debit Card'
-              : methodType === 'netbanking' ? 'Net Banking'
-              : methodType;
-
             pendingInstrumentRef.current = {
-              methodType,
-              corePaymentMode: methodType,
-              params: {},
-              methodLabel,
+              methodType, corePaymentMode: methodType, params: {}, methodLabel,
             };
             setModalView('confirm-payment');
             return;
           }
 
-          // Store gateway-specific session data
-          if (data.cashfreeSessionId && data.cfOrderId) {
-            setCashfreeSession(data.cashfreeSessionId, data.cfOrderId);
-          } else if (data.payuParams) {
+          if (data.payuParams) {
             setPayuSessionParams(buildSessionParams(data.payuParams as Record<string, string>));
           }
           setProcessing(data.paymentId);
           setLastPayment(data.paymentId);
           setPaymentId(data.paymentId);
 
-          // Cashfree Web Checkout: skip card/bank form — Cashfree handles the input UI.
-          // Go straight to confirm screen which has the correct gateway routing.
-          if (data.cashfreeSessionId && data.cfOrderId) {
-            const methodLabel = methodType === 'card' ? 'Credit Card'
-              : methodType === 'debit_card' ? 'Debit Card'
-              : methodType === 'netbanking' ? 'Net Banking'
-              : methodType;
-            pendingInstrumentRef.current = {
-              methodType,
-              corePaymentMode: methodType,
-              params: {},
-              methodLabel,
-            };
-            setModalView('confirm-payment');
-            return;
-          }
-
-          // PayU: navigate to add-method form for card/bank input
+          // Navigate to card form or bank selector
           const viewMap: Record<Exclude<PaymentMethodType, 'upi'>, ModalView> = {
             card: 'add-card',
             debit_card: 'add-debit-card',
@@ -445,8 +435,7 @@ export function PaymentMethodModal({
         } catch (err) {
           console.error('PaymentMethodModal initiate error:', err);
           const rawMessage = err instanceof Error ? err.message : 'An error occurred';
-          const errorMessage = sanitizeErrorForUI(rawMessage);
-          Alert.alert('Payment Error', errorMessage);
+          Alert.alert('Payment Error', sanitizeErrorForUI(rawMessage));
         } finally {
           setIsInitiating(false);
         }
@@ -454,16 +443,7 @@ export function PaymentMethodModal({
         isProceedingRef.current = false;
       }
     },
-    [
-      tenancyId,
-      rentMonth,
-      isConnected,
-      setConfirming,
-      setProcessing,
-      setLastPayment,
-      setPayuSessionParams,
-      setCashfreeSession,
-    ],
+    [isConnected, tenancyId, rentMonth, setConfirming, setProcessing, setLastPayment, setPayuSessionParams, setCashfreeSession],
   );
 
   return (
