@@ -983,7 +983,9 @@ export default function PaymentStatusScreen() {
       date: formatDisplayDate(new Date().toISOString()),
       method: method ? method.toUpperCase() : '\u2014',
       landlordName: params.landlordName || 'N/A',
-      utr: 'Pending',
+      panCard: 'Pending',
+      agreementId: 'Pending',
+      transactionId: 'Pending',
       payableRent: formatted,
     };
   }, [receiptData, amount, cashback, method, params.landlordName]);
