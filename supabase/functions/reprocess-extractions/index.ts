@@ -465,11 +465,30 @@ function mergeGeminiResults(gemini: any): any {
     rooms_in_agreement: gemini.rooms_in_agreement != null ? Number(gemini.rooms_in_agreement) : null,
     property_bhk_type: gemini.property_bhk_type || null,
     gemini_verification_score: gemini.confidence || null,
-    confidence_score: gemini.confidence != null ? Number(gemini.confidence) : 0,
+    confidence_score: gemini.confidence != null && Number(gemini.confidence) > 0
+      ? Number(gemini.confidence) : 0,
     agreement_date: null,
     registration_number: null,
     fields_extracted: 0,
   };
+
+  // Sanity-check financial amounts (same guards as process-document)
+  const MAX_RENT_PAISE = 50_00_000_00;
+  const MAX_DEPOSIT_PAISE = 500_00_000_00;
+  if (merged.monthly_rent_paise != null && (merged.monthly_rent_paise <= 0 || merged.monthly_rent_paise > MAX_RENT_PAISE)) {
+    console.warn(`[reprocess] Invalid monthly_rent_paise=${merged.monthly_rent_paise}, clearing`);
+    merged.monthly_rent_paise = null;
+  }
+  if (merged.security_deposit_paise != null && (merged.security_deposit_paise < 0 || merged.security_deposit_paise > MAX_DEPOSIT_PAISE)) {
+    console.warn(`[reprocess] Invalid security_deposit_paise=${merged.security_deposit_paise}, clearing`);
+    merged.security_deposit_paise = null;
+  }
+  if (merged.rooms_in_agreement != null && (merged.rooms_in_agreement < 1 || merged.rooms_in_agreement > 20)) {
+    merged.rooms_in_agreement = null;
+  }
+  if (merged.rent_due_day != null && (merged.rent_due_day < 1 || merged.rent_due_day > 28)) {
+    merged.rent_due_day = null;
+  }
 
   merged.fields_extracted = countExtractedFields(merged);
   return merged;
