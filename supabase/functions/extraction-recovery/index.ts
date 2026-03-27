@@ -15,7 +15,7 @@
  *   4. All above -> set user_status to 'waitlisted'
  *
  * Skip conditions:
- *   - contract_status in (manual_review, invalid_document, expired)
+ *   - contract_status in (manual_review, invalid_document)
  *   - needs_manual_review=true (unless contract_status=confirmed)
  *   - is_city_supported=false
  *   - Missing critical fields (address, rent, tenant name, landlord name)
@@ -209,7 +209,8 @@ serve(async (req: Request) => {
         }
 
         // Skip: contract flagged by process-document (needs admin intervention)
-        if (["manual_review", "invalid_document", "expired"].includes(extraction.contract_status)) {
+        // NOTE: "expired" removed — expired agreements proceed, risk engine flags them
+        if (["manual_review", "invalid_document"].includes(extraction.contract_status)) {
           results.skipped.push({ user_id: userId, reason: `contract_status: ${extraction.contract_status}` });
           continue;
         }

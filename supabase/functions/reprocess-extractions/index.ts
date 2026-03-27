@@ -552,19 +552,9 @@ function evaluateExtraction(data: any, isCitySupported: boolean): { needs_manual
     };
   }
 
-  // Check lease expiry
-  if (data.lease_end_date) {
-    const endDate = new Date(data.lease_end_date);
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    if (!isNaN(endDate.getTime()) && endDate < today) {
-      return {
-        needs_manual_review: true,
-        review_reason: `Agreement expired on ${data.lease_end_date}.`,
-        contract_status: 'expired',
-      };
-    }
-  }
+  // Expired agreements are NOT a blocker — common for verbal renewals and
+  // extensions pending. Risk engine flags these as RED (agreement_expiry signal).
+  // Log for visibility but proceed with extraction.
 
   // Check critical fields
   const criticalMissing: string[] = [];
