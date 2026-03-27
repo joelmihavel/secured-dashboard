@@ -251,7 +251,9 @@ export const PaymentFlipCard = memo(function PaymentFlipCard({ data }: PaymentFl
               <Text style={styles.viewReceiptText}>View Rent Receipt</Text>
             </Pressable>
           ) : (
-            <Text style={styles.upcomingPaymentText}>Upcoming Payment</Text>
+            <Text style={styles.upcomingPaymentText}>
+              {data.status === 'missed' ? 'Missed Payment' : 'Upcoming Payment'}
+            </Text>
           )}
         </View>
 
