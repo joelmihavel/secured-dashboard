@@ -321,6 +321,7 @@ export async function onDemandTransfer(params: {
     transfer_type: "ON_DEMAND",
     transfer_amount: parseFloat((amountPaise / 100).toFixed(2)),
     remark: remark ?? `Rent settlement - ${paymentId}`,
+    tags: { payment_id: paymentId },
   };
 
   const result = await cfFetch(

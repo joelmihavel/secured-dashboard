@@ -162,6 +162,11 @@ serve(async (req: Request) => {
   const corsResponse = handleCors(req);
   if (corsResponse) return corsResponse;
 
+  // TEMPORARY: GET returns deployment probe (no auth needed)
+  if (req.method === "GET") {
+    return jsonResponse({ _probe: true, _build: "2026-03-27T01:30-v2", ts: new Date().toISOString() });
+  }
+
   if (req.method !== "POST") {
     return errorResponse("Method not allowed", 405);
   }
@@ -713,7 +718,7 @@ serve(async (req: Request) => {
       const cfResponseData = {
         payment_id: payment.id,
         txn_id: txnId,
-        _build: "2026-03-27T00:30",
+        _build: "2026-03-27T01:30-v2",
         _gw_debug: `gv=${gateway_version}|cf=${useCashfree}`,
         total_amount_paise: totalAmountPaise,
         original_rent_paise: originalRentPaise,
@@ -764,7 +769,7 @@ serve(async (req: Request) => {
       payment_id: payment.id,
       txn_id: txnId,
       gateway: "payu" as const,
-      _build: "2026-03-27T00:30",
+      _build: "2026-03-27T01:30-v2",
       _gw_debug: `gv=${gateway_version}|cf=${useCashfree}`,
       original_rent_paise: originalRentPaise,
       cashback_applied_paise: cashbackDiscountPaise,

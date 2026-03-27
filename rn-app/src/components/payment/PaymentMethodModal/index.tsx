@@ -276,8 +276,6 @@ export function PaymentMethodModal({
         route: gatewayRoute,
         paymentId: currentPaymentId,
       }));
-      // DEBUG: temporary visible alert — remove after confirming Cashfree works
-      Alert.alert('DEBUG Gateway', `Route: ${gatewayRoute}\nCF Session: ${storeState.cashfreeSessionId ? 'YES' : 'NO'}\nCF Order: ${storeState.cfOrderId ? 'YES' : 'NO'}\nPayU: ${storeState.payuSessionParams ? 'YES' : 'NO'}`);
       if (storeState.cashfreeSessionId && storeState.cfOrderId) {
         // Cashfree path
         const outcome = await executeCashfreePayment(
@@ -411,8 +409,6 @@ export function PaymentMethodModal({
           }
 
           // Store gateway-specific session data
-          // DEBUG: temporary visible alert — remove after confirming Cashfree works
-          Alert.alert('DEBUG Initiate', `CF Session: ${data.cashfreeSessionId ? 'YES' : 'NO'}\nCF Order: ${data.cfOrderId ? 'YES' : 'NO'}\nPayU: ${data.payuParams ? 'YES' : 'NO'}\nDemo: ${data.demoMode}`);
           if (data.cashfreeSessionId && data.cfOrderId) {
             setCashfreeSession(data.cashfreeSessionId, data.cfOrderId);
           } else if (data.payuParams) {

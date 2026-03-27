@@ -155,13 +155,16 @@ export async function initiatePayment(params: {
   /** UPI VPA for S2S collect flow — when provided, backend sends collect request directly */
   upiVpa?: string;
 }): Promise<{ data: UnifiedInitiateResult | null; error: string | null }> {
+  // Use dedicated Cashfree function — isolated from PayU path
+  const useCashfree = true;
+  const functionName = useCashfree ? 'initiate-cashfree-payment' : 'initiate-payment';
+
   const body: Record<string, unknown> = {
     tenancy_id: params.tenancyId,
     payment_method: params.paymentMethod === 'debit_card' ? 'card' : params.paymentMethod,
     card_type: params.cardType,
     rent_month: params.rentMonth.slice(0, 7),
     checkout_mode: 'sdk',
-    gateway_version: 'cashfree',
   };
   if (params.amountPaise) {
     body.amount_paise = params.amountPaise;
@@ -169,6 +172,9 @@ export async function initiatePayment(params: {
   if (params.upiVpa) {
     body.upi_vpa = params.upiVpa;
   }
+
+  // Standard authenticated call — JWT ref matches edge function project
+  // because EAS env vars point dev/preview to the branch and production to main.
   const { data, error, errorBody } = await callEdgeFunction<{
     success: boolean;
     data: {
@@ -177,12 +183,9 @@ export async function initiatePayment(params: {
       total_amount_paise: number;
       cashback_applied_paise: number;
       payu?: Record<string, unknown>;
-      cashfree?: {
-        payment_session_id: string;
-        cf_order_id: string;
-      };
+      cashfree?: { payment_session_id: string; cf_order_id: string };
     };
-  }>('initiate-payment', body, true);
+  }>(functionName, body, true);
 
   if (error) {
     console.error('[initiatePayment] Edge function error:', error, 'code:', errorBody?.code, 'body:', JSON.stringify(errorBody));
@@ -239,11 +242,6 @@ export async function initiatePayment(params: {
 
   const d = data.data;
   const raw = d as Record<string, unknown>;
-  // DEBUG: show Supabase URL + server response to diagnose DB routing
-  const { Alert } = require('react-native');
-  const sbUrl = process.env.EXPO_PUBLIC_SUPABASE_URL ?? 'UNSET';
-  const dbId = sbUrl.includes('zqlow') ? 'DEV-DB' : sbUrl.includes('uowjt') ? 'MAIN-DB' : 'UNKNOWN';
-  Alert.alert('DEBUG', `DB: ${dbId}\nURL: ...${sbUrl.slice(-30)}\nBUILD: ${raw._build ?? 'OLD'}\nGW: ${raw._gw_debug ?? 'NONE'}\ngateway: ${raw.gateway ?? 'MISSING'}\ncashfree: ${!!raw.cashfree}`);
   return {
     data: {
       paymentId: d.payment_id,

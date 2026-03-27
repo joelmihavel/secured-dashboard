@@ -25,12 +25,11 @@ import {
   setupCallbacks as setupCashfreeCallbacks,
   removeCallbacks as removeCashfreeCallbacks,
   launchCardPayment,
+  launchNetbanking,
   launchUPIIntent,
   isCashfreeAvailable,
-  getWebCheckoutUrl,
 } from '@/src/services/payment/cashfreeService';
 import { callEdgeFunction } from '@/src/services/supabase';
-import * as WebBrowser from 'expo-web-browser';
 import { addCardToken, addUpiVpa, saveBankPreference } from '@/src/services/api/payments';
 import { paymentKeys } from '@/src/hooks/usePayments';
 import { dashboardKeys } from '@/src/hooks/useDashboard';
@@ -250,55 +249,112 @@ export function usePaymentFlow(): UsePaymentFlowReturn {
       isExecutingRef.current = true;
       setIsExecuting(true);
 
+      // Cleanup helper — called after SDK callback fires or on timeout/error.
+      // NOT in a finally block, because the SDK callback fires asynchronously
+      // after the Promise is returned. A finally block would kill callbacks
+      // before the SDK has a chance to fire them.
+      const cleanup = () => {
+        removeCashfreeCallbacks();
+        clearCashfreeSession();
+        isExecutingRef.current = false;
+        setIsExecuting(false);
+      };
+
       try {
         if (paymentMethod === 'card' || paymentMethod === 'debit_card' || paymentMethod === 'netbanking') {
-          // Card / Debit Card / Net Banking: Open Cashfree Web Checkout
-          // The order's payment_methods restriction (set server-side) ensures
-          // only the selected method is shown in the checkout page.
-          const checkoutUrl = getWebCheckoutUrl(cashfreeSessionId);
-          console.log('[Cashfree] Opening web checkout for', paymentMethod, '→', checkoutUrl);
-
-          await WebBrowser.openBrowserAsync(checkoutUrl, {
-            dismissButtonStyle: 'close',
-            presentationStyle: WebBrowser.WebBrowserPresentationStyle.FULL_SCREEN,
-          });
-
-          // After browser closes (user completed or dismissed), navigate to status.
-          // Webhook determines the actual payment outcome.
-          setLastPayment(paymentId);
-          router.replace({
-            pathname: '/(payment)/status',
-            params: {
-              paymentId,
-              method: paymentMethod === 'netbanking' ? 'netbanking' : 'card',
-              initialStatus: 'pending',
-            },
-          } as never);
-          return { status: 'navigating' };
+          // Card / Debit Card / Net Banking: Drop Checkout with method-specific restriction.
+          // Server-side order_meta.payment_methods (cc/dc/nb) + client-side CFPaymentModes
+          // provides defense-in-depth — user sees only the selected payment method.
+          console.log('[Cashfree] Launching drop checkout for', paymentMethod);
+          const methodParam = paymentMethod === 'netbanking' ? 'netbanking' : 'card';
+          return await Promise.race([
+            new Promise<PaymentFlowOutcome>((resolve) => {
+              setupCashfreeCallbacks(
+                (orderId) => {
+                  cleanup();
+                  Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                  setLastPayment(paymentId);
+                  router.replace({
+                    pathname: '/(payment)/status',
+                    params: { paymentId, method: methodParam, initialStatus: 'success' },
+                  } as never);
+                  resolve({ status: 'navigating' });
+                },
+                (_error, orderId) => {
+                  cleanup();
+                  setLastPayment(paymentId);
+                  // Navigate to status — webhook will confirm actual outcome.
+                  // User may have cancelled, or bank may still be processing.
+                  router.replace({
+                    pathname: '/(payment)/status',
+                    params: { paymentId, method: methodParam, initialStatus: 'pending' },
+                  } as never);
+                  resolve({ status: 'navigating' });
+                },
+              );
+              // Launch method-specific Drop Checkout
+              if (paymentMethod === 'netbanking') {
+                launchNetbanking(cashfreeSessionId, cfOrderId);
+              } else {
+                launchCardPayment(cashfreeSessionId, cfOrderId);
+              }
+            }),
+            // Timeout safety net: 5 min for bank OTP/3DS flows.
+            // If SDK never fires a callback, navigate to status screen
+            // which polls the backend for the webhook-confirmed result.
+            new Promise<PaymentFlowOutcome>((resolve) =>
+              setTimeout(() => {
+                console.warn('[Cashfree] SDK callback timeout — navigating to status');
+                cleanup();
+                setLastPayment(paymentId);
+                router.replace({
+                  pathname: '/(payment)/status',
+                  params: { paymentId, method: methodParam, initialStatus: 'pending' },
+                } as never);
+                resolve({ status: 'navigating' });
+              }, 300_000),
+            ),
+          ]);
         } else if (paymentMethod === 'upi' && !upiVpa) {
           // UPI Intent: Launch Cashfree UPI Intent SDK
-          return new Promise<PaymentFlowOutcome>((resolve) => {
-            setupCashfreeCallbacks(
-              (orderId) => {
-                Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+          return await Promise.race([
+            new Promise<PaymentFlowOutcome>((resolve) => {
+              setupCashfreeCallbacks(
+                (orderId) => {
+                  cleanup();
+                  Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                  setLastPayment(paymentId);
+                  router.replace({
+                    pathname: '/(payment)/status',
+                    params: { paymentId, method: 'upi', initialStatus: 'success' },
+                  } as never);
+                  resolve({ status: 'navigating' });
+                },
+                (_error, orderId) => {
+                  cleanup();
+                  setLastPayment(paymentId);
+                  router.replace({
+                    pathname: '/(payment)/status',
+                    params: { paymentId, method: 'upi', initialStatus: 'pending' },
+                  } as never);
+                  resolve({ status: 'navigating' });
+                },
+              );
+              launchUPIIntent(cashfreeSessionId, cfOrderId);
+            }),
+            new Promise<PaymentFlowOutcome>((resolve) =>
+              setTimeout(() => {
+                console.warn('[Cashfree] UPI Intent callback timeout');
+                cleanup();
                 setLastPayment(paymentId);
                 router.replace({
                   pathname: '/(payment)/status',
                   params: { paymentId, method: 'upi', initialStatus: 'pending' },
                 } as never);
                 resolve({ status: 'navigating' });
-              },
-              (_error, orderId) => {
-                setLastPayment(paymentId);
-                router.replace({
-                  pathname: '/(payment)/status',
-                  params: { paymentId, method: 'upi', initialStatus: 'pending' },
-                } as never);
-                resolve({ status: 'navigating' });
-              },
-            );
-            launchUPIIntent(cashfreeSessionId, cfOrderId);
-          });
+              }, 300_000),
+            ),
+          ]);
         } else if (paymentMethod === 'upi' && upiVpa) {
           // UPI Collect: API-driven via cashfree-pay-order
           const { data: payData, error: payError } = await callEdgeFunction<{
@@ -310,11 +366,12 @@ export function usePaymentFlow(): UsePaymentFlowReturn {
             payment_method: { upi: { channel: 'collect', upi_id: upiVpa } },
           }, true);
 
+          cleanup();
+
           if (payError) {
             return { status: 'failure', error: payError };
           }
 
-          // Navigate to status screen — poll for result
           setLastPayment(paymentId);
           router.replace({
             pathname: '/(payment)/status',
@@ -323,8 +380,10 @@ export function usePaymentFlow(): UsePaymentFlowReturn {
           return { status: 'navigating' };
         }
 
+        cleanup();
         return { status: 'failure', error: 'Unknown payment method' };
       } catch (err) {
+        cleanup();
         captureError(
           err instanceof Error ? err : new Error(String(err)),
           { flow: 'cashfree_payment', paymentMethod, paymentId }
@@ -333,11 +392,6 @@ export function usePaymentFlow(): UsePaymentFlowReturn {
           status: 'failure',
           error: err instanceof Error ? err.message : 'Payment error',
         };
-      } finally {
-        removeCashfreeCallbacks();
-        clearCashfreeSession();
-        isExecutingRef.current = false;
-        setIsExecuting(false);
       }
     },
     [router, setLastPayment, clearCashfreeSession, queryClient],
