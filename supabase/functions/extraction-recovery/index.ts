@@ -291,8 +291,7 @@ serve(async (req: Request) => {
               lease_end_date: extraction.lease_end_date,
               landlord_name: landlordName,
               landlord_names: extraction.landlord_names ?? (landlordName ? [landlordName] : null),
-              landlord_phone: extraction.landlord_phone,
-              landlord_email: extraction.landlord_email,
+              // landlord_phone/email omitted — tenant provides via invite-landlord flow
             })
             .select("id")
             .single();
