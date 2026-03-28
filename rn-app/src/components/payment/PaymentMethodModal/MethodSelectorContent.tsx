@@ -221,6 +221,12 @@ export function MethodSelectorContent({
   const [selectedMethod, setSelectedMethod] = useState<string>('upi-1');
   const rentAmount = storedAmount || tenancy?.monthly_rent || 32500;
 
+  // Fee should be computed on post-cashback amount (matches backend + confirm screen)
+  const isVerified = cashback?.verification_complete ?? false;
+  const cashbackPct = cashback?.discount_rate ?? 0.01;
+  const cashbackAmount = isVerified ? Math.round(rentAmount * cashbackPct) : 0;
+  const feeBaseAmount = rentAmount - cashbackAmount;
+
   const paymentMethods: PaymentMethod[] = useMemo(() => {
     const rates = dynamicRates ?? getGatewayFeeRates();
 
@@ -229,34 +235,34 @@ export function MethodSelectorContent({
         id: 'upi-1',
         type: 'upi' as const,
         title: 'UPI',
-        fee: formatFeeLabel(rates.upi, rentAmount),
-        feeAmount: computeFee(rates.upi, rentAmount),
+        fee: formatFeeLabel(rates.upi, feeBaseAmount),
+        feeAmount: computeFee(rates.upi, feeBaseAmount),
       },
       {
         id: 'netbanking-1',
         type: 'netbanking' as const,
         title: 'Net Banking',
-        fee: formatFeeLabel(rates.netbanking, rentAmount),
-        feeAmount: computeFee(rates.netbanking, rentAmount),
+        fee: formatFeeLabel(rates.netbanking, feeBaseAmount),
+        feeAmount: computeFee(rates.netbanking, feeBaseAmount),
       },
       {
         id: 'debit-card-1',
         type: 'debit_card' as const,
         title: 'Debit Card',
-        fee: formatFeeLabel(rates.debit_card, rentAmount),
-        feeAmount: computeFee(rates.debit_card, rentAmount),
+        fee: formatFeeLabel(rates.debit_card, feeBaseAmount),
+        feeAmount: computeFee(rates.debit_card, feeBaseAmount),
       },
       {
         id: 'card-1',
         type: 'card' as const,
         title: 'Credit Card',
-        fee: formatFeeLabel(rates.credit_card, rentAmount),
-        feeAmount: computeFee(rates.credit_card, rentAmount),
+        fee: formatFeeLabel(rates.credit_card, feeBaseAmount),
+        feeAmount: computeFee(rates.credit_card, feeBaseAmount),
         isDisabled: creditCardDisabled,
         disabledReason: creditCardDisabledReason,
       },
     ];
-  }, [rentAmount, dynamicRates, creditCardDisabled, creditCardDisabledReason]);
+  }, [feeBaseAmount, dynamicRates, creditCardDisabled, creditCardDisabledReason]);
 
   const selectedPaymentMethod = paymentMethods.find((m) => m.id === selectedMethod);
   const isSelectedDisabled = selectedPaymentMethod?.isDisabled ?? false;

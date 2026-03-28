@@ -28,7 +28,7 @@ import {
   PaymentStampsResponse,
   NetbankingBank,
 } from '../services/api/payments';
-import { fetchFeeConfig, getGatewayFeeRates, type GatewayFeeRates } from '../services/payment';
+import { fetchFeeConfig, getGatewayFeeRates, getPaymentGateway, type GatewayFeeRates } from '../services/payment';
 import { dashboardKeys } from './useDashboard';
 
 // ==============================================
@@ -118,7 +118,8 @@ export function useFeeRates() {
     queryKey: paymentKeys.feeRates(),
     queryFn: fetchFeeConfig,
     staleTime: 1000 * 60 * 60, // 1 hour
-    placeholderData: getGatewayFeeRates(),
+    // Use current gateway's rates as placeholder to prevent fee flash on first render
+    placeholderData: getGatewayFeeRates(getPaymentGateway()),
   });
 }
 
