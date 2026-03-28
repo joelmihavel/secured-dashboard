@@ -72,7 +72,7 @@ export function getJourneyRouteTarget(): string {
     case 'agreement_upload':
       return '/(agreement)/upload';
     case 'setup':
-      return '/(setup)';
+      return '/(setup)/add-bank';
     case 'active':
       return '/(main)';
   }

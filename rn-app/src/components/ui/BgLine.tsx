@@ -10,7 +10,7 @@
  * - ViewBox: 0 0 369 234.544
  *
  * Used behind receipt cards and decorative areas across:
- * - Personalized cashback plan (pending-steps)
+ * - Payment confirm receipt
  * - Payment confirmation
  * - Payment status (success/pending/failed/refunded)
  * - Home screen (behind flip card)

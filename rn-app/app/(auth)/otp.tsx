@@ -78,7 +78,7 @@ async function resolvePostOtpTarget(userId: string): Promise<string> {
 
     switch (data.user_status) {
       case 'approved':
-        return '/(setup)';
+        return '/(setup)/add-bank';
       case 'active':
         return '/(main)';
       case 'agreement_confirmed':
@@ -280,7 +280,7 @@ export default function OTPScreen() {
         addBreadcrumb('OTP verified — navigating directly', 'navigation', { target });
 
         // Cache for fast-path on next cold start
-        if (target === '/(main)' || target === '/(setup)' || target === '/(waitlist)') {
+        if (target === '/(main)' || target === '/(setup)/add-bank' || target === '/(waitlist)') {
           SecureStore.setItemAsync(LAST_ROUTE_KEY, target).catch(() => {});
         }
 
