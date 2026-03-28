@@ -801,16 +801,16 @@ export default function PaymentStatusScreen() {
         return (
           <>
             <PrimaryButton
-              title="Try again"
-              onPress={handleTryAgain}
+              title="Contact Support"
+              onPress={handleContactSupport}
               showDivider={true}
-              testID="try-again-button"
+              testID="contact-support-button"
             />
             <TouchableOpacity
-              onPress={handleContactSupport}
+              onPress={handleTryAgain}
               hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             >
-              <Text style={styles.contactSupportText}>Contact Support</Text>
+              <Text style={styles.contactSupportText}>Try Again</Text>
             </TouchableOpacity>
           </>
         );
