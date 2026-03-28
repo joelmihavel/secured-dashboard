@@ -379,16 +379,16 @@ export async function ensureWaitlistEntry(
 ): Promise<void> {
   await supabase.from("waitlist_entries").delete().eq("user_id", userId);
 
+  // Dev DB actual columns (verified via PostgREST probe):
+  // waitlist_position (rename migration never ran), admin_review,
+  // extraction_id, priority_boost, batch_number. No 'status' or 'position'.
   const { error } = await supabase
     .from("waitlist_entries")
     .insert({
       user_id: userId,
       waitlist_position: adminReview === "approved" ? 1 : 42,
-      status: adminReview === "approved" ? "approved" : "pending_review",
       admin_review: adminReview,
       extraction_id: extractionId,
-      extraction_status: "completed",
-      contract_status: "confirmed",
       priority_boost: 0,
       batch_number: adminReview === "approved" ? 1 : null,
     });
@@ -468,6 +468,13 @@ export async function seedPayments(
     const appliedCashback = (i > 0 && withCashback) ? cashbackPaise : 0;
     const totalAmount = rentPaise + pgFeePaise - appliedCashback;
 
+    // Determine settlement status: older payments are fully settled, newest is pending
+    const isOldestPayment = i < count - 1;
+    const settlementStatus = isOldestPayment ? "settled" : "pending";
+    const settledAt = isOldestPayment
+      ? new Date(paymentDate.getFullYear(), paymentDate.getMonth(), paymentDate.getDate() + 3).toISOString()
+      : null;
+
     payments.push({
       user_id: userId,
       tenancy_id: tenancyId,
@@ -484,6 +491,18 @@ export async function seedPayments(
       due_date: dueDate.toISOString().split("T")[0],
       payment_month: paymentMonth.toISOString().split("T")[0],
       paid_at: paymentDate.toISOString(),
+      // Settlement tracking (original single-tier column from create_payments_table)
+      settlement_status: settlementStatus,
+      settled_at: settledAt,
+      // Two-tier payout tracking (added by add_payout_tracking migration)
+      payu_settlement_status: settlementStatus,
+      payu_settled_at: settledAt,
+      landlord_payout_status: isOldestPayment ? "settled" : "pending",
+      landlord_payout_paise: isOldestPayment ? rentPaise : null,
+      landlord_payout_at: settledAt,
+      // Gateway-agnostic columns (added by add_cashfree_columns migration)
+      gateway_settlement_status: settlementStatus,
+      gateway_settled_at: settledAt,
     });
   }
 
