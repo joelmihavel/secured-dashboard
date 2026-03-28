@@ -281,26 +281,32 @@ export default function HomeScreen() {
             && p.rent_month.startsWith(rentMonthPrefix)
             && p.amount >= rentAmount
         );
-        const rawCashback = paidPayment
+        const actualCashback = paidPayment
           ? (paidPayment.cashback_applied > 0 ? paidPayment.cashback_applied : paidPayment.cashback_earned)
           : 0;
-        const cashbackAmount = rawCashback > 0 ? rawCashback : Math.round(rentAmount * (cashbackRate / 100));
+        const potentialCashback = Math.round(rentAmount * (cashbackRate / 100));
 
-        // Determine if payment was late (paid after rent due day)
+        // Determine if payment was late (paid after cashback cutoff day)
+        const cutoffDay = tenancy?.cashback_cutoff_day ?? 7;
         const paidStatus: 'paid' | 'late' = (() => {
-          if (!paidPayment?.paid_at || !tenancy?.rent_due_day) return 'paid';
+          if (!paidPayment?.paid_at) return 'paid';
           const paidDate = new Date(paidPayment.paid_at);
-          // Due date is rent_due_day of the payment month (IST)
           const monthParts = paidPayment.rent_month.match(/^(\d{4})-(\d{2})/);
           if (!monthParts) return 'paid';
-          const dueDate = new Date(
+          // Cutoff is cashback_cutoff_day of the payment month (end of day, generous)
+          const cutoffDate = new Date(
             parseInt(monthParts[1]),
             parseInt(monthParts[2]) - 1,
-            tenancy.rent_due_day,
-            23, 59, 59 // End of due day IST (approx — generous)
+            cutoffDay,
+            23, 59, 59
           );
-          return paidDate > dueDate ? 'late' : 'paid';
+          return paidDate > cutoffDate ? 'late' : 'paid';
         })();
+
+        // Paid on time → show actual cashback earned; Late → show cashback lost (= potential)
+        const cashbackAmount = paidStatus === 'paid'
+          ? (actualCashback > 0 ? actualCashback : potentialCashback)
+          : potentialCashback;
 
         items.push({
           type: 'payment',
@@ -330,9 +336,9 @@ export default function HomeScreen() {
           }
         });
       } else {
-        let earlyStatus: 'upcoming' | 'late' | 'missed' = 'upcoming';
-        if (isMissed || isMultipleOverdue) earlyStatus = 'missed';
-        else if (isOverdue) earlyStatus = 'late';
+        // Not paid: past cutoff → missed, otherwise → upcoming
+        const pastCutoff = upcomingPayment.past_cutoff ?? false;
+        const unpaidStatus: 'upcoming' | 'missed' = pastCutoff ? 'missed' : 'upcoming';
 
         items.push({
           type: 'payment',
@@ -340,7 +346,7 @@ export default function HomeScreen() {
           data: {
             monthName: formatMonth(upcomingPayment.rent_month),
             cashbackEarned: Math.round(rentAmount * (cashbackRate / 100)),
-            status: earlyStatus,
+            status: unpaidStatus,
             yearlyStamps,
             lateCount: summaryLate,
             missedCount: summaryMissed,
@@ -360,15 +366,26 @@ export default function HomeScreen() {
       historicalStamps.forEach((stamp) => {
         const cardStatus = mapStampStatus(stamp.status);
         const hasPayment = stamp.payment_id && (stamp.status === 'on_time' || stamp.status === 'late');
+        const potentialCb = Math.round(rentAmount * (cashbackRate / 100));
+
+        // Paid on time → actual cashback earned; Late/missed → potential cashback (= lost amount)
+        let historicalCashback: number;
+        if (cardStatus === 'paid') {
+          historicalCashback = (stamp.cashback_applied_paise ?? 0) > 0
+            ? stamp.cashback_applied_paise! / 100
+            : potentialCb;
+        } else if (cardStatus === 'late' || cardStatus === 'missed') {
+          historicalCashback = potentialCb;
+        } else {
+          historicalCashback = potentialCb;
+        }
 
         items.push({
           type: 'payment',
           id: `stamp-${stamp.month}`,
           data: {
             monthName: formatMonth(stamp.month),
-            cashbackEarned: (stamp.cashback_applied_paise ?? 0) > 0
-              ? stamp.cashback_applied_paise / 100
-              : hasPayment ? Math.round(rentAmount * (cashbackRate / 100)) : 0,
+            cashbackEarned: historicalCashback,
             status: cardStatus,
             onViewReceipt: hasPayment ? () => {
               router.push({

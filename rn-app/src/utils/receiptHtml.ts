@@ -5,9 +5,12 @@
  * Designed for use with expo-print (WebKit renderer on iOS/Android).
  *
  * Design language: Dark theme matching Flent Secured app design system.
- * Background #131313, cards #202020, brand accent #FF9A6D.
- * Optimised for A4/Letter PDF output.
+ * Background #131313, secondary #1A1A1A, brand accent #FF9A6D.
+ * Optimised for A4 PDF output with PlusJakartaSans embedded fonts.
  */
+
+import { Asset } from 'expo-asset';
+import * as FileSystem from 'expo-file-system';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -29,7 +32,6 @@ export interface ReceiptHtmlData {
     name: string;
     phone: string | null;
     email: string | null;
-    panMasked: string | null;
   };
   property: {
     address: string;
@@ -37,11 +39,50 @@ export interface ReceiptHtmlData {
   };
   landlord: {
     name: string;
-    panMasked: string | null;
+    pan: string | null;
   };
   agreement: {
     certId: string | null;
   };
+}
+
+export interface ReceiptFonts {
+  regular: string;
+  medium: string;
+  semiBold: string;
+  bold: string;
+}
+
+// ---------------------------------------------------------------------------
+// Font Loading
+// ---------------------------------------------------------------------------
+
+let cachedFonts: ReceiptFonts | null = null;
+
+export async function loadReceiptFonts(): Promise<ReceiptFonts | null> {
+  if (cachedFonts) return cachedFonts;
+
+  try {
+    const [regularAsset, mediumAsset, semiBoldAsset, boldAsset] = await Promise.all([
+      Asset.fromModule(require('../../assets/fonts/PlusJakartaSans-Regular.ttf')).downloadAsync(),
+      Asset.fromModule(require('../../assets/fonts/PlusJakartaSans-Medium.ttf')).downloadAsync(),
+      Asset.fromModule(require('../../assets/fonts/PlusJakartaSans-SemiBold.ttf')).downloadAsync(),
+      Asset.fromModule(require('../../assets/fonts/PlusJakartaSans-Bold.ttf')).downloadAsync(),
+    ]);
+
+    const [regular, medium, semiBold, bold] = await Promise.all([
+      FileSystem.readAsStringAsync(regularAsset.localUri!, { encoding: FileSystem.EncodingType.Base64 }),
+      FileSystem.readAsStringAsync(mediumAsset.localUri!, { encoding: FileSystem.EncodingType.Base64 }),
+      FileSystem.readAsStringAsync(semiBoldAsset.localUri!, { encoding: FileSystem.EncodingType.Base64 }),
+      FileSystem.readAsStringAsync(boldAsset.localUri!, { encoding: FileSystem.EncodingType.Base64 }),
+    ]);
+
+    cachedFonts = { regular, medium, semiBold, bold };
+    return cachedFonts;
+  } catch (error) {
+    console.warn('[receiptHtml] Failed to load receipt fonts:', error);
+    return null;
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -83,62 +124,185 @@ function esc(value: string | null | undefined): string {
 }
 
 // ---------------------------------------------------------------------------
-// Design tokens (inline for PDF — no external deps)
+// Design tokens (inline for PDF -- no external deps)
 // ---------------------------------------------------------------------------
 
 const C = {
-  bg: '#0E0E0E',
-  cardBg: '#181818',
-  card: '#1E1E1E',
-  cardBorder: '#2A2A2A',
-  cardBorderLight: '#333333',
+  bg: '#131313',
+  secondaryBg: '#1A1A1A',
+  border: '#4D4D4D',
   accent: '#FF9A6D',
   accentLight: '#FFAE8A',
-  accentDim: 'rgba(255,154,109,0.12)',
-  accentDimBorder: 'rgba(255,154,109,0.25)',
-  textPrimary: '#E0E0E0',
-  textSecondary: '#A9A9A9',
-  textMuted: '#777777',
-  textDim: '#555555',
-  divider: '#272727',
-  successGreen: '#34D399',
-  successBg: 'rgba(52,211,153,0.10)',
-  successBorder: 'rgba(52,211,153,0.25)',
-  errorRed: '#F87171',
-  errorBg: 'rgba(248,113,113,0.10)',
+  label: '#878787',
+  value: '#CBCBCB',
+  highlight: '#DDDDDD',
+  muted: '#A9A9A9',
   white: '#FFFFFF',
-  pillBg: '#2A2A2A',
+  success: '#06C270',
+  error: '#FF8080',
 } as const;
+
+// ---------------------------------------------------------------------------
+// SVG Logos
+// ---------------------------------------------------------------------------
+
+const LOGO_HEADER = `<div class="logo-neo"><svg width="42" height="42" viewBox="0 0 172.46 172.46" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Flent logo"><path d="M86.23,0h0C38.61,0,0,38.61,0,86.23v86.23h172.46v-86.23C172.46,38.61,133.85,0,86.23,0ZM123.43,140.61h-21.36v-69.79s-5.15-15.08-22.64-15.08c-7.82,0-14.74,5.28-14.74,12.1,0,8.18,6.07,14.02,16.57,14.02h7.58v12.56h-16.57v46.2h-21.36v-46.2h-9.36v-12.44l9.34-.03c-5.67-19.35,9.86-39.16,34.74-39.16,19.57,0,32.94,11.5,37.79,17.81v80.02Z" fill="${C.accent}"/></svg></div>`;
+
+const LOGO_FOOTER = `<svg width="16" height="18" viewBox="0 0 48 56" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Flent logo"><path d="M0 56V24C0 10.745 10.745 0 24 0C37.255 0 48 10.745 48 24V56Z" fill="${C.border}"/><g transform="translate(7,10)"><path d="M12.4751 40H3.72631V21.2062H0V16.0217H3.72631C1.65252 7.98576 7.50667 3.16855 10.693 1.76445C20.025 -3.16081 29.7028 3.38457 33.3751 7.27293V40H24.6263V11.6473C19.5714 3.35216 13.2312 5.27474 10.693 7.27293C7.45266 12.8463 12.0431 15.4277 14.7433 16.0217H19.2798V21.2062H12.4751V40Z" fill="${C.bg}"/></g></svg>`;
+
+// ---------------------------------------------------------------------------
+// Font Face Declarations
+// ---------------------------------------------------------------------------
+
+function buildFontFaceCSS(fonts: ReceiptFonts): string {
+  return `
+    @font-face {
+      font-family: 'PlusJakartaSans';
+      font-weight: 400;
+      font-style: normal;
+      src: url(data:font/truetype;base64,${fonts.regular}) format('truetype');
+    }
+    @font-face {
+      font-family: 'PlusJakartaSans';
+      font-weight: 500;
+      font-style: normal;
+      src: url(data:font/truetype;base64,${fonts.medium}) format('truetype');
+    }
+    @font-face {
+      font-family: 'PlusJakartaSans';
+      font-weight: 600;
+      font-style: normal;
+      src: url(data:font/truetype;base64,${fonts.semiBold}) format('truetype');
+    }
+    @font-face {
+      font-family: 'PlusJakartaSans';
+      font-weight: 700;
+      font-style: normal;
+      src: url(data:font/truetype;base64,${fonts.bold}) format('truetype');
+    }
+    @font-face {
+      font-family: 'PlusJakartaSans';
+      font-weight: 800;
+      font-style: normal;
+      src: url(data:font/truetype;base64,${fonts.bold}) format('truetype');
+    }`;
+}
 
 // ---------------------------------------------------------------------------
 // Builder
 // ---------------------------------------------------------------------------
 
-export function buildReceiptHtml(receipt: ReceiptHtmlData): string {
+export function buildReceiptHtml(receipt: ReceiptHtmlData, fonts?: ReceiptFonts | null): string {
   const { payment, tenant, property, landlord, agreement } = receipt;
 
-  const transactionRef = payment.utr
-    ? payment.utr
-    : payment.transactionId
-      ? payment.transactionId
-      : 'N/A';
+  // Transaction reference: prefer UTR, fall back to transactionId, hide if both null
+  const transactionRef = payment.utr ?? payment.transactionId ?? null;
 
+  // Property line
   const propertyLine = property.city
     ? `${esc(property.address)}, ${esc(property.city)}`
     : esc(property.address);
 
+  // Payment method display
   const methodDisplay = payment.paymentMethod
     ? payment.paymentMethod.toUpperCase()
-    : 'N/A';
+    : null;
 
-  const timelinessBadge =
-    payment.timeliness === 'on_time'
-      ? `<span class="badge badge-success">ON TIME</span>`
-      : payment.timeliness === 'late'
-        ? `<span class="badge badge-late">LATE</span>`
-        : '';
 
-  const totalPaid = payment.amount + payment.pgFee;
+  // Font face CSS (only if fonts are provided)
+  const fontFaceCSS = fonts ? buildFontFaceCSS(fonts) : '';
+
+  // Timeliness badge removed — keeping receipt minimal
+
+  // Detail rows for payment section
+  let paymentDetailsHtml = '';
+
+  // Rent Month (always first, no top border)
+  paymentDetailsHtml += `
+        <div class="detail-row">
+          <span class="detail-label">Rent Month</span>
+          <span class="detail-value" style="font-weight:600;">${esc(payment.rentMonthDisplay)}</span>
+        </div>`;
+
+  // Rent Amount
+  paymentDetailsHtml += `
+        <div class="detail-row">
+          <span class="detail-label">Rent Amount</span>
+          <span class="detail-value">&#8377;${esc(formatIndianAmount(payment.amount))}</span>
+        </div>`;
+
+  // Payment Method
+  paymentDetailsHtml += `
+        <div class="detail-row">
+          <span class="detail-label">Payment Method</span>
+          <span class="detail-value detail-value-method">${methodDisplay ? esc(methodDisplay) : '&mdash;'}</span>
+        </div>`;
+
+  // Transaction Ref / UTR (always show)
+  paymentDetailsHtml += `
+        <div class="detail-row">
+          <span class="detail-label">UTR / Transaction Ref</span>
+          <span class="detail-value detail-value-mono">${transactionRef ? esc(transactionRef) : 'N/A'}</span>
+        </div>`;
+
+  // Landlord PAN (always shown as line item)
+  paymentDetailsHtml += `
+        <div class="detail-row">
+          <span class="detail-label">Landlord PAN</span>
+          <span class="detail-value" style="letter-spacing:1px;">${landlord.pan ? esc(landlord.pan) : 'N/A'}</span>
+        </div>`;
+
+  // Tenant details section (line items)
+  let tenantSectionHtml = `
+        <div class="divider"></div>
+        <section>
+          <div class="section-header">Tenant</div>
+          <div class="detail-row">
+            <span class="detail-label">Name</span>
+            <span class="detail-value" style="font-weight:600;">${esc(tenant.name) || '&mdash;'}</span>
+          </div>`;
+  if (tenant.phone) {
+    tenantSectionHtml += `
+          <div class="detail-row">
+            <span class="detail-label">Phone</span>
+            <span class="detail-value">${esc(tenant.phone)}</span>
+          </div>`;
+  }
+  if (tenant.email) {
+    tenantSectionHtml += `
+          <div class="detail-row">
+            <span class="detail-label">Email</span>
+            <span class="detail-value" style="word-break:break-word;">${esc(tenant.email)}</span>
+          </div>`;
+  }
+  tenantSectionHtml += `
+        </section>`;
+
+  // Landlord details section (line items)
+  const landlordSectionHtml = `
+        <div class="divider"></div>
+        <section>
+          <div class="section-header">Landlord</div>
+          <div class="detail-row">
+            <span class="detail-label">Name</span>
+            <span class="detail-value" style="font-weight:600;">${esc(landlord.name) || '&mdash;'}</span>
+          </div>
+        </section>`;
+
+  // Property & Agreement section (always shown)
+  const propertySectionHtml = `
+        <div class="divider"></div>
+        <section>
+          <div class="section-header">Property &amp; Agreement</div>
+          <div class="detail-row">
+            <span class="detail-label">Address</span>
+            <span class="detail-value" style="word-break:break-word;text-align:right;max-width:280px;">${propertyLine || 'N/A'}</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">Agreement ID</span>
+            <span class="detail-value detail-value-mono">${agreement.certId ? esc(agreement.certId) : 'N/A'}</span>
+          </div>
+        </section>`;
 
   return `<!DOCTYPE html>
 <html lang="en">
@@ -147,273 +311,196 @@ export function buildReceiptHtml(receipt: ReceiptHtmlData): string {
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Rent Receipt - ${esc(receipt.receiptNumber)}</title>
 <style>
+  ${fontFaceCSS}
+
   * { margin: 0; padding: 0; box-sizing: border-box; }
   @page { size: A4; margin: 0; }
+
   body {
     background: ${C.bg};
-    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    font-family: 'PlusJakartaSans', -apple-system, BlinkMacSystemFont, sans-serif;
     font-size: 13px;
     line-height: 1.5;
-    color: ${C.textPrimary};
-    padding: 40px 32px;
+    color: ${C.value};
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
   }
+
   .container {
     max-width: 540px;
     margin: 0 auto;
+    padding: 40px 32px;
   }
 
-  /* Brand header */
-  .header {
+  /* Dividers */
+  .divider {
+    height: 1px;
+    background: rgba(77, 77, 77, 0.4);
+    margin: 24px 0;
+  }
+
+  /* ----- HEADER ----- */
+  header {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    margin-bottom: 28px;
   }
   .brand {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 12px;
   }
-  .brand-name {
-    font-size: 20px;
-    font-weight: 700;
+  .logo-neo {
+    width: 42px;
+    height: 42px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    filter: drop-shadow(4px 4px 8px rgba(0, 0, 0, 0.6))
+            drop-shadow(-2px -2px 6px rgba(255, 255, 255, 0.03))
+            drop-shadow(0 0 12px rgba(255, 154, 109, 0.15));
+  }
+  .brand-text {
+    font-size: 14px;
+    font-weight: 500;
     color: ${C.white};
-    letter-spacing: -0.3px;
+    letter-spacing: 0.3px;
   }
-  .brand-name span { color: ${C.accent}; }
-  .brand-sub {
-    font-size: 9px;
-    color: ${C.textMuted};
-    text-transform: uppercase;
-    letter-spacing: 2px;
-    margin-top: 2px;
+  .brand-text-flent {
+    font-weight: 700;
   }
   .receipt-meta {
     text-align: right;
   }
-  .receipt-meta .label {
-    font-size: 9px;
-    color: ${C.textMuted};
-    text-transform: uppercase;
-    letter-spacing: 0.8px;
-  }
-  .receipt-meta .value {
-    font-size: 12px;
-    font-weight: 600;
-    color: ${C.textPrimary};
-    font-variant-numeric: tabular-nums;
-    margin-top: 1px;
-  }
-  .receipt-meta .date {
+  .receipt-number {
     font-size: 11px;
-    color: ${C.textSecondary};
+    font-weight: 600;
+    color: ${C.muted};
+    font-variant-numeric: tabular-nums;
+  }
+  .receipt-date {
+    font-size: 10px;
+    font-weight: 400;
+    color: ${C.border};
     margin-top: 2px;
   }
 
-  /* Main card */
-  .main-card {
-    background: ${C.card};
-    border: 1px solid ${C.cardBorder};
-    border-radius: 16px;
-    overflow: hidden;
-  }
-  .accent-bar {
-    height: 3px;
-    background: linear-gradient(90deg, ${C.accent} 0%, ${C.accentLight} 50%, ${C.accent} 100%);
-  }
-  .card-body {
-    padding: 28px 28px 24px;
-  }
-
-  /* Hero amount section */
+  /* ----- HERO ----- */
   .hero {
-    background: ${C.bg};
-    border: 1px solid ${C.cardBorder};
-    border-radius: 12px;
-    padding: 24px 28px;
-    margin-bottom: 28px;
-  }
-  .hero-inner {
     display: flex;
     align-items: center;
     justify-content: space-between;
   }
-  .amount-label {
+  .hero-left {
+    display: flex;
+    flex-direction: column;
+  }
+  .hero-label {
     font-size: 10px;
-    color: ${C.textMuted};
+    font-weight: 500;
+    color: ${C.border};
     text-transform: uppercase;
-    letter-spacing: 1.2px;
+    letter-spacing: 2px;
     margin-bottom: 8px;
   }
-  .amount-value {
-    font-size: 38px;
+  .hero-amount {
+    font-size: 36px;
     font-weight: 700;
     color: ${C.white};
-    line-height: 1;
+    letter-spacing: -1px;
     font-variant-numeric: tabular-nums;
-    letter-spacing: -0.5px;
+    line-height: 1;
   }
-  .amount-value .currency {
-    font-size: 22px;
-    font-weight: 400;
-    color: ${C.textMuted};
+  .hero-currency {
+    font-size: 20px;
+    font-weight: 300;
+    color: ${C.label};
     vertical-align: top;
     position: relative;
-    top: 4px;
+    top: 2px;
     margin-right: 2px;
   }
-  .amount-time {
+  .hero-datetime {
     font-size: 11px;
-    color: ${C.textMuted};
-    margin-top: 8px;
+    font-weight: 400;
+    color: ${C.border};
+    margin-top: 10px;
+  }
+  .hero-right {
+    display: flex;
+    align-items: center;
   }
   .paid-stamp {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    border: 2.5px solid ${C.successGreen};
-    border-radius: 10px;
-    padding: 10px 22px;
+    border: 2.5px solid ${C.success};
+    border-radius: 8px;
+    padding: 8px 16px;
     transform: rotate(-4deg);
     -webkit-transform: rotate(-4deg);
   }
-  .paid-stamp span {
-    font-size: 22px;
+  .paid-stamp-text {
+    font-size: 18px;
     font-weight: 800;
-    color: ${C.successGreen};
-    letter-spacing: 5px;
+    color: ${C.success};
+    letter-spacing: 4px;
     line-height: 1;
   }
-  .badge {
-    display: inline-block;
+
+  /* ----- SECTIONS ----- */
+  .section-header {
     font-size: 9px;
-    font-weight: 700;
-    padding: 3px 10px;
-    border-radius: 6px;
-    letter-spacing: 0.8px;
-    margin-top: 8px;
-  }
-  .badge-success {
-    background: ${C.successBg};
-    color: ${C.successGreen};
-    border: 1px solid ${C.successBorder};
-  }
-  .badge-late {
-    background: ${C.errorBg};
-    color: ${C.errorRed};
-    border: 1px solid rgba(248,113,113,0.25);
-  }
-
-  /* Section headers */
-  .section-title {
-    font-size: 10px;
-    font-weight: 700;
-    color: ${C.accent};
+    font-weight: 600;
+    color: ${C.border};
     text-transform: uppercase;
-    letter-spacing: 1.8px;
-    margin-bottom: 14px;
-    padding-bottom: 8px;
-    border-bottom: 1px solid ${C.divider};
+    letter-spacing: 2.5px;
+    margin-bottom: 16px;
   }
 
-  /* Detail rows */
+  /* ----- DETAIL ROWS ----- */
   .detail-row {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 10px 0;
-    border-bottom: 1px solid ${C.divider};
+    padding: 9px 0;
   }
-  .detail-row:last-child { border-bottom: none; }
-  .detail-row .label {
-    font-size: 13px;
-    color: ${C.textMuted};
+  .detail-row + .detail-row {
+    border-top: 1px solid rgba(77, 77, 77, 0.15);
   }
-  .detail-row .value {
-    font-size: 13px;
-    color: ${C.textPrimary};
-    font-weight: 500;
-    text-align: right;
-  }
-  .detail-row .value.bold {
-    font-size: 14px;
-    color: ${C.white};
-    font-weight: 700;
-  }
-  .detail-row .value.mono {
+  .detail-label {
     font-size: 12px;
-    color: ${C.textSecondary};
-    font-family: 'SF Mono', SFMono-Regular, Menlo, Consolas, monospace;
-    word-break: break-all;
-    max-width: 240px;
+    font-weight: 400;
+    color: ${C.label};
   }
-  .method-pill {
-    display: inline-block;
-    background: ${C.accentDim};
-    color: ${C.accent};
-    border: 1px solid ${C.accentDimBorder};
-    padding: 3px 14px;
-    border-radius: 6px;
+  .detail-value {
+    font-size: 12px;
+    font-weight: 500;
+    color: ${C.value};
+    text-align: right;
+    word-break: break-word;
+  }
+  .detail-value-method {
     font-size: 11px;
-    font-weight: 700;
+    font-weight: 600;
+    color: ${C.accent};
     letter-spacing: 0.5px;
   }
-
-  /* Party cards */
-  .parties-grid {
-    display: flex;
-    gap: 12px;
-    margin-top: 14px;
-  }
-  .party-card {
-    flex: 1;
-    background: ${C.bg};
-    border: 1px solid ${C.cardBorder};
-    border-radius: 10px;
-    padding: 16px 18px;
-  }
-  .party-label {
-    font-size: 9px;
-    color: ${C.textMuted};
-    text-transform: uppercase;
-    letter-spacing: 1.2px;
-    margin-bottom: 8px;
-  }
-  .party-name {
-    font-size: 15px;
-    font-weight: 600;
-    color: ${C.white};
-    margin-bottom: 4px;
-  }
-  .party-detail {
-    font-size: 11px;
-    color: ${C.textSecondary};
-    line-height: 1.5;
-  }
-  .pan-tag {
-    display: inline-block;
-    background: ${C.accentDim};
-    border: 1px solid ${C.accentDimBorder};
-    color: ${C.accent};
+  .detail-value-mono {
     font-size: 10px;
-    font-weight: 600;
-    padding: 2px 8px;
-    border-radius: 4px;
-    margin-top: 6px;
-    font-family: 'SF Mono', SFMono-Regular, Menlo, Consolas, monospace;
+    font-weight: 400;
+    color: ${C.label};
+    font-family: monospace;
+    word-break: break-word;
+    max-width: 240px;
     letter-spacing: 0.5px;
   }
 
-  /* Spacer */
-  .spacer { height: 24px; }
-  .spacer-sm { height: 16px; }
 
-  /* Footer */
-  .footer {
-    padding: 18px 28px;
-    border-top: 1px solid ${C.divider};
+  /* ----- FOOTER ----- */
+  footer {
+    padding-top: 16px;
+    border-top: 1px solid rgba(77, 77, 77, 0.25);
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -424,17 +511,20 @@ export function buildReceiptHtml(receipt: ReceiptHtmlData): string {
     gap: 8px;
   }
   .footer-brand-text {
-    font-size: 13px;
-    font-weight: 600;
-    color: ${C.textSecondary};
+    font-size: 10px;
+    font-weight: 500;
+    color: ${C.border};
   }
-  .footer-brand-text span { color: ${C.accent}; }
+  .footer-brand-text-flent {
+    color: rgba(255, 154, 109, 0.4);
+  }
   .footer-note {
-    font-size: 9px;
-    color: ${C.textDim};
+    font-size: 8px;
+    font-weight: 400;
+    color: rgba(77, 77, 77, 0.8);
     text-align: right;
     max-width: 220px;
-    line-height: 1.4;
+    line-height: 1.5;
   }
 </style>
 </head>
@@ -443,129 +533,64 @@ export function buildReceiptHtml(receipt: ReceiptHtmlData): string {
 <div class="container">
 
   <!-- HEADER -->
-  <div class="header">
+  <header>
     <div class="brand">
-      <svg width="24" height="28" viewBox="0 0 34 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path d="M12.4751 40H3.72631V21.2062H0V16.0217H3.72631C1.65252 7.98576 7.50667 3.16855 10.693 1.76445C20.025 -3.16081 29.7028 3.38457 33.3751 7.27293V40H24.6263V11.6473C19.5714 3.35216 13.2312 5.27474 10.693 7.27293C7.45266 12.8463 12.0431 15.4277 14.7433 16.0217H19.2798V21.2062H12.4751V40Z" fill="${C.accent}"/>
-      </svg>
-      <div>
-        <div class="brand-name"><span>Flent</span> Secured</div>
-        <div class="brand-sub">Rent Receipt</div>
-      </div>
+      ${LOGO_HEADER}
+      <span class="brand-text">Secured by Flent</span>
     </div>
     <div class="receipt-meta">
-      <div class="label">Receipt No.</div>
-      <div class="value">${esc(receipt.receiptNumber)}</div>
-      <div class="date">${esc(formatDate(payment.paidAt))}</div>
+      <div class="receipt-number">${esc(receipt.receiptNumber)}</div>
+      <div class="receipt-date">${esc(formatDate(payment.paidAt))}</div>
     </div>
-  </div>
+  </header>
 
-  <!-- MAIN CARD -->
-  <div class="main-card">
-    <div class="accent-bar"></div>
-    <div class="card-body">
+  <div class="divider"></div>
 
-      <!-- HERO: Amount + PAID Stamp -->
-      <div class="hero">
-        <div class="hero-inner">
-          <div>
-            <div class="amount-label">Amount Paid</div>
-            <div class="amount-value">
-              <span class="currency">&#8377;</span>${esc(formatIndianAmount(payment.amount))}
-            </div>
-            <div class="amount-time">${esc(formatTime(payment.paidAt))}</div>
-          </div>
-          <div style="text-align:center;">
-            <div class="paid-stamp"><span>PAID</span></div>
-            ${timelinessBadge ? `<div style="text-align:center;">${timelinessBadge}</div>` : ''}
-          </div>
+  <!-- MAIN -->
+  <main>
+
+    <!-- HERO -->
+    <section class="hero">
+      <div class="hero-left">
+        <div class="hero-label">Amount Paid</div>
+        <div class="hero-amount">
+          <span class="hero-currency">&#8377;</span>${esc(formatIndianAmount(payment.amount))}
         </div>
+        <div class="hero-datetime">${esc(formatDate(payment.paidAt))}&nbsp;&middot;&nbsp;${esc(formatTime(payment.paidAt))}</div>
       </div>
-
-      <!-- PAYMENT DETAILS -->
-      <div class="section-title">Payment Details</div>
-      <div>
-        <div class="detail-row">
-          <div class="label">Rent Month</div>
-          <div class="value" style="font-weight:600;">${esc(payment.rentMonthDisplay)}</div>
-        </div>
-        <div class="detail-row">
-          <div class="label">Rent Amount</div>
-          <div class="value">&#8377;${esc(formatIndianAmount(payment.amount))}</div>
-        </div>
-        ${payment.pgFee > 0 ? `
-        <div class="detail-row">
-          <div class="label">Convenience Fee</div>
-          <div class="value">&#8377;${esc(formatIndianAmount(payment.pgFee))}</div>
-        </div>
-        <div class="detail-row">
-          <div class="label" style="font-weight:600;">Total Paid</div>
-          <div class="value bold">&#8377;${esc(formatIndianAmount(totalPaid))}</div>
-        </div>` : ''}
-        <div class="detail-row">
-          <div class="label">Payment Method</div>
-          <div class="value"><span class="method-pill">${esc(methodDisplay)}</span></div>
-        </div>
-        <div class="detail-row" style="border-bottom:none;">
-          <div class="label">Transaction Ref</div>
-          <div class="value mono">${esc(transactionRef)}</div>
-        </div>
+      <div class="hero-right">
+        <div class="paid-stamp"><span class="paid-stamp-text">PAID</span></div>
       </div>
+    </section>
 
-      <div class="spacer"></div>
+    <div class="divider"></div>
 
-      <!-- PARTIES -->
-      <div class="section-title">Parties</div>
-      <div class="parties-grid">
-        <div class="party-card">
-          <div class="party-label">Tenant</div>
-          <div class="party-name">${esc(tenant.name) || '&mdash;'}</div>
-          ${tenant.phone ? `<div class="party-detail">${esc(tenant.phone)}</div>` : ''}
-          ${tenant.email ? `<div class="party-detail" style="word-break:break-all;">${esc(tenant.email)}</div>` : ''}
-          ${tenant.panMasked ? `<div class="pan-tag">PAN ${esc(tenant.panMasked)}</div>` : ''}
-        </div>
-        <div class="party-card">
-          <div class="party-label">Landlord</div>
-          <div class="party-name">${esc(landlord.name)}</div>
-          ${landlord.panMasked ? `<div class="pan-tag">PAN ${esc(landlord.panMasked)}</div>` : ''}
-        </div>
-      </div>
+    <!-- PAYMENT DETAILS -->
+    <section>
+      <div class="section-header">Payment Details</div>
+      ${paymentDetailsHtml}
+    </section>
 
-      <div class="spacer"></div>
+    ${tenantSectionHtml}
 
-      <!-- PROPERTY & AGREEMENT -->
-      ${propertyLine || agreement.certId ? `
-      <div class="section-title">Property</div>
-      <div>
-        ${propertyLine ? `
-        <div class="detail-row">
-          <div class="label">Address</div>
-          <div class="value">${propertyLine}</div>
-        </div>` : ''}
-        ${agreement.certId ? `
-        <div class="detail-row" style="border-bottom:none;">
-          <div class="label">Agreement ID</div>
-          <div class="value mono">${esc(agreement.certId)}</div>
-        </div>` : ''}
-      </div>
-      <div class="spacer-sm"></div>
-      ` : ''}
+    ${landlordSectionHtml}
 
+    ${propertySectionHtml}
+
+  </main>
+
+  <div class="divider"></div>
+
+  <!-- FOOTER -->
+  <footer>
+    <div class="footer-brand">
+      ${LOGO_FOOTER}
+      <span class="footer-brand-text">Secured by <span class="footer-brand-text-flent">Flent</span></span>
     </div>
-
-    <!-- FOOTER -->
-    <div class="footer">
-      <div class="footer-brand">
-        <svg width="14" height="16" viewBox="0 0 34 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M12.4751 40H3.72631V21.2062H0V16.0217H3.72631C1.65252 7.98576 7.50667 3.16855 10.693 1.76445C20.025 -3.16081 29.7028 3.38457 33.3751 7.27293V40H24.6263V11.6473C19.5714 3.35216 13.2312 5.27474 10.693 7.27293C7.45266 12.8463 12.0431 15.4277 14.7433 16.0217H19.2798V21.2062H12.4751V40Z" fill="${C.accent}"/>
-        </svg>
-        <div class="footer-brand-text"><span>Flent</span> Secured</div>
-      </div>
-      <div class="footer-note">
-        Computer-generated receipt.<br/>Does not require a signature.
-      </div>
+    <div class="footer-note">
+      Computer-generated receipt.<br/>Does not require a signature.
     </div>
-  </div>
+  </footer>
 
 </div>
 
@@ -615,7 +640,6 @@ export function buildFallbackReceiptData(params: FallbackReceiptParams): Receipt
       name: '',
       phone: null,
       email: null,
-      panMasked: null,
     },
     property: {
       address: '',
@@ -623,7 +647,7 @@ export function buildFallbackReceiptData(params: FallbackReceiptParams): Receipt
     },
     landlord: {
       name: params.landlordName ?? '',
-      panMasked: null,
+      pan: null,
     },
     agreement: {
       certId: params.agreementId ?? null,

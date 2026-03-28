@@ -155,15 +155,36 @@ export function useUploadAgreement(options: UploadAndProcessOptions = {}) {
         mimeType,
       );
 
-      // Auto-retry once on network/upload errors (2s delay)
-      if (!uploadResult.success && uploadResult.error) {
-        const retryable =
-          uploadResult.error.code === 'NETWORK_ERROR' ||
-          uploadResult.error.code === 'UPLOAD_FAILED';
-        if (retryable) {
-          await new Promise((resolve) => setTimeout(resolve, 2000));
-          uploadResult = await uploadFileToSignedUrl(uploadUrl, fileUri, mimeType);
+      // Auto-retry up to 2 times with exponential backoff (2s, 4s).
+      // Only retry on network errors and 5xx server errors — not 4xx client
+      // errors like 403 (expired URL) which won't succeed on retry.
+      const MAX_UPLOAD_RETRIES = 2;
+      for (let attempt = 1; attempt <= MAX_UPLOAD_RETRIES; attempt++) {
+        if (uploadResult.success || !uploadResult.error) break;
+
+        const errorCode = uploadResult.error.code;
+        const errorMsg = uploadResult.error.message ?? '';
+
+        // Network errors are always retryable
+        const isNetworkError = errorCode === 'NETWORK_ERROR';
+
+        // UPLOAD_FAILED is retryable only for 5xx server errors, not 4xx
+        const is5xxError =
+          errorCode === 'UPLOAD_FAILED' &&
+          !errorMsg.includes('expired') &&
+          !errorMsg.includes('interrupted') &&
+          /status\s+5\d{2}/.test(errorMsg);
+
+        if (!isNetworkError && !is5xxError) break;
+
+        const delayMs = 2000 * Math.pow(2, attempt - 1); // 2s, 4s
+        if (__DEV__) {
+          console.log(
+            `[useAgreement] Upload retry ${attempt}/${MAX_UPLOAD_RETRIES} after ${delayMs}ms (${errorCode}: ${errorMsg})`
+          );
         }
+        await new Promise((resolve) => setTimeout(resolve, delayMs));
+        uploadResult = await uploadFileToSignedUrl(uploadUrl, fileUri, mimeType);
       }
 
       // Stop simulated progress

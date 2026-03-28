@@ -362,14 +362,13 @@ Deno.serve(async (req) => {
 
     let extractedData: ExtractedData;
 
-    // ENH 2: 300s timeout around Document AI + Gemini calls.
-    // Large/complex PDFs can take 2-3 min for Document AI + Gemini.
-    // Edge function wall clock is 400s on paid plan; keep internal timeout below that.
-    const PROCESSING_TIMEOUT_MS = 300_000;
+    // Each API call (Document AI, Gemini) has its own 300s timeout via AbortController
+    // inside processWithDocumentAI, so no outer Promise.race needed.
+    // This allows large documents to use the full budget for each step independently.
 
     if (gcpCredentials && gcpProcessorId) {
       // Production: Use GCP Document AI + Vertex AI Gemini
-      const processingPromise = processWithDocumentAI(
+      extractedData = await processWithDocumentAI(
         base64Content,
         "application/pdf",
         gcpCredentials,
@@ -380,12 +379,6 @@ Deno.serve(async (req) => {
         vertexAiProjectId,
         geminiApiKey
       );
-
-      const timeoutPromise = new Promise<never>((_, reject) => {
-        setTimeout(() => reject(new Error("Processing timed out after 300 seconds")), PROCESSING_TIMEOUT_MS);
-      });
-
-      extractedData = await Promise.race([processingPromise, timeoutPromise]);
     } else if (!gcpCredentials) {
       return new Response(
         JSON.stringify({ error: "Document processing not configured", code: "SERVICE_UNAVAILABLE" }),
@@ -428,6 +421,22 @@ Deno.serve(async (req) => {
       isCitySupported,
       extractedData  // Pass full extracted data for minimum fields validation
     );
+
+    // Structured quality log for operator visibility
+    console.log("[process-document] Extraction quality:", JSON.stringify({
+      extraction_id,
+      fields: `${extractedData.fields_extracted}/${extractedData.total_fields}`,
+      confidence: extractedData.confidence_score,
+      contract_status: evaluationResult.contract_status,
+      needs_manual_review: evaluationResult.needs_manual_review,
+      city_supported: isCitySupported,
+      has_rent: !!extractedData.monthly_rent_paise,
+      has_deposit: !!extractedData.security_deposit_paise,
+      has_tenant: (extractedData.tenant_names?.length ?? 0) > 0,
+      has_landlord: (extractedData.landlord_names?.length ?? 0) > 0,
+      has_lease_end: !!extractedData.lease_end_date,
+      missing: evaluationResult.missing_fields ?? [],
+    }));
 
     // Store extracted data - update the existing extraction record
     const { data: rentalInfo, error: insertError } = await supabase
@@ -495,33 +504,9 @@ Deno.serve(async (req) => {
 
     completedExtractionPersisted = true;
 
-    // Store rental parties
-    const partyInserts = [
-      ...extractedData.tenants.map((t) => ({
-        extracted_rental_info_id: extraction_id,
-        party_type: "tenant",
-        name: t.name,
-        phone_number: t.phone,
-        email: t.email,
-      })),
-      ...extractedData.landlords.map((l) => ({
-        extracted_rental_info_id: extraction_id,
-        party_type: "landlord",
-        name: l.name,
-        phone_number: l.phone,
-        email: l.email,
-      })),
-    ];
-
-    if (partyInserts.length > 0) {
-      // Delete existing parties first
-      await supabase
-        .from("rental_parties")
-        .delete()
-        .eq("extracted_rental_info_id", extraction_id);
-
-      await supabase.from("rental_parties").insert(partyInserts);
-    }
+    // NOTE: rental_parties is a VIEW (UNION ALL on extracted_rental_info tenant/landlord columns),
+    // not a table. Party data is already stored in tenant_names/landlord_names arrays and
+    // tenant_name/landlord_name singular columns on extracted_rental_info. No separate insert needed.
 
     // Geocode the property address (non-blocking - errors don't fail extraction)
     const googleMapsApiKey = Deno.env.get("GOOGLE_MAPS_API_KEY");
@@ -578,7 +563,7 @@ Deno.serve(async (req) => {
       requires_manual_review: evaluationResult.needs_manual_review,
       manual_review_reason: evaluationResult.review_reason,
       fields_extracted: extractedData.fields_extracted,
-      total_fields: extractedData.total_fields,
+      // total_fields omitted — column doesn't exist in DB, value is constant (24)
       // Debug fields
       _debug: {
         extraction_method: extractedData.extraction_method,
@@ -635,33 +620,46 @@ async function processWithDocumentAI(
   // Get access token for Document AI
   const accessToken = await getGCPAccessToken(credentialsJson);
 
-  // Step 1: Call Document AI for OCR
-  // Note: Relies on Edge Function timeout (150s default, 400s on paid plans)
+  // Step 1: Call Document AI for OCR — 300s independent timeout
   console.log("[process-document] Calling GCP Document AI...");
-  const docAIResponse = await fetch(
-    `https://${location}-documentai.googleapis.com/v1/projects/${projectId}/locations/${location}/processors/${processorId}:process`,
-    {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        rawDocument: {
-          content: base64Content,
-          mimeType: mimeType,
+  const DOC_AI_TIMEOUT_MS = 300_000;
+  const docAIController = new AbortController();
+  const docAITimeout = setTimeout(() => docAIController.abort(), DOC_AI_TIMEOUT_MS);
+  let docAIResponse: Response;
+  try {
+    docAIResponse = await fetch(
+      `https://${location}-documentai.googleapis.com/v1/projects/${projectId}/locations/${location}/processors/${processorId}:process`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          "Content-Type": "application/json",
         },
-        // Bug 2 fix: Enable imageless mode (raises page limit from 15 to 30)
-        // and cap at first 30 pages to avoid PAGE_LIMIT_EXCEEDED for large docs
-        processOptions: {
-          ocrConfig: {
-            premiumFeatures: { computeStyleInfo: false },
+        body: JSON.stringify({
+          rawDocument: {
+            content: base64Content,
+            mimeType: mimeType,
           },
-          fromStart: 30,
-        },
-      }),
+          // Bug 2 fix: Enable imageless mode (raises page limit from 15 to 30)
+          // and cap at first 30 pages to avoid PAGE_LIMIT_EXCEEDED for large docs
+          processOptions: {
+            ocrConfig: {
+              premiumFeatures: { computeStyleInfo: false },
+            },
+            fromStart: 30,
+          },
+        }),
+        signal: docAIController.signal,
+      }
+    );
+  } catch (err: unknown) {
+    clearTimeout(docAITimeout);
+    if (err instanceof DOMException && err.name === "AbortError") {
+      throw new Error(`Document AI timed out after ${DOC_AI_TIMEOUT_MS / 1000}s — document may be too large`);
     }
-  );
+    throw err;
+  }
+  clearTimeout(docAITimeout);
 
   if (!docAIResponse.ok) {
     const errorText = await docAIResponse.text();
@@ -718,19 +716,27 @@ async function processWithDocumentAI(
       } catch (vertexError: any) {
         geminiDebug.vertex_ai_error = vertexError.message || String(vertexError);
         console.error("[process-document] Vertex AI Gemini failed:", vertexError.message || vertexError);
-        // Retry once on "No JSON found" (likely safety filter flakiness on PII-heavy docs)
-        if (vertexError.message?.includes("No JSON found")) {
-          console.log("[process-document] Retrying Vertex AI after 2s (possible safety filter flake)...");
-          await new Promise(r => setTimeout(r, 2000));
-          try {
-            const retryToken = await getGCPAccessToken(vertexCredentialsJson);
-            geminiResult = await extractWithVertexAIGemini(documentText, retryToken, vertexAiProjectId, "global");
-            geminiDebug.vertex_ai_success = true;
-            geminiDebug.vertex_ai_retried = true;
-            geminiDebug.final_result_keys = geminiResult ? Object.keys(geminiResult).length : 0;
-          } catch (retryError: any) {
-            geminiDebug.vertex_ai_retry_error = retryError.message || String(retryError);
-            console.error("[process-document] Vertex AI retry also failed:", retryError.message);
+        // Retry up to 2 times on "No JSON found" / empty response (safety filter flakiness on PII-heavy docs)
+        if (vertexError.message?.includes("No JSON found") || vertexError.message?.includes("empty response")) {
+          const maxRetries = 2;
+          for (let attempt = 1; attempt <= maxRetries; attempt++) {
+            console.log(`[process-document] Retrying Vertex AI (attempt ${attempt}/${maxRetries}) after 3s (possible safety filter flake)...`);
+            await new Promise(r => setTimeout(r, 3000));
+            try {
+              const retryToken = await getGCPAccessToken(vertexCredentialsJson);
+              geminiResult = await extractWithVertexAIGemini(documentText, retryToken, vertexAiProjectId, "global");
+              geminiDebug.vertex_ai_success = true;
+              geminiDebug.vertex_ai_retried = true;
+              geminiDebug.vertex_ai_retry_attempt = attempt;
+              geminiDebug.final_result_keys = geminiResult ? Object.keys(geminiResult).length : 0;
+              break; // Success — exit retry loop
+            } catch (retryError: any) {
+              geminiDebug.vertex_ai_retry_error = retryError.message || String(retryError);
+              console.error(`[process-document] Vertex AI retry attempt ${attempt} failed:`, retryError.message);
+              if (attempt === maxRetries) {
+                console.error("[process-document] Vertex AI exhausted all retry attempts");
+              }
+            }
           }
         }
       }
@@ -756,18 +762,26 @@ async function processWithDocumentAI(
       } catch (apiKeyError: any) {
         geminiDebug.api_key_error = apiKeyError.message || String(apiKeyError);
         console.error("[process-document] API key Gemini failed:", apiKeyError.message || apiKeyError);
-        // Retry once on "No JSON found" (safety filter flakiness)
-        if (apiKeyError.message?.includes("No JSON found")) {
-          console.log("[process-document] Retrying API key Gemini after 2s...");
-          await new Promise(r => setTimeout(r, 2000));
-          try {
-            geminiResult = await verifyWithGemini(documentText, extractedData, geminiApiKey);
-            geminiDebug.api_key_success = true;
-            geminiDebug.api_key_retried = true;
-            geminiDebug.final_result_keys = geminiResult ? Object.keys(geminiResult).length : 0;
-          } catch (retryError: any) {
-            geminiDebug.api_key_retry_error = retryError.message || String(retryError);
-            console.error("[process-document] API key retry also failed:", retryError.message);
+        // Retry up to 2 times on "No JSON found" / empty response (safety filter flakiness)
+        if (apiKeyError.message?.includes("No JSON found") || apiKeyError.message?.includes("empty response")) {
+          const maxRetries = 2;
+          for (let attempt = 1; attempt <= maxRetries; attempt++) {
+            console.log(`[process-document] Retrying API key Gemini (attempt ${attempt}/${maxRetries}) after 3s...`);
+            await new Promise(r => setTimeout(r, 3000));
+            try {
+              geminiResult = await verifyWithGemini(documentText, extractedData, geminiApiKey);
+              geminiDebug.api_key_success = true;
+              geminiDebug.api_key_retried = true;
+              geminiDebug.api_key_retry_attempt = attempt;
+              geminiDebug.final_result_keys = geminiResult ? Object.keys(geminiResult).length : 0;
+              break; // Success — exit retry loop
+            } catch (retryError: any) {
+              geminiDebug.api_key_retry_error = retryError.message || String(retryError);
+              console.error(`[process-document] API key retry attempt ${attempt} failed:`, retryError.message);
+              if (attempt === maxRetries) {
+                console.error("[process-document] API key Gemini exhausted all retry attempts");
+              }
+            }
           }
         }
       }
@@ -939,7 +953,7 @@ IMPORTANT:
 - FIRST: Determine is_rental_agreement. Set to true ONLY if the document is a rental agreement, lease deed, leave and license agreement, or tenancy agreement. Set to false for sale deeds, bank statements, invoices, resumes, or any other non-rental document. If false, set all extraction fields to null.
 - For amounts, extract only the numeric value (60000 not "Rs. 60,000")
 - For dates, convert to YYYY-MM-DD format
-- For names, include all parties mentioned in the agreement
+- For names, include all parties mentioned in the agreement. IMPORTANT: Each person must be a SEPARATE array element. If a clause says "RAMESH AND SEEMA JOSHI", return ["RAMESH JOSHI", "SEEMA JOSHI"] as two separate entries, not one combined string.
 - For e-stamp fields, look in the stamp/e-stamp section of the document (usually at top or bottom with certificate details)
 - For property_state: infer from city if not explicitly mentioned (Bangalore→Karnataka, Mumbai→Maharashtra, Delhi→Delhi NCT)
 - MUMBAI EDGE CASE: For Mumbai/Maharashtra agreements, the GRN (Government Receipt Number) or Transaction ID/Transaction No. IS the Stamp Certificate ID. If you detect the city is Mumbai/Maharashtra and see a GRN or Transaction ID, use that value as certificate_no.
@@ -954,27 +968,43 @@ IMPORTANT:
     : `${location}-aiplatform.googleapis.com`;
   const endpoint = `https://${host}/v1/projects/${projectId}/locations/${location}/publishers/google/models/gemini-3-flash-preview:generateContent`;
 
-  const response = await fetch(endpoint, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      contents: [{ role: "user", parts: [{ text: prompt }] }],
-      generationConfig: {
-        temperature: 0.1,
-        maxOutputTokens: 8192,
-        responseMimeType: "application/json",
+  // 300s timeout — large agreements can produce 50K+ chars of document text
+  const GEMINI_TIMEOUT_MS = 300_000;
+  const geminiController = new AbortController();
+  const geminiTimeout = setTimeout(() => geminiController.abort(), GEMINI_TIMEOUT_MS);
+
+  let response: Response;
+  try {
+    response = await fetch(endpoint, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/json",
       },
-      safetySettings: [
-        { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_ONLY_HIGH" },
-        { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_ONLY_HIGH" },
-        { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_ONLY_HIGH" },
-        { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_ONLY_HIGH" },
-      ],
-    }),
-  });
+      body: JSON.stringify({
+        contents: [{ role: "user", parts: [{ text: prompt }] }],
+        generationConfig: {
+          temperature: 0.1,
+          maxOutputTokens: 8192,
+          responseMimeType: "application/json",
+        },
+        safetySettings: [
+          { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_ONLY_HIGH" },
+          { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_ONLY_HIGH" },
+          { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_ONLY_HIGH" },
+          { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_ONLY_HIGH" },
+        ],
+      }),
+      signal: geminiController.signal,
+    });
+  } catch (err: unknown) {
+    clearTimeout(geminiTimeout);
+    if (err instanceof DOMException && err.name === "AbortError") {
+      throw new Error(`Vertex AI Gemini timed out after ${GEMINI_TIMEOUT_MS / 1000}s`);
+    }
+    throw err;
+  }
+  clearTimeout(geminiTimeout);
 
   if (!response.ok) {
     const errorText = await response.text();
@@ -1034,7 +1064,7 @@ async function verifyWithGemini(
   const prompt = `You are analyzing a document that the user claims is an Indian rental/lease agreement. First determine if it actually IS a rental/lease agreement, then extract and verify information.
 
 DOCUMENT TEXT:
-${documentText.substring(0, 30000)}
+${documentText.substring(0, 50000)}
 
 INITIAL EXTRACTION (verify and correct if needed):
 ${JSON.stringify(extractedFields, null, 2)}
@@ -1054,6 +1084,7 @@ Please extract and return a JSON object with these exact fields:
   "security_deposit": "number in rupees",
   "rent_escalation_percent": "annual escalation % (e.g., 5 for 5%)",
   "contract_start_date": "YYYY-MM-DD format",
+  "contract_end_date": "YYYY-MM-DD format",
   "contract_length_months": "number of months",
   "rent_due_day": "day of month when rent is due (e.g., 1, 5, 10)",
   "tenant_names": ["array of tenant names"],
@@ -1075,6 +1106,7 @@ Please extract and return a JSON object with these exact fields:
 
 IMPORTANT:
 - FIRST: Determine is_rental_agreement. Set to true ONLY for rental agreements, lease deeds, leave and license agreements, or tenancy agreements. Set to false for anything else. If false, set all extraction fields to null.
+- For names: Each person must be a SEPARATE array element. "RAMESH AND SEEMA JOSHI" → ["RAMESH JOSHI", "SEEMA JOSHI"]. Never combine multiple people into one string.
 - Look for e-stamp fields in the stamp/e-stamp section (usually at top or bottom).
 - MUMBAI EDGE CASE: For Mumbai/Maharashtra agreements, the GRN or Transaction ID IS the Stamp Certificate ID.
 - For rooms_in_agreement: Look for "one room", "single bedroom", "2BHK", "3BHK", "entire flat", "portion of premises". Partial rent = count rented rooms only.
@@ -1083,28 +1115,43 @@ IMPORTANT:
   try {
     console.log("[process-document] Calling Gemini API with key prefix:", apiKey.substring(0, 10) + "...");
 
-    // Note: Relies on Edge Function timeout (150s default, 400s on paid plans)
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: {
-            temperature: 0.1,
-            maxOutputTokens: 8192,
-            responseMimeType: "application/json",
-          },
-          safetySettings: [
-            { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_ONLY_HIGH" },
-            { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_ONLY_HIGH" },
-            { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_ONLY_HIGH" },
-            { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_ONLY_HIGH" },
-          ],
-        }),
+    // 300s independent timeout for API key fallback Gemini call
+    const FALLBACK_TIMEOUT_MS = 300_000;
+    const fallbackController = new AbortController();
+    const fallbackTimeout = setTimeout(() => fallbackController.abort(), FALLBACK_TIMEOUT_MS);
+
+    let response: Response;
+    try {
+      response = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: prompt }] }],
+            generationConfig: {
+              temperature: 0.1,
+              maxOutputTokens: 8192,
+              responseMimeType: "application/json",
+            },
+            safetySettings: [
+              { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_ONLY_HIGH" },
+              { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_ONLY_HIGH" },
+              { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_ONLY_HIGH" },
+              { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_ONLY_HIGH" },
+            ],
+          }),
+          signal: fallbackController.signal,
+        }
+      );
+    } catch (err: unknown) {
+      clearTimeout(fallbackTimeout);
+      if (err instanceof DOMException && err.name === "AbortError") {
+        throw new Error(`Gemini API key fallback timed out after ${FALLBACK_TIMEOUT_MS / 1000}s`);
       }
-    );
+      throw err;
+    }
+    clearTimeout(fallbackTimeout);
 
     console.log("[process-document] Gemini API response status:", response.status);
 
@@ -1146,6 +1193,20 @@ IMPORTANT:
   }
 }
 
+/** Split joint names like "RAMESH AND SEEMA JOSHI" into individual names */
+function splitJointNames(names: string[]): string[] {
+  const result: string[] = [];
+  for (const name of names) {
+    // Split on " AND ", " & ", " / " (case-insensitive, surrounded by spaces)
+    const parts = name.split(/\s+(?:AND|&|\/)\s+/i);
+    for (const part of parts) {
+      const trimmed = part.trim();
+      if (trimmed.length > 0) result.push(trimmed);
+    }
+  }
+  return result;
+}
+
 function mergeGeminiResults(docAI: ExtractedData, gemini: any): ExtractedData {
   // Merge results, preferring Gemini for missing fields or corrections
   const merged: ExtractedData = {
@@ -1177,13 +1238,15 @@ function mergeGeminiResults(docAI: ExtractedData, gemini: any): ExtractedData {
     rent_due_day: gemini.rent_due_day != null
       ? Number(gemini.rent_due_day)
       : docAI.rent_due_day,
-    tenant_names: gemini.tenant_names?.length > 0 ? gemini.tenant_names : docAI.tenant_names,
-    landlord_names: gemini.landlord_names?.length > 0 ? gemini.landlord_names : docAI.landlord_names,
+    tenant_names: gemini.tenant_names?.length > 0
+      ? splitJointNames(gemini.tenant_names) : docAI.tenant_names,
+    landlord_names: gemini.landlord_names?.length > 0
+      ? splitJointNames(gemini.landlord_names) : docAI.landlord_names,
     tenants: gemini.tenant_names?.length > 0
-      ? gemini.tenant_names.map((name: string) => ({ name }))
+      ? splitJointNames(gemini.tenant_names).map((name: string) => ({ name }))
       : docAI.tenants,
     landlords: gemini.landlord_names?.length > 0
-      ? gemini.landlord_names.map((name: string) => ({ name }))
+      ? splitJointNames(gemini.landlord_names).map((name: string) => ({ name }))
       : docAI.landlords,
     // E-stamp fields
     certificate_no: gemini.certificate_no || docAI.certificate_no,
@@ -1205,11 +1268,34 @@ function mergeGeminiResults(docAI: ExtractedData, gemini: any): ExtractedData {
     rooms_in_agreement: gemini.rooms_in_agreement != null ? Number(gemini.rooms_in_agreement) : (docAI as any).rooms_in_agreement || null,
     property_bhk_type: gemini.property_bhk_type || (docAI as any).property_bhk_type || null,
     gemini_verification_score: gemini.confidence || null,
-    // Use Gemini's confidence if available (since Document AI OCR doesn't provide entity confidence)
-    confidence_score: gemini.confidence != null ? Number(gemini.confidence) : docAI.confidence_score,
+    // Use Gemini's confidence if it's meaningful (>0), otherwise keep Document AI's score.
+    // Gemini sometimes returns 0 confidence due to safety filters or empty responses.
+    confidence_score: gemini.confidence != null && Number(gemini.confidence) > 0
+      ? Number(gemini.confidence)
+      : docAI.confidence_score,
     raw_gemini_data: gemini,
     fields_extracted: 0, // Will be recalculated below
   };
+
+  // Sanity-check financial amounts — Gemini can hallucinate negative values or astronomical amounts
+  const MAX_RENT_PAISE = 50_00_000_00; // ₹50 lakh max rent (covers luxury properties)
+  const MAX_DEPOSIT_PAISE = 500_00_000_00; // ₹5 crore max deposit
+  if (merged.monthly_rent_paise != null && (merged.monthly_rent_paise <= 0 || merged.monthly_rent_paise > MAX_RENT_PAISE)) {
+    console.warn(`[process-document] Invalid monthly_rent_paise=${merged.monthly_rent_paise}, clearing`);
+    merged.monthly_rent_paise = undefined;
+  }
+  if (merged.security_deposit_paise != null && (merged.security_deposit_paise < 0 || merged.security_deposit_paise > MAX_DEPOSIT_PAISE)) {
+    console.warn(`[process-document] Invalid security_deposit_paise=${merged.security_deposit_paise}, clearing`);
+    merged.security_deposit_paise = undefined;
+  }
+  // Sanity-check rooms/BHK
+  if (merged.rooms_in_agreement != null && (merged.rooms_in_agreement < 1 || merged.rooms_in_agreement > 20)) {
+    merged.rooms_in_agreement = null;
+  }
+  // Sanity-check rent_due_day (1-28)
+  if (merged.rent_due_day != null && (merged.rent_due_day < 1 || merged.rent_due_day > 28)) {
+    merged.rent_due_day = undefined;
+  }
 
   // Recalculate fields extracted
   merged.fields_extracted = countExtractedFields(merged);
@@ -1593,9 +1679,12 @@ function slimDocAiData(raw: object): object {
 }
 
 function categorizeError(message: string): string {
+  const msg = message.toLowerCase();
   if (message.includes('PDF') || message.includes('file type')) return 'INVALID_FILE_TYPE';
   if (message.includes('download')) return 'FILE_NOT_FOUND';
-  if (message.includes('timed out')) return 'PROCESSING_TIMEOUT';
+  if (msg.includes('timed out') || msg.includes('abort')) return 'PROCESSING_TIMEOUT';
+  if (msg.includes('safety') || msg.includes('blocked')) return 'SAFETY_FILTER_BLOCKED';
+  if (message.includes('RESOURCE_EXHAUSTED') || message.includes('429')) return 'RATE_LIMITED';
   if (message.includes('Document AI')) return 'OCR_FAILED';
   if (message.includes('Gemini')) return 'VERIFICATION_FAILED';
   if (message.includes('store') || message.includes('database')) return 'DATABASE_ERROR';

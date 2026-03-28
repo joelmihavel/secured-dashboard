@@ -218,27 +218,7 @@ Deno.serve(async (req) => {
           result.status = "update_failed";
           result.reason = updateError.message;
         } else {
-          // Also update rental_parties
-          const partyInserts = [
-            ...(merged.tenant_names || []).map((name: string) => ({
-              extracted_rental_info_id: extraction.id,
-              party_type: "tenant",
-              name,
-            })),
-            ...(merged.landlord_names || []).map((name: string) => ({
-              extracted_rental_info_id: extraction.id,
-              party_type: "landlord",
-              name,
-            })),
-          ];
-
-          if (partyInserts.length > 0) {
-            await supabase
-              .from("rental_parties")
-              .delete()
-              .eq("extracted_rental_info_id", extraction.id);
-            await supabase.from("rental_parties").insert(partyInserts);
-          }
+          // rental_parties is a VIEW — party data derived from extraction columns automatically.
 
           // Update waitlist_entries for V1 compatibility
           if (extraction.user_id) {
@@ -376,10 +356,15 @@ async function extractWithVertexAIGemini(
 
   if (!textContent) throw new Error("Empty Vertex AI response");
 
-  const jsonMatch = textContent.match(/\{[\s\S]*\}/);
-  if (!jsonMatch) throw new Error("No JSON in Vertex AI response");
-
-  return JSON.parse(jsonMatch[0]);
+  // Try direct JSON.parse first (responseMimeType=application/json gives clean JSON),
+  // fall back to regex for markdown-wrapped responses
+  try {
+    return JSON.parse(textContent);
+  } catch {
+    const jsonMatch = textContent.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) throw new Error("No JSON in Vertex AI response");
+    return JSON.parse(jsonMatch[0]);
+  }
 }
 
 async function extractWithGeminiApiKey(
@@ -414,15 +399,31 @@ async function extractWithGeminiApiKey(
 
   if (!textContent) throw new Error("Empty Gemini API response");
 
-  const jsonMatch = textContent.match(/\{[\s\S]*\}/);
-  if (!jsonMatch) throw new Error("No JSON in Gemini API response");
-
-  return JSON.parse(jsonMatch[0]);
+  try {
+    return JSON.parse(textContent);
+  } catch {
+    const jsonMatch = textContent.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) throw new Error("No JSON in Gemini API response");
+    return JSON.parse(jsonMatch[0]);
+  }
 }
 
 // ============================================
 // DATA MERGING (mirrors process-document logic)
 // ============================================
+
+/** Split joint names like "RAMESH AND SEEMA JOSHI" into individual names */
+function splitJointNames(names: string[]): string[] {
+  const result: string[] = [];
+  for (const name of names) {
+    const parts = name.split(/\s+(?:AND|&|\/)\s+/i);
+    for (const part of parts) {
+      const trimmed = part.trim();
+      if (trimmed.length > 0) result.push(trimmed);
+    }
+  }
+  return result;
+}
 
 function mergeGeminiResults(gemini: any): any {
   const merged: any = {
@@ -441,8 +442,8 @@ function mergeGeminiResults(gemini: any): any {
     lease_end_date: gemini.contract_end_date || null,
     contract_length_months: gemini.contract_length_months != null ? Number(gemini.contract_length_months) : null,
     rent_due_day: gemini.rent_due_day != null ? Number(gemini.rent_due_day) : null,
-    tenant_names: gemini.tenant_names?.length > 0 ? gemini.tenant_names : [],
-    landlord_names: gemini.landlord_names?.length > 0 ? gemini.landlord_names : [],
+    tenant_names: gemini.tenant_names?.length > 0 ? splitJointNames(gemini.tenant_names) : [],
+    landlord_names: gemini.landlord_names?.length > 0 ? splitJointNames(gemini.landlord_names) : [],
     // E-stamp fields
     certificate_no: gemini.certificate_no || null,
     certificate_issued_date: gemini.certificate_issued_date || null,
@@ -457,11 +458,30 @@ function mergeGeminiResults(gemini: any): any {
     rooms_in_agreement: gemini.rooms_in_agreement != null ? Number(gemini.rooms_in_agreement) : null,
     property_bhk_type: gemini.property_bhk_type || null,
     gemini_verification_score: gemini.confidence || null,
-    confidence_score: gemini.confidence != null ? Number(gemini.confidence) : 0,
+    confidence_score: gemini.confidence != null && Number(gemini.confidence) > 0
+      ? Number(gemini.confidence) : 0,
     agreement_date: null,
     registration_number: null,
     fields_extracted: 0,
   };
+
+  // Sanity-check financial amounts (same guards as process-document)
+  const MAX_RENT_PAISE = 50_00_000_00;
+  const MAX_DEPOSIT_PAISE = 500_00_000_00;
+  if (merged.monthly_rent_paise != null && (merged.monthly_rent_paise <= 0 || merged.monthly_rent_paise > MAX_RENT_PAISE)) {
+    console.warn(`[reprocess] Invalid monthly_rent_paise=${merged.monthly_rent_paise}, clearing`);
+    merged.monthly_rent_paise = null;
+  }
+  if (merged.security_deposit_paise != null && (merged.security_deposit_paise < 0 || merged.security_deposit_paise > MAX_DEPOSIT_PAISE)) {
+    console.warn(`[reprocess] Invalid security_deposit_paise=${merged.security_deposit_paise}, clearing`);
+    merged.security_deposit_paise = null;
+  }
+  if (merged.rooms_in_agreement != null && (merged.rooms_in_agreement < 1 || merged.rooms_in_agreement > 20)) {
+    merged.rooms_in_agreement = null;
+  }
+  if (merged.rent_due_day != null && (merged.rent_due_day < 1 || merged.rent_due_day > 28)) {
+    merged.rent_due_day = null;
+  }
 
   merged.fields_extracted = countExtractedFields(merged);
   return merged;
@@ -525,19 +545,9 @@ function evaluateExtraction(data: any, isCitySupported: boolean): { needs_manual
     };
   }
 
-  // Check lease expiry
-  if (data.lease_end_date) {
-    const endDate = new Date(data.lease_end_date);
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    if (!isNaN(endDate.getTime()) && endDate < today) {
-      return {
-        needs_manual_review: true,
-        review_reason: `Agreement expired on ${data.lease_end_date}.`,
-        contract_status: 'expired',
-      };
-    }
-  }
+  // Expired agreements are NOT a blocker — common for verbal renewals and
+  // extensions pending. Risk engine flags these as RED (agreement_expiry signal).
+  // Log for visibility but proceed with extraction.
 
   // Check critical fields
   const criticalMissing: string[] = [];

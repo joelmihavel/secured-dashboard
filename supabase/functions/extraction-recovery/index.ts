@@ -15,7 +15,7 @@
  *   4. All above -> set user_status to 'waitlisted'
  *
  * Skip conditions:
- *   - contract_status in (manual_review, invalid_document, expired)
+ *   - contract_status in (manual_review, invalid_document)
  *   - needs_manual_review=true (unless contract_status=confirmed)
  *   - is_city_supported=false
  *   - Missing critical fields (address, rent, tenant name, landlord name)
@@ -32,6 +32,8 @@ type Row = Record<string, any>;
 
 // Minimum age before auto-recovery kicks in (avoid racing with normal flow)
 const MIN_AGE_MINUTES = 30;
+// If an extraction has been in "processing" for longer than this, it's hung
+const PROCESSING_TIMEOUT_MINUTES = 15;
 
 function hasMinimumFields(extraction: Row): { valid: boolean; missing: string[] } {
   const missing: string[] = [];
@@ -126,13 +128,50 @@ serve(async (req: Request) => {
     }
 
     const tenancyMap = new Map<string, Row>();
+    // Key by "user_id:extracted_rental_info_id" for idempotent lookup per extraction
+    const tenancyByExtractionMap = new Map<string, Row>();
     for (const row of tenanciesRes.data ?? []) {
       tenancyMap.set(row.user_id, row);
+      if (row.extracted_rental_info_id) {
+        tenancyByExtractionMap.set(`${row.user_id}:${row.extracted_rental_info_id}`, row);
+      }
     }
 
     const waitlistSet = new Set<string>();
     for (const row of waitlistRes.data ?? []) {
       waitlistSet.add(row.user_id);
+    }
+
+    // ============================================================
+    // STEP 1.5: Mark stale "processing" extractions as failed
+    // ============================================================
+    const processingCutoff = new Date(Date.now() - PROCESSING_TIMEOUT_MINUTES * 60 * 1000).toISOString();
+    const { data: staleExtractions, error: staleError } = await supabase
+      .from("extracted_rental_info")
+      .select("id, user_id, created_at, updated_at")
+      .in("user_id", userIds)
+      .eq("extraction_status", "processing")
+      .lt("updated_at", processingCutoff);
+
+    if (!staleError && staleExtractions && staleExtractions.length > 0) {
+      for (const stale of staleExtractions) {
+        const { error: markError } = await supabase
+          .from("extracted_rental_info")
+          .update({
+            extraction_status: "failed",
+            extraction_error: "Processing timed out — extraction hung",
+          })
+          .eq("id", stale.id)
+          .eq("extraction_status", "processing"); // optimistic lock: only update if still processing
+
+        if (markError) {
+          console.error(`[extraction-recovery] Failed to mark stale extraction ${stale.id} as failed:`, markError.message);
+        } else {
+          console.warn(`[extraction-recovery] Marked extraction ${stale.id} (user ${stale.user_id}) as failed — stuck in processing since ${stale.updated_at}`);
+        }
+      }
+    } else if (staleError) {
+      console.error("[extraction-recovery] Failed to query stale processing extractions:", staleError.message);
     }
 
     // ============================================================
@@ -142,7 +181,11 @@ serve(async (req: Request) => {
     for (const user of stuckUsers) {
       const userId = user.id;
       const extraction = extractionMap.get(userId);
-      const existingTenancy = tenancyMap.get(userId);
+      // Check for tenancy matching THIS extraction (idempotency), falling back to any user tenancy
+      const existingTenancyForExtraction = extraction
+        ? tenancyByExtractionMap.get(`${userId}:${extraction.id}`)
+        : undefined;
+      const existingTenancy = existingTenancyForExtraction ?? tenancyMap.get(userId);
       const hasWaitlist = waitlistSet.has(userId);
       const actions: string[] = [];
 
@@ -166,7 +209,8 @@ serve(async (req: Request) => {
         }
 
         // Skip: contract flagged by process-document (needs admin intervention)
-        if (["manual_review", "invalid_document", "expired"].includes(extraction.contract_status)) {
+        // NOTE: "expired" removed — expired agreements proceed, risk engine flags them
+        if (["manual_review", "invalid_document"].includes(extraction.contract_status)) {
           results.skipped.push({ user_id: userId, reason: `contract_status: ${extraction.contract_status}` });
           continue;
         }
@@ -202,7 +246,9 @@ serve(async (req: Request) => {
         // (prevents confirming garbage data that can't become a tenancy)
         const fieldCheck = hasMinimumFields(extraction);
         if (!fieldCheck.valid && !existingTenancy && !extraction.tenancy_id) {
-          results.skipped.push({ user_id: userId, reason: `Missing critical fields: ${fieldCheck.missing.join(", ")}` });
+          const reason = `Missing critical fields: ${fieldCheck.missing.join(", ")}`;
+          console.warn(`[extraction-recovery] Skipping user ${userId} (phone: ${user.phone}): ${reason} [extraction_id=${extraction.id}]`);
+          results.skipped.push({ user_id: userId, reason });
           continue;
         }
 
@@ -245,8 +291,7 @@ serve(async (req: Request) => {
               lease_end_date: extraction.lease_end_date,
               landlord_name: landlordName,
               landlord_names: extraction.landlord_names ?? (landlordName ? [landlordName] : null),
-              landlord_phone: extraction.landlord_phone,
-              landlord_email: extraction.landlord_email,
+              // landlord_phone/email omitted — tenant provides via invite-landlord flow
             })
             .select("id")
             .single();

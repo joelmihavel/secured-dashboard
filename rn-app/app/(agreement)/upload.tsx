@@ -236,7 +236,7 @@ const FIGMA = {
 // TYPES
 // ============================================
 
-type UploadState = 'idle' | 'uploading' | 'success' | 'error_expired' | 'error_size' | 'manual_review';
+type UploadState = 'idle' | 'uploading' | 'success' | 'error_expired' | 'error_size';
 interface SelectedDocument {
   uri: string;
   name: string;
@@ -314,20 +314,6 @@ const STATE_CONFIG = {
     errorMessage: 'This file is too large. Maximum size is 10MB.',
     showDivider: true, // Figma: divider pill above active button
     fileNameColor: FIGMA.colors.iconError, // red filename
-    showTrashIcon: true,
-  },
-  manual_review: {
-    borderColor: FIGMA.colors.iconWarning, // #FFB020
-    borderWidth: 1,
-    foldCornerFill: FIGMA.colors.foldCornerFill, // #1A1A1A
-    foldCornerStroke: FIGMA.colors.iconWarning, // #FFB020 - matches card border
-
-    buttonTitle: 'Join Waitlist',
-    buttonEnabled: true,
-    // From 1-30358 - message appears OUTSIDE the card
-    errorMessage: 'Our team will review it manually and get back to you within 24 hours.',
-    showDivider: true, // Figma: divider pill above active button
-    fileNameColor: '#D2D2D2', // Figma 1:30358: lighter filename
     showTrashIcon: true,
   },
 } as const;
@@ -822,27 +808,21 @@ export default function UploadScreen() {
         setUploadProgress(100);
         agreement.setExtractionId(eid);
 
-        // Check for expired/invalid contract status
-        if (status.contractStatus === 'expired' || status.contractStatus === 'invalid_document') {
+        // Only truly invalid documents (not rental agreements) redirect back to upload
+        if (status.contractStatus === 'invalid_document') {
           setUploadState('error_expired');
           setErrorOverrideMessage(
             status.extractionError ??
-            'The agreement is invalid or expired. Please upload a valid one.'
+            'This doesn\'t appear to be a rental agreement. Please upload a valid one.'
           );
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
           return;
         }
 
-        if (status.needsManualReview || !status.isCitySupported) {
-          setUploadState('manual_review');
-          setErrorOverrideMessage(
-            status.extractionError ??
-            "Our team will review it manually and get back to you within 24 hours."
-          );
-        } else {
-          setUploadState('success');
-          setErrorOverrideMessage(null);
-        }
+        // All other cases (expired, manual_review, unsupported city) proceed to waitlist.
+        // Backend handles extraction in background. Admin reviews flagged cases.
+        setUploadState('success');
+        setErrorOverrideMessage(null);
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
 
         setTimeout(() => {
@@ -1132,9 +1112,6 @@ export default function UploadScreen() {
       case 'error_size':
         handleRetry();
         break;
-      case 'manual_review':
-        handleGetNotified();
-        break;
       case 'success':
         handleGetNotified();
         break;
@@ -1261,10 +1238,7 @@ export default function UploadScreen() {
               {/* errorOverrideMessage takes priority (dynamic backend errors) */}
               {(errorOverrideMessage || config.errorMessage) && (
                 <Text
-                  style={[
-                    styles.errorTextOutside,
-                    uploadState === 'manual_review' && styles.warningTextOutside,
-                  ]}
+                  style={styles.errorTextOutside}
                 >
                   {errorOverrideMessage ?? config.errorMessage}
                 </Text>

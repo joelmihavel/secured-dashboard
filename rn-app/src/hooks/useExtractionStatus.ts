@@ -35,21 +35,23 @@ import { useAuthStore } from '../stores/auth';
 // CONSTANTS
 // ==============================================
 
-/** Max polling duration: 200 polls * 3s = 10 minutes */
-const MAX_POLL_COUNT = 200;
+/** Max polling duration: 300 polls * 3s = 15 minutes (covers 300s DocAI + 300s Gemini + margin) */
+const MAX_POLL_COUNT = 300;
 /** Fast polling during active processing — 3s for near-realtime feedback */
 const POLL_INTERVAL_FAST_MS = 3_000;
 /** Slower polling once first data arrives or for non-critical states */
 const POLL_INTERVAL_SLOW_MS = 10_000;
 
-/** If extraction_status=processing and updated_at > 7 min old, treat as failed */
-const PROCESSING_STALENESS_MS = 7 * 60 * 1000;
+/** If extraction_status=processing and updated_at > 12 min old, treat as failed.
+ *  Backend has 300s Document AI + 300s Gemini = 10 min max. 12 min adds safety margin. */
+const PROCESSING_STALENESS_MS = 12 * 60 * 1000;
 
-/** If extraction_status=pending for > 2 min, processDocument likely failed silently */
-const PENDING_STALENESS_MS = 2 * 60 * 1000;
+/** If extraction_status=pending for > 3 min, processDocument likely failed silently.
+ *  Increased from 2 min to account for slow networks triggering processDocument. */
+const PENDING_STALENESS_MS = 3 * 60 * 1000;
 
-/** Skip records older than 5 min for mount discovery (except completed) */
-const DISCOVERY_MAX_AGE_MS = 5 * 60 * 1000;
+/** Skip records older than 15 min for mount discovery (except completed) */
+const DISCOVERY_MAX_AGE_MS = 15 * 60 * 1000;
 
 // ==============================================
 // QUERY KEY
@@ -263,19 +265,8 @@ function useMountDiscovery(enabled: boolean) {
               return;
             }
 
-            // Don't restore completed extractions flagged for manual review.
-            // These are awaiting admin review — the journey router will route
-            // to waitlist. Restoring them causes a "Join Waitlist" button to
-            // appear on the upload screen without the user having uploaded.
-            if (
-              status.extractionStatus === 'completed' &&
-              (status.needsManualReview || !status.isCitySupported)
-            ) {
-              currentStore.reset();
-              return;
-            }
-
             // Record exists and is active — resume tracking
+            // (manual_review / unsupported city no longer blocks user — admin handles in background)
             if (currentStore.uploadPhase !== 'completed') {
               currentStore.setPhase('server_processing');
             }
@@ -323,16 +314,8 @@ function useMountDiscovery(enabled: boolean) {
         // Skip stale processing records (completed records are always resumable)
         if (status === 'processing' && ageMs > DISCOVERY_MAX_AGE_MS) return;
 
-        // Don't restore completed extractions flagged for manual review.
-        // These are awaiting admin action — the journey router routes to waitlist.
-        if (
-          status === 'completed' &&
-          ((row.needs_manual_review as boolean) || !(row.is_city_supported as boolean))
-        ) {
-          return;
-        }
-
         // Found active extraction — set in store so query picks it up
+        // (manual_review / unsupported city no longer blocks — admin handles in background)
         const currentStore = useUploadStore.getState();
         currentStore.setExtractionId(rowId);
         currentStore.setPhase('server_processing');

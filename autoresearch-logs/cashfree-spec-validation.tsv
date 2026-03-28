@@ -1,0 +1,12 @@
+iteration	timestamp	change	metric	decision	notes
+0	2026-03-26T14:40:00	baseline	0	baseline	No gap markers in spec yet
+1	2026-03-26T14:45:00	SDK compat + deep link + HMAC separator	3	keep	Added BLOCKER note for SDK, fixed deep link URL, flagged HMAC separator
+2	2026-03-26T14:52:00	store & hook coupling risks	5	keep	Added store additive note, hook gateway-conditional routing, service contract gaps
+3	2026-03-26T14:58:00	response contract & modal wiring	7	keep	UnifiedInitiateResult needs CF fields, modal has 2 initiatePayment sites, cashfree-pay-order ownership
+4	2026-03-26T15:05:00	migration conflicts & state machine	11	keep	cf_order_id vs gateway_order_id conflict, expired→success must be allowed, missing partially_refunded
+5	2026-03-26T15:15:00	missing expo-web-browser + deep link contradiction	7	keep	expo-web-browser NOT installed, NB redirect needs it. Line 362 contradicted line 358 (fixed)
+6	2026-03-26T16:00:00	HMAC dot separator + timing-safe compare	9	keep	IMPL FIX: webhook used no separator (should be "."), used === instead of timingSafeCompare
+7	2026-03-26T16:10:00	check-payment-status Cashfree support	11	keep	IMPL FIX: Added getOrderPaymentStatus() Cashfree path alongside existing PayU verification
+8	2026-03-26T16:25:00	store stale state + missing params + SDK guard	14	keep	IMPL FIX: clearCashfreeSession now resets paymentGateway, bankCode passed to executeCashfreePayment, SDK try/catch imports
+9	2026-03-26T16:35:00	input validation + createOrder error handling	16	keep	IMPL FIX: cashfree-pay-order validates payment_method enum, initiate-payment wraps createOrder in try-catch
+10	2026-03-26T16:45:00	webhook race + npm deps + SDK availability	19	keep	IMPL FIX: 3-retry loop for cf_order_id lookup, installed SDK+expo-web-browser, isCashfreeAvailable guard

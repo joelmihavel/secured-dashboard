@@ -88,10 +88,9 @@ export const PaymentFlipCard = memo(function PaymentFlipCard({ data }: PaymentFl
   const furnitureAnim = useSharedValue(0);
 
   const handlePress = () => {
-    // If the receipt link was tapped, navigate instead of flipping
+    // If the receipt link was tapped, skip flip — receipt handler already navigated
     if (receiptTappedRef.current) {
       receiptTappedRef.current = false;
-      data.onViewReceipt?.();
       return;
     }
 
@@ -175,14 +174,12 @@ export const PaymentFlipCard = memo(function PaymentFlipCard({ data }: PaymentFl
   });
 
   const config = useMemo(() => {
-    // Show "Cashback Potential" for any unpaid month (no receipt = no actual payment)
     const hasReceipt = !!data.onViewReceipt;
-    const cashbackLabel = hasReceipt ? 'Cashback\nEarned' : 'Cashback\nPotential';
     switch (data.status) {
       case 'late':
-        return { badgeVariant: 'late' as BadgeVariant, badgeCount: data.lateCount ?? 1, label: cashbackLabel, showReceipt: hasReceipt };
+        return { badgeVariant: 'late' as BadgeVariant, badgeCount: data.lateCount ?? 1, label: 'Cashback\nLost', showReceipt: hasReceipt };
       case 'missed':
-        return { badgeVariant: 'missed' as BadgeVariant, badgeCount: data.missedCount ?? 1, label: cashbackLabel, showReceipt: hasReceipt };
+        return { badgeVariant: 'missed' as BadgeVariant, badgeCount: data.missedCount ?? 1, label: 'Cashback\nLost', showReceipt: hasReceipt };
       case 'upcoming':
         return { badgeVariant: 'upcoming' as BadgeVariant, badgeCount: 0, label: 'Cashback\nPotential', showReceipt: false };
       case 'paid':
@@ -244,7 +241,13 @@ export const PaymentFlipCard = memo(function PaymentFlipCard({ data }: PaymentFl
         <View style={styles.middleSection}>
           <Text style={styles.monthText}>{data.monthName}</Text>
           {config.showReceipt ? (
-            <Pressable onPressIn={() => { receiptTappedRef.current = true; }} hitSlop={{ top: 8, bottom: 8, left: 16, right: 16 }}>
+            <Pressable
+              onPress={() => {
+                receiptTappedRef.current = true;
+                data.onViewReceipt?.();
+              }}
+              hitSlop={{ top: 8, bottom: 8, left: 16, right: 16 }}
+            >
               <Text style={styles.viewReceiptText}>View Rent Receipt</Text>
             </Pressable>
           ) : (

@@ -200,8 +200,9 @@ export async function ensureTenancyForExtraction(
       lease_end_date: extraction.lease_end_date ?? null,
       landlord_name: landlordName,
       landlord_names: extraction.landlord_names ?? (landlordName ? [landlordName] : null),
-      landlord_phone: extraction.landlord_phone ?? null,
-      landlord_email: extraction.landlord_email ?? null,
+      // Landlord contact details intentionally omitted — must be provided by the
+      // tenant user (invite-landlord flow), not pulled from the extracted agreement.
+      // Extracted phone/email stays in extracted_rental_info for admin reference only.
     })
     .select("id")
     .single();
@@ -441,10 +442,12 @@ export async function finalizeExtractionForOnboarding(
     ...syncWaitlistFields,
   };
 
+  // Target specific waitlist entry (not all of user's entries) to prevent
+  // overwriting data on older entries if user has multiple extractions
   await supabase
     .from("waitlist_entries")
     .update(waitlistPayload)
-    .eq("user_id", userId);
+    .eq("id", waitlistState.entryId);
 
   let finalUserStatus = waitlistState.finalUserStatus;
   let autoApproved = false;

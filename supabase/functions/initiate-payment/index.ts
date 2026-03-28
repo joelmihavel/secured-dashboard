@@ -26,6 +26,7 @@ import { AuditLogger, AuditActions } from "../_shared/audit.ts";
 import { IdempotencyManager, getIdempotencyKey } from "../_shared/idempotency.ts";
 import { generatePayUHash, generateTransactionId, sha512, hmacSha256 } from "../_shared/crypto.ts";
 import { isTestUser } from "../_shared/demo-helpers.ts";
+import { createOrder, CashfreeError } from "../_shared/cashfree-easysplit.ts";
 import {
   PAYU_MERCHANT_KEY,
   PAYU_MERCHANT_SALT,
@@ -161,6 +162,11 @@ serve(async (req: Request) => {
   const corsResponse = handleCors(req);
   if (corsResponse) return corsResponse;
 
+  // TEMPORARY: GET returns deployment probe (no auth needed)
+  if (req.method === "GET") {
+    return jsonResponse({ _probe: true, _build: "2026-03-27T01:30-v2", ts: new Date().toISOString() });
+  }
+
   if (req.method !== "POST") {
     return errorResponse("Method not allowed", 405);
   }
@@ -194,7 +200,7 @@ serve(async (req: Request) => {
 
     // Parse and validate request body
     const body = await req.json();
-    console.log("[initiate-payment] Request for tenancy:", body.tenancy_id, "method:", body.payment_method);
+    console.log("[initiate-payment] Request for tenancy:", body.tenancy_id, "method:", body.payment_method, "gateway_version:", body.gateway_version, "checkout_mode:", body.checkout_mode, "ALL_KEYS:", Object.keys(body).join(","));
     const validatedBody = validateSchema<InitiatePaymentRequest>(
       body,
       requestSchema,
@@ -212,6 +218,12 @@ serve(async (req: Request) => {
       rent_month,
     } = validatedBody;
     const checkout_mode = (validatedBody as Record<string, unknown>).checkout_mode as string | undefined;
+
+    // Dual-gateway routing: client sends gateway_version to opt into Cashfree
+    // BUILD_MARKER: 2026-03-27T00:30:00Z — if you see this in logs, deployment is fresh
+    const gateway_version = body.gateway_version as string | undefined;
+    const useCashfree = gateway_version === 'cashfree';
+    console.log("[initiate-payment] BUILD_MARKER=2026-03-27T00:30 GATEWAY ROUTING: gateway_version=", JSON.stringify(gateway_version), "useCashfree=", useCashfree, "typeof=", typeof gateway_version, "RAW_BODY_KEYS=", Object.keys(body).join(","));
 
     // Normalize payment method (iOS sends net_banking, credit_card, debit_card)
     const payment_method = normalizePaymentMethod(rawPaymentMethod);
@@ -248,7 +260,7 @@ serve(async (req: Request) => {
     const { data: tenancy, error: tenancyError } = await supabase
       .from("tenancies")
       .select(`
-        id, user_id, status, monthly_rent_paise, landlord_name,
+        id, user_id, landlord_user_id, status, monthly_rent_paise, landlord_name,
         bank_verified, utility_verified, landlord_approved,
         cashback_cutoff_day, rent_due_day
       `)
@@ -267,8 +279,28 @@ serve(async (req: Request) => {
       throw new PaymentError("Tenancy is not active", "TENANCY_INACTIVE");
     }
 
-    if (!tenancy.bank_verified) {
-      throw new PaymentError("Landlord bank account not verified yet", "BANK_NOT_VERIFIED");
+    // Bank verification is NOT a hard gate for payments — tenants should be able
+    // to pay rent even while landlord bank details are being verified.
+    // bank_verified only affects: (a) 1% discount eligibility, (b) settlement routing.
+
+    // Cashfree: Landlord vendor must be ACTIVE before accepting payment
+    // Cashfree vendor status check — log but don't block payments.
+    // Settlement will fail if vendor isn't ACTIVE, but that's handled
+    // asynchronously by settle-to-landlord. Blocking here prevents testing
+    // and hurts UX when vendor onboarding is slow.
+    if (useCashfree) {
+      const { data: landlordBank } = await supabase
+        .from("bank_accounts")
+        .select("cf_beneficiary_id, cf_beneficiary_status")
+        .eq("user_id", userId)
+        .eq("party_type", "landlord")
+        .eq("is_primary", true)
+        .eq("verified", true)
+        .maybeSingle();
+
+      if (!landlordBank?.cf_beneficiary_id || landlordBank.cf_beneficiary_status !== "ACTIVE") {
+        console.warn(`[initiate-payment] Landlord vendor not active: beneficiary=${landlordBank?.cf_beneficiary_id ?? "none"}, status=${landlordBank?.cf_beneficiary_status ?? "none"}. Proceeding anyway — settlement will be deferred.`);
+      }
     }
 
     // Amount guardrail: minimum INR 10
@@ -299,17 +331,27 @@ serve(async (req: Request) => {
     // Check for in-progress payment this month (prevent simultaneous double-charge)
     const rentMonthDate = `${rent_month}-01`;
 
-    // Expire abandoned initiated payments that never reached PayU SDK.
-    // Uses payu_mihpayid IS NULL instead of time-based expiry so that
-    // backing out of confirm-payment and re-proceeding works immediately.
-    // Payments that reached PayU (have mihpayid) are handled by the webhook.
+    // Expire abandoned initiated payments that never reached the payment gateway.
+    // PayU: uses payu_mihpayid IS NULL (no SDK interaction yet)
+    // Cashfree: uses cf_order_id IS NULL (createOrder never succeeded)
+    // Payments that reached the gateway are handled by the webhook.
     await supabase
       .from("payments")
       .update({ status: "failed", payu_status: "expired_stale" })
       .eq("tenancy_id", tenancy_id)
       .eq("payment_month", rentMonthDate)
       .eq("status", "initiated")
+      .eq("payment_gateway", "payu")
       .is("payu_mihpayid", null);
+
+    await supabase
+      .from("payments")
+      .update({ status: "failed" })
+      .eq("tenancy_id", tenancy_id)
+      .eq("payment_month", rentMonthDate)
+      .eq("status", "initiated")
+      .eq("payment_gateway", "cashfree")
+      .is("cf_order_id", null);
 
     // Block only if a payment is actively in progress (prevent double-charge).
     // Multiple successful payments per month are allowed.
@@ -493,47 +535,56 @@ serve(async (req: Request) => {
     const productinfo = `Rent payment for ${rent_month}`;
     const amountStr = (totalAmountPaise / 100).toFixed(2); // PayU expects amount in rupees
 
-    const payuParams = {
-      key: PAYU_MERCHANT_KEY,
-      txnid: txnId,
-      amount: amountStr,
-      productinfo,
-      firstname,
-      email,
-      salt: PAYU_MERCHANT_SALT,
-      udf1: tenancy_id,
-      udf2: rent_month,
-      udf3: userId,
-    };
+    // PayU-specific hash computation — skip for Cashfree path
+    let payuParams: Record<string, string> | null = null;
+    let payuHash = "";
+    let payuHashV2 = "";
+    let vasHash = "";
+    let paymentRelatedHash = "";
 
-    // PayU hash generation — compute both v1 (SHA-512) and v2 (HMAC-SHA256) for diagnostics
-    const userCredential = `${PAYU_MERCHANT_KEY}:${email}`;
-    const hashInputStr = `${PAYU_MERCHANT_KEY}|${txnId}|${amountStr}|${productinfo}|${firstname}|${email}|${payuParams.udf1 ?? ""}|${payuParams.udf2 ?? ""}|${payuParams.udf3 ?? ""}|${payuParams.udf4 ?? ""}|${payuParams.udf5 ?? ""}||||||`;
-    // Salt v1 hash: sha512(hashString + salt)
-    const payuHashV1 = await sha512(hashInputStr + PAYU_MERCHANT_SALT);
-    // Salt v2 hash: hmac-sha256(hashString WITHOUT trailing salt, key=salt)
-    const hashInputStrV2 = `${PAYU_MERCHANT_KEY}|${txnId}|${amountStr}|${productinfo}|${firstname}|${email}|${payuParams.udf1 ?? ""}|${payuParams.udf2 ?? ""}|${payuParams.udf3 ?? ""}|${payuParams.udf4 ?? ""}|${payuParams.udf5 ?? ""}||||||`;
-    const payuHashV2 = await hmacSha256(hashInputStrV2, PAYU_MERCHANT_SALT);
-    // Use v1 by default, log both for diagnostics
-    const payuHash = payuHashV1;
-    const vasHash = await sha512(`${PAYU_MERCHANT_KEY}|vas_for_mobile_sdk|default|${PAYU_MERCHANT_SALT}`);
-    const paymentRelatedHash = await sha512(`${PAYU_MERCHANT_KEY}|payment_related_details_for_mobile_sdk|${userCredential}|${PAYU_MERCHANT_SALT}`);
+    if (!useCashfree) {
+      payuParams = {
+        key: PAYU_MERCHANT_KEY,
+        txnid: txnId,
+        amount: amountStr,
+        productinfo,
+        firstname,
+        email,
+        salt: PAYU_MERCHANT_SALT,
+        udf1: tenancy_id,
+        udf2: rent_month,
+        udf3: userId,
+      };
 
-    // Diagnostic: log hash input for debugging (salt masked)
-    const maskedSalt = PAYU_MERCHANT_SALT.slice(0, 4) + "****" + PAYU_MERCHANT_SALT.slice(-4);
-    console.log("[initiate-payment] Hash diagnostic:", {
-      hashInput: hashInputStr + maskedSalt,
-      hashV1_sha512: payuHashV1.slice(0, 16) + "...",
-      hashV2_hmac256: payuHashV2.slice(0, 16) + "...",
-      usingHash: "v1",
-      environment: PAYU_SDK_ENVIRONMENT,
-      baseUrl: PAYU_BASE_URL,
-      isSandbox: IS_SANDBOX,
-      keyLen: PAYU_MERCHANT_KEY.length,
-      saltLen: PAYU_MERCHANT_SALT.length,
-      amount: amountStr,
-      txnid: txnId,
-    });
+      // PayU hash generation — compute both v1 (SHA-512) and v2 (HMAC-SHA256) for diagnostics
+      const userCredential = `${PAYU_MERCHANT_KEY}:${email}`;
+      const hashInputStr = `${PAYU_MERCHANT_KEY}|${txnId}|${amountStr}|${productinfo}|${firstname}|${email}|${payuParams.udf1 ?? ""}|${payuParams.udf2 ?? ""}|${payuParams.udf3 ?? ""}|${payuParams.udf4 ?? ""}|${payuParams.udf5 ?? ""}||||||`;
+      // Salt v1 hash: sha512(hashString + salt)
+      const payuHashV1 = await sha512(hashInputStr + PAYU_MERCHANT_SALT);
+      // Salt v2 hash: hmac-sha256(hashString WITHOUT trailing salt, key=salt)
+      const hashInputStrV2 = `${PAYU_MERCHANT_KEY}|${txnId}|${amountStr}|${productinfo}|${firstname}|${email}|${payuParams.udf1 ?? ""}|${payuParams.udf2 ?? ""}|${payuParams.udf3 ?? ""}|${payuParams.udf4 ?? ""}|${payuParams.udf5 ?? ""}||||||`;
+      payuHashV2 = await hmacSha256(hashInputStrV2, PAYU_MERCHANT_SALT);
+      // Use v1 by default, log both for diagnostics
+      payuHash = payuHashV1;
+      vasHash = await sha512(`${PAYU_MERCHANT_KEY}|vas_for_mobile_sdk|default|${PAYU_MERCHANT_SALT}`);
+      paymentRelatedHash = await sha512(`${PAYU_MERCHANT_KEY}|payment_related_details_for_mobile_sdk|${userCredential}|${PAYU_MERCHANT_SALT}`);
+
+      // Diagnostic: log hash input for debugging (salt masked)
+      const maskedSalt = PAYU_MERCHANT_SALT.slice(0, 4) + "****" + PAYU_MERCHANT_SALT.slice(-4);
+      console.log("[initiate-payment] Hash diagnostic:", {
+        hashInput: hashInputStr + maskedSalt,
+        hashV1_sha512: payuHashV1.slice(0, 16) + "...",
+        hashV2_hmac256: payuHashV2.slice(0, 16) + "...",
+        usingHash: "v1",
+        environment: PAYU_SDK_ENVIRONMENT,
+        baseUrl: PAYU_BASE_URL,
+        isSandbox: IS_SANDBOX,
+        keyLen: PAYU_MERCHANT_KEY.length,
+        saltLen: PAYU_MERCHANT_SALT.length,
+        amount: amountStr,
+        txnid: txnId,
+      });
+    }
 
     // Calculate due date (5th of the rent month, or next month if already past)
     const dueDate = calculateDueDate(rent_month);
@@ -556,10 +607,10 @@ serve(async (req: Request) => {
         net_rent_paise: netRentPaise,
         flent_subsidy_paise: cashbackDiscountPaise,
         status: "initiated",
-        payu_txn_id: txnId,
-        payment_gateway: "payu",
-        gateway_order_id: txnId,
-        gateway_metadata: { key: PAYU_MERCHANT_KEY, txnid: txnId, amount: amountStr },
+        payu_txn_id: useCashfree ? null : txnId,
+        payment_gateway: useCashfree ? "cashfree" : "payu",
+        gateway_order_id: useCashfree ? null : txnId,
+        gateway_metadata: useCashfree ? {} : { key: PAYU_MERCHANT_KEY, txnid: txnId, amount: amountStr },
         payment_method,
         idempotency_key: idempotencyKey,
         payment_month: rentMonthDate,
@@ -569,7 +620,7 @@ serve(async (req: Request) => {
           upi_vpa,
           bank_code,
         },
-        payu_initiation_params: {
+        payu_initiation_params: useCashfree ? null : {
           key: PAYU_MERCHANT_KEY,
           txnid: txnId,
           amount: amountStr,
@@ -588,6 +639,10 @@ serve(async (req: Request) => {
       .single();
 
     if (paymentError || !payment) {
+      // Unique constraint violation = concurrent duplicate (TOCTOU race)
+      if (paymentError?.code === "23505") {
+        throw new PaymentError("Payment already in progress for this month", "PAYMENT_IN_PROGRESS");
+      }
       console.error("Failed to create payment:", paymentError);
       throw new PaymentError("Failed to initiate payment", "DB_ERROR");
     }
@@ -606,6 +661,101 @@ serve(async (req: Request) => {
       rent_month,
     });
 
+    // ── CASHFREE PATH ──────────────────────────────────────────────
+    if (useCashfree) {
+      const WEBHOOK_URL = `${SUPABASE_URL}/functions/v1/payment-webhook`;
+      // Map payment method to Cashfree payment_methods restriction for Web Checkout
+      // UPI uses native SDK intent — no restriction needed (order supports all methods)
+      const CF_METHOD_MAP: Record<string, string> = {
+        card: 'cc',
+        credit_card: 'cc',
+        CC: 'cc',
+        debit_card: 'dc',
+        DC: 'dc',
+        netbanking: 'nb',
+        NB: 'nb',
+      };
+      const cfPaymentMethods = CF_METHOD_MAP[payment_method] ?? undefined;
+
+      let cfOrder;
+      try {
+        cfOrder = await createOrder({
+          amountPaise: totalAmountPaise,
+          orderId: `flent-${payment.id.slice(0, 8)}`,
+          customerId: userId,
+          customerPhone: userProfile?.phone ?? '',
+          notifyUrl: WEBHOOK_URL,
+          paymentMethods: cfPaymentMethods,
+          // No returnUrl for native app — expo-web-browser handles the close.
+          // Cashfree's return_url redirects the browser, but our in-app browser
+          // dismisses on close. Webhook (notifyUrl) handles the actual outcome.
+        });
+      } catch (cfErr) {
+        // Mark payment as failed so it doesn't stay orphaned in 'initiated'
+        await supabase.from('payments').update({ status: 'failed' }).eq('id', payment.id);
+        console.error('[initiate-payment] Cashfree createOrder failed:', cfErr);
+        throw new PaymentError(
+          cfErr instanceof CashfreeError ? cfErr.message : 'Failed to create Cashfree order',
+        );
+      }
+
+      if (!cfOrder.order_id || !cfOrder.payment_session_id) {
+        await supabase.from('payments').update({ status: 'failed' }).eq('id', payment.id);
+        console.error('[initiate-payment] Cashfree returned incomplete order:', cfOrder);
+        throw new PaymentError('Cashfree returned incomplete order response');
+      }
+
+      // Update payment record with Cashfree order details
+      await supabase
+        .from('payments')
+        .update({
+          payment_gateway: 'cashfree',
+          cf_order_id: cfOrder.order_id,
+          gateway_order_id: cfOrder.order_id,
+        })
+        .eq('id', payment.id);
+
+      const cfResponseData = {
+        payment_id: payment.id,
+        txn_id: txnId,
+        _build: "2026-03-27T01:30-v2",
+        _gw_debug: `gv=${gateway_version}|cf=${useCashfree}`,
+        total_amount_paise: totalAmountPaise,
+        original_rent_paise: originalRentPaise,
+        cashback_applied_paise: cashbackDiscountPaise,
+        cashback_earned_paise: cashbackEarnedPaise,
+        accumulated_redeemed_paise: accumulatedRedeemed,
+        net_rent_paise: netRentPaise,
+        pg_fee_paise: 0,
+        estimated_pg_fee_paise: estimatedPgFeePaise,
+        landlord_payout_paise: landlordPayoutPaise,
+        payment_method,
+        gateway: "cashfree" as const,
+        cashback_discount: {
+          discount_paise: cashbackDiscountPaise,
+          discount_rupees: cashbackDiscountPaise / 100,
+          verification_complete: verificationComplete,
+          past_cutoff: isPastCutoff,
+          cutoff_day: cutoffDay,
+          reason: getCashbackBlockerReason(tenancy, verificationComplete, isPastCutoff, cutoffDay, cashbackAlreadyApplied),
+        },
+        verification_complete: verificationComplete,
+        cashfree: {
+          payment_session_id: cfOrder.payment_session_id,
+          cf_order_id: cfOrder.order_id,
+        },
+      };
+
+      await idempotencyManager.complete(idempotencyKey, 200, cfResponseData);
+
+      return jsonResponse({
+        success: true,
+        data: cfResponseData,
+      });
+    }
+    // ── END CASHFREE PATH ────────────────────────────────────────
+
+    // ── PAYU PATH ────────────────────────────────────────────────
     // Build response based on payment method
     const surl = `${SUPABASE_URL}/functions/v1/payment-webhook`;
     const furl = `${SUPABASE_URL}/functions/v1/payment-webhook`;
@@ -619,6 +769,8 @@ serve(async (req: Request) => {
       payment_id: payment.id,
       txn_id: txnId,
       gateway: "payu" as const,
+      _build: "2026-03-27T01:30-v2",
+      _gw_debug: `gv=${gateway_version}|cf=${useCashfree}`,
       original_rent_paise: originalRentPaise,
       cashback_applied_paise: cashbackDiscountPaise,
       cashback_earned_paise: cashbackEarnedPaise,
@@ -712,6 +864,7 @@ serve(async (req: Request) => {
       success: true,
       data: responseData,
     });
+    // ── END PAYU PATH ────────────────────────────────────────────
   } catch (error) {
     // Mark idempotency as failed
     if (idempotencyKey) {

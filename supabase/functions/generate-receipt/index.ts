@@ -147,7 +147,7 @@ serve(async (req: Request) => {
     const { data: payment, error: paymentError } = await supabase
       .from("payments")
       .select(`
-        id, payu_txn_id, payu_mihpayid, payu_bank_ref_num,
+        id, payu_txn_id, payu_mihpayid, payu_bank_ref_num, settlement_utr,
         payment_gateway, gateway_payment_id, payment_method_details,
         rent_amount_paise, pg_fee_paise, cashback_applied_paise, cashback_earned_paise,
         payment_method, status, payment_month, paid_at, created_at, due_date,
@@ -384,9 +384,10 @@ function maskPan(pan: string | null | undefined): string | null {
   return pan.slice(0, 5) + '****' + pan.slice(-1);
 }
 
-/** Resolves UTR (Unique Transaction Reference) from PayU payment data. */
+/** Resolves UTR (Unique Transaction Reference).
+ *  Priority: settlement_utr (from vendor webhook) > payu_bank_ref_num > payu_mihpayid */
 function resolveUtr(payment: any): string | null {
-  return payment.payu_bank_ref_num || payment.payu_mihpayid || null;
+  return payment.settlement_utr || payment.payu_bank_ref_num || payment.payu_mihpayid || null;
 }
 
 /**

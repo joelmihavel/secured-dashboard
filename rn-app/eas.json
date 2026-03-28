@@ -8,9 +8,9 @@
       "developmentClient": true,
       "distribution": "internal",
       "channel": "development",
+      "environment": "development",
       "env": {
-        "APP_ENV": "development",
-        "SENTRY_DISABLE_AUTO_UPLOAD": "true"
+        "APP_ENV": "development"
       },
       "ios": {
         "simulator": true
@@ -20,29 +20,38 @@
       "developmentClient": true,
       "distribution": "internal",
       "channel": "development",
+      "environment": "development",
       "env": {
-        "APP_ENV": "development",
-        "SENTRY_DISABLE_AUTO_UPLOAD": "true"
+        "APP_ENV": "development"
       }
     },
     "preview": {
       "distribution": "internal",
       "channel": "preview",
       "autoIncrement": true,
+      "environment": "preview",
       "env": {
-        "APP_ENV": "preview",
-        "SENTRY_DISABLE_AUTO_UPLOAD": "true"
+        "APP_ENV": "preview"
       }
     },
     "production": {
       "autoIncrement": true,
       "channel": "production",
+      "environment": "production",
       "env": {
         "APP_ENV": "production"
-      },
+      }
     }
   },
   "submit": {
+    "preview": {
+      "ios": {
+        "ascAppId": "6757275258",
+        "ascApiKeyId": "P8AM5FW523",
+        "ascApiKeyIssuerId": "f7aeb1fa-2e94-4ba5-a6c6-328010540b3f",
+        "ascApiKeyPath": "/Users/atrishabh/Documents/Dev/iOS APN Keys/App Store Connect Key/AuthKey_P8AM5FW523.p8"
+      }
+    },
     "production": {
       "ios": {
         "ascAppId": "6757275258",

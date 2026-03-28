@@ -22,7 +22,7 @@ import {
 } from "../_shared/errors.ts";
 import { validateSchema, isValidPan, maskPan } from "../_shared/validation.ts";
 import { AuditLogger, AuditActions } from "../_shared/audit.ts";
-import { encrypt } from "../_shared/crypto.ts";
+import { encrypt, decrypt } from "../_shared/crypto.ts";
 import {
   IdempotencyManager,
   generateIdempotencyKey,
@@ -32,6 +32,7 @@ import {
   matchAgainstAgreementNames,
 } from "../_shared/name-match-service.ts";
 import { generateCfSignature } from "../_shared/cashfree-m360-otp.ts";
+import { createVendor, getVendor, CashfreeError } from "../_shared/cashfree-easysplit.ts";
 
 // ==============================================
 // CONFIGURATION
@@ -262,6 +263,82 @@ serve(async (req: Request) => {
         .update({ pan_verified: true })
         .eq("id", tenancy_id);
     }
+
+    // ── IMMEDIATE VENDOR REGISTRATION ────────────────────────────
+    // Register landlord as Cashfree Easy Split vendor right after PAN
+    // verification succeeds. Don't wait for the daily sync-vendors cron.
+    if (panValid && matchResult.matched) {
+      try {
+        // Fetch bank account with encrypted fields for vendor creation
+        const { data: fullBankAccount } = await supabase
+          .from("bank_accounts")
+          .select("id, account_holder_name, account_number_encrypted, ifsc_code, cf_beneficiary_id")
+          .eq("id", bank_account_id)
+          .single();
+
+        if (fullBankAccount && !fullBankAccount.cf_beneficiary_id) {
+          // Decrypt account number for Cashfree API
+          const accountNumber = await decrypt(fullBankAccount.account_number_encrypted);
+
+          // Fetch user phone/email for vendor record
+          const { data: userRecord } = await supabase
+            .from("users")
+            .select("phone, email")
+            .eq("id", userId)
+            .single();
+
+          const vendorId = `VENDOR${bank_account_id.replace(/-/g, "")}`;
+          const phone = (userRecord?.phone ?? "").replace(/^\+91/, "");
+          const email = userRecord?.email ?? `${bank_account_id}@flent.app`;
+
+          let vendor;
+          try {
+            vendor = await createVendor({
+              vendor_id: vendorId,
+              name: fullBankAccount.account_holder_name,
+              email,
+              phone,
+              account_number: accountNumber,
+              account_holder: fullBankAccount.account_holder_name,
+              ifsc: fullBankAccount.ifsc_code,
+              pan: sanitizedPan,
+              schedule_option: 2,
+            });
+          } catch (createErr) {
+            // Vendor may already exist from a prior attempt
+            if (createErr instanceof CashfreeError && createErr.message.includes("vendor already exists")) {
+              vendor = await getVendor(vendorId);
+            } else {
+              throw createErr;
+            }
+          }
+
+          // Store vendor ID and initial status on bank account
+          await supabase
+            .from("bank_accounts")
+            .update({
+              cf_beneficiary_id: vendor.vendor_id ?? vendorId,
+              cf_beneficiary_status: vendor.status ?? "IN_BENE_CREATION",
+            })
+            .eq("id", bank_account_id);
+
+          console.log(`[verify-pan] Vendor ${vendorId} created immediately, status: ${vendor.status}`);
+
+          await audit!.logSuccess(
+            "VENDOR_CREATED_IMMEDIATE",
+            "landlord",
+            "bank_account",
+            bank_account_id,
+            { vendor_id: vendorId, status: vendor.status },
+          );
+        }
+      } catch (vendorErr) {
+        // Vendor creation failure should NOT block PAN verification response
+        // sync-vendors daily cron will pick it up as fallback
+        console.error("[verify-pan] Immediate vendor creation failed (sync-vendors will retry):", vendorErr);
+      }
+    }
+    // ── END IMMEDIATE VENDOR REGISTRATION ────────────────────────
 
     // Log result
     if (panValid && matchResult.matched) {

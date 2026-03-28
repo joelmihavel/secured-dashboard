@@ -204,13 +204,16 @@ export default function Index() {
       // Moved here from usePaymentRecovery hook in _layout.tsx because
       // navigating from _layout.tsx races with expo-router's assertIsReady.
       // By the time index.tsx navigates, the Stack is fully mounted.
+      // Window: 5 minutes (enough for SDK crash recovery, not stale redirects).
+      // Always clears after use — status screen polls DB for actual outcome.
       if (usePaymentStore.persist.hasHydrated()) {
         const { lastPaymentId, lastPaymentTimestamp, clearLastPayment } =
           usePaymentStore.getState();
         if (lastPaymentId && lastPaymentTimestamp) {
           const elapsed = Date.now() - lastPaymentTimestamp;
-          if (elapsed <= 30 * 60 * 1000) {
+          if (elapsed <= 5 * 60 * 1000) {
             // Recent payment in progress — resume polling on status screen
+            clearLastPayment(); // Clear immediately so next cold start won't redirect again
             setTarget(`/(payment)/status?paymentId=${lastPaymentId}&initialStatus=pending`);
             setJourneyResolved(true);
             return;

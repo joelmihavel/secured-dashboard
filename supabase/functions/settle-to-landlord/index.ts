@@ -16,6 +16,7 @@ import { handleCors, jsonResponse, errorResponse } from "../_shared/cors.ts";
 import { AppError, handleError } from "../_shared/errors.ts";
 import { AuditLogger } from "../_shared/audit.ts";
 import { getSystemTransferFlag } from "../_shared/transfer-flags.ts";
+import { onDemandTransfer, CashfreeError } from "../_shared/cashfree-easysplit.ts";
 import { notifyUser } from "../_shared/notifications.ts";
 
 // ==============================================
@@ -82,6 +83,7 @@ serve(async (req: Request) => {
         total_amount_paise, flent_subsidy_paise,
         landlord_payout_status, payu_settlement_status, payu_txn_id,
         payment_gateway, gateway_order_id, gateway_settlement_status,
+        cf_order_id,
         transfer_hold, transfer_hold_reason,
         payment_month, paid_at,
         tenancy:tenancies(
@@ -154,17 +156,19 @@ serve(async (req: Request) => {
         continue;
       }
 
-      // Fetch landlord bank details via landlord_user_id -> bank_accounts (party_type='landlord', primary)
+      // Fetch landlord bank details: try landlord_user_id first, then fall back to tenant's user_id
       let bankAccount = null;
-      if (tenancy.landlord_user_id) {
+      const bankOwnerIds = [tenancy.landlord_user_id, payment.user_id].filter(Boolean) as string[];
+      for (const ownerId of bankOwnerIds) {
+        if (bankAccount) break;
         const { data: bank } = await supabase
           .from("bank_accounts")
-          .select("id, account_holder_name, account_number_masked, ifsc_code, verified")
-          .eq("user_id", tenancy.landlord_user_id)
+          .select("id, account_holder_name, account_number_masked, ifsc_code, verified, cf_beneficiary_id, cf_beneficiary_status")
+          .eq("user_id", ownerId)
           .eq("party_type", "landlord")
           .eq("is_primary", true)
           .maybeSingle();
-        bankAccount = bank;
+        if (bank) bankAccount = bank;
       }
 
       const payoutAmountPaise = payment.landlord_payout_paise ?? payment.rent_amount_paise;
@@ -211,7 +215,7 @@ serve(async (req: Request) => {
           .from("payments")
           .update({
             landlord_payout_status: "failed",
-            landlord_payout_error: "Landlord bank account not verified",
+            gateway_payout_status: "Landlord bank account not verified",
           })
           .eq("id", payment.id);
 
@@ -248,31 +252,15 @@ serve(async (req: Request) => {
         continue;
       }
 
-      // PayU manual-logging payout path
       const payoutRef = `PAYOUT-${payment.id.slice(0, 8)}-${Date.now().toString(36)}`;
 
-      console.log("[LANDLORD_PAYOUT] Ready for manual processing:", {
-        payout_ref: payoutRef,
-        payment_id: payment.id,
-        payu_txn_id: payment.payu_txn_id,
-        amount_paise: payoutAmountPaise,
-        amount_rupees: (payoutAmountPaise / 100).toFixed(2),
-        landlord_name: tenancy.landlord_name,
-        landlord_phone: tenancy.landlord_phone,
-        bank_holder: bankAccount.account_holder_name,
-        bank_account_masked: bankAccount.account_number_masked,
-        bank_ifsc: bankAccount.ifsc_code,
-        property: tenancy.property_address,
-        payment_month: payment.payment_month,
-      });
-
-      // Update payment status to processing (optimistic lock on 'ready' prevents double-processing)
+      // Optimistic lock: set to 'processing' first (prevents double-processing)
       const { data: updatedRow, error: updateError } = await supabase
         .from("payments")
         .update({
           landlord_payout_status: "processing",
-          landlord_payout_ref: payoutRef,
-          landlord_payout_initiated_at: new Date().toISOString(),
+          landlord_payout_utr: payoutRef,
+          landlord_payout_at: new Date().toISOString(),
         })
         .eq("id", payment.id)
         .eq("landlord_payout_status", "ready")
@@ -280,7 +268,7 @@ serve(async (req: Request) => {
         .maybeSingle();
 
       if (updateError || !updatedRow) {
-        console.error(`Failed to update payment ${payment.id} to processing:`, updateError ?? "optimistic lock failed (no longer ready)");
+        console.error(`Failed to update payment ${payment.id} to processing:`, updateError ?? "optimistic lock failed");
         results.push({
           payment_id: payment.id,
           status: "failed",
@@ -291,23 +279,85 @@ serve(async (req: Request) => {
         continue;
       }
 
-      await audit.logSuccess(
-        "LANDLORD_PAYOUT_INITIATED",
-        "payment",
-        "payment",
-        payment.id,
-        {
-          payout_ref: payoutRef,
-          amount_paise: payoutAmountPaise,
-          landlord_name: tenancy.landlord_name,
-          bank_ifsc: bankAccount.ifsc_code,
-        },
-      );
+      // ── CASHFREE EASY SPLIT: on-demand transfer ──
+      if (payment.payment_gateway === "cashfree") {
+        const vendorId = bankAccount.cf_beneficiary_id;
+        if (!vendorId) {
+          console.error(`[settle-to-landlord] No cf_beneficiary_id for bank ${bankAccount.id}`);
+          await supabase.from("payments").update({
+            landlord_payout_status: "failed",
+            gateway_payout_status: "Landlord not registered as Cashfree vendor",
+          }).eq("id", payment.id);
+          results.push({
+            payment_id: payment.id, status: "failed", amount_paise: payoutAmountPaise,
+            landlord_name: tenancy.landlord_name, error: "No Cashfree vendor ID",
+          });
+          continue;
+        }
+
+        try {
+          const transferResult = await onDemandTransfer({
+            vendorId,
+            amountPaise: payoutAmountPaise,
+            paymentId: payment.id,
+            remark: `Rent ${payment.payment_month} - ${tenancy.landlord_name}`,
+          });
+
+          const settlementId = String(transferResult.settlement_id);
+          console.log("[settle-to-landlord] Cashfree transfer initiated:", {
+            payment_id: payment.id,
+            vendor_id: vendorId,
+            settlement_id: settlementId,
+            amount_paise: payoutAmountPaise,
+          });
+
+          await supabase.from("payments").update({
+            landlord_payout_status: "settled",
+            landlord_payout_utr: settlementId,
+            landlord_payout_at: new Date().toISOString(),
+            gateway_payout_id: settlementId,
+            gateway_payout_status: "processing",
+          }).eq("id", payment.id);
+
+          await audit.logSuccess("LANDLORD_PAYOUT_INITIATED", "payment", "payment", payment.id, {
+            gateway: "cashfree", settlement_id: settlementId, vendor_id: vendorId,
+            amount_paise: payoutAmountPaise, landlord_name: tenancy.landlord_name,
+          });
+
+          results.push({
+            payment_id: payment.id, status: "processing", amount_paise: payoutAmountPaise,
+            landlord_name: tenancy.landlord_name,
+          });
+        } catch (cfErr) {
+          const errMsg = cfErr instanceof CashfreeError ? cfErr.message : String(cfErr);
+          console.error(`[settle-to-landlord] Cashfree transfer failed for ${payment.id}:`, cfErr);
+          await supabase.from("payments").update({
+            landlord_payout_status: "failed",
+            gateway_payout_status: `Cashfree transfer failed: ${errMsg}`,
+          }).eq("id", payment.id);
+
+          results.push({
+            payment_id: payment.id, status: "failed", amount_paise: payoutAmountPaise,
+            landlord_name: tenancy.landlord_name, error: errMsg,
+          });
+        }
+        continue;
+      }
+
+      // ── PAYU: manual-logging payout path ──
+      console.log("[LANDLORD_PAYOUT] Ready for manual processing:", {
+        payout_ref: payoutRef, payment_id: payment.id, payu_txn_id: payment.payu_txn_id,
+        amount_paise: payoutAmountPaise, amount_rupees: (payoutAmountPaise / 100).toFixed(2),
+        landlord_name: tenancy.landlord_name, bank_ifsc: bankAccount.ifsc_code,
+      });
+
+      await audit.logSuccess("LANDLORD_PAYOUT_INITIATED", "payment", "payment", payment.id, {
+        gateway: "payu", payout_ref: payoutRef, amount_paise: payoutAmountPaise,
+        landlord_name: tenancy.landlord_name, bank_ifsc: bankAccount.ifsc_code,
+      });
 
       results.push({
-        payment_id: payment.id,
-        status: "processing",
-        amount_paise: payoutAmountPaise,
+        payment_id: payment.id, status: "processing", amount_paise: payoutAmountPaise,
         landlord_name: tenancy.landlord_name,
       });
     }

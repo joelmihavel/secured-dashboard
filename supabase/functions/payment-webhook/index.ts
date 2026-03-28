@@ -13,7 +13,7 @@ import { createServiceClient } from "../_shared/supabase.ts";
 import { handleCors, jsonResponse, errorResponse } from "../_shared/cors.ts";
 import { AppError, PaymentError, handleError } from "../_shared/errors.ts";
 import { AuditLogger, AuditActions } from "../_shared/audit.ts";
-import { verifyPayUWebhookHashWithCharges, sha512 } from "../_shared/crypto.ts";
+import { verifyPayUWebhookHashWithCharges, sha512, hmacSha256Base64, timingSafeCompare } from "../_shared/crypto.ts";
 import {
   PAYU_MERCHANT_KEY,
   PAYU_MERCHANT_SALT,
@@ -126,6 +126,23 @@ interface PayUWebhookPayload {
 // MAIN HANDLER
 // ==============================================
 
+// ==============================================
+// CASHFREE WEBHOOK SIGNATURE VERIFICATION
+// ==============================================
+
+async function verifyCashfreeSignature(
+  timestamp: string,
+  rawBody: string,
+  receivedSignature: string,
+  secretKey: string
+): Promise<boolean> {
+  // Cashfree signs: timestamp + rawBody (NO separator per Cashfree docs)
+  // See: https://docs.cashfree.com/docs/webhooks — "concatenate timestamp and raw body"
+  const signedPayload = timestamp + rawBody;
+  const expectedSignature = await hmacSha256Base64(signedPayload, secretKey);
+  return timingSafeCompare(expectedSignature, receivedSignature);
+}
+
 serve(async (req: Request) => {
   // Handle CORS preflight
   const corsResponse = handleCors(req);
@@ -139,15 +156,269 @@ serve(async (req: Request) => {
   let audit: AuditLogger | null = null;
 
   try {
-    // Parse form data (PayU sends application/x-www-form-urlencoded)
+    // Read raw body ONCE — needed for Cashfree signature verification
+    // and also used by PayU path (since body stream can only be read once)
+    const rawBody = await req.text();
+    const cfTimestamp = req.headers.get('x-webhook-timestamp');
+    const cfSignature = req.headers.get('x-webhook-signature');
+
+    // ── CASHFREE WEBHOOK PATH ──────────────────────────────────────
+    if (cfTimestamp && cfSignature) {
+      const CF_WEBHOOK_SECRET = Deno.env.get('CASHFREE_PG_APP_SECRET') ?? Deno.env.get('CASHFREE_PG_SECRET_KEY') ?? '';
+
+      const isValid = await verifyCashfreeSignature(cfTimestamp, rawBody, cfSignature, CF_WEBHOOK_SECRET);
+      if (!isValid) {
+        console.error('[webhook] Cashfree signature verification FAILED');
+        return errorResponse('Invalid signature', 400, 'CF_SIGNATURE_FAILED');
+      }
+
+      let event;
+      try {
+        event = JSON.parse(rawBody);
+      } catch {
+        return jsonResponse({ status: 'ignored', reason: 'invalid json' });
+      }
+
+      const cfOrderId = event.data?.order?.order_id;
+      const cfPaymentId = event.data?.payment?.cf_payment_id;
+      const cfStatus = event.data?.payment?.payment_status; // SUCCESS, FAILED, etc.
+      const cfAmount = event.data?.order?.order_amount; // in rupees (decimal)
+      // Include event type in dedup key to allow different events for same payment
+      const eventId = `cf-${cfPaymentId ?? cfOrderId ?? Date.now()}-${event.type ?? 'unknown'}`;
+
+      if (!cfOrderId) {
+        console.warn('[webhook] Cashfree event missing order_id, ignoring');
+        return jsonResponse({ status: 'ignored', reason: 'missing order_id' });
+      }
+
+      console.log('[webhook] Cashfree event received:', {
+        type: event.type,
+        cf_order_id: cfOrderId,
+        cf_payment_id: cfPaymentId,
+        status: cfStatus,
+      });
+
+      // Dedup check
+      const { data: existingWebhook } = await supabase
+        .from('processed_webhooks')
+        .select('id')
+        .eq('event_id', String(eventId))
+        .maybeSingle();
+
+      if (existingWebhook) {
+        console.log(`[webhook] Duplicate Cashfree event ${eventId}, skipping`);
+        return jsonResponse({ success: true, message: 'Already processed' });
+      }
+
+      // Find payment by cf_order_id (with retry for rare race condition where
+      // webhook arrives before initiate-payment stores cf_order_id)
+      let cfPayment = null;
+      for (let attempt = 0; attempt < 3; attempt++) {
+        const { data, error: cfLookupErr } = await supabase
+          .from('payments')
+          .select('*, tenancy:tenancies(user_id, monthly_rent_paise, bank_verified, utility_verified, landlord_approved, cashback_cutoff_day, rent_due_day)')
+          .or(`cf_order_id.eq.${cfOrderId},gateway_order_id.eq.${cfOrderId}`)
+          .maybeSingle();
+
+        if (data) {
+          cfPayment = data;
+          break;
+        }
+        if (attempt < 2) {
+          console.warn(`[webhook] Payment not found for cf_order_id=${cfOrderId}, retry ${attempt + 1}/2`);
+          await new Promise((r) => setTimeout(r, 1000)); // 1s backoff
+        } else {
+          console.error(`[webhook] Payment not found after 3 attempts for cf_order_id=${cfOrderId}`, cfLookupErr);
+        }
+      }
+
+      if (!cfPayment) {
+        console.error(`[OPS_ALERT] Cashfree webhook for unknown order ${cfOrderId} — may be orphaned`);
+        // Return 200 to prevent Cashfree infinite retries
+        return jsonResponse({ status: 'ignored', reason: 'payment_not_found' });
+      }
+
+      // Amount validation (convert CF rupees to paise)
+      const webhookAmountPaise = Math.round(parseFloat(cfAmount) * 100);
+      if (webhookAmountPaise !== cfPayment.total_amount_paise) {
+        console.error(`[webhook] AMOUNT MISMATCH: webhook=${webhookAmountPaise} vs db=${cfPayment.total_amount_paise}`);
+        return errorResponse('Amount mismatch', 400, 'AMOUNT_MISMATCH');
+      }
+
+      // Map Cashfree status to our status
+      const CASHFREE_STATUS_MAP: Record<string, string> = {
+        'SUCCESS': 'success',
+        'FAILED': 'failed',
+        'USER_DROPPED': 'failed',
+        'CANCELLED': 'failed',
+        'VOID': 'failed',
+        'NOT_ATTEMPTED': 'failed',
+        'PENDING': 'processing',
+      };
+
+      const newCfStatus = CASHFREE_STATUS_MAP[cfStatus] ?? 'failed';
+
+      // Check allowed transitions (reuse ALLOWED_TRANSITIONS from existing code)
+      const currentCfStatus = cfPayment.status;
+      if (!ALLOWED_TRANSITIONS[currentCfStatus]?.includes(newCfStatus)) {
+        console.log(`[webhook] Cashfree transition ${currentCfStatus} -> ${newCfStatus} not allowed, skipping`);
+        // Record dedup anyway
+        await supabase.from('processed_webhooks').insert({
+          event_id: String(eventId),
+          payment_id: cfPayment.id,
+          gateway: 'cashfree',
+          raw_payload: event,
+        });
+        return jsonResponse({ success: true, message: 'Transition not allowed' });
+      }
+
+      // Update payment status
+      const cfUpdateData: Record<string, unknown> = {
+        status: newCfStatus,
+        gateway_payment_id: String(cfPaymentId),
+        gateway_metadata: event.data,
+      };
+
+      if (newCfStatus === 'success') {
+        cfUpdateData.paid_at = new Date().toISOString();
+        cfUpdateData.landlord_payout_status = 'pending';
+        cfUpdateData.landlord_payout_paise = cfPayment.rent_amount_paise;
+        cfUpdateData.cf_split_posted = false; // Signal for settle-to-landlord cron
+      }
+
+      // Optimistic lock — only update if status hasn't changed concurrently
+      const { data: cfUpdatedRow } = await supabase
+        .from('payments')
+        .update(cfUpdateData)
+        .eq('id', cfPayment.id)
+        .eq('status', currentCfStatus)
+        .select('id')
+        .maybeSingle();
+
+      if (!cfUpdatedRow) {
+        // Concurrent change — re-fetch and check
+        const { data: freshCfPayment } = await supabase
+          .from('payments')
+          .select('id, status')
+          .eq('id', cfPayment.id)
+          .single();
+
+        if (freshCfPayment) {
+          const retryAllowed = (ALLOWED_TRANSITIONS[freshCfPayment.status] ?? []).includes(newCfStatus);
+          if (retryAllowed) {
+            await supabase
+              .from('payments')
+              .update(cfUpdateData)
+              .eq('id', freshCfPayment.id)
+              .eq('status', freshCfPayment.status);
+            console.log(`[webhook] Cashfree payment ${cfPayment.id}: retried ${freshCfPayment.status} -> ${newCfStatus}`);
+          } else {
+            console.log(`[webhook] Cashfree payment ${cfPayment.id}: concurrent change to ${freshCfPayment.status}, ${newCfStatus} no longer valid`);
+          }
+        }
+      }
+
+      // Record processed webhook
+      await supabase.from('processed_webhooks').insert({
+        event_id: String(eventId),
+        payment_id: cfPayment.id,
+        gateway: 'cashfree',
+        raw_payload: event,
+      });
+
+      // On success: handle cashback and notifications
+      if (newCfStatus === 'success') {
+        console.log(`[webhook] Cashfree payment ${cfPayment.id} marked success, settlement pending`);
+
+        // Cashback handling — reuse same logic as PayU path
+        const cfTenancyData = cfPayment.tenancy as Record<string, any> | null;
+        const cfUserId = cfPayment.user_id ?? cfTenancyData?.user_id;
+
+        if (cfUserId && cfPayment.cashback_applied_paise > 0) {
+          try {
+            await supabase.from("cashback_ledger").insert({
+              user_id: cfUserId,
+              transaction_type: "discount",
+              amount_paise: cfPayment.cashback_applied_paise,
+              balance_after_paise: 0,
+              payment_id: cfPayment.id,
+              tenancy_id: cfPayment.tenancy_id,
+              reference_type: "payment",
+              reference_id: cfPayment.id,
+              description: `1% instant discount on rent payment`,
+            });
+            const accumulatedUsed = cfPayment.accumulated_redeemed_paise ?? 0;
+            if (accumulatedUsed > 0) {
+              await supabase.from("cashback_ledger").insert({
+                user_id: cfUserId,
+                transaction_type: "applied",
+                amount_paise: accumulatedUsed,
+                balance_after_paise: 0,
+                payment_id: cfPayment.id,
+                tenancy_id: cfPayment.tenancy_id,
+                reference_type: "payment",
+                reference_id: cfPayment.id,
+                description: `Accumulated cashback redeemed`,
+              });
+              await supabase.rpc("decrement_cashback_balance", {
+                p_user_id: cfUserId,
+                p_amount: accumulatedUsed,
+              });
+            }
+          } catch (e) {
+            console.error("[webhook] Failed to log Cashfree cashback discount:", e);
+          }
+        }
+
+        if (cfUserId && cfPayment.cashback_earned_paise > 0) {
+          try {
+            await supabase.from("cashback_ledger").insert({
+              user_id: cfUserId,
+              transaction_type: "earned",
+              amount_paise: cfPayment.cashback_earned_paise,
+              balance_after_paise: 0,
+              payment_id: cfPayment.id,
+              tenancy_id: cfPayment.tenancy_id,
+              reference_type: "payment",
+              reference_id: cfPayment.id,
+              description: `1% cashback earned (pending verification)`,
+            });
+            await supabase.rpc("increment_cashback_balance", {
+              p_user_id: cfUserId,
+              p_amount: cfPayment.cashback_earned_paise,
+            });
+          } catch (e) {
+            console.error("[webhook] Failed to credit Cashfree earned cashback:", e);
+          }
+        }
+
+        // Send notifications
+        if (cfUserId) {
+          await sendPaymentSuccessNotification(supabase, cfUserId, cfPayment, cfPayment.cashback_applied_paise ?? 0);
+        }
+      } else if (newCfStatus === 'failed') {
+        const cfTenancyData = cfPayment.tenancy as Record<string, any> | null;
+        const cfUserId = cfPayment.user_id ?? cfTenancyData?.user_id;
+        if (cfUserId) {
+          await sendPaymentFailedNotification(supabase, cfUserId, cfPayment, cfStatus);
+        }
+      }
+
+      return jsonResponse({ success: true });
+    }
+    // ── END CASHFREE WEBHOOK PATH ──────────────────────────────────
+
+    // ── PAYU WEBHOOK PATH ──────────────────────────────────────────
+    // Parse form data from pre-read rawBody (PayU sends application/x-www-form-urlencoded)
     const contentType = req.headers.get("content-type") ?? "";
     let payload: PayUWebhookPayload;
 
     if (contentType.includes("application/x-www-form-urlencoded")) {
-      const formData = await req.formData();
-      payload = Object.fromEntries(formData.entries()) as unknown as PayUWebhookPayload;
+      // Parse URL-encoded form data from the raw body string
+      const params = new URLSearchParams(rawBody);
+      payload = Object.fromEntries(params.entries()) as unknown as PayUWebhookPayload;
     } else if (contentType.includes("application/json")) {
-      payload = await req.json();
+      payload = JSON.parse(rawBody);
     } else {
       throw new AppError("Unsupported content type", "INVALID_CONTENT_TYPE", 400);
     }
