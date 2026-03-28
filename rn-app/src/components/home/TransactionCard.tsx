@@ -108,6 +108,7 @@ const STATUS_ICON_MAP: Record<TransactionCardStatus, React.FC> = {
   retrying: HourglassIcon,
   refunded: InfoCircleIcon,
   failed: XCircleIcon,
+  settlement_failed: XCircleIcon,
 };
 
 const SHOW_PROGRESS_BAR: Record<TransactionCardStatus, boolean> = {
@@ -117,6 +118,7 @@ const SHOW_PROGRESS_BAR: Record<TransactionCardStatus, boolean> = {
   retrying: true,
   refunded: false,
   failed: true,
+  settlement_failed: true,
 };
 
 const SHOW_ACTION_BAR: Record<TransactionCardStatus, boolean> = {
@@ -126,6 +128,7 @@ const SHOW_ACTION_BAR: Record<TransactionCardStatus, boolean> = {
   retrying: false,
   refunded: false,
   failed: true,
+  settlement_failed: true,
 };
 
 function getStatusText(cardStatus: TransactionCardStatus, date: string): string {
@@ -142,6 +145,8 @@ function getStatusText(cardStatus: TransactionCardStatus, date: string): string 
       return `Refunded \u00B7 ${date}`;
     case 'failed':
       return `Failed \u00B7 ${date}`;
+    case 'settlement_failed':
+      return `Settlement failed \u00B7 ${date}`;
   }
 }
 
@@ -159,6 +164,8 @@ function getBannerText(cardStatus: TransactionCardStatus, formattedAmount: strin
       return `${formattedAmount} returned to your account`;
     case 'failed':
       return 'If deducted, it will be refunded within 48 hours';
+    case 'settlement_failed':
+      return 'Settlement to landlord failed. We\u2019re looking into it';
   }
 }
 
@@ -238,7 +245,7 @@ function TransactionCardComponent({
               </TouchableOpacity>
             )}
 
-            {cardStatus === 'failed' && (
+            {(cardStatus === 'failed' || cardStatus === 'settlement_failed') && (
               <>
                 <TouchableOpacity
                   style={styles.actionButton}

@@ -194,7 +194,7 @@ serve(async (req: Request) => {
           actual_pg_fee_paise: Math.round(serviceCharge * 100),
         })
         .eq("id", payment.id)
-        .in("landlord_payout_status", ["pending", "processing"]);
+        .in("landlord_payout_status", ["pending", "ready", "processing"]);
 
       await audit.logSuccess(
         "VENDOR_SETTLEMENT_SUCCESS",
@@ -235,7 +235,7 @@ serve(async (req: Request) => {
         .from("payments")
         .update({ landlord_payout_status: "failed" })
         .eq("id", payment.id)
-        .in("landlord_payout_status", ["pending", "processing"]);
+        .in("landlord_payout_status", ["pending", "ready", "processing"]);
 
       await audit.logFailure(
         "VENDOR_SETTLEMENT_FAILED",
