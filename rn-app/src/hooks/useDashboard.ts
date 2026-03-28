@@ -22,7 +22,6 @@ import {
 } from '../services/api/dashboard';
 import { useRealtimeQuery } from './useRealtimeQuery';
 import { useAuthStore } from '../stores/auth';
-import { paymentKeys } from './usePayments';
 import { subscribe } from '../services/supabase/realtimeManager';
 import { supabase } from '../services/supabase/client';
 
