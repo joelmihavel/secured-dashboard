@@ -313,7 +313,7 @@ export default function AddBankScreen() {
   // "Confirm & Continue" on success screen
   const handleConfirm = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    router.replace('/(setup)/add-utility' as never);
+    router.replace('/(main)' as never);
   }, [router]);
 
   // "Try Again" on failure screen
@@ -378,7 +378,7 @@ export default function AddBankScreen() {
             {isSuccess ? (
               <Text style={styles.successTitle}>Details Verified</Text>
             ) : (
-              <ScreenTitle gray="Add your Landlord's " accent="Bank Details" />
+              <ScreenTitle gray="Add your landlord's " accent="bank details" />
             )}
           </View>
 

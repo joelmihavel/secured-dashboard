@@ -105,7 +105,7 @@ export function VerificationCheckSheet({
 
   // Setup steps for the horizontal cards
   const steps: SetupStep[] = useMemo(() => [
-    { id: 'bank', label: "Add landlord's bank details", completed: true },
+    { id: 'bank', label: "Add your landlord's bank details", completed: true },
     { id: 'utility', label: 'Upload address proof', completed: utilityVerified },
     { id: 'landlord', label: 'Awaiting Landlord Approval', completed: landlordApproved },
   ], [utilityVerified, landlordApproved]);

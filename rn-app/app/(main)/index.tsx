@@ -161,7 +161,7 @@ export default function HomeScreen() {
   );
 
   // Tab state for Recent Payments / Cashbacks
-  const [activeTab, setActiveTab] = useState<TabId>('recent_payments');
+  const [activeTab, setActiveTab] = useState<TabId>('cashbacks');
   const { showSheet } = useLocalSearchParams<{ showSheet?: string }>();
   const [showVerificationSheet, setShowVerificationSheet] = useState(showSheet === 'cashback-setup');
   const [showStatusSheet, setShowStatusSheet] = useState(false);
@@ -680,7 +680,7 @@ export default function HomeScreen() {
         paymentId: rawId,
         amount: String(rawPayment.amount ?? 0),
         method: rawPayment.payment_method ?? '',
-        initialStatus: 'success',
+        initialStatus: 'success', // All cashback entries come from successful payments
         cashback: String(rawPayment.cashback_applied ?? rawPayment.cashback_earned ?? 0),
         source: 'receipt_view',
         landlordName: tenancy?.landlord_name ?? '',
@@ -992,36 +992,7 @@ function renderDashboardContent(state: DashboardState, props: ContentProps) {
       return null;
 
     case 'pending_verification': {
-      const verificationStatus = tenancy?.verification_status;
-
-      // Sub-case A: Zero transactions — render HomeEmptyState with flip card + divider + CTA
-      if (recentPayments.length === 0) {
-        return (
-          <View style={styles.contentContainer}>
-            <HomeEmptyState
-              variant={emptyStateVariant}
-              daysUntilDue={daysUntilDue ?? undefined}
-              carouselItems={carouselItems}
-              bankDetailsComplete={verificationStatus?.bank_verified ?? false}
-              addressProofComplete={verificationStatus?.utility_verified ?? false}
-              landlordInvited={verificationStatus?.landlord_approved ?? false}
-              paymentMethods={paymentMethods}
-              cashbackAccrued={cashback?.total_savings ?? 0}
-              cashbackAllTime={cashback?.total_savings ?? 0}
-              cashbackRate={cashbackRate}
-              onAddPayment={onAddPayment}
-              onFinishSetup={onFinishSetup}
-              onCtaPress={onHowItWorks}
-              onSendReminder={onSendReminder}
-              onContactSupport={onContactSupport}
-              onPaymentMethodPress={onPaymentMethodPress}
-              onPaymentMethodEdit={onPaymentMethodEdit}
-            />
-          </View>
-        );
-      }
-
-      // Sub-case B: Has transactions — render active-style layout inline
+      // Same layout for zero and non-zero transactions: Headline + Carousel + Tabs
       const pvHeadlineVariant = alreadyPaid ? 'paid' : isOverdue ? 'overdue' : 'due';
       const pvDaysValue = alreadyPaid ? (daysUntilNextDue ?? 0) : isOverdue ? Math.abs(daysUntilDue ?? 0) : (daysUntilDue ?? 0);
 
@@ -1036,28 +1007,24 @@ function renderDashboardContent(state: DashboardState, props: ContentProps) {
           <View style={styles.tabSection}>
             <TabSwitcher activeTab={activeTab} onTabChange={onTabChange} />
             {activeTab === 'recent_payments' ? (
-              <RecentPaymentsList
-                transactions={transactions}
-                landlordName={tenancy?.landlord_name}
-                onViewReceipt={onViewReceipt}
-                onNeedHelp={onNeedHelp}
-                onTryAgain={onTryAgain}
-              />
-            ) : (
-              cashbackModule.entries.length > 0 || cashbackModule.moduleState !== 'active' ? (
-                <CashbacksList
-                  {...cashbackModule}
-                  onEntryPress={onCashbackEntryPress}
-                  onStepPress={onSetupStepPress}
-                  onMemberStatusPress={onMemberStatusPress}
+              transactions.length > 0 ? (
+                <RecentPaymentsList
+                  transactions={transactions}
+                  landlordName={tenancy?.landlord_name}
+                  onViewReceipt={onViewReceipt}
+                  onNeedHelp={onNeedHelp}
+                  onTryAgain={onTryAgain}
                 />
               ) : (
-                <CashbackEmptyState
-                  accruedAmount={cashbackBalance}
-                  allTimeTotal={allTimeCashback}
-                  cashbackRate={cashbackRate}
-                />
+                <EmptyPaymentsState />
               )
+            ) : (
+              <CashbacksList
+                {...cashbackModule}
+                onEntryPress={onCashbackEntryPress}
+                onStepPress={onSetupStepPress}
+                onMemberStatusPress={onMemberStatusPress}
+              />
             )}
           </View>
         </View>

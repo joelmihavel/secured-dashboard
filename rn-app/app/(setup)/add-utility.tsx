@@ -229,7 +229,7 @@ export default function AddUtilityScreen() {
 
           {/* Title - Figma: gray="Verify" accent="your address" */}
           <View style={styles.titleContainer}>
-            <ScreenTitle gray="Verify" accent="utility bill" />
+            <ScreenTitle gray="Verify your" accent="address" />
           </View>
 
           {/* Description - Figma: 12px/20px PlusJakartaSans-Regular #A9A9A9 */}

@@ -21,11 +21,14 @@ import { handleCors, jsonResponse, errorResponse } from "../_shared/cors.ts";
 import { AppError, handleError } from "../_shared/errors.ts";
 import { AuditLogger } from "../_shared/audit.ts";
 import { getSystemTransferFlag, type SystemTransferFlag } from "../_shared/transfer-flags.ts";
-import { getOrderPaymentStatus, CashfreeError } from "../_shared/cashfree-easysplit.ts";
+import { getOrderPaymentStatus, createRefund, CashfreeError } from "../_shared/cashfree-easysplit.ts";
+import { notifyUser } from "../_shared/notifications.ts";
+import { getSupabaseUrl } from "../_shared/supabase.ts";
 
 const BATCH_SIZE = 50;
 const STUCK_THRESHOLD_MINUTES = 15;
 const PAYOUT_ALERT_HOURS = 24;
+const REFUND_THRESHOLD_HOURS = 36;
 
 interface TierResult {
   checked: number;
@@ -60,9 +63,10 @@ serve(async (req: Request) => {
     const systemConfig = await getSystemTransferFlag(supabase);
 
     const releaseResult = await releaseHeldPayments(supabase, audit, systemConfig);
-    const [reconciliationResult, monitoringResult] = await Promise.all([
+    const [reconciliationResult, monitoringResult, refundResult] = await Promise.all([
       reconcileStuckPayments(supabase, audit),
       monitorPendingPayouts(supabase, audit),
+      checkRefundEligibility(supabase, audit),
     ]);
 
     const durationMs = Date.now() - startTime;
@@ -72,7 +76,7 @@ serve(async (req: Request) => {
       "system",
       undefined,
       undefined,
-      { duration_ms: durationMs, released: releaseResult, reconciliation: reconciliationResult, monitoring: monitoringResult },
+      { duration_ms: durationMs, released: releaseResult, reconciliation: reconciliationResult, monitoring: monitoringResult, refunds: refundResult },
     );
 
     return jsonResponse({
@@ -82,6 +86,7 @@ serve(async (req: Request) => {
         released_held_payments: releaseResult,
         reconciliation: reconciliationResult,
         monitoring: monitoringResult,
+        refunds: refundResult,
       },
     });
   } catch (error) {
@@ -290,4 +295,190 @@ async function monitorPendingPayouts(
     console.error("[monitoring] Error:", err);
     return { stale_count: 0, total_paise: 0 };
   }
+}
+
+// ==============================================
+// REFUND: 36hr retrying → failed + Cashfree refund
+// ==============================================
+
+/**
+ * Payments in 'retrying' where paid_at + 36h < now are deterministically
+ * moved to 'failed' and a Cashfree PG refund is initiated.
+ *
+ * Two-step refund: Cashfree Create Refund API with refund_splits debits
+ * the vendor balance and refunds the customer in one atomic call.
+ */
+async function checkRefundEligibility(
+  supabase: ReturnType<typeof createServiceClient>,
+  audit: AuditLogger,
+): Promise<TierResult> {
+  const result: TierResult = { checked: 0, updated: 0, errors: 0 };
+
+  try {
+    const refundThreshold = new Date(Date.now() - REFUND_THRESHOLD_HOURS * 60 * 60 * 1000).toISOString();
+
+    const { data: retryingPayments } = await supabase
+      .from("payments")
+      .select(`
+        id, user_id, tenancy_id, cf_order_id, gateway_order_id,
+        rent_amount_paise, total_amount_paise, landlord_payout_paise,
+        cashback_earned_paise, cashback_applied_paise,
+        payment_gateway, paid_at,
+        tenancy:tenancies(landlord_user_id)
+      `)
+      .eq("status", "success")
+      .eq("landlord_payout_status", "retrying")
+      .eq("payment_gateway", "cashfree")
+      .lt("paid_at", refundThreshold)
+      .order("paid_at", { ascending: true })
+      .limit(BATCH_SIZE);
+
+    if (!retryingPayments?.length) return result;
+
+    result.checked = retryingPayments.length;
+    console.log(`[refund] Found ${retryingPayments.length} Cashfree payments in 'retrying' for > ${REFUND_THRESHOLD_HOURS}h`);
+
+    for (const payment of retryingPayments) {
+      try {
+        const orderId = payment.cf_order_id ?? payment.gateway_order_id;
+        if (!orderId) {
+          console.error(`[refund] No cf_order_id for payment ${payment.id}, skipping`);
+          result.errors++;
+          continue;
+        }
+
+        // Find vendor ID for refund_splits
+        const tenancy = payment.tenancy as { landlord_user_id: string | null } | null;
+        let vendorId: string | null = null;
+        const lookupUserIds = [tenancy?.landlord_user_id, payment.user_id].filter(Boolean) as string[];
+        for (const uid of lookupUserIds) {
+          if (vendorId) break;
+          const { data: bank } = await supabase
+            .from("bank_accounts")
+            .select("cf_beneficiary_id")
+            .eq("user_id", uid)
+            .eq("party_type", "landlord")
+            .eq("is_primary", true)
+            .maybeSingle();
+          if (bank?.cf_beneficiary_id) vendorId = bank.cf_beneficiary_id;
+        }
+
+        const refundAmountPaise = payment.total_amount_paise;
+        const refundId = `REFUND-${payment.id.slice(0, 8)}-${Date.now().toString(36)}`;
+
+        // Deterministically mark as failed first (prevents re-processing)
+        const { data: lockResult } = await supabase
+          .from("payments")
+          .update({
+            landlord_payout_status: "failed",
+            gateway_payout_status: `Settlement failed after ${REFUND_THRESHOLD_HOURS}h — refund initiated`,
+          })
+          .eq("id", payment.id)
+          .eq("landlord_payout_status", "retrying")
+          .select("id")
+          .maybeSingle();
+
+        if (!lockResult) {
+          console.warn(`[refund] Optimistic lock failed for payment ${payment.id} (already processed)`);
+          continue;
+        }
+
+        // Call Cashfree Create Refund API
+        const vendorAmountPaise = payment.landlord_payout_paise ?? payment.rent_amount_paise;
+        const refundResult = await createRefund({
+          orderId,
+          amountPaise: refundAmountPaise,
+          refundId,
+          note: `Settlement to landlord failed after ${REFUND_THRESHOLD_HOURS}h — automatic refund`,
+          vendorId: vendorId ?? undefined,
+          vendorAmountPaise: vendorId ? vendorAmountPaise : undefined,
+        });
+
+        console.log(`[refund] Cashfree refund initiated for payment ${payment.id}:`, {
+          refund_id: refundId,
+          cf_refund_id: refundResult.cf_refund_id,
+          refund_status: refundResult.refund_status,
+          amount: refundAmountPaise,
+        });
+
+        // Create refund record in DB
+        await supabase.from("refunds").insert({
+          payment_id: payment.id,
+          user_id: payment.user_id,
+          amount_paise: refundAmountPaise,
+          reason: "settlement_failed_timeout",
+          status: refundResult.refund_status === "SUCCESS" ? "completed" : "processing",
+          payment_gateway: "cashfree",
+          gateway_refund_id: refundResult.cf_refund_id ?? refundId,
+          gateway_refund_status: refundResult.refund_status,
+          gateway_metadata: refundResult,
+          initiated_by: null,
+          processed_by: "system",
+          requested_at: new Date().toISOString(),
+        });
+
+        // Update payment status to refunded
+        await supabase.from("payments").update({
+          status: "refunded",
+          refund_amount_paise: refundAmountPaise,
+          refund_reason: "settlement_failed_timeout",
+          refund_initiated_at: new Date().toISOString(),
+        }).eq("id", payment.id);
+
+        // Notify user
+        const supabaseUrl = getSupabaseUrl();
+        const serviceKey = Deno.env.get("SB_SECRET_KEY") || Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+        notifyUser(supabaseUrl, serviceKey, {
+          user_id: payment.user_id,
+          notification_type: "settlement_failed",
+          template_vars: {
+            amount: (refundAmountPaise / 100).toLocaleString("en-IN"),
+          },
+          related_entity_type: "payment",
+          related_entity_id: payment.id,
+        }).catch((e) => console.error("[refund] Notify failed:", e));
+
+        await audit.logSuccess(
+          "SETTLEMENT_REFUND_INITIATED",
+          "payment",
+          "payment",
+          payment.id,
+          {
+            refund_id: refundId,
+            cf_refund_id: refundResult.cf_refund_id,
+            refund_amount_paise: refundAmountPaise,
+            vendor_id: vendorId,
+            refund_status: refundResult.refund_status,
+          },
+        );
+
+        result.updated++;
+      } catch (err) {
+        const msg = err instanceof CashfreeError
+          ? `HTTP ${err.statusCode}: ${err.message}`
+          : (err as Error).message;
+        console.error(`[refund] Failed to process refund for payment ${payment.id}:`, msg);
+
+        await audit.logFailure(
+          "SETTLEMENT_REFUND_FAILED",
+          "payment",
+          err instanceof CashfreeError ? "CASHFREE_REFUND_ERROR" : "REFUND_ERROR",
+          msg,
+          "payment",
+          payment.id,
+        );
+
+        result.errors++;
+      }
+    }
+
+    if (result.updated > 0 || result.errors > 0) {
+      console.log(`[refund] Processed ${result.updated} refunds, ${result.errors} errors out of ${result.checked} eligible`);
+    }
+  } catch (err) {
+    console.error("[refund] Error:", err);
+    result.errors++;
+  }
+
+  return result;
 }

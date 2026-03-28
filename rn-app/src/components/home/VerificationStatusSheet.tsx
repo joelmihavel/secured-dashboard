@@ -23,6 +23,7 @@
 import React, { useEffect } from 'react';
 import {
   View,
+  Text as RNText,
   StyleSheet,
   Modal,
   TouchableOpacity,
@@ -151,6 +152,7 @@ export function VerificationStatusSheet({
           style={[
             styles.sheet,
             sheetStyle,
+            { paddingBottom: Math.max(insets.bottom, 24) },
           ]}
         >
           {/* Handle — Figma: 48x4, #4D4D4D */}
@@ -158,24 +160,25 @@ export function VerificationStatusSheet({
             <View style={styles.handle} />
           </View>
 
-          {/* Scrollable Content — Figma: gap=40, scrolls under fixed CTA */}
+          {/* Content — gap=40 */}
           <ScrollView
-            style={styles.scrollContent}
             contentContainerStyle={styles.scrollContentInner}
             showsVerticalScrollIndicator={false}
             bounces={false}
           >
-            {/* Title Section — Figma: pad=48, gap=4, "Status" in #FF9A6D */}
+            {/* Title Section — Figma: pad=48, gap=4 */}
             <View style={styles.header}>
-              <Text style={styles.title}>
-                {'What is your '}
-                <Text style={styles.titleAccent}>Status</Text>
-                {'?'}
-              </Text>
-              <Text style={styles.subtitle}>
+              <RNText style={styles.title}>
+                {'What is your\n'}
+                <RNText style={styles.titleAccent}>status?</RNText>
+              </RNText>
+              <RNText style={styles.subtitle}>
                 How you save on rent depends on this.
-              </Text>
+              </RNText>
             </View>
+
+            {/* Divider — Figma Vector 51: #4D4D4D, 0.25px, between header and cards */}
+            <View style={styles.headerDivider} />
 
             {/* Status Cards — Figma: pad=48, gap=16 */}
             <View style={styles.cardsContainer}>
@@ -261,8 +264,9 @@ const styles = StyleSheet.create({
     backgroundColor: colors.black[600], // Figma: #1A1A1A
     borderTopLeftRadius: 23,
     borderTopRightRadius: 23,
-    paddingTop: 15, // Figma: gap=15 between handle row and content
+    paddingTop: 15,
     zIndex: 20,
+    maxHeight: Dimensions.get('window').height * 0.75, // Cap sheet height
   },
   handleContainer: {
     alignItems: 'center',
@@ -274,14 +278,15 @@ const styles = StyleSheet.create({
     backgroundColor: colors.black[400], // Figma: #4D4D4D
     borderRadius: 200, // Figma: r=200
   },
-  // ScrollView replaces the old `content` View — allows scrolling under fixed CTA
-  scrollContent: {
-    flex: 1,
-    maxHeight: Dimensions.get('window').height * 0.6, // Cap at ~60% screen height
-  },
   scrollContentInner: {
-    gap: 40, // Figma: Frame 1686557301 gap=40
-    paddingBottom: 32, // Bottom spacing
+    gap: 30, // Figma: ~30px gap between sections
+    paddingBottom: 16,
+  },
+  // Divider between header and cards — Figma Vector 51: 297px, #4D4D4D, 0.25px
+  headerDivider: {
+    height: 0.25,
+    backgroundColor: colors.black[400], // Figma: #4D4D4D
+    marginHorizontal: 48, // Align with 48px padded content
   },
   // Title Section — Figma: Frame 1686557311, pad=48, gap=4
   header: {
@@ -297,6 +302,9 @@ const styles = StyleSheet.create({
   },
   // Figma: "Status" word uses character override to #FF9A6D
   titleAccent: {
+    fontSize: 28, // Explicit — RN nested Text can lose inherited size
+    lineHeight: 40,
+    letterSpacing: -1,
     color: colors.brand[500], // Figma: #FF9A6D
   },
   subtitle: {

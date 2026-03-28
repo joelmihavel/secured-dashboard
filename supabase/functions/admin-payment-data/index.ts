@@ -72,7 +72,7 @@ serve(async (req: Request) => {
   // Fetch primary landlord bank accounts (one per user)
   const { data: bankAccounts } = await supabase
     .from("bank_accounts")
-    .select("id, user_id, account_number_encrypted, account_number_masked, ifsc_code, verified_account_holder_name, verified")
+    .select("id, user_id, account_number_encrypted, account_number_masked, ifsc_code, verified_account_holder_name, verified, cf_beneficiary_id, cf_beneficiary_status")
     .eq("party_type", "landlord")
     .eq("is_primary", true)
     .in("user_id", userIds);
@@ -132,6 +132,7 @@ serve(async (req: Request) => {
       ll_bank_ifsc: bank?.ifsc_code ?? "",
       ll_bank_holder: bank?.verified_account_holder_name ?? "",
       ll_bank_verified: bank?.verified ?? false,
+      cf_vendor_status: bank?.cf_beneficiary_status ?? "",
     };
   });
 

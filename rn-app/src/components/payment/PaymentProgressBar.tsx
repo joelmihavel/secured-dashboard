@@ -77,11 +77,19 @@ function getConfig(cardStatus: TransactionCardStatus): {
         lines: [{ color: INACTIVE }, { color: INACTIVE }],
       };
     case 'failed':
+      return {
+        steps: [
+          { dotColor: FAILED_RED, label: 'Failed' },
+          { dotColor: INACTIVE, label: 'Processing' },
+          { dotColor: INACTIVE, label: 'Settled' },
+        ],
+        lines: [{ color: INACTIVE }, { color: INACTIVE }],
+      };
     case 'settlement_failed':
       return {
         steps: [
           { dotColor: SUCCESS_GREEN, label: 'Initiated' },
-          { dotColor: FAILED_RED, label: 'Processing' },
+          { dotColor: FAILED_RED, label: 'Settlement Failed' },
           { dotColor: INACTIVE, label: 'Settled' },
         ],
         lines: [{ color: SUCCESS_GREEN }, { color: INACTIVE }],

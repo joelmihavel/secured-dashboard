@@ -28,6 +28,21 @@ export interface TabSwitcherProps {
 function TabSwitcherComponent({ activeTab, onTabChange }: TabSwitcherProps) {
   return (
     <View style={styles.container} accessibilityRole="tablist">
+      {/* Cashbacks tab — shown first */}
+      <TouchableOpacity
+        onPress={() => onTabChange('cashbacks')}
+        activeOpacity={0.8}
+        accessibilityRole="tab"
+        accessibilityState={{ selected: activeTab === 'cashbacks' }}
+        accessibilityLabel="Cashbacks"
+      >
+        <View style={activeTab === 'cashbacks' ? styles.tabActive : styles.tabInactive}>
+          <Text style={activeTab === 'cashbacks' ? styles.tabTextActive : styles.tabTextInactive}>
+            Cashbacks
+          </Text>
+        </View>
+      </TouchableOpacity>
+
       {/* Recent Payments tab */}
       <TouchableOpacity
         onPress={() => onTabChange('recent_payments')}
@@ -39,21 +54,6 @@ function TabSwitcherComponent({ activeTab, onTabChange }: TabSwitcherProps) {
         <View style={activeTab === 'recent_payments' ? styles.tabActive : styles.tabInactive}>
           <Text style={activeTab === 'recent_payments' ? styles.tabTextActive : styles.tabTextInactive}>
             Recent Payments
-          </Text>
-        </View>
-      </TouchableOpacity>
-
-      {/* Cashbacks tab */}
-      <TouchableOpacity
-        onPress={() => onTabChange('cashbacks')}
-        activeOpacity={0.8}
-        accessibilityRole="tab"
-        accessibilityState={{ selected: activeTab === 'cashbacks' }}
-        accessibilityLabel="Cashbacks"
-      >
-        <View style={activeTab === 'cashbacks' ? styles.tabActive : styles.tabInactive}>
-          <Text style={activeTab === 'cashbacks' ? styles.tabTextActive : styles.tabTextInactive}>
-            Cashbacks
           </Text>
         </View>
       </TouchableOpacity>

@@ -84,7 +84,6 @@ function CashbackMemberStatusComponent({ onPress, verified = true }: CashbackMem
       style={styles.container}
       onPress={onPress}
       activeOpacity={0.7}
-      hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
     >
       {/* Left: Avatar + Label */}
       <View style={styles.left}>

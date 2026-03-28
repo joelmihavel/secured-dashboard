@@ -16,7 +16,7 @@ import { handleCors, jsonResponse, errorResponse } from "../_shared/cors.ts";
 import { AppError, handleError } from "../_shared/errors.ts";
 import { AuditLogger } from "../_shared/audit.ts";
 import { getSystemTransferFlag } from "../_shared/transfer-flags.ts";
-import { onDemandTransfer, CashfreeError } from "../_shared/cashfree-easysplit.ts";
+import { createAdjustment, CashfreeError } from "../_shared/cashfree-easysplit.ts";
 import { notifyUser } from "../_shared/notifications.ts";
 
 // ==============================================
@@ -294,31 +294,43 @@ serve(async (req: Request) => {
           continue;
         }
 
+        if (bankAccount.cf_beneficiary_status !== "ACTIVE") {
+          console.error(`[settle-to-landlord] Vendor ${vendorId} status is ${bankAccount.cf_beneficiary_status}, skipping payment ${payment.id}`);
+          await supabase.from("payments").update({
+            landlord_payout_status: "failed",
+            gateway_payout_status: `Vendor not active: ${bankAccount.cf_beneficiary_status}`,
+          }).eq("id", payment.id);
+          results.push({
+            payment_id: payment.id, status: "failed", amount_paise: payoutAmountPaise,
+            landlord_name: tenancy.landlord_name, error: `Vendor status: ${bankAccount.cf_beneficiary_status}`,
+          });
+          continue;
+        }
+
         try {
-          const transferResult = await onDemandTransfer({
+          const adjustResult = await createAdjustment({
             vendorId,
             amountPaise: payoutAmountPaise,
             paymentId: payment.id,
             remark: `Rent ${payment.payment_month} - ${tenancy.landlord_name}`,
           });
 
-          const settlementId = String(transferResult.settlement_id);
-          console.log("[settle-to-landlord] Cashfree transfer initiated:", {
+          console.log("[settle-to-landlord] Cashfree adjustment created:", {
             payment_id: payment.id,
             vendor_id: vendorId,
-            settlement_id: settlementId,
+            status: adjustResult.status,
             amount_paise: payoutAmountPaise,
           });
 
           await supabase.from("payments").update({
             landlord_payout_status: "processing",
-            gateway_payout_id: settlementId,
-            gateway_payout_status: "processing",
+            gateway_payout_status: "adjustment_credited",
           }).eq("id", payment.id);
 
           await audit.logSuccess("LANDLORD_PAYOUT_INITIATED", "payment", "payment", payment.id, {
-            gateway: "cashfree", settlement_id: settlementId, vendor_id: vendorId,
+            gateway: "cashfree", vendor_id: vendorId,
             amount_paise: payoutAmountPaise, landlord_name: tenancy.landlord_name,
+            method: "adjustment",
           });
 
           results.push({
@@ -327,10 +339,10 @@ serve(async (req: Request) => {
           });
         } catch (cfErr) {
           const errMsg = cfErr instanceof CashfreeError ? cfErr.message : String(cfErr);
-          console.error(`[settle-to-landlord] Cashfree transfer failed for ${payment.id}:`, cfErr);
+          console.error(`[settle-to-landlord] Cashfree adjustment failed for ${payment.id}:`, cfErr);
           await supabase.from("payments").update({
             landlord_payout_status: "failed",
-            gateway_payout_status: `Cashfree transfer failed: ${errMsg}`,
+            gateway_payout_status: `Cashfree adjustment failed: ${errMsg}`,
           }).eq("id", payment.id);
 
           results.push({

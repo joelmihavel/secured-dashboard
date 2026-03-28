@@ -88,7 +88,7 @@ const BADGE_CONFIGS: Record<
     bg: '#FF9A6D', // colours/brand/500
     ringStroke: '#4D4D4D', // Figma Ellipse 21915/21916
     textFill: '#000000',
-    label: 'paid | ',
+    label: ' paid · ',
     centerType: 'logo',
     centerColor: '#000000',
   },
@@ -96,15 +96,15 @@ const BADGE_CONFIGS: Record<
     bg: '#202020', // colours/black/500
     ringStroke: '#797979',
     textFill: '#878787',
-    label: 'due soon | ',
-    centerType: 'count', // Figma 694:6667: shows number, not logo
+    label: ' due soon · ',
+    centerType: 'count',
     centerColor: '#878787', // colours/neutral/600
   },
   late: {
     bg: '#892B2E', // colour/icons/error/default-3
     ringStroke: '#EF9194',
     textFill: '#EF9194',
-    label: 'late | ',
+    label: ' late · ',
     centerType: 'count',
     centerColor: '#EF9194', // colour/icons/error/default-2
   },
@@ -112,7 +112,7 @@ const BADGE_CONFIGS: Record<
     bg: '#FFC04D', // colours/warning/400
     ringStroke: '#332306',
     textFill: '#332306',
-    label: 'missed | ',
+    label: ' missed · ',
     centerType: 'count',
     centerColor: '#332306', // colours/warning/900
   },
@@ -132,11 +132,9 @@ function PaymentBadgeComponent({
   const cfg = BADGE_CONFIGS[variant];
   const pathId = `badge-text-${variant}`;
 
-  // Use exact repeat count so text fills the circle without overflowing mid-word.
-  // Circumference ≈ 314 units. At fontSize 12, avg char width ≈ 6.8 units → ~46 chars fit.
-  // floor() ensures the last repeat completes fully — small gap beats partial "mi".
-  const maxChars = Math.floor((2 * Math.PI * TEXT_R) / 6.8); // ~46
-  const repeatCount = Math.max(Math.floor(maxChars / cfg.label.length), 3);
+  // Overfill the circumference — SVG TextPath clips at path end, so extra text is harmless.
+  // This guarantees no visible gap in the circular text ring.
+  const repeatCount = Math.max(Math.ceil((2 * Math.PI * TEXT_R) / (cfg.label.length * 5.5)) + 1, 5);
   const fullLabel = cfg.label.repeat(repeatCount);
 
   return (

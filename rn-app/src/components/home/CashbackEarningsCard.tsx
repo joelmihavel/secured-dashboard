@@ -37,6 +37,7 @@ const STATUS_CONFIG: Record<CashbackCardStatus, { label: string }> = {
   received: { label: 'Recieved' }, // Figma spelling preserved
   accrued: { label: 'Accrued \uD83D\uDD12' }, // lock emoji
   missed: { label: 'Missed' },
+  reversed: { label: 'Reversed' },
 };
 
 // ==============================================
@@ -115,10 +116,25 @@ function MissedIcon() {
   );
 }
 
+/** Gray info circle — reversed/refunded cashback */
+function ReversedIcon() {
+  return (
+    <View style={styles.statusIconContainer}>
+      <Svg width={10} height={10} viewBox="0 0 10 10" fill="none">
+        <Path
+          d="M5 0C7.7615 0 10 2.2385 10 5C10 7.7615 7.7615 10 5 10C2.2385 10 0 7.7615 0 5C0 2.2385 2.2385 0 5 0ZM6.35 3.65C6.16 3.46 5.84 3.46 5.65 3.65L5 4.3L4.35 3.65C4.16 3.46 3.84 3.46 3.65 3.65C3.46 3.84 3.46 4.16 3.65 4.35L4.3 5L3.65 5.65C3.46 5.84 3.46 6.16 3.65 6.35C3.84 6.54 4.16 6.54 4.35 6.35L5 5.7L5.65 6.35C5.84 6.54 6.16 6.54 6.35 6.35C6.54 6.16 6.54 5.84 6.35 5.65L5.7 5L6.35 4.35C6.54 4.16 6.54 3.84 6.35 3.65Z"
+          fill={colors.black[300]}
+        />
+      </Svg>
+    </View>
+  );
+}
+
 const STATUS_ICON: Record<CashbackCardStatus, React.ComponentType> = {
   received: ReceivedIcon,
   accrued: AccruedIcon,
   missed: MissedIcon,
+  reversed: ReversedIcon,
 };
 
 // ==============================================
@@ -132,6 +148,16 @@ function AmountDisplay({ status, amount }: { status: CashbackCardStatus; amount:
   }
 
   const formatted = amount.toLocaleString('en-IN');
+
+  if (status === 'reversed') {
+    // Reversed: show negative amount in muted gray
+    return (
+      <Text style={styles.amountReversed}>
+        {'- ₹  '}
+        <Text style={styles.amountDigitsLarge}>{formatted}</Text>
+      </Text>
+    );
+  }
 
   if (status === 'accrued') {
     // Figma: base 12px amber, digits override to 16px amber
@@ -179,7 +205,8 @@ function CashbackEarningsCardComponent({ entry, onPress }: CashbackEarningsCardP
     </View>
   );
 
-  if (onPress) {
+  // Reversed/missed entries are not clickable — no receipt to show
+  if (onPress && entry.status !== 'reversed' && entry.status !== 'missed') {
     return (
       <TouchableOpacity onPress={() => onPress(entry)} activeOpacity={0.7}>
         {content}
@@ -275,6 +302,15 @@ const styles = StyleSheet.create({
   // Figma: digit chars rendered at 16px inside 12px base
   amountDigitsLarge: {
     fontSize: 16,
+  },
+
+  // Amount - Reversed (refunded/settlement failed — muted gray with minus)
+  amountReversed: {
+    fontFamily: 'PlusJakartaSans-SemiBold',
+    fontSize: 12,
+    lineHeight: 16.92,
+    letterSpacing: -0.48,
+    color: colors.black[300], // #797979 — muted
   },
 
   // Amount - Missed

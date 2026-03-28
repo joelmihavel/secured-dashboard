@@ -360,7 +360,7 @@ const SuccessContent = memo(({
 }: SuccessContentProps) => {
   return (
     <View style={styles.receiptDetails}>
-      <ReceiptRow label="Amount paid" value={`\u20B9  ${amount}`} />
+      <ReceiptRow label="Rent paid" value={`\u20B9  ${amount}`} />
       <DashedDivider color={FIGMA_COLORS.dividerColor} style={styles.divider} />
       <ReceiptRow label="Cashback Applied" value={`- \u20B9  ${cashbackApplied}`} isCashback />
       <DashedDivider color={FIGMA_COLORS.dividerColor} style={styles.divider} />
@@ -371,16 +371,6 @@ const SuccessContent = memo(({
       <ReceiptRow label="Landlord" value={landlordName} />
       <DashedDivider color={FIGMA_COLORS.dividerColor} style={styles.divider} />
       <ReceiptRow label="Transaction ID" value={transactionId} />
-      <View style={styles.secondSection}>
-        <DashedDivider color={FIGMA_COLORS.dividerColor} style={styles.divider} />
-        <ReceiptRow label="Rent Paid" value={`\u20B9  ${payableRent}`} isPayableRent />
-      </View>
-      {/* Figma 2095586455: Settlement info box — bg:#1a1a1a r:8 p:8/12 */}
-      <View style={styles.settlementInfoBox}>
-        <Text style={styles.settlementInfoText}>
-          {'\u2139\uFE0F'} Settlement would be processed within 24 hrs
-        </Text>
-      </View>
     </View>
   );
 });
@@ -1148,10 +1138,10 @@ export default function PaymentStatusScreen() {
         style={styles.scrollContainer}
         contentContainerStyle={[
           !isSuccessState && styles.nonSuccessScrollContent,
-          // Extra bottom padding so scroll content doesn't hide behind the fixed button
-          isSuccessState && { paddingBottom: sv(120) },
+          isSuccessState && styles.successScrollContent,
         ]}
-        bounces={isSuccessState}
+        scrollEnabled={!isSuccessState}
+        bounces={false}
         showsVerticalScrollIndicator={false}
       >
         {backButton}
@@ -1198,6 +1188,10 @@ const styles = StyleSheet.create({
   nonSuccessScrollContent: {
     flexGrow: 1,
   },
+  successScrollContent: {
+    flexGrow: 1,
+    paddingBottom: sv(80),
+  },
 
   // -- Info section (pending/failed/refunded)
   // Figma: info container at x=1 within 270px card, but PaymentReceiptCard content has padding s(24).
@@ -1233,9 +1227,9 @@ const styles = StyleSheet.create({
     textAlign: 'left',
   },
 
-  // -- Receipt section (success)
+  // -- Receipt section (success) — compact to fit single screen
   receiptDetails: {
-    gap: sv(16),
+    gap: sv(10),
     alignItems: 'center',
   },
   receiptRow: {

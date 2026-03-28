@@ -115,7 +115,7 @@ async function queryUserStatus(userId: string): Promise<string | null> {
 function statusToTarget(userStatus: string): JourneyTarget | null {
   switch (userStatus) {
     case 'approved':
-      return '/(setup)';
+      return '/(main)'; // Bank verification done → go straight to dashboard
     case 'active':
       return '/(main)';
     case 'agreement_confirmed':

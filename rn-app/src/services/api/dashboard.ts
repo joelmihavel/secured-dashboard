@@ -94,7 +94,7 @@ export interface RawRecentPayment {
   cashback_earned: number;
   cashback_applied: number;
   payment_method: string | null;
-  settlement_status?: 'pending' | 'ready' | 'held' | 'processing' | 'settled' | 'failed' | null;
+  settlement_status?: 'pending' | 'ready' | 'held' | 'processing' | 'retrying' | 'settled' | 'failed' | null;
 }
 
 export interface Notification {
@@ -194,7 +194,7 @@ export type CashbackModuleState = 'setup_pending' | 'landlord_rejected' | 'activ
 export type BarStatus = 'earned' | 'missed' | 'future';
 export type InviteState = 'sent' | 'rejected';
 export type LandlordInviteState = 'pre_invite' | 'invited' | 'not_approved';
-export type CashbackCardStatus = 'received' | 'accrued' | 'missed';
+export type CashbackCardStatus = 'received' | 'accrued' | 'missed' | 'reversed';
 
 export type SetupStepStatus = 'not_started' | 'active' | 'in_progress' | 'completed';
 
@@ -362,6 +362,7 @@ function deriveCardStatus(
       switch (settlementStatus) {
         case 'settled': return 'settled';
         case 'processing': return 'in_progress';
+        case 'retrying': return 'retrying';
         case 'failed': return 'settlement_failed';
         case 'pending':
         case 'ready':
@@ -535,49 +536,73 @@ function computeChartBars(
 /**
  * Map payments to CashbackEarningsEntry[] for the earnings card list.
  *
+ * ONLY successful payments appear here. Cashback and payments are separate concerns:
  * - success + cashback applied (verified) → received
  * - success + cashback earned but not applied (unverified) → accrued (locked)
- * - success + no cashback (paid late) → missed
- * - failed → missed
+ * - success + no cashback (paid late / after cutoff) → missed
+ *
+ * Excluded from cashback earnings (these are payment issues, not cashback events):
+ * - failed payments — payment didn't go through, no cashback event
+ * - refunded payments — money returned, no cashback event
+ * - settlement_failed — will be refunded, cashback shouldn't count
  */
 function mapEarningsEntries(
   payments: RawRecentPayment[],
   isVerified: boolean,
+  cutoffDay: number,
 ): CashbackEarningsEntry[] {
-  return payments
-    .filter((p) => p.status === 'success' || p.status === 'failed')
-    .map((p): CashbackEarningsEntry => {
-      let status: CashbackCardStatus;
-      let amount: number | null = null;
+  const entries: CashbackEarningsEntry[] = [];
 
-      if (p.status === 'failed') {
-        status = 'missed';
-      } else if (p.cashback_applied > 0) {
-        // Verified user — cashback was deducted at checkout
+  for (const p of payments) {
+    // Skip failed payments — payment infrastructure issue, not a cashback event
+    if (p.status === 'failed') continue;
+    // Skip pending/processing/initiated — still in flight
+    if (p.status !== 'success' && p.status !== 'refunded') continue;
+
+    let status: CashbackCardStatus;
+    let amount: number | null = null;
+
+    // Refunded or settlement failed → cashback reversed
+    if (p.status === 'refunded' || p.settlement_status === 'failed') {
+      const hadCashback = (p.cashback_applied > 0 || p.cashback_earned > 0);
+      if (!hadCashback) continue; // No cashback was involved, skip
+      status = 'reversed';
+      amount = p.cashback_applied || p.cashback_earned;
+    } else if (p.cashback_applied > 0) {
+      status = 'received';
+      amount = p.cashback_applied;
+    } else if (p.cashback_earned > 0) {
+      if (isVerified) {
         status = 'received';
-        amount = p.cashback_applied;
-      } else if (p.cashback_earned > 0) {
-        if (isVerified) {
-          // Verified but cashback_earned (not applied) — treat as received
-          status = 'received';
-          amount = p.cashback_earned;
-        } else {
-          // Unverified — cashback accrued but locked
-          status = 'accrued';
-          amount = p.cashback_earned;
-        }
+        amount = p.cashback_earned;
       } else {
-        // Success but no cashback at all → paid late / after cutoff
-        status = 'missed';
+        status = 'accrued';
+        amount = p.cashback_earned;
       }
+    } else {
+      // Success but no cashback → paid late / after cutoff
+      status = 'missed';
+    }
 
-      return {
-        id: `cbe_${p.id}`,
-        date: formatEarningsDate(p.paid_at || p.rent_month),
-        status,
-        amount,
-      };
+    // For missed cashback, show cutoff_day + 1 (the day cashback was forfeited)
+    let displayDate: string;
+    if (status === 'missed') {
+      const rentMonth = new Date(p.rent_month);
+      const missedDate = new Date(rentMonth.getFullYear(), rentMonth.getMonth(), cutoffDay + 1);
+      displayDate = formatEarningsDate(missedDate.toISOString());
+    } else {
+      displayDate = formatEarningsDate(p.paid_at || p.rent_month);
+    }
+
+    entries.push({
+      id: `cbe_${p.id}`,
+      date: displayDate,
+      status,
+      amount,
     });
+  }
+
+  return entries;
 }
 
 /**
@@ -629,12 +654,12 @@ export function mapCashbackModule(
   let announcementText: string;
   if (isVerified) {
     // Figma State 3: "💰 Earn ₹400 by paying your rent on time"
-    announcementText = `💰 Earn ₹${monthlyDiscount.toLocaleString('en-IN')} by paying your rent on time`;
+    announcementText = `💰  Earn ₹${monthlyDiscount.toLocaleString('en-IN')} by paying your rent on time`;
   } else if (earned > 0) {
-    announcementText = `🔒 Complete setup to use  ₹${earned.toLocaleString('en-IN')}`;
+    announcementText = `🔒  Complete setup to use ₹${earned.toLocaleString('en-IN')}`;
   } else {
     // Empty state pill
-    announcementText = `💸 Reduce your monthly rent by ₹${monthlyDiscount.toLocaleString('en-IN')}`;
+    announcementText = `💸  Reduce your monthly rent by ₹${monthlyDiscount.toLocaleString('en-IN')}`;
   }
 
   // ── Info text (below chart) — always shown per Figma ─────────
@@ -644,10 +669,9 @@ export function mapCashbackModule(
     infoText = 'ℹ️  Missed payments reduce your payout';
   } else if (earned > 0) {
     // Figma State 2: "🔒 ₹ 1,200 can be redeemed after setup is complete"
-    infoText = `🔒 ₹ ${earned.toLocaleString('en-IN')} can be redeemed after setup is complete`;
+    infoText = `🔒  ₹${earned.toLocaleString('en-IN')} can be redeemed after setup is complete`;
   } else {
-    // Figma State 1: "🔒 Cashback is accumulated until setup is complete"
-    infoText = '🔒 Cashback is accumulated until setup is complete';
+    infoText = '🔒  Cashback is accumulated until setup is complete';
   }
 
   // ── Setup steps (4-state: not_started → active → in_progress → completed) ──
@@ -669,7 +693,7 @@ export function mapCashbackModule(
   const setupSteps: SetupStep[] = [
     {
       id: 'bank',
-      label: "Add landlord's bank details",
+      label: "Add your landlord's bank details",
       completed: bankDone,
       status: stepStatus(bankDone, 0),
     },
@@ -722,7 +746,7 @@ export function mapCashbackModule(
   }
 
   // ── Earnings entries ──────────────────────────────────────────
-  const entries = mapEarningsEntries(rawPayments, isVerified);
+  const entries = mapEarningsEntries(rawPayments, isVerified, cutoffDay);
 
   return {
     moduleState,

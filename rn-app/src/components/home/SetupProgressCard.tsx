@@ -60,7 +60,7 @@ function SetupProgressCardComponent({
 
   const steps = [
     {
-      title: "Add landlord's bank details",
+      title: "Add your landlord's bank details",
       subtitle: 'enables secure payouts',
       isComplete: bankDetailsComplete,
     },

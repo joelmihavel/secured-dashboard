@@ -65,11 +65,21 @@ function getConfig(cardStatus: TransactionCardStatus): {
         lines: [{ color: INACTIVE }, { color: INACTIVE }],
       };
     case 'failed':
+      // Payment itself failed — nothing succeeded, first dot red
+      return {
+        steps: [
+          { dotColor: FAILED_RED, label: 'Failed' },
+          { dotColor: INACTIVE, label: 'Processing' },
+          { dotColor: INACTIVE, label: 'Settled' },
+        ],
+        lines: [{ color: INACTIVE }, { color: INACTIVE }],
+      };
     case 'settlement_failed':
+      // Payment succeeded (green) but settlement to landlord failed (red)
       return {
         steps: [
           { dotColor: SUCCESS_GREEN, label: 'Initiated' },
-          { dotColor: FAILED_RED, label: 'Processing' },
+          { dotColor: FAILED_RED, label: 'Settlement Failed' },
           { dotColor: INACTIVE, label: 'Settled' },
         ],
         lines: [{ color: SUCCESS_GREEN }, { color: INACTIVE }],

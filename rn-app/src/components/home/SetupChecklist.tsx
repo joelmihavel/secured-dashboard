@@ -63,7 +63,7 @@ function SetupChecklistComponent({
 }: SetupChecklistProps) {
   const items = [
     {
-      title: "Add landlord's bank details",
+      title: "Add your landlord's bank details",
       subtitle: 'enables secure payouts',
       isComplete: bankDetailsComplete,
     },

@@ -2523,6 +2523,7 @@ function writePaymentsSheet(data) {
     { key: 'll_bank_account', header: 'LL Bank A/C', fmt: 'text' },
     { key: 'll_bank_ifsc', header: 'LL IFSC', fmt: 'text' },
     { key: 'll_bank_holder', header: 'LL Bank Holder' },
+    { key: 'cf_vendor_status', header: 'Vendor Status' },
   ];
   var headers = cols.map(function(c) { return c.header; });
   var rows = data.map(function(r) {

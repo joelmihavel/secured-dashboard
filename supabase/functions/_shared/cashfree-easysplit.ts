@@ -2,11 +2,12 @@
  * Flent Secured v2 - Cashfree Easy Split Shared Module
  *
  * Wraps the Cashfree PG + Easy Split APIs:
- *   - createOrder()           POST /pg/orders
- *   - createVendor()          POST /pg/easy-split/vendors
- *   - getVendor()             GET  /pg/easy-split/vendors/{vendor_id}
- *   - onDemandTransfer()      POST /pg/easy-split/vendors/{vendor_id}/transfer
- *   - getOrderPaymentStatus() GET  /pg/orders/{order_id}
+ *   - createOrder()           POST /pg/orders                                   (v2025-01-01)
+ *   - createVendor()          POST /pg/easy-split/vendors                       (v2025-01-01)
+ *   - getVendor()             GET  /pg/easy-split/vendors/{vendor_id}           (v2025-01-01)
+ *   - createAdjustment()      POST /pg/easy-split/vendors/{vendor_id}/adjustment (v2023-08-01)
+ *   - createRefund()          POST /pg/orders/{order_id}/refunds                (v2025-01-01)
+ *   - getOrderPaymentStatus() GET  /pg/orders/{order_id}                        (v2025-01-01)
  *
  * Auth: x-client-id + x-client-secret (same as Cashfree PG credentials)
  * All amounts are in paise internally; converted to rupees at API boundary.
@@ -86,11 +87,11 @@ export class CashfreeError extends Error {
 // AUTH HEADERS
 // ==============================================
 
-function getHeaders(idempotencyKey?: string): Record<string, string> {
+function getHeaders(idempotencyKey?: string, apiVersion?: string): Record<string, string> {
   const headers: Record<string, string> = {
     "x-client-id": CF_APP_ID,
     "x-client-secret": CF_SECRET_KEY,
-    "x-api-version": CF_API_VERSION,
+    "x-api-version": apiVersion ?? CF_API_VERSION,
     "Content-Type": "application/json",
     Accept: "application/json",
   };
@@ -109,6 +110,7 @@ async function cfFetch(
   path: string,
   body?: unknown,
   idempotencyKey?: string,
+  apiVersion?: string,
 ): Promise<unknown> {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
@@ -127,7 +129,7 @@ async function cfFetch(
   try {
     response = await fetch(`${CF_BASE_URL}${path}`, {
       method,
-      headers: getHeaders(idempotencyKey),
+      headers: getHeaders(idempotencyKey, apiVersion),
       body: body ? JSON.stringify(body) : undefined,
       signal: controller.signal,
     });
@@ -262,74 +264,124 @@ export async function getVendor(vendorId: string): Promise<CashfreeVendor> {
 }
 
 // ==============================================
-// 4. ON-DEMAND TRANSFER (MERCHANT → VENDOR)
+// 4. CREATE ADJUSTMENT (MERCHANT → VENDOR LEDGER)
 // ==============================================
 
 /**
- * Transfers funds from merchant's unsettled balance to a vendor.
- * Not tied to any specific order — draws from aggregate merchant balance.
+ * Credits funds from merchant ledger to vendor ledger on Cashfree.
+ * Cashfree then auto-settles vendor balance to their bank on the vendor's
+ * schedule (Instant Settlement = 1 hour).
  *
- * Use case: Landlord receives full rent even when customer paid a discounted amount.
- * Merchant tops up Cashfree balance manually to cover the difference.
- *
- * Requires: vendor status = ACTIVE, sufficient merchant balance.
+ * Uses API version 2023-08-01 (only version where this endpoint exists).
  *
  * @param vendorId    - Cashfree vendor_id (bank_accounts.cf_beneficiary_id)
- * @param amountPaise - Full rent amount to transfer to landlord
- * @param paymentId   - Our payment UUID (used as idempotency key)
- * @param remark      - Optional description for the transfer
+ * @param amountPaise - Amount to credit to vendor in paise
+ * @param paymentId   - Our payment UUID (used for idempotency + remarks)
+ * @param remark      - Optional description
  */
-export interface OnDemandTransferResult {
-  settlement_id: number;
-  transfer_details?: {
-    vendor_id: string;
-    transfer_from: string;
-    transfer_type: string;
-    transfer_amount: number;
-    remark?: string;
-    tags?: Record<string, string>;
-  };
-  balances?: {
-    merchant_id: number;
-    vendor_id: string;
-    merchant_unsettled: number;
-    vendor_unsettled: number;
-  };
-  charges?: {
-    service_charges: number;
-    service_tax: number;
-    amount: number;
-    billed_to: string;
-    is_postpaid: boolean;
-  };
+const CF_ADJUSTMENT_API_VERSION = "2023-08-01";
+
+export interface AdjustmentResult {
+  message: string;
+  status: string;
 }
 
-export async function onDemandTransfer(params: {
+export async function createAdjustment(params: {
   vendorId: string;
   amountPaise: number;
   paymentId: string;
   remark?: string;
-}): Promise<OnDemandTransferResult> {
+}): Promise<AdjustmentResult> {
   const { vendorId, amountPaise, paymentId, remark } = params;
 
   if (amountPaise <= 0) {
-    throw new CashfreeError("Transfer amount must be greater than 0", 0);
+    throw new CashfreeError("Adjustment amount must be greater than 0", 0);
   }
 
   const body = {
-    transfer_from: "MERCHANT",
-    transfer_type: "ON_DEMAND",
-    transfer_amount: parseFloat((amountPaise / 100).toFixed(2)),
-    remark: remark ?? `Rent settlement - ${paymentId}`,
-    tags: { payment_id: paymentId },
+    vendor_id: vendorId,
+    amount: parseFloat((amountPaise / 100).toFixed(2)),
+    type: "CREDIT",
+    remarks: remark ?? `Rent settlement - ${paymentId}`,
   };
 
   const result = await cfFetch(
     "POST",
-    `/pg/easy-split/vendors/${encodeURIComponent(vendorId)}/transfer`,
+    `/pg/easy-split/vendors/${encodeURIComponent(vendorId)}/adjustment`,
     body,
-    `odt-${paymentId}`, // deterministic idempotency key
-  ) as OnDemandTransferResult;
+    `adj-${paymentId}`,
+    CF_ADJUSTMENT_API_VERSION,
+  ) as AdjustmentResult;
+
+  return result;
+}
+
+// ==============================================
+// 5. CREATE REFUND (REFUND PAYMENT TO CUSTOMER)
+// ==============================================
+
+/**
+ * Initiates a refund for a Cashfree PG payment via the order_id.
+ * Used when settlement to landlord fails after 36 hours.
+ *
+ * When Easy Split is active, use refund_splits to specify how much to
+ * debit from each vendor vs merchant balance.
+ *
+ * @param orderId     - Cashfree order_id (cf_order_id or gateway_order_id)
+ * @param amountPaise - Refund amount in paise
+ * @param refundId    - Unique refund identifier
+ * @param note        - Refund reason/note
+ * @param vendorId    - Optional: vendor to debit via refund_splits
+ * @param vendorAmount - Optional: amount in rupees to debit from vendor
+ */
+export interface CashfreeRefundResult {
+  cf_payment_id?: string;
+  cf_refund_id?: string;
+  refund_id: string;
+  order_id: string;
+  refund_amount: number;
+  refund_status: "SUCCESS" | "PENDING" | "CANCELLED" | "ONHOLD" | string;
+  refund_arn?: string;
+  refund_note?: string;
+  status_description?: string;
+  created_at?: string;
+  processed_at?: string;
+}
+
+export async function createRefund(params: {
+  orderId: string;
+  amountPaise: number;
+  refundId: string;
+  note?: string;
+  vendorId?: string;
+  vendorAmountPaise?: number;
+}): Promise<CashfreeRefundResult> {
+  const { orderId, amountPaise, refundId, note, vendorId, vendorAmountPaise } = params;
+
+  if (amountPaise <= 0) {
+    throw new CashfreeError("Refund amount must be greater than 0", 0);
+  }
+
+  const body: Record<string, unknown> = {
+    refund_amount: parseFloat((amountPaise / 100).toFixed(2)),
+    refund_id: refundId,
+    refund_note: note ?? "Settlement failed - automatic refund",
+    refund_speed: "STANDARD",
+  };
+
+  if (vendorId && vendorAmountPaise) {
+    body.refund_splits = [{
+      vendor_id: vendorId,
+      amount: parseFloat((vendorAmountPaise / 100).toFixed(2)),
+    }];
+  }
+
+  const result = await cfFetch(
+    "POST",
+    `/pg/orders/${encodeURIComponent(orderId)}/refunds`,
+    body,
+    `refund-${refundId}`,
+  ) as CashfreeRefundResult;
 
   return result;
 }
