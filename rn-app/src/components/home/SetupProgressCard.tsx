@@ -40,6 +40,7 @@ export interface SetupProgressCardProps {
   /** @deprecated Use onPress instead */
   onFinishSetup?: () => void;
   ctaLabel?: string;
+  onAddPaymentMethod?: () => void;
 }
 
 function SetupProgressCardComponent({

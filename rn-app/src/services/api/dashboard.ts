@@ -94,6 +94,7 @@ export interface RawRecentPayment {
   cashback_earned: number;
   cashback_applied: number;
   payment_method: string | null;
+  settlement_status?: 'pending' | 'processing' | 'settled' | 'failed' | null;
 }
 
 export interface Notification {
@@ -161,6 +162,18 @@ export interface MappedRecentPayment {
   amount: number; // In rupees
 }
 
+/** Transaction card status for the new rich transaction cards (Figma 4109-67659) */
+export type TransactionCardStatus = 'settled' | 'in_progress' | 'initiated' | 'retrying' | 'refunded' | 'failed';
+
+/** UI-ready transaction for TransactionCard component */
+export interface MappedTransaction {
+  id: string;
+  title: string; // e.g., "September rent"
+  cardStatus: TransactionCardStatus;
+  date: string; // e.g., "15 Sep, 9:40am"
+  amount: number; // In rupees
+}
+
 /** UI-ready cashback entry for CashbacksList component */
 export interface MappedCashbackEntry {
   id: string;
@@ -169,6 +182,47 @@ export interface MappedCashbackEntry {
   statusLabel: string; // e.g., "Paid - On Time"
   amount: number | null; // In rupees, null for N/A
   paymentId: string; // Source payment ID for direct lookup
+}
+
+// ==============================================
+// TYPES — Cashback Module (new card UI)
+// ==============================================
+
+// Cashback module types — defined here to avoid circular imports with components.
+// Components re-import these types via their own props.
+export type CashbackModuleState = 'setup_pending' | 'landlord_rejected' | 'active';
+export type BarStatus = 'earned' | 'missed' | 'future';
+export type InviteState = 'sent' | 'rejected';
+export type CashbackCardStatus = 'received' | 'accrued' | 'missed';
+
+export type SetupStepStatus = 'not_started' | 'active' | 'in_progress' | 'completed';
+
+export interface SetupStep {
+  id: string;
+  label: string;
+  completed: boolean; // backward compat: derived from status === 'completed'
+  status: SetupStepStatus;
+}
+
+export interface CashbackEarningsEntry {
+  id: string;
+  date: string;
+  status: CashbackCardStatus;
+  amount: number | null;
+}
+
+/** Fully computed props for the CashbacksList component */
+export interface MappedCashbackModule {
+  moduleState: CashbackModuleState;
+  earned: number;
+  potential: number;
+  remainingCashback: number | undefined;
+  chartBars: BarStatus[];
+  announcementText: string | undefined;
+  infoText: string | undefined;
+  setupSteps: SetupStep[];
+  inviteState: InviteState | undefined;
+  entries: CashbackEarningsEntry[];
 }
 
 // ==============================================
@@ -275,6 +329,51 @@ export function mapRecentPayments(
 }
 
 /**
+ * Map raw payments to TransactionCard-ready shape.
+ *
+ * Uses status + settlement_status to derive the card state:
+ *   success + settled    → settled   (3/3 progress)
+ *   success + processing → in_progress (2/3)
+ *   success + pending/null → initiated (1/3)
+ *   processing           → retrying  (1/3)
+ *   failed               → failed    (1 + red)
+ *   refunded             → refunded  (0/3)
+ */
+export function mapTransactions(
+  rawPayments: RawRecentPayment[]
+): MappedTransaction[] {
+  return rawPayments.map((p) => ({
+    id: p.id,
+    title: `${parseRentMonthLabel(p.rent_month)} rent`,
+    cardStatus: deriveCardStatus(p.status, p.settlement_status),
+    date: formatPaidAtDate(p.paid_at),
+    amount: p.amount,
+  }));
+}
+
+function deriveCardStatus(
+  status: RawRecentPayment['status'],
+  settlementStatus?: RawRecentPayment['settlement_status'],
+): TransactionCardStatus {
+  switch (status) {
+    case 'success':
+      switch (settlementStatus) {
+        case 'settled': return 'settled';
+        case 'processing': return 'in_progress';
+        case 'failed': return 'failed';
+        case 'pending':
+        default: return 'initiated';
+      }
+    case 'processing': return 'retrying';
+    case 'failed': return 'failed';
+    case 'refunded': return 'refunded';
+    case 'initiated':
+    case 'pending':
+    default: return 'initiated';
+  }
+}
+
+/**
  * Derive cashback entries from recent payments.
  *
  * Each successful payment with cashback > 0 becomes a "paid" entry.
@@ -331,6 +430,274 @@ export function deriveCashbackEntries(
       paymentId: p.id,
     };
   });
+}
+
+// ==============================================
+// CASHBACK MODULE MAPPING
+// ==============================================
+
+// Figma uses "Sept" not "Sep" for earnings card dates
+const EARNINGS_MONTH_NAMES = [
+  'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+  'Jul', 'Aug', 'Sept', 'Oct', 'Nov', 'Dec',
+];
+
+/**
+ * Format a date as "24 Sept 2025" for earnings card display.
+ */
+function formatEarningsDate(dateStr: string | null): string {
+  if (!dateStr) return '';
+  const d = new Date(dateStr);
+  if (isNaN(d.getTime())) return '';
+  return `${d.getDate()} ${EARNINGS_MONTH_NAMES[d.getMonth()]} ${d.getFullYear()}`;
+}
+
+/**
+ * Determine if a payment earned cashback based on cutoff day.
+ * Rent paid on or before cutoff_day of the month = earned.
+ * Rent paid after cutoff_day = missed (paid late).
+ */
+function didEarnCashback(payment: RawRecentPayment, cutoffDay: number): boolean {
+  // Explicit cashback recorded by backend takes priority
+  if (payment.cashback_earned > 0 || payment.cashback_applied > 0) return true;
+  // If payment succeeded but no cashback → check if paid after cutoff
+  if (payment.status !== 'success') return false;
+  if (!payment.paid_at) return false;
+  const paidDate = new Date(payment.paid_at);
+  return paidDate.getDate() <= cutoffDay;
+}
+
+/**
+ * Generate 12-month bar chart data from lease start and payment history.
+ *
+ * Each bar represents one month. Heights are fixed (ascending visual).
+ * Colors: earned (orange) | missed (red) | future (gray).
+ */
+function computeChartBars(
+  leaseStart: string | null,
+  payments: RawRecentPayment[],
+  cutoffDay: number,
+): BarStatus[] {
+  const bars: BarStatus[] = Array(12).fill('future');
+  if (!leaseStart) return bars;
+
+  const start = new Date(leaseStart);
+  if (isNaN(start.getTime())) return bars;
+
+  const now = new Date();
+
+  // Build a lookup of rent_month → payment
+  const paymentMap = new Map<string, RawRecentPayment>();
+  for (const p of payments) {
+    // Normalize rent_month to "YYYY-MM" for lookup
+    const key = p.rent_month.substring(0, 7);
+    // Keep the most recent / highest-priority payment per month
+    if (!paymentMap.has(key) || p.status === 'success') {
+      paymentMap.set(key, p);
+    }
+  }
+
+  for (let i = 0; i < 12; i++) {
+    const monthDate = new Date(start.getFullYear(), start.getMonth() + i, 1);
+    const monthKey = `${monthDate.getFullYear()}-${String(monthDate.getMonth() + 1).padStart(2, '0')}`;
+
+    // Future month — hasn't happened yet
+    if (monthDate > now) {
+      bars[i] = 'future';
+      continue;
+    }
+
+    const payment = paymentMap.get(monthKey);
+    if (!payment) {
+      // Past month with no payment — check if we're past cutoff for this month
+      const cutoffDate = new Date(monthDate.getFullYear(), monthDate.getMonth(), cutoffDay);
+      bars[i] = now > cutoffDate ? 'missed' : 'future';
+      continue;
+    }
+
+    if (payment.status === 'failed') {
+      bars[i] = 'missed';
+    } else if (payment.status === 'success') {
+      bars[i] = didEarnCashback(payment, cutoffDay) ? 'earned' : 'missed';
+    } else {
+      // processing/pending/initiated — still in flight
+      bars[i] = 'future';
+    }
+  }
+
+  return bars;
+}
+
+/**
+ * Map payments to CashbackEarningsEntry[] for the earnings card list.
+ *
+ * - success + cashback applied (verified) → received
+ * - success + cashback earned but not applied (unverified) → accrued (locked)
+ * - success + no cashback (paid late) → missed
+ * - failed → missed
+ */
+function mapEarningsEntries(
+  payments: RawRecentPayment[],
+  isVerified: boolean,
+): CashbackEarningsEntry[] {
+  return payments
+    .filter((p) => p.status === 'success' || p.status === 'failed')
+    .map((p): CashbackEarningsEntry => {
+      let status: CashbackCardStatus;
+      let amount: number | null = null;
+
+      if (p.status === 'failed') {
+        status = 'missed';
+      } else if (p.cashback_applied > 0) {
+        // Verified user — cashback was deducted at checkout
+        status = 'received';
+        amount = p.cashback_applied;
+      } else if (p.cashback_earned > 0) {
+        if (isVerified) {
+          // Verified but cashback_earned (not applied) — treat as received
+          status = 'received';
+          amount = p.cashback_earned;
+        } else {
+          // Unverified — cashback accrued but locked
+          status = 'accrued';
+          amount = p.cashback_earned;
+        }
+      } else {
+        // Success but no cashback at all → paid late / after cutoff
+        status = 'missed';
+      }
+
+      return {
+        id: `cbe_${p.id}`,
+        date: formatEarningsDate(p.paid_at || p.rent_month),
+        status,
+        amount,
+      };
+    });
+}
+
+/**
+ * Compute the complete cashback module state from dashboard data.
+ *
+ * Takes raw tenancy, cashback, and payment data and produces
+ * all props needed by the CashbacksList component.
+ */
+export function mapCashbackModule(
+  tenancy: DashboardTenancy | null,
+  cashback: CashbackBalance | null,
+  rawPayments: RawRecentPayment[],
+): MappedCashbackModule {
+  // ── Module state ──────────────────────────────────────────────
+  const vs = tenancy?.verification_status;
+  const landlordApproved = vs?.landlord_approved;
+  const isVerified = landlordApproved === true;
+
+  let moduleState: CashbackModuleState;
+  if (landlordApproved === true) {
+    moduleState = 'active';
+  } else if (landlordApproved === false) {
+    moduleState = 'landlord_rejected';
+  } else {
+    moduleState = 'setup_pending';
+  }
+
+  // ── Stats ─────────────────────────────────────────────────────
+  const monthlyRent = tenancy?.monthly_rent ?? 0;
+  const discountRate = cashback?.discount_rate ?? 0.01;
+  const earned = cashback?.total_savings ?? 0;
+  const potential = Math.round(monthlyRent * discountRate * 12);
+
+  // ── Remaining cashback (locked, unverified only) ──────────────
+  const remainingCashback = !isVerified
+    ? (cashback?.available_balance ?? cashback?.legacy_wallet_balance ?? 0) || undefined
+    : undefined;
+
+  // ── Chart bars ────────────────────────────────────────────────
+  const cutoffDay = tenancy?.cashback_cutoff_day ?? 7;
+  const chartBars = computeChartBars(
+    tenancy?.lease_start_date ?? null,
+    rawPayments,
+    cutoffDay,
+  );
+
+  // ── Announcement banner ───────────────────────────────────────
+  let announcementText: string | undefined;
+  if (!isVerified && remainingCashback && remainingCashback > 0) {
+    announcementText = `🔒 ₹${remainingCashback.toLocaleString('en-IN')} waiting to be unlocked`;
+  }
+
+  // ── Info text (below chart) ───────────────────────────────────
+  let infoText: string | undefined;
+  if (!isVerified && earned > 0) {
+    infoText = `🔒 ₹ ${earned.toLocaleString('en-IN')} can be redeemed after setup is complete`;
+  }
+
+  // ── Setup steps (4-state: not_started → active → in_progress → completed) ──
+  const bankDone = vs?.bank_verified ?? false;
+  const utilityDone = vs?.utility_verified ?? false;
+  const landlordDone = vs?.landlord_approved ?? false;
+  const landlordPending = vs?.landlord_response === 'pending' || vs?.landlord_response === null;
+
+  function stepStatus(done: boolean, index: number): SetupStepStatus {
+    if (done) return 'completed';
+    // Landlord step is "in_progress" when invite sent + awaiting response
+    if (index === 2 && bankDone && utilityDone && landlordPending) return 'in_progress';
+    // First incomplete step is "active" (the one user should act on)
+    const firstIncompleteIndex = [bankDone, utilityDone, landlordDone].findIndex(v => !v);
+    if (index === firstIncompleteIndex) return 'active';
+    return 'not_started';
+  }
+
+  const setupSteps: SetupStep[] = [
+    {
+      id: 'bank',
+      label: "Add landlord's bank details",
+      completed: bankDone,
+      status: stepStatus(bankDone, 0),
+    },
+    {
+      id: 'utility',
+      label: 'Upload address proof',
+      completed: utilityDone,
+      status: stepStatus(utilityDone, 1),
+    },
+    {
+      id: 'landlord',
+      label: 'Awaiting Landlord Approval',
+      completed: landlordDone,
+      status: stepStatus(landlordDone, 2),
+    },
+  ];
+
+  // ── Invite state ──────────────────────────────────────────────
+  let inviteState: InviteState | undefined;
+  if (!isVerified) {
+    const response = vs?.landlord_response;
+    if (response === 'disputed') {
+      inviteState = 'rejected';
+    } else if (response === 'pending' || response === null || response === undefined) {
+      // Only show invite status if bank+utility are done (landlord step is next)
+      if (vs?.bank_verified && vs?.utility_verified) {
+        inviteState = 'sent';
+      }
+    }
+  }
+
+  // ── Earnings entries ──────────────────────────────────────────
+  const entries = mapEarningsEntries(rawPayments, isVerified);
+
+  return {
+    moduleState,
+    earned,
+    potential,
+    remainingCashback,
+    chartBars,
+    announcementText,
+    infoText,
+    setupSteps,
+    inviteState,
+    entries,
+  };
 }
 
 // ==============================================

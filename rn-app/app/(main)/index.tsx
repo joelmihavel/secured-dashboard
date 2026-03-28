@@ -45,7 +45,7 @@
  */
 
 import React, { useCallback, useEffect, useState, useMemo, useRef } from 'react';
-import { View, StyleSheet, ScrollView, RefreshControl, ActivityIndicator, Linking } from 'react-native';
+import { View, StyleSheet, ScrollView, RefreshControl, ActivityIndicator, Linking, Alert } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -75,17 +75,18 @@ import {
   PaymentMethod,
   EmptyStateVariant,
   NotificationType,
+  CashbackModuleState,
+  VerificationStatusSheet,
 } from '@/src/components/home';
 
-// RecentPayment type from home components for the list props
-import type { RecentPayment } from '@/src/components/home/RecentPaymentsList';
-import type { CashbackEntry } from '@/src/components/home/CashbacksList';
+import type { CashbackEarningsEntry } from '@/src/components/home/CashbackEarningsCard';
+import type { SetupStep } from '@/src/components/home/CashbackSetupSteps';
 
 // Import hooks from useDashboard
 import { useDashboard, useRefreshDashboard } from '@/src/hooks/useDashboard';
 
 // Import DashboardState type and mapped types from dashboard service
-import type { DashboardState, MappedRecentPayment, MappedCashbackEntry, RawRecentPayment } from '@/src/services/api/dashboard';
+import type { DashboardState, MappedRecentPayment, MappedCashbackEntry, MappedTransaction, RawRecentPayment } from '@/src/services/api/dashboard';
 
 // Import payment stamps
 import { usePaymentStamps } from '@/src/hooks/usePayments';
@@ -95,7 +96,8 @@ import type { PaymentStampEntry } from '@/src/services/api/payments';
 // Import colors from theme
 import { colors, spacing, radius } from '@/src/theme';
 
-import { mapRecentPayments, deriveCashbackEntries, getDashboardState } from '@/src/services/api/dashboard';
+import { mapRecentPayments, mapTransactions, mapCashbackModule, deriveCashbackEntries, getDashboardState } from '@/src/services/api/dashboard';
+import type { MappedCashbackModule } from '@/src/services/api/dashboard';
 
 // ==============================================
 // MAIN COMPONENT
@@ -140,16 +142,29 @@ export default function HomeScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [resolvedData?.recent_payments]
   );
+  const transactions = useMemo(
+    () => mapTransactions(resolvedData?.recent_payments ?? []),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [resolvedData?.recent_payments]
+  );
   const cashbackEntries = useMemo(
     () => deriveCashbackEntries(resolvedData?.recent_payments ?? [], tenancy?.monthly_rent, cashback?.discount_rate),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [resolvedData?.recent_payments, tenancy?.monthly_rent, cashback?.discount_rate]
   );
 
+  // Cashback module — single computed object with all CashbacksList props
+  const cashbackModule = useMemo(
+    () => mapCashbackModule(tenancy ?? null, cashback ?? null, resolvedData?.recent_payments ?? []),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [tenancy, cashback, resolvedData?.recent_payments]
+  );
+
   // Tab state for Recent Payments / Cashbacks
   const [activeTab, setActiveTab] = useState<TabId>('recent_payments');
   const { showSheet } = useLocalSearchParams<{ showSheet?: string }>();
   const [showVerificationSheet, setShowVerificationSheet] = useState(showSheet === 'cashback-setup');
+  const [showStatusSheet, setShowStatusSheet] = useState(false);
 
   // Clear the URL param after consumption to prevent re-triggering on re-render
   useEffect(() => {
@@ -589,7 +604,7 @@ export default function HomeScreen() {
     });
   }, [router]);
 
-  const handlePaymentPress = useCallback((payment: RecentPayment) => {
+  const handlePaymentPress = useCallback((payment: MappedRecentPayment) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     const statusMap: Record<string, string> = {
       paid: 'success',
@@ -615,35 +630,111 @@ export default function HomeScreen() {
     });
   }, [router, resolvedData?.recent_payments, tenancy]);
 
-  const handleCashbackEntryPress = useCallback((entry: CashbackEntry) => {
-    // Only navigate for entries with an associated payment
-    if (!entry.paymentId) return;
+  // Transaction card action handlers (new card UI — Figma 4109-67659)
+  const handleViewReceipt = useCallback((tx: MappedTransaction) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    const rawPayment = resolvedData?.recent_payments?.find((p: RawRecentPayment) => p.id === tx.id);
+    router.push({
+      pathname: '/(payment)/status' as never,
+      params: {
+        paymentId: tx.id,
+        initialStatus: 'success',
+        amount: String(tx.amount),
+        method: rawPayment?.payment_method ?? '',
+        cashback: String(rawPayment?.cashback_applied ?? rawPayment?.cashback_earned ?? 0),
+        transactionId: tx.id,
+        source: 'receipt_view',
+        landlordName: tenancy?.landlord_name ?? '',
+        agreementId: tenancy?.agreement_cert_id ?? '',
+      },
+    });
+  }, [router, resolvedData?.recent_payments, tenancy]);
 
-    const rawPayment = resolvedData?.recent_payments?.find((p: RawRecentPayment) => p.id === entry.paymentId);
+  const handleNeedHelp = useCallback(() => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    Linking.openURL('mailto:secured@flent.in').catch(() => {
+      Alert.alert('Contact Support', 'Email us at secured@flent.in');
+    });
+  }, []);
 
-    // Map cashback status → payment status screen
+  const handleTryAgain = useCallback((tx: MappedTransaction) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    router.push({
+      pathname: '/(payment)/enter-rent' as never,
+      params: {
+        prefillAmount: String(tx.amount),
+      },
+    });
+  }, [router]);
+
+  const handleCashbackEntryPress = useCallback((entry: CashbackEarningsEntry) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    // Find matching raw payment to navigate to receipt
+    const rawPayment = resolvedData?.recent_payments?.find((p: RawRecentPayment) => p.id === entry.id);
+    if (!rawPayment) return;
+
     const statusMap: Record<string, string> = {
-      paid: 'success',
-      delayed: 'success',
-      pending: 'pending',
+      received: 'success',
+      accrued: 'pending',
       missed: 'failed',
     };
 
     router.push({
       pathname: '/(payment)/status',
       params: {
-        paymentId: entry.paymentId,
-        amount: String(rawPayment?.amount ?? 0),
-        method: rawPayment?.payment_method ?? '',
+        paymentId: entry.id,
+        amount: String(rawPayment.amount ?? 0),
+        method: rawPayment.payment_method ?? '',
         initialStatus: statusMap[entry.status] ?? 'pending',
-        cashback: String(rawPayment?.cashback_applied ?? rawPayment?.cashback_earned ?? 0),
+        cashback: String(rawPayment.cashback_applied ?? rawPayment.cashback_earned ?? 0),
         source: 'receipt_view',
         landlordName: tenancy?.landlord_name ?? '',
         agreementId: tenancy?.agreement_cert_id ?? '',
       },
     } as never);
   }, [router, resolvedData?.recent_payments, tenancy]);
+
+  const handleCopyInviteLink = useCallback(async () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    const tenancyId = tenancy?.id;
+    if (!tenancyId) return;
+    const link = `flentsecured:///setup/invite-landlord?tenancyId=${tenancyId}`;
+    try {
+      const Clipboard = await import('expo-clipboard');
+      await Clipboard.setStringAsync(link);
+      Alert.alert('Copied!', 'Invite link copied to clipboard');
+    } catch {
+      Alert.alert('Invite Link', link);
+    }
+  }, [tenancy?.id]);
+
+  const handleSetupStepPress = useCallback((step: SetupStep) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    const routeMap: Record<string, string> = {
+      bank: '/(setup)/add-bank',
+      utility: '/(setup)/add-utility',
+      landlord: '/(setup)/invite-landlord',
+    };
+    const route = routeMap[step.id];
+    if (route) router.push(route as never);
+  }, [router]);
+
+  const handleLearnMore = useCallback(() => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    Linking.openURL('mailto:secured@flent.in?subject=How to invite my landlord').catch(() => {
+      Alert.alert('Contact Support', 'Email us at secured@flent.in');
+    });
+  }, []);
+
+  const handleStatusPress = useCallback(() => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setShowStatusSheet(true);
+  }, []);
+
+  const handleStartSaving = useCallback(() => {
+    setShowStatusSheet(false);
+    router.push('/(setup)/pending-steps' as never);
+  }, [router]);
 
   // ==============================================
   // LOADING STATE
@@ -733,7 +824,9 @@ export default function HomeScreen() {
             cashback,
             paymentMethods,
             recentPayments,
+            transactions,
             cashbackEntries,
+            cashbackModule,
             emptyStateVariant,
             carouselItems,
             daysUntilDue,
@@ -758,7 +851,13 @@ export default function HomeScreen() {
             onPaymentMethodPress: handlePaymentMethodPress,
             onPaymentMethodEdit: handlePaymentMethodEdit,
             onPaymentPress: handlePaymentPress,
+            onViewReceipt: handleViewReceipt,
+            onNeedHelp: handleNeedHelp,
+            onTryAgain: handleTryAgain,
             onCashbackEntryPress: handleCashbackEntryPress,
+            onCopyInviteLink: handleCopyInviteLink,
+            onSetupStepPress: handleSetupStepPress,
+            onLearnMore: handleLearnMore,
             onHowItWorks: handleHowItWorks,
           })}
         </Animated.View>
@@ -787,6 +886,13 @@ export default function HomeScreen() {
         utilityVerified={verificationStatus?.utility_verified ?? false}
         landlordApproved={verificationStatus?.landlord_approved ?? false}
       />
+
+      {/* Verification Status Sheet — shown when user taps pending/verified status */}
+      <VerificationStatusSheet
+        visible={showStatusSheet}
+        onClose={() => setShowStatusSheet(false)}
+        onStartSaving={handleStartSaving}
+      />
     </Screen>
   );
 }
@@ -801,7 +907,9 @@ interface ContentProps {
   cashback: ReturnType<typeof useDashboard>['cashback'];
   paymentMethods: PaymentMethod[];
   recentPayments: MappedRecentPayment[];
+  transactions: MappedTransaction[];
   cashbackEntries: MappedCashbackEntry[];
+  cashbackModule: MappedCashbackModule;
   emptyStateVariant: EmptyStateVariant;
   carouselItems: CarouselCardItem[];
   daysUntilDue: number | null;
@@ -825,8 +933,14 @@ interface ContentProps {
   onContactSupport: () => void;
   onPaymentMethodPress: (method: PaymentMethod) => void;
   onPaymentMethodEdit: (method: PaymentMethod) => void;
-  onPaymentPress: (payment: RecentPayment) => void;
-  onCashbackEntryPress?: (entry: CashbackEntry) => void;
+  onPaymentPress: (payment: MappedRecentPayment) => void;
+  onViewReceipt: (transaction: MappedTransaction) => void;
+  onNeedHelp: () => void;
+  onTryAgain: (transaction: MappedTransaction) => void;
+  onCashbackEntryPress?: (entry: CashbackEarningsEntry) => void;
+  onCopyInviteLink?: () => void;
+  onSetupStepPress?: (step: SetupStep) => void;
+  onLearnMore?: () => void;
   onHowItWorks?: () => void;
 }
 
@@ -837,7 +951,9 @@ function renderDashboardContent(state: DashboardState, props: ContentProps) {
     cashback,
     paymentMethods,
     recentPayments,
+    transactions,
     cashbackEntries,
+    cashbackModule,
     emptyStateVariant,
     carouselItems,
     daysUntilDue,
@@ -862,7 +978,13 @@ function renderDashboardContent(state: DashboardState, props: ContentProps) {
     onPaymentMethodPress,
     onPaymentMethodEdit,
     onPaymentPress,
+    onViewReceipt,
+    onNeedHelp,
+    onTryAgain,
     onCashbackEntryPress,
+    onCopyInviteLink,
+    onSetupStepPress,
+    onLearnMore,
     onHowItWorks,
   } = props;
 
@@ -934,17 +1056,21 @@ function renderDashboardContent(state: DashboardState, props: ContentProps) {
             <TabSwitcher activeTab={activeTab} onTabChange={onTabChange} />
             {activeTab === 'recent_payments' ? (
               <RecentPaymentsList
-                payments={recentPayments}
-                onPaymentPress={onPaymentPress}
+                transactions={transactions}
+                landlordName={tenancy?.landlord_name}
+                onViewReceipt={onViewReceipt}
+                onNeedHelp={onNeedHelp}
+                onTryAgain={onTryAgain}
               />
             ) : (
-              cashbackEntries.length > 0 ? (
+              cashbackModule.entries.length > 0 || cashbackModule.moduleState !== 'active' ? (
                 <CashbacksList
-                  balance={cashbackBalance}
-                  allTimeTotal={allTimeCashback}
-                  cashbackRate={cashbackRate}
-                  entries={cashbackEntries}
+                  {...cashbackModule}
                   onEntryPress={onCashbackEntryPress}
+                  onCopyInviteLink={onCopyInviteLink}
+                  onNeedHelp={onNeedHelp}
+                  onStepPress={onSetupStepPress}
+                  onLearnMore={onLearnMore}
                 />
               ) : (
                 <CashbackEmptyState
@@ -1005,22 +1131,25 @@ function renderDashboardContent(state: DashboardState, props: ContentProps) {
 
         {/* Tab Content - gap 48 separates toggle from content */}
         {activeTab === 'recent_payments' ? (
-          recentPayments.length > 0 ? (
+          transactions.length > 0 ? (
             <RecentPaymentsList
-              payments={recentPayments}
-              onPaymentPress={onPaymentPress}
+              transactions={transactions}
+              onViewReceipt={onViewReceipt}
+              onNeedHelp={onNeedHelp}
+              onTryAgain={onTryAgain}
             />
           ) : (
             <EmptyPaymentsState />
           )
         ) : (
-          cashbackEntries.length > 0 ? (
+          cashbackModule.entries.length > 0 || cashbackModule.moduleState !== 'active' ? (
             <CashbacksList
-              balance={cashbackBalance}
-              allTimeTotal={allTimeCashback}
-              cashbackRate={cashbackRate}
-              entries={cashbackEntries}
+              {...cashbackModule}
               onEntryPress={onCashbackEntryPress}
+              onCopyInviteLink={onCopyInviteLink}
+              onNeedHelp={onNeedHelp}
+              onStepPress={onSetupStepPress}
+              onLearnMore={onLearnMore}
             />
           ) : (
             <CashbackEmptyState

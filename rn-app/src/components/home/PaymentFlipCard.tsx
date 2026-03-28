@@ -61,6 +61,7 @@ export interface PaymentMonthData {
   missedCount?: number;
   /** Rent due day of month (e.g. 4 for 4th) — shown in upcoming stamp */
   rentDueDay?: number;
+  onAddPaymentMethod?: () => void;
   /** Unique index to cycle between 3D furniture assets */
   cardIndex?: number;
 }

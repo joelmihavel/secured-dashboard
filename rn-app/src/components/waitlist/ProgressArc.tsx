@@ -238,6 +238,35 @@ function ProgressArcComponent({
             </RNText>
           </RNText>
         </View>
+        
+        {/* Hint text - "This release" */}
+        <View style={[styles.hintContainer, { left: 139 + HINT_REF_X, top: 139 + HINT_REF_Y }]}>
+          <RNText style={styles.hintText}>This{'\n'}release</RNText>
+        </View>
+        
+        {/* Callout SVG */}
+        <View style={styles.calloutSvg} pointerEvents="none">
+           <Svg width={ELLIPSE_SIZE} height={ELLIPSE_SIZE} viewBox={`0 0 ${ELLIPSE_SIZE} ${ELLIPSE_SIZE}`}>
+             <G transform={`translate(${CX}, ${CY}) rotate(${rotationDelta(progress)}) translate(${-CX}, ${-CY})`}>
+               {/* Dashed line */}
+               <Line
+                 x1={DASH_REF_X1}
+                 y1={DASH_REF_Y1}
+                 x2={DASH_REF_X2}
+                 y2={DASH_REF_Y2}
+                 stroke={DASHED_STROKE}
+                 strokeWidth={0.5}
+                 strokeDasharray="3,3"
+               />
+               {/* Triangle */}
+               <Path
+                 d={TRIANGLE_PATH}
+                 fill={TRIANGLE_FILL}
+                 transform={`matrix(${TRI_MATRIX})`}
+               />
+             </G>
+           </Svg>
+        </View>
       </View>
     </View>
   );

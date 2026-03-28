@@ -27,10 +27,24 @@ export { TabSwitcher } from './TabSwitcher';
 export type { TabSwitcherProps, TabId } from './TabSwitcher';
 
 export { RecentPaymentsList } from './RecentPaymentsList';
-export type { RecentPaymentsListProps, RecentPayment, PaymentStatus } from './RecentPaymentsList';
+export type { RecentPaymentsListProps } from './RecentPaymentsList';
+
 
 export { CashbacksList } from './CashbacksList';
-export type { CashbacksListProps, CashbackEntry, CashbackStatus } from './CashbacksList';
+export type { CashbacksListProps, CashbackModuleState } from './CashbacksList';
+
+// Cashback sub-components
+export { CashbackEarningsCard } from './CashbackEarningsCard';
+export type { CashbackEarningsEntry, CashbackCardStatus } from './CashbackEarningsCard';
+export { CashbackProgressChart } from './CashbackProgressChart';
+export { CashbackStatsSection } from './CashbackStatsSection';
+export { CashbackSetupSteps } from './CashbackSetupSteps';
+export { CashbackInviteStatus } from './CashbackInviteStatus';
+export { CashbackMemberStatus } from './CashbackMemberStatus';
+
+// Verification status sheet
+export { VerificationStatusSheet } from './VerificationStatusSheet';
+export type { VerificationStatusSheetProps } from './VerificationStatusSheet';
 
 // Status notification
 export { StatusNotificationBanner } from './StatusNotificationBanner';
