@@ -6,7 +6,9 @@
  */
 
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { useCallback, useEffect, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
+import { fetchFeeConfig } from '../services/payment';
+import { paymentKeys } from './usePayments';
 import {
   fetchDashboard,
   DashboardData,
@@ -66,6 +68,20 @@ export function useDashboard(options: UseDashboardOptions = {}) {
     retry: 2,
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 5000),
   });
+
+  // Prefetch fee rates in background once dashboard loads — eliminates fee flash in payment flow
+  const queryClient = useQueryClient();
+  const feeRatesPrefetched = useRef(false);
+  useEffect(() => {
+    if (query.data && !feeRatesPrefetched.current) {
+      feeRatesPrefetched.current = true;
+      queryClient.prefetchQuery({
+        queryKey: paymentKeys.feeRates(),
+        queryFn: fetchFeeConfig,
+        staleTime: 1000 * 60 * 60, // 1 hour
+      });
+    }
+  }, [query.data, queryClient]);
 
   // Derive dashboard state from data
   const dashboardState: DashboardState = getDashboardState(query.data ?? null);
