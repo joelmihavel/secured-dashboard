@@ -294,7 +294,7 @@ export default function PaymentSuccessScreen() {
     <Screen testID="success-screen" padded={false} style={styles.screen}>
       <View style={styles.container}>
         <BackButton
-          style={StyleSheet.flatten([styles.backButton, { top: Math.max(sv(8), 111 - insets.top) }])}
+          style={StyleSheet.flatten([styles.backButton, { top: sv(16) }])}
           onPress={handleBack}
           testID="back-button"
         />
@@ -327,6 +327,8 @@ export default function PaymentSuccessScreen() {
           </View>
         </PaymentReceiptCard>
 
+        <View style={styles.spacer} />
+
         <View style={styles.buttonContainer}>
           <PrimaryButton
             title="Download receipt"
@@ -357,6 +359,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     paddingHorizontal: s(24),
+    paddingBottom: sv(24),
   },
   backButton: {
     position: 'absolute' as const,
@@ -433,12 +436,15 @@ const styles = StyleSheet.create({
     color: '#FF9A6D',
     textAlign: 'center',
   },
+  spacer: {
+    flex: 1,
+    minHeight: sv(33),
+  },
   buttonContainer: {
     width: '100%',
     paddingHorizontal: s(16),
     gap: sv(16),
     alignItems: 'center',
-    marginTop: sv(33), // Figma: 921 - 888(card bottom) = 33px
   },
   contactSupportText: {
     fontFamily: 'PlusJakartaSans-Regular',
