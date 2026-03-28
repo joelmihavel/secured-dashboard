@@ -18,7 +18,7 @@
  */
 
 import React, { useEffect, useState, useRef } from 'react';
-import { View, ScrollView, StyleSheet, RefreshControl, Text as RNText, TouchableOpacity, Linking } from 'react-native';
+import { View, ScrollView, StyleSheet, RefreshControl, Text as RNText, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -32,7 +32,7 @@ import {
   ApplicationTimeline,
   ReferralCodeInput,
   ProgressArc,
-  BenefitsCard,
+  BenefitsCarousel,
   DottedGridPattern,
   SkeletonLoader,
 } from '@/src/components';
@@ -260,7 +260,6 @@ export default function WaitlistScreen() {
     isReferralComplete,
     referralApplied,
     referralError,
-    countdownText,
     isLoading,
     isRefetching,
     error,
@@ -286,6 +285,10 @@ export default function WaitlistScreen() {
     router.replace('/(agreement)/upload' as never);
   }, [router]);
 
+  const navigateToRejected = React.useCallback(() => {
+    router.replace('/(waitlist)/rejected');
+  }, [router]);
+
   // Redirect to approved screen when approved
   useEffect(() => {
     if (viewState === 'approved' && !isNavigating) {
@@ -297,6 +300,18 @@ export default function WaitlistScreen() {
       });
     }
   }, [viewState, navigateToApproved, isNavigating, transitionOpacity]);
+
+  // Redirect to rejected screen when rejected
+  useEffect(() => {
+    if (viewState === 'rejected' && !isNavigating) {
+      setIsNavigating(true);
+      transitionOpacity.value = withTiming(1, { duration: 300 }, (finished) => {
+        if (finished) {
+          runOnJS(navigateToRejected)();
+        }
+      });
+    }
+  }, [viewState, navigateToRejected, isNavigating, transitionOpacity]);
 
   useEffect(() => {
     if (!status?.requiresReupload || isNavigating) {
@@ -453,162 +468,11 @@ export default function WaitlistScreen() {
             style={styles.retryButtonContainer}
           >
             <PrimaryButton
-              title="Try Again"
+              title="Try again"
               onPress={refresh}
             />
           </Animated.View>
         </View>
-      </View>
-    );
-  }
-
-  // ============================================
-  // REJECTED STATE
-  // Figma: 41-11410 "Onboarding / Waitlist Screen -- Rejected"
-  // ============================================
-  if (viewState === 'rejected') {
-    // Figma 41:11410 statically shows 3 reasons
-    const rejectionReasons = [
-      "You're renting outside Bangalore",
-      "You did not use an invite code.",
-      "You rent agreement didn't qualify.",
-    ];
-    const canReapply = countdownText === '';
-
-    // Timeline for rejected state
-    // From Figma nodes 41:11430-41:11444
-    const rejectedTimelineItems: TimelineItemData[] = [
-      {
-        label: 'Application Sent',
-        value: `Submitted on ${submissionDate}`,
-        status: 'complete',
-      },
-      {
-        label: 'In Review',
-        value: reviewTime,
-        status: 'complete',
-      },
-      {
-        label: 'Account Status',
-        value: 'Rejected',
-        status: 'rejected',
-      },
-    ];
-
-    return (
-      <View style={styles.screen}>
-        <DottedGridPattern fadeMask={false} />
-
-      <ScrollView
-        ref={scrollViewRef}
-        style={styles.scrollView}
-        contentContainerStyle={[
-          styles.scrollContent,
-          {
-            paddingTop: insets.top + spacing.huge,
-            paddingBottom: insets.bottom + s(32), // Using 32px to match Figma typical bottom spacing
-          },
-        ]}
-        showsVerticalScrollIndicator={false}
-        onScroll={handleScroll}
-        scrollEventThrottle={16}
-        refreshControl={
-          <RefreshControl refreshing={isRefetching} onRefresh={refresh} tintColor="#FF9A6D" />
-        }
-      >
-          {/* All content - single wrapper with gap 40 matching Figma */}
-          <View style={styles.contentWrapper}>
-            {/* Header Section */}
-            <Animated.View
-              entering={FadeInDown.delay(FIGMA.animation.stagger).duration(FIGMA.animation.duration)}
-              style={styles.headerSection}
-            >
-              <View style={styles.logoContainer}>
-                <Logo size={38} color={FIGMA.colors.textPrimary} />
-              </View>
-
-              {/* Text Block - Figma node 41:11421 */}
-              <View style={styles.textBlock}>
-                {/* Title: "We can't approve you right now" */}
-                {/* Figma: #FFFFFF base, "right now" in orange #FF9A6D */}
-                <Text style={styles.titleBase}>
-                  <RNText style={{ color: FIGMA.colors.textPrimary }}>We can't approve you </RNText>
-                  <RNText style={styles.titleAccent}>right now</RNText>
-                </Text>
-
-                {/* Subtitle: "We're opening access in batches. Stay tuned." */}
-                {/* Figma: #A6A6A6, fontSize 14, lineHeight 20 */}
-                <Text style={styles.subtitle}>
-                  We're opening access in batches. Stay tuned.
-                </Text>
-              </View>
-            </Animated.View>
-
-            {/* Timeline Card - same structure as pending */}
-            {/* Figma node 41:11424: fill=#202020, radius=12, padding 24/16, gap 24 */}
-            <Animated.View
-              entering={FadeInDown.delay(FIGMA.animation.stagger * 2).duration(FIGMA.animation.duration)}
-              style={styles.timelineCard}
-            >
-              <ApplicationTimeline items={rejectedTimelineItems} />
-            </Animated.View>
-
-            {/* Rejection Reasons Card */}
-            {/* Figma node 160:3051: fill=#202020, radius=12, padding 32/24, gap 24 */}
-            <Animated.View
-              entering={FadeInDown.delay(FIGMA.animation.stagger * 3).duration(FIGMA.animation.duration)}
-            >
-              <BenefitsCard variant="rejected" />
-            </Animated.View>
-
-            {/* Contact Support + Countdown */}
-            {/* Figma node 41:11468: gap 16 */}
-            <Animated.View
-              entering={FadeInDown.delay(FIGMA.animation.stagger * 4).duration(FIGMA.animation.duration)}
-              style={styles.rejectionActionsContainer}
-            >
-              <PrimaryButton
-                title="Contact support"
-                onPress={() => Linking.openURL('mailto:secured@flent.in')}
-              />
-
-              {/* Countdown text */}
-              {/* Figma node 41:11470 */}
-              {!canReapply && (
-                <Text style={styles.countdownText}>
-                  You can try again in next batch, applications open in {countdownText}
-                </Text>
-              )}
-            </Animated.View>
-
-          </View>
-        </ScrollView>
-
-        {/* Scroll Down Indicator */}
-        {!isScrolledToBottom && !isNavigating && (
-          <TouchableOpacity
-            onPress={scrollToBottom}
-            activeOpacity={0.7}
-            style={styles.scrollIndicatorContainer}
-          >
-            <Animated.View
-              entering={FadeIn.duration(300)}
-              exiting={FadeOut.duration(300)}
-              style={animatedStyle}
-            >
-              <Ionicons name="chevron-down" size={32} color="#FF9A6D" />
-            </Animated.View>
-          </TouchableOpacity>
-        )}
-
-      {/* Transition Overlay */}
-      <Animated.View
-        style={[
-          StyleSheet.absoluteFill,
-          { backgroundColor: '#131313', pointerEvents: 'none', zIndex: 999 },
-          transitionAnimatedStyle
-        ]}
-      />
       </View>
     );
   }
@@ -760,14 +624,14 @@ export default function WaitlistScreen() {
                   {referralError ? (
                     // Error State - button instance (node 3099:27758)
                     <PrimaryButton
-                      title="Clear Code"
+                      title="Clear code"
                       onPress={clearReferralCode}
                       showDivider={true}
                     />
                   ) : (
                     // Default State
                     <PrimaryButton
-                      title="Enter Invite Code"
+                      title="Enter invite code"
                       onPress={claimInviteCode}
                       disabled={false}
                       loading={isClaimingInviteCode}
@@ -779,12 +643,50 @@ export default function WaitlistScreen() {
             )}
           </Animated.View>
 
-          {/* Benefits Card - Frame 2095586390 (node 41:11255) */}
-          {/* computedStyles: width 313, height 342, borderRadius 12, backgroundColor #202020 */}
+          {/* "Once you're in, keep these things handy" — Figma 4109:24272 */}
           <Animated.View
             entering={FadeInDown.delay(FIGMA.animation.stagger * 4).duration(FIGMA.animation.duration)}
           >
-            <BenefitsCard variant="benefits" />
+            <RNText style={styles.stepsTitle}>
+              <RNText style={styles.stepsTitleGray}>Once you're in{'\n'}</RNText>
+              <RNText style={styles.stepsTitleAccent}>keep these things handy</RNText>
+            </RNText>
+          </Animated.View>
+
+          {/* 3-Step Indicator — Figma 4109:24273 */}
+          <Animated.View
+            entering={FadeInDown.delay(FIGMA.animation.stagger * 5).duration(FIGMA.animation.duration)}
+          >
+            <View style={styles.stepsWrapper}>
+              <View style={styles.stepsTrackRow}>
+                <View style={styles.stepsDot} />
+                <View style={styles.stepsConnector} />
+                <View style={styles.stepsDot} />
+                <View style={styles.stepsConnector} />
+                <View style={styles.stepsDot} />
+              </View>
+              <View style={styles.stepsLabelRow}>
+                <RNText style={[styles.stepLabel, { textAlign: 'left' }]}>
+                  Landlord's{'\n'}bank details and PAN
+                </RNText>
+                <RNText style={[styles.stepLabel, { textAlign: 'center' }]}>
+                  Home{'\n'}electricity bill
+                </RNText>
+                <RNText style={[styles.stepLabel, { textAlign: 'right' }]}>
+                  Landlord's{'\n'}contact details
+                </RNText>
+              </View>
+            </View>
+          </Animated.View>
+
+          {/* Benefits Carousel — Figma 4109:24285 */}
+          <Animated.View
+            entering={FadeInDown.delay(FIGMA.animation.stagger * 6).duration(FIGMA.animation.duration)}
+            style={{ marginHorizontal: -FIGMA.layout.containerPadding }}
+          >
+            <View style={{ paddingLeft: FIGMA.layout.containerPadding }}>
+              <BenefitsCarousel />
+            </View>
           </Animated.View>
 
         </View>
@@ -940,7 +842,7 @@ const styles = StyleSheet.create({
   // Contains label (HUG width) + description (FILL width)
   inviteTextBlock: {
     width: '100%',
-    alignItems: 'flex-start',
+    alignItems: 'center',
     justifyContent: 'center',
     gap: spacing.xxs, // 4px between label and description
   },
@@ -963,7 +865,7 @@ const styles = StyleSheet.create({
     fontSize: FIGMA.typography.value.fontSize,
     lineHeight: FIGMA.typography.value.lineHeight,
     color: FIGMA.colors.textValue,
-    textAlign: 'left',
+    textAlign: 'center',
     width: '100%',
   },
 
@@ -1063,26 +965,54 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
   },
 
-  // ============================================
-  // REJECTED STATE STYLES
-  // All values from Figma node 41-11410
-  // ============================================
-
-  // Actions container - node 41:11468, gap 16
-  rejectionActionsContainer: {
-    gap: spacing.md, // 16
+  // "Once you're in / keep these things handy" — Figma 4109:24272
+  stepsTitle: {
+    fontFamily: 'PlusJakartaSans-Regular',
+    fontSize: s(28),
+    lineHeight: s(40),
+    letterSpacing: -1,
+  },
+  stepsTitleGray: {
+    color: '#A9A9A9',
+  },
+  stepsTitleAccent: {
+    color: '#FF9A6D',
   },
 
-  // Countdown text - node 41:11470
-  // Figma: "Next applications open in 28:24:24"
-  // Color: #797979, fontSize 14, lineHeight 20
-  // fontWeight 400 -> PlusJakartaSans-Regular (no RN fontWeight)
-  countdownText: {
-    fontFamily: FIGMA.typography.value.fontFamily,
-    fontSize: FIGMA.typography.value.fontSize,
-    lineHeight: FIGMA.typography.value.lineHeight,
-    color: FIGMA.colors.textHint, // #797979
-    textAlign: 'center',
+  // 3-step indicator — matches TransactionProgressBar dot-line-dot pattern
+  stepsWrapper: {
+    alignSelf: 'stretch',
+    gap: 8,
+    paddingTop: 16,
+    paddingHorizontal: 8,
   },
-
+  stepsTrackRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  stepsDot: {
+    width: 11,
+    height: 11,
+    borderRadius: 4,
+    backgroundColor: '#202020', // Figma: fill #202020
+    borderWidth: 1,
+    borderColor: '#FF9A6D', // Figma: stroke #FF9A6D, INSIDE
+  },
+  stepsConnector: {
+    flex: 1,
+    height: 1,
+    backgroundColor: '#4D4D4D', // Figma: #4D4D4D connector
+  },
+  stepsLabelRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  stepLabel: {
+    fontFamily: 'PlusJakartaSans-Regular',
+    fontSize: 12,
+    lineHeight: 16.92,
+    letterSpacing: -0.24,
+    color: '#878787', // colours/neutral/600
+    flex: 1,
+  },
 });

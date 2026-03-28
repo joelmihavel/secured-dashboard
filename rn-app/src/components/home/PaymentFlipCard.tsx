@@ -61,6 +61,7 @@ export interface PaymentMonthData {
   missedCount?: number;
   /** Rent due day of month (e.g. 4 for 4th) — shown in upcoming stamp */
   rentDueDay?: number;
+  onAddPaymentMethod?: () => void;
   /** Unique index to cycle between 3D furniture assets */
   cardIndex?: number;
 }
@@ -332,7 +333,7 @@ export const PaymentFlipCard = memo(function PaymentFlipCard({ data }: PaymentFl
         </Animated.View>
       </View>
 
-      <View style={[styles.contentPadding, styles.backContent]} />
+
     </Animated.View>
   );
 
@@ -541,19 +542,7 @@ const styles = StyleSheet.create({
   backContent: {
     justifyContent: 'flex-start',
   },
-  backHeader: {
-    marginBottom: sv(40),
-  },
-  backTitle: {
-    color: '#BABABA',
-    fontSize: sf(16),
-    fontFamily: 'PlusJakartaSans-Regular',
-  },
-  backSubtitle: {
-    color: '#FF9A6D',
-    fontSize: sf(16),
-    fontFamily: 'PlusJakartaSans-Regular',
-  },
+
 
   // FURNITURE & PATTERN
   patternBackground: {

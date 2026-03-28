@@ -62,18 +62,19 @@ const SECTIONS: Section[] = [
     label: 'Home',
     icon: 'H',
     screens: [
-      { name: 'Home Dashboard', path: '/(main)', figmaNode: '243:2762' },
-      { name: 'Setup to Earn Cashback', path: '/(main)', params: { showSheet: 'cashback-setup' }, description: 'Verification check sheet modal' },
+      { name: 'Dashboard (Cashbacks tab)', path: '/(main)', figmaNode: '4109:65720', description: 'Default view — cashback graph, setup steps, earnings' },
+      { name: 'Complete Setup Sheet', path: '/(main)', params: { showSheet: 'cashback-setup' }, figmaNode: '4109:3882', description: 'Bottom sheet before payment when setup incomplete' },
     ],
   },
   {
     label: 'Payment',
     icon: 'P',
     screens: [
-      { name: 'Enter Rent', path: '/(payment)/enter-rent', description: 'Enter amount → select method → pay' },
-      { name: 'Payment Success', path: '/(payment)/status', params: { initialStatus: 'success' }, description: 'Receipt card with paid stamp' },
+      { name: 'Enter Rent', path: '/(payment)/enter-rent', description: 'Enter amount' },
+      { name: 'Confirm Payment', path: '/(payment)/confirm', description: 'Choose payment method → pay' },
+      { name: 'Rent Paid', path: '/(payment)/status', params: { initialStatus: 'success', source: 'receipt_view' }, description: 'Receipt with rent paid details' },
       { name: 'Payment Pending', path: '/(payment)/status', params: { initialStatus: 'pending' }, description: 'Processing state with polling' },
-      { name: 'Payment Failed', path: '/(payment)/status', params: { initialStatus: 'failed' }, description: 'Failed state with retry' },
+      { name: 'Payment Failed', path: '/(payment)/status', params: { initialStatus: 'failed' }, description: 'Failed state — first dot red' },
       { name: 'Payment Refunded', path: '/(payment)/status', params: { initialStatus: 'refunded' }, description: 'Refunded state' },
     ],
   },
@@ -81,7 +82,7 @@ const SECTIONS: Section[] = [
     label: 'Profile',
     icon: 'U',
     screens: [
-      { name: 'Profile Home', path: '/(profile)', figmaNode: '41:8760' },
+      { name: 'Profile', path: '/(profile)', figmaNode: '41:8760' },
       { name: 'Edit Profile', path: '/(profile)/edit' },
       { name: 'Agreement', path: '/(profile)/agreement' },
     ],
@@ -90,11 +91,9 @@ const SECTIONS: Section[] = [
     label: 'Setup',
     icon: 'S',
     screens: [
-      { name: 'Setup Dashboard', path: '/(setup)', figmaNode: '41:10712' },
-      { name: 'Add Bank', path: '/(setup)/add-bank' },
-      { name: 'Add Utility Bill', path: '/(setup)/add-utility' },
-      { name: 'Invite Landlord', path: '/(setup)/invite-landlord' },
-      { name: 'Pending Steps', path: '/(setup)/pending-steps' },
+      { name: 'Add Landlord Bank Details', path: '/(setup)/add-bank', description: 'Bank/UPI + PAN verification → dashboard' },
+      { name: 'Verify Your Address', path: '/(setup)/add-utility', description: 'Upload utility bill for address proof' },
+      { name: 'Invite Landlord', path: '/(setup)/invite-landlord', description: 'Send WhatsApp invite to landlord' },
     ],
   },
   {
@@ -102,7 +101,8 @@ const SECTIONS: Section[] = [
     icon: 'W',
     screens: [
       { name: 'Waitlist', path: '/(waitlist)', figmaNode: '41:11206' },
-      { name: 'Approved', path: '/(waitlist)/approved' },
+      { name: 'Approved', path: '/(waitlist)/approved', figmaNode: '41:11313' },
+      { name: 'Rejected', path: '/(waitlist)/rejected', figmaNode: '41:11410', description: 'Rejection with countdown timer' },
     ],
   },
   {
@@ -110,7 +110,6 @@ const SECTIONS: Section[] = [
     icon: 'D',
     screens: [
       { name: 'Upload Agreement', path: '/(agreement)/upload' },
-      { name: 'Review Agreement', path: '/(agreement)/review' },
     ],
   },
 ];

@@ -14,7 +14,9 @@ import { supabase } from '../supabase/client';
 export interface NotificationPreferences {
   payment_reminders: boolean;
   payment_confirmations: boolean;
-  cashback_alerts: boolean;
+  cashback_notifications: boolean;
+  landlord_updates: boolean;
+  verification_updates: boolean;
   promotional: boolean;
   push_enabled: boolean;
   whatsapp_enabled: boolean;
@@ -112,4 +114,17 @@ export async function updateNotificationPreferences(
 
   if (error) throw new Error(mapNotificationError(error.message));
   return data!;
+}
+
+/**
+ * Mark all notifications as read for the current user.
+ * Called on dashboard mount to clear unread count.
+ */
+export async function markAllNotificationsRead(): Promise<void> {
+  try {
+    const { callEdgeFunction } = await import('../supabase/client');
+    await callEdgeFunction('mark-notification-read', { notification_ids: [] }, true);
+  } catch {
+    // Best-effort — don't block the UI
+  }
 }

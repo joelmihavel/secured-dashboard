@@ -2,13 +2,15 @@
  * Notification copy templates for all trigger scenarios.
  *
  * Placeholders use `{key}` syntax — callers replace before sending.
- * Referenced by edge functions (server-side) and local notification helpers (client-side).
+ * Keep in sync with: supabase/functions/_shared/notification-templates.ts
  */
 
 export type NotificationType =
   | 'waitlist_approved'
   | 'waitlist_rejected'
   | 'rent_due'
+  | 'payment_success'
+  | 'payment_failed'
   | 'settlement_complete'
   | 'settlement_failed'
   | 'rent_due_tomorrow'
@@ -34,6 +36,14 @@ export const NOTIFICATION_TEMPLATES: Record<NotificationType, NotificationTempla
     title: "We couldn't approve your application",
     body: "Sorry, your current rental contract doesn't qualify our eligibility criteria.",
   },
+  payment_success: {
+    title: 'Rent paid, {name}',
+    body: '₹{amount} received. You saved ₹{cashback} with Flent.',
+  },
+  payment_failed: {
+    title: "Payment didn't go through",
+    body: '₹{amount} couldn\'t be processed. Tap to retry.',
+  },
   rent_due: {
     title: "Rent's coming up",
     body: '₹{amount} due on {date}. Pay early, earn cashback.',
@@ -48,7 +58,7 @@ export const NOTIFICATION_TEMPLATES: Record<NotificationType, NotificationTempla
   },
   rent_due_tomorrow: {
     title: "Tomorrow's the last day",
-    body: 'Pay ₹{amount} before it\'s overdue. Takes under a minute.',
+    body: "Pay ₹{amount} before it's overdue. Takes under a minute.",
   },
   rent_overdue: {
     title: 'Gentle reminder',
@@ -68,7 +78,7 @@ export const NOTIFICATION_TEMPLATES: Record<NotificationType, NotificationTempla
   },
   reminder_utility: {
     title: 'One step left — utility verification',
-    body: 'Add your electricity or water bill ID to complete setup. Takes 30 seconds.',
+    body: 'Add your electricity bill ID to complete setup. Takes 30 seconds.',
   },
   reminder_landlord_invite: {
     title: "Your landlord's waiting",

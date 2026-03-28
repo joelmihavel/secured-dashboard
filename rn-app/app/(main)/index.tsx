@@ -45,7 +45,7 @@
  */
 
 import React, { useCallback, useEffect, useState, useMemo, useRef } from 'react';
-import { View, StyleSheet, ScrollView, RefreshControl, ActivityIndicator, Linking } from 'react-native';
+import { View, StyleSheet, ScrollView, RefreshControl, ActivityIndicator, Linking, Alert } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -56,7 +56,6 @@ import { Screen, Text, Logo, PrimaryButton, DottedGridPattern } from '@/src/comp
 import {
   HomeHeader,
   HeadlineSection,
-  WarningBanner,
   StatusNotificationBanner,
   RentStatusCarousel,
   CarouselCardItem,
@@ -64,28 +63,25 @@ import {
   RecentPaymentsList,
   CashbacksList,
   BottomFooter,
-  HomeEmptyState,
   VerificationCheckSheet,
     EmptyPaymentsState,
-  CashbackEmptyState,
-
   SetupProgressCard,
   // Import types from home components
-  TabId,
   PaymentMethod,
   EmptyStateVariant,
   NotificationType,
+  CashbackModuleState,
+  VerificationStatusSheet,
 } from '@/src/components/home';
 
-// RecentPayment type from home components for the list props
-import type { RecentPayment } from '@/src/components/home/RecentPaymentsList';
-import type { CashbackEntry } from '@/src/components/home/CashbacksList';
+import type { CashbackEarningsEntry } from '@/src/components/home/CashbackEarningsCard';
+import type { SetupStep } from '@/src/components/home/CashbackSetupSteps';
 
 // Import hooks from useDashboard
 import { useDashboard, useRefreshDashboard } from '@/src/hooks/useDashboard';
 
 // Import DashboardState type and mapped types from dashboard service
-import type { DashboardState, MappedRecentPayment, MappedCashbackEntry, RawRecentPayment } from '@/src/services/api/dashboard';
+import type { DashboardState, MappedRecentPayment, MappedCashbackEntry, MappedTransaction, RawRecentPayment } from '@/src/services/api/dashboard';
 
 // Import payment stamps
 import { usePaymentStamps } from '@/src/hooks/usePayments';
@@ -95,7 +91,8 @@ import type { PaymentStampEntry } from '@/src/services/api/payments';
 // Import colors from theme
 import { colors, spacing, radius } from '@/src/theme';
 
-import { mapRecentPayments, deriveCashbackEntries, getDashboardState } from '@/src/services/api/dashboard';
+import { mapRecentPayments, mapTransactions, mapCashbackModule, deriveCashbackEntries, getDashboardState } from '@/src/services/api/dashboard';
+import type { MappedCashbackModule } from '@/src/services/api/dashboard';
 
 // ==============================================
 // MAIN COMPONENT
@@ -135,8 +132,22 @@ export default function HomeScreen() {
   const unreadCount = resolvedData?.unread_notification_count ?? 0;
   const paymentStamps = resolvedData?.payment_stamps ?? null;
 
+  // Mark all notifications as read when dashboard loads with unread count
+  useEffect(() => {
+    if (unreadCount > 0) {
+      import('@/src/services/api/notifications').then(({ markAllNotificationsRead }) => {
+        markAllNotificationsRead();
+      });
+    }
+  }, [unreadCount > 0]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const recentPayments = useMemo(
     () => mapRecentPayments(resolvedData?.recent_payments ?? []),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [resolvedData?.recent_payments]
+  );
+  const transactions = useMemo(
+    () => mapTransactions(resolvedData?.recent_payments ?? []),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [resolvedData?.recent_payments]
   );
@@ -146,10 +157,18 @@ export default function HomeScreen() {
     [resolvedData?.recent_payments, tenancy?.monthly_rent, cashback?.discount_rate]
   );
 
+  // Cashback module — single computed object with all CashbacksList props
+  const cashbackModule = useMemo(
+    () => mapCashbackModule(tenancy ?? null, cashback ?? null, resolvedData?.recent_payments ?? []),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [tenancy, cashback, resolvedData?.recent_payments]
+  );
+
   // Tab state for Recent Payments / Cashbacks
-  const [activeTab, setActiveTab] = useState<TabId>('recent_payments');
+  const [activeTab, setActiveTab] = useState<string>('cashbacks');
   const { showSheet } = useLocalSearchParams<{ showSheet?: string }>();
   const [showVerificationSheet, setShowVerificationSheet] = useState(showSheet === 'cashback-setup');
+  const [showStatusSheet, setShowStatusSheet] = useState(false);
 
   // Clear the URL param after consumption to prevent re-triggering on re-render
   useEffect(() => {
@@ -337,8 +356,28 @@ export default function HomeScreen() {
         });
       } else {
         // Not paid: past cutoff → missed, otherwise → upcoming
+        //
+        // Grace period logic for new users:
+        // - If user signed up in the same month as the upcoming payment AND has
+        //   no payment history → treat as 'upcoming' (they just joined, can't
+        //   have "missed" a month they weren't on the platform for)
+        // - From the NEXT month onwards, normal missed logic applies even with
+        //   zero payments — the user had a full month to pay and didn't
         const pastCutoff = upcomingPayment.past_cutoff ?? false;
-        const unpaidStatus: 'upcoming' | 'missed' = pastCutoff ? 'missed' : 'upcoming';
+        const hasAnyPayments = (resolvedData?.recent_payments?.length ?? 0) > 0;
+
+        let isGracePeriod = false;
+        if (!hasAnyPayments && pastCutoff) {
+          // Check if tenancy was created in the same month as this payment
+          const tenancyCreated = (tenancy as Record<string, unknown>)?.created_at as string | undefined;
+          if (tenancyCreated) {
+            const createdMonth = tenancyCreated.substring(0, 7); // "YYYY-MM"
+            const paymentMonth = upcomingPayment.rent_month.substring(0, 7);
+            isGracePeriod = createdMonth === paymentMonth;
+          }
+        }
+
+        const unpaidStatus: 'upcoming' | 'missed' = (pastCutoff && !isGracePeriod) ? 'missed' : 'upcoming';
 
         items.push({
           type: 'payment',
@@ -506,15 +545,14 @@ export default function HomeScreen() {
           } else if (!verificationStatus?.landlord_approved) {
             router.push({ pathname: '/(setup)/invite-landlord', params: { reentry: '1' } } as never);
           } else {
-            router.push('/(setup)/pending-steps' as never);
+            router.replace('/(main)' as never);
           }
         }, [router, verificationStatus]);
 
         const handleVerificationSkip = useCallback(() => {
           setShowVerificationSheet(false);
-          setVerificationSkippedStore(true);
-          setTimeout(() => router.push('/(payment)/enter-rent' as never), 300);
-        }, [setVerificationSkippedStore, router]);
+          router.replace('/(main)' as never);
+        }, [router]);
 
         const handleFinishSetup = useCallback(() => {
           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -526,7 +564,7 @@ export default function HomeScreen() {
           } else if (!verificationStatus?.landlord_approved) {
             router.push({ pathname: '/(setup)/invite-landlord', params: { reentry: '1' } } as never);
           } else {
-            router.push('/(setup)/pending-steps' as never);
+            router.replace('/(main)' as never);
           }
         }, [router, verificationStatus]);
 
@@ -589,7 +627,7 @@ export default function HomeScreen() {
     });
   }, [router]);
 
-  const handlePaymentPress = useCallback((payment: RecentPayment) => {
+  const handlePaymentPress = useCallback((payment: MappedRecentPayment) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     const statusMap: Record<string, string> = {
       paid: 'success',
@@ -615,35 +653,104 @@ export default function HomeScreen() {
     });
   }, [router, resolvedData?.recent_payments, tenancy]);
 
-  const handleCashbackEntryPress = useCallback((entry: CashbackEntry) => {
-    // Only navigate for entries with an associated payment
-    if (!entry.paymentId) return;
+  // Transaction card action handlers (new card UI — Figma 4109-67659)
+  const handleViewReceipt = useCallback((tx: MappedTransaction) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    const rawPayment = resolvedData?.recent_payments?.find((p: RawRecentPayment) => p.id === tx.id);
+    router.push({
+      pathname: '/(payment)/status' as never,
+      params: {
+        paymentId: tx.id,
+        initialStatus: 'success',
+        amount: String(tx.amount),
+        method: rawPayment?.payment_method ?? '',
+        cashback: String(rawPayment?.cashback_applied ?? rawPayment?.cashback_earned ?? 0),
+        transactionId: tx.id,
+        source: 'receipt_view',
+        landlordName: tenancy?.landlord_name ?? '',
+        agreementId: tenancy?.agreement_cert_id ?? '',
+      },
+    });
+  }, [router, resolvedData?.recent_payments, tenancy]);
 
-    const rawPayment = resolvedData?.recent_payments?.find((p: RawRecentPayment) => p.id === entry.paymentId);
+  const handleNeedHelp = useCallback(() => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    Linking.openURL('mailto:secured@flent.in').catch(() => {
+      Alert.alert('Contact Support', 'Email us at secured@flent.in');
+    });
+  }, []);
 
-    // Map cashback status → payment status screen
-    const statusMap: Record<string, string> = {
-      paid: 'success',
-      delayed: 'success',
-      pending: 'pending',
-      missed: 'failed',
-    };
+  const handleTryAgain = useCallback((tx: MappedTransaction) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    router.push({
+      pathname: '/(payment)/enter-rent' as never,
+      params: {
+        prefillAmount: String(tx.amount),
+      },
+    });
+  }, [router]);
+
+  const handleCashbackEntryPress = useCallback((entry: CashbackEarningsEntry) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    // entry.id is "cbe_{paymentId}" — strip prefix to find raw payment
+    const rawId = entry.id.replace(/^cbe_/, '');
+    const rawPayment = resolvedData?.recent_payments?.find((p: RawRecentPayment) => p.id === rawId);
+    if (!rawPayment) return;
 
     router.push({
       pathname: '/(payment)/status',
       params: {
-        paymentId: entry.paymentId,
-        amount: String(rawPayment?.amount ?? 0),
-        method: rawPayment?.payment_method ?? '',
-        initialStatus: statusMap[entry.status] ?? 'pending',
-        cashback: String(rawPayment?.cashback_applied ?? rawPayment?.cashback_earned ?? 0),
+        paymentId: rawId,
+        amount: String(rawPayment.amount ?? 0),
+        method: rawPayment.payment_method ?? '',
+        initialStatus: 'success', // All cashback entries come from successful payments
+        cashback: String(rawPayment.cashback_applied ?? rawPayment.cashback_earned ?? 0),
         source: 'receipt_view',
         landlordName: tenancy?.landlord_name ?? '',
         agreementId: tenancy?.agreement_cert_id ?? '',
       },
     } as never);
   }, [router, resolvedData?.recent_payments, tenancy]);
+
+  const handleCopyInviteLink = useCallback(async () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    const tenancyId = tenancy?.id;
+    if (!tenancyId) return;
+    const link = `flentsecured:///setup/invite-landlord?tenancyId=${tenancyId}`;
+    try {
+      const Clipboard = await import('expo-clipboard');
+      await Clipboard.setStringAsync(link);
+      Alert.alert('Copied!', 'Invite link copied to clipboard');
+    } catch {
+      Alert.alert('Invite Link', link);
+    }
+  }, [tenancy?.id]);
+
+  const handleSetupStepPress = useCallback((step: SetupStep) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    const routeMap: Record<string, string> = {
+      bank: '/(setup)/add-bank',
+      utility: '/(setup)/add-utility',
+      landlord: '/(setup)/invite-landlord',
+    };
+    const route = routeMap[step.id];
+    if (route) router.push(route as never);
+  }, [router]);
+
+  const handleLearnMore = useCallback(async () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    try {
+      await Linking.openURL('https://flent.in/secured/how-it-works');
+    } catch (e) {
+      console.warn('Failed to open URL:', e);
+    }
+  }, []);
+
+  const handleStatusPress = useCallback(() => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setShowStatusSheet(true);
+  }, []);
+
 
   // ==============================================
   // LOADING STATE
@@ -682,7 +789,7 @@ export default function HomeScreen() {
             Something went wrong
           </Text>
           <Text variant="bodyMd2" color="muted" align="center" style={styles.errorMessage}>
-            {error instanceof Error ? error.message : 'Unable to load your dashboard. Please try again.'}
+            {error instanceof Error ? error.message : 'Unable to load your dashboard. Please try again'}
           </Text>
           <PrimaryButton
             title="Retry"
@@ -733,7 +840,9 @@ export default function HomeScreen() {
             cashback,
             paymentMethods,
             recentPayments,
+            transactions,
             cashbackEntries,
+            cashbackModule,
             emptyStateVariant,
             carouselItems,
             daysUntilDue,
@@ -758,8 +867,15 @@ export default function HomeScreen() {
             onPaymentMethodPress: handlePaymentMethodPress,
             onPaymentMethodEdit: handlePaymentMethodEdit,
             onPaymentPress: handlePaymentPress,
+            onViewReceipt: handleViewReceipt,
+            onNeedHelp: handleNeedHelp,
+            onTryAgain: handleTryAgain,
             onCashbackEntryPress: handleCashbackEntryPress,
+            onCopyInviteLink: handleCopyInviteLink,
+            onSetupStepPress: handleSetupStepPress,
+            onLearnMore: handleLearnMore,
             onHowItWorks: handleHowItWorks,
+            onMemberStatusPress: handleStatusPress,
           })}
         </Animated.View>
       </ScrollView>
@@ -787,6 +903,12 @@ export default function HomeScreen() {
         utilityVerified={verificationStatus?.utility_verified ?? false}
         landlordApproved={verificationStatus?.landlord_approved ?? false}
       />
+
+      {/* Verification Status Sheet — shown when user taps pending/verified status */}
+      <VerificationStatusSheet
+        visible={showStatusSheet}
+        onClose={() => setShowStatusSheet(false)}
+      />
     </Screen>
   );
 }
@@ -801,7 +923,9 @@ interface ContentProps {
   cashback: ReturnType<typeof useDashboard>['cashback'];
   paymentMethods: PaymentMethod[];
   recentPayments: MappedRecentPayment[];
+  transactions: MappedTransaction[];
   cashbackEntries: MappedCashbackEntry[];
+  cashbackModule: MappedCashbackModule;
   emptyStateVariant: EmptyStateVariant;
   carouselItems: CarouselCardItem[];
   daysUntilDue: number | null;
@@ -811,12 +935,12 @@ interface ContentProps {
   isMissed: boolean;
   isMultipleOverdue: boolean;
   missedMonthName: string;
-  activeTab: TabId;
+  activeTab: string;
   cashbackBalance: number;
   allTimeCashback: number;
   cashbackRate: number;
   statusNotification: { type: NotificationType; message?: string } | null;
-  onTabChange: (tab: TabId) => void;
+  onTabChange: (tabId: string) => void;
   onAddPayment: () => void;
   onFinishSetup: () => void;
   onPayNow: () => void;
@@ -825,10 +949,22 @@ interface ContentProps {
   onContactSupport: () => void;
   onPaymentMethodPress: (method: PaymentMethod) => void;
   onPaymentMethodEdit: (method: PaymentMethod) => void;
-  onPaymentPress: (payment: RecentPayment) => void;
-  onCashbackEntryPress?: (entry: CashbackEntry) => void;
+  onPaymentPress: (payment: MappedRecentPayment) => void;
+  onViewReceipt: (transaction: MappedTransaction) => void;
+  onNeedHelp: () => void;
+  onTryAgain: (transaction: MappedTransaction) => void;
+  onCashbackEntryPress?: (entry: CashbackEarningsEntry) => void;
+  onCopyInviteLink?: () => void;
+  onSetupStepPress?: (step: SetupStep) => void;
+  onLearnMore?: () => void;
   onHowItWorks?: () => void;
+  onMemberStatusPress?: () => void;
 }
+
+const DASHBOARD_TABS = [
+  { id: 'cashbacks', label: 'Cashbacks' },
+  { id: 'recent_payments', label: 'Recent Payments' },
+];
 
 function renderDashboardContent(state: DashboardState, props: ContentProps) {
   const {
@@ -837,7 +973,9 @@ function renderDashboardContent(state: DashboardState, props: ContentProps) {
     cashback,
     paymentMethods,
     recentPayments,
+    transactions,
     cashbackEntries,
+    cashbackModule,
     emptyStateVariant,
     carouselItems,
     daysUntilDue,
@@ -862,8 +1000,15 @@ function renderDashboardContent(state: DashboardState, props: ContentProps) {
     onPaymentMethodPress,
     onPaymentMethodEdit,
     onPaymentPress,
+    onViewReceipt,
+    onNeedHelp,
+    onTryAgain,
     onCashbackEntryPress,
+    onCopyInviteLink,
+    onSetupStepPress,
+    onLearnMore,
     onHowItWorks,
+    onMemberStatusPress,
   } = props;
 
   switch (state) {
@@ -875,43 +1020,7 @@ function renderDashboardContent(state: DashboardState, props: ContentProps) {
       return null;
 
     case 'pending_verification': {
-      const verificationStatus = tenancy?.verification_status;
-
-      // Sub-case A: Zero transactions — render HomeEmptyState with flip card + divider + CTA
-      if (recentPayments.length === 0) {
-        return (
-          <View style={styles.contentContainer}>
-            <HomeEmptyState
-              variant={emptyStateVariant}
-              daysUntilDue={daysUntilDue ?? undefined}
-              carouselItems={carouselItems}
-              bankDetailsComplete={verificationStatus?.bank_verified ?? false}
-              addressProofComplete={verificationStatus?.utility_verified ?? false}
-              landlordInvited={verificationStatus?.landlord_approved ?? false}
-              paymentMethods={paymentMethods}
-              cashbackAccrued={cashback?.total_savings ?? 0}
-              cashbackAllTime={cashback?.total_savings ?? 0}
-              cashbackRate={cashbackRate}
-              onAddPayment={onAddPayment}
-              onFinishSetup={onFinishSetup}
-              onCtaPress={onHowItWorks}
-              onSendReminder={onSendReminder}
-              onContactSupport={onContactSupport}
-              onPaymentMethodPress={onPaymentMethodPress}
-              onPaymentMethodEdit={onPaymentMethodEdit}
-            />
-            {statusNotification ? (
-                <StatusNotificationBanner
-                  type={statusNotification.type}
-                  customMessage={statusNotification.message}
-                  onPress={onFinishSetup}
-                />
-            ) : null}
-          </View>
-        );
-      }
-
-      // Sub-case B: Has transactions — render active-style layout inline
+      // Same layout for zero and non-zero transactions: Headline + Carousel + Tabs
       const pvHeadlineVariant = alreadyPaid ? 'paid' : isOverdue ? 'overdue' : 'due';
       const pvDaysValue = alreadyPaid ? (daysUntilNextDue ?? 0) : isOverdue ? Math.abs(daysUntilDue ?? 0) : (daysUntilDue ?? 0);
 
@@ -923,47 +1032,29 @@ function renderDashboardContent(state: DashboardState, props: ContentProps) {
             daysOverdue={pvHeadlineVariant === 'overdue' ? pvDaysValue : undefined}
           />
           <RentStatusCarousel items={carouselItems} />
-          {statusNotification ? (
-              <StatusNotificationBanner
-                type={statusNotification.type}
-                customMessage={statusNotification.message}
-                onPress={onFinishSetup}
-              />
-          ) : null}
           <View style={styles.tabSection}>
-            <TabSwitcher activeTab={activeTab} onTabChange={onTabChange} />
+            <TabSwitcher tabs={DASHBOARD_TABS} activeTabId={activeTab} onTabChange={onTabChange} />
             {activeTab === 'recent_payments' ? (
-              <RecentPaymentsList
-                payments={recentPayments}
-                onPaymentPress={onPaymentPress}
-              />
-            ) : (
-              cashbackEntries.length > 0 ? (
-                <CashbacksList
-                  balance={cashbackBalance}
-                  allTimeTotal={allTimeCashback}
-                  cashbackRate={cashbackRate}
-                  entries={cashbackEntries}
-                  onEntryPress={onCashbackEntryPress}
+              transactions.length > 0 ? (
+                <RecentPaymentsList
+                  transactions={transactions}
+                  landlordName={tenancy?.landlord_name}
+                  onViewReceipt={onViewReceipt}
+                  onNeedHelp={onNeedHelp}
+                  onTryAgain={onTryAgain}
                 />
               ) : (
-                <CashbackEmptyState
-                  accruedAmount={cashbackBalance}
-                  allTimeTotal={allTimeCashback}
-                  cashbackRate={cashbackRate}
-                />
+                <EmptyPaymentsState />
               )
+            ) : (
+              <CashbacksList
+                {...cashbackModule}
+                onEntryPress={onCashbackEntryPress}
+                onStepPress={onSetupStepPress}
+                onMemberStatusPress={onMemberStatusPress}
+              />
             )}
           </View>
-          {/* Divider — Figma 684:9207 */}
-          <View style={styles.sectionDivider} />
-          <SetupProgressCard
-            bankDetailsComplete={verificationStatus?.bank_verified ?? false}
-            addressProofComplete={verificationStatus?.utility_verified ?? false}
-            landlordInvited={verificationStatus?.landlord_approved ?? false}
-            onPress={onFinishSetup}
-            onCtaPress={onHowItWorks}
-          />
         </View>
       );
     }
@@ -992,72 +1083,34 @@ function renderDashboardContent(state: DashboardState, props: ContentProps) {
               paddingLeft: 64, paddingRight: 32, gap: 16 -- DO NOT add parent padding */}
           <RentStatusCarousel items={carouselItems} />
 
-          {statusNotification ? (
-              <StatusNotificationBanner
-                type={statusNotification.type}
-                customMessage={statusNotification.message}
-              />
-          ) : null}
 
           {/* Tab Section (Frame 1686557297): wraps Toggle + payment list content */}
           <View style={styles.tabSection}>
-        <TabSwitcher activeTab={activeTab} onTabChange={onTabChange} />
+        <TabSwitcher tabs={DASHBOARD_TABS} activeTabId={activeTab} onTabChange={onTabChange} />
 
         {/* Tab Content - gap 48 separates toggle from content */}
         {activeTab === 'recent_payments' ? (
-          recentPayments.length > 0 ? (
+          transactions.length > 0 ? (
             <RecentPaymentsList
-              payments={recentPayments}
-              onPaymentPress={onPaymentPress}
+              transactions={transactions}
+              onViewReceipt={onViewReceipt}
+              onNeedHelp={onNeedHelp}
+              onTryAgain={onTryAgain}
             />
           ) : (
             <EmptyPaymentsState />
           )
         ) : (
-          cashbackEntries.length > 0 ? (
             <CashbacksList
-              balance={cashbackBalance}
-              allTimeTotal={allTimeCashback}
-              cashbackRate={cashbackRate}
-              entries={cashbackEntries}
+              {...cashbackModule}
               onEntryPress={onCashbackEntryPress}
+              onStepPress={onSetupStepPress}
+              onMemberStatusPress={onMemberStatusPress}
             />
-          ) : (
-            <CashbackEmptyState
-              accruedAmount={cashbackBalance}
-              allTimeTotal={allTimeCashback}
-              cashbackRate={cashbackRate}
-            />
-          )
         )}
       </View>
 
-          {/* Warning Banner — below tabs, only for overdue/missed active states */}
-          {(() => {
-            if (isMultipleOverdue) return <WarningBanner type="multiple" />;
-            if (isMissed) return <WarningBanner type="missed" />;
-            if (isOverdue) return <WarningBanner type="late" />;
-            return null;
-          })()}
 
-          {/* Setup Progress Card — shown until all 3 verifications complete */}
-          {(() => {
-            const vs = tenancy?.verification_status;
-            const setupComplete = vs?.bank_verified && vs?.utility_verified && vs?.landlord_approved;
-            if (setupComplete) return null;
-            return (
-              <>
-                <View style={styles.sectionDivider} />
-                <SetupProgressCard
-                  bankDetailsComplete={vs?.bank_verified ?? false}
-                  addressProofComplete={vs?.utility_verified ?? false}
-                  landlordInvited={vs?.landlord_approved ?? false}
-                  onPress={onFinishSetup}
-                  onCtaPress={onHowItWorks}
-                />
-              </>
-            );
-          })()}
         </View>
       );
 

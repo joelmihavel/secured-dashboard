@@ -92,7 +92,7 @@ const mutationCache = new MutationCache({
     reportFatalError({
       source: 'mutation_error',
       title: 'Something went wrong',
-      message: 'An operation failed unexpectedly.',
+      message: 'An operation failed unexpectedly',
       technicalMessage: errorMsg,
       originalError: error,
     });

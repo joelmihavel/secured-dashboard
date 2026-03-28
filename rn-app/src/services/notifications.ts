@@ -174,35 +174,6 @@ function sleep(ms: number): Promise<void> {
 }
 
 // ==============================================
-// ROUTE MAP
-// ==============================================
-
-/**
- * Route map: notification type -> screen route
- */
-export const NOTIFICATION_ROUTES: Record<string, string> = {
-  waitlist_approved: '/(waitlist)/approved',
-  waitlist_rejected: '/(waitlist)',
-  agreement_reviewed: '/(waitlist)',
-  payment_success: '/(payment)/status',
-  payment_failed: '/(payment)/status',
-  rent_due: '/(payment)/enter-rent',
-  rent_due_tomorrow: '/(payment)/enter-rent',
-  rent_overdue: '/(payment)/enter-rent',
-  settlement_complete: '/(main)',
-  settlement_failed: '/(main)',
-  landlord_approved: '/(setup)/pending-steps',
-  landlord_confirmed: '/(setup)/pending-steps',
-  landlord_rejected: '/(setup)/invite-landlord',
-  new_cashback: '/(main)',
-  rent_reminder: '/(payment)/enter-rent',
-  app_update: '/(main)',
-  reminder_utility: '/(setup)/add-utility',
-  reminder_landlord_invite: '/(setup)/invite-landlord',
-  reminder_agreement: '/(agreement)/upload',
-};
-
-// ==============================================
 // REGISTRATION
 // ==============================================
 
@@ -318,7 +289,9 @@ export function handleNotificationResponse(data: Record<string, unknown>): void 
   addBreadcrumb('Notification tapped', 'notifications', { route });
 
   try {
-    router.push({ pathname: route as never, params });
+    // Use navigate (not push) to avoid stale screens in back stack
+    // when notification changes the user's state (e.g., approved/rejected)
+    router.navigate({ pathname: route as never, params });
   } catch (err) {
     console.warn('[Notifications] Failed to navigate to:', route, err);
   }

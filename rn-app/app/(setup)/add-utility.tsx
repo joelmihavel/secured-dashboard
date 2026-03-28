@@ -229,7 +229,7 @@ export default function AddUtilityScreen() {
 
           {/* Title - Figma: gray="Verify" accent="your address" */}
           <View style={styles.titleContainer}>
-            <ScreenTitle gray="Verify" accent="utility bill" />
+            <ScreenTitle gray="Verify your" accent="address" />
           </View>
 
           {/* Description - Figma: 12px/20px PlusJakartaSans-Regular #A9A9A9 */}
@@ -387,9 +387,9 @@ const styles = StyleSheet.create({
   backButton: {
     marginBottom: 40,
   },
-  // Title container - Figma: sectionGap 48
+  // Title container - gap 16 to description (matching invite-landlord titleSection gap: 16)
   titleContainer: {
-    marginBottom: 48,
+    marginBottom: 16,
   },
   // Description - Figma: 12px/20px PlusJakartaSans-Regular #A9A9A9
   description: {

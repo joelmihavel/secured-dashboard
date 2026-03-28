@@ -22,7 +22,7 @@
  *       - Label: "Invite your landlord to Secured to finish setup."
  *         - 12/20, #A9A9A9, PlusJakartaSans-Medium
  *     - Button section (column, gap 16)
- *       - "Save & Invite" button -- disabled state, 297x56, #202020
+ *       - "Save and invite" button -- disabled state, 297x56, #202020
  *       - "Skip" text -- centered, 14/20, #FFFFFF, PlusJakartaSans-Medium, underline
  *
  * Backend: send-landlord-invite edge function (POST, auth required)
@@ -163,7 +163,7 @@ export default function InviteLandlordScreen() {
             if (reentry) {
               router.replace('/(main)' as never);
             } else {
-              router.push('/(setup)/pending-steps' as never);
+              router.replace('/(main)' as never);
             }
           }, 1500);
         },
@@ -180,12 +180,12 @@ export default function InviteLandlordScreen() {
     if (reentry) {
       router.replace('/(main)' as never);
     } else {
-      router.push('/(setup)/pending-steps' as never);
+      router.replace('/(main)' as never);
     }
   }, [router, reentry]);
 
   const handleLearnMore = useCallback(() => {
-    Linking.openURL('https://hiw-secured.flent.in/');
+    Linking.openURL('https://flent.in/secured/how-it-works');
   }, []);
 
   const cleaned = phoneNumber.replace(/\D/g, '');
@@ -254,15 +254,15 @@ export default function InviteLandlordScreen() {
             />
 
             <TouchableOpacity style={styles.inviteBanner} onPress={handleLearnMore}>
-              <Text style={styles.inviteBannerText}>How to invite your landlord?</Text>
-              <Text style={styles.inviteBannerLink}>Learn More</Text>
+              <Text style={styles.inviteBannerText}>What does my landlord get?</Text>
+              <Text style={styles.inviteBannerLink}>Learn more</Text>
             </TouchableOpacity>
           </View>
 
           {/* Button section -- Figma 1:34233: column, gap 16 */}
           <View style={styles.buttonSection}>
             <PrimaryButton
-              title="Save & Invite"
+              title="Save & invite"
               onPress={handleSubmit}
               disabled={!isFormValid}
               loading={sendLandlordInvite.isPending}

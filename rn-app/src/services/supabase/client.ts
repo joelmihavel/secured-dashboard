@@ -17,14 +17,14 @@ const SUPABASE_ANON_KEY = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
 if (!SUPABASE_URL) {
   throw new Error(
     'EXPO_PUBLIC_SUPABASE_URL is not set. ' +
-    'Please add it to your .env file. See .env.example for reference.'
+    'Please add it to your .env file. See .env.example for reference'
   );
 }
 
 if (!SUPABASE_ANON_KEY) {
   throw new Error(
     'EXPO_PUBLIC_SUPABASE_ANON_KEY is not set. ' +
-    'Please add it to your .env file. See .env.example for reference.'
+    'Please add it to your .env file. See .env.example for reference'
   );
 }
 
@@ -334,9 +334,9 @@ export async function callEdgeFunction<T = unknown>(
     });
     // Surface a user-friendly message instead of raw DOMException/TypeError
     const userMessage =
-      rawMessage.toLowerCase().includes('network') ? 'Network error. Please check your connection.' :
-      rawMessage.toLowerCase().includes('abort') ? 'Request was cancelled. Please try again.' :
-      isDomException ? `Something went wrong. Please try again. (${(error as DOMException).name})` :
+      rawMessage.toLowerCase().includes('network') ? 'Network error. Please check your connection' :
+      rawMessage.toLowerCase().includes('abort') ? 'Request was cancelled. Please try again' :
+      isDomException ? `Something went wrong. Please try again (${(error as DOMException).name})` :
       rawMessage;
     return {
       data: null,

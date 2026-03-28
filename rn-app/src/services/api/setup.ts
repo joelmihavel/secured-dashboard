@@ -17,6 +17,8 @@ import { callEdgeFunction } from '../supabase';
 import type {
   BankVerificationRequest,
   BankVerificationResponse,
+  UpiVerificationRequest,
+  UpiVerificationResponse,
   PanVerificationRequest,
   PanVerificationResponse,
   UtilityVerificationRequest,
@@ -48,6 +50,26 @@ interface RawVerifyBankResponse {
     verification_status: 'SUCCESS' | 'FAILURE' | 'PENDING';
     bank_name: string | null;
     branch: string | null;
+    message: string;
+    agreement_name_matched: boolean | null;
+    matched_landlord_name: string | null;
+    agreement_match_score: number | null;
+  };
+}
+
+/** Raw response from verify-upi-vpa edge function */
+interface RawVerifyUpiVpaResponse {
+  success: boolean;
+  data: {
+    bank_account_id: string;
+    verified: boolean;
+    upi_vpa: string;
+    verified_name: string | null;
+    name_match_score: number;
+    name_match_threshold: number;
+    verification_status: 'SUCCESS' | 'FAILURE' | 'PENDING';
+    bank_name: string | null;
+    ifsc: string | null;
     message: string;
     agreement_name_matched: boolean | null;
     matched_landlord_name: string | null;
@@ -165,6 +187,26 @@ function mapBankResponse(raw: RawVerifyBankResponse): BankVerificationResponse {
   };
 }
 
+function mapUpiVpaResponse(raw: RawVerifyUpiVpaResponse): UpiVerificationResponse {
+  const d = raw.data;
+  return {
+    success: raw.success,
+    bankAccountId: d.bank_account_id,
+    verified: d.verified,
+    upiVpa: d.upi_vpa,
+    verifiedName: d.verified_name,
+    nameMatchScore: d.name_match_score,
+    nameMatchThreshold: d.name_match_threshold,
+    verificationStatus: d.verification_status,
+    bankName: d.bank_name,
+    ifsc: d.ifsc,
+    message: d.message,
+    agreementNameMatched: d.agreement_name_matched ?? null,
+    matchedLandlordName: d.matched_landlord_name ?? null,
+    agreementMatchScore: d.agreement_match_score ?? null,
+  };
+}
+
 function mapUtilityResponse(raw: RawVerifyUtilityResponse): UtilityVerificationResponse {
   const d = raw.data;
   return {
@@ -223,10 +265,16 @@ function mapSetupError(errorMessage: string, errorBody?: Record<string, unknown>
         return { code: 'NOT_FOUND', message: (errorBody?.message as string) ?? errorMessage };
       case 'EMAIL_FAILED':
         return { code: 'EMAIL_FAILED', message: (errorBody?.message as string) ?? errorMessage };
+      case 'UPI_VPA_INVALID':
+        return { code: 'UPI_VPA_INVALID', message: (errorBody?.message as string) ?? "This UPI ID doesn't exist" };
+      case 'NAME_MISMATCH':
+        return { code: 'NAME_MISMATCH', message: (errorBody?.message as string) ?? errorMessage };
+      case 'SERVICE_UNAVAILABLE':
+        return { code: 'SERVICE_UNAVAILABLE', message: (errorBody?.message as string) ?? 'Verification service temporarily unavailable' };
       case 'IDEMPOTENCY_CONFLICT':
-        return { code: 'IDEMPOTENCY_CONFLICT', message: 'Please wait a moment and try again.' };
+        return { code: 'IDEMPOTENCY_CONFLICT', message: 'Please wait a moment and try again' };
       case 'RATE_LIMITED':
-        return { code: 'UNKNOWN_ERROR', message: 'Too many requests. Please wait a moment.' };
+        return { code: 'UNKNOWN_ERROR', message: 'Too many requests. Please wait a moment' };
       // Fall through for unknown structured codes — use string matching below
     }
   }
@@ -252,7 +300,7 @@ function mapSetupError(errorMessage: string, errorBody?: Record<string, unknown>
     return { code: 'EMAIL_FAILED', message: errorMessage };
   }
   if (lower.includes('currently being processed') || lower.includes('idempotency')) {
-    return { code: 'IDEMPOTENCY_CONFLICT', message: 'Please wait a moment and try again.' };
+    return { code: 'IDEMPOTENCY_CONFLICT', message: 'Please wait a moment and try again' };
   }
   if (lower.includes('not found')) {
     return { code: 'NOT_FOUND', message: errorMessage };
@@ -271,12 +319,12 @@ function mapSetupError(errorMessage: string, errorBody?: Record<string, unknown>
     lower.includes('x-signature') || lower.includes('x-client') ||
     lower.includes('http 5') || lower.includes('502') || lower.includes('503') || lower.includes('gateway')
   ) {
-    return { code: 'SERVICE_UNAVAILABLE', message: 'Verification service is temporarily unavailable. Please try again.' };
+    return { code: 'SERVICE_UNAVAILABLE', message: 'Verification service is temporarily unavailable. Please try again' };
   }
 
   // Mask any "unexpected error" responses from backend
   if (lower.includes('unexpected error')) {
-    return { code: 'UNKNOWN_ERROR', message: 'Something went wrong. Please try again.' };
+    return { code: 'UNKNOWN_ERROR', message: 'Something went wrong. Please try again' };
   }
 
   return { code: 'UNKNOWN_ERROR', message: errorMessage };
@@ -346,6 +394,63 @@ export async function verifyBank(
   }
 
   return { data: mapBankResponse(data), error: null };
+}
+
+/**
+ * Verify landlord's UPI VPA via Cashfree UPI Penny Drop.
+ *
+ * Edge function: POST /functions/v1/verify-upi-vpa
+ * Auth: Required (JWT)
+ * Request mapping: camelCase -> snake_case
+ * Response mapping: snake_case -> camelCase
+ * Timeout: 30s (UPI penny drop + Gemini name matching)
+ */
+export async function verifyUpiVpa(
+  request: UpiVerificationRequest
+): Promise<{ data: UpiVerificationResponse | null; error: SetupError | null }> {
+  const body = {
+    tenancy_id: request.tenancyId,
+    upi_vpa: request.upiVpa.toLowerCase().trim(),
+    party_type: request.partyType ?? 'landlord',
+  };
+
+  const { data, error, errorBody } = await callEdgeFunction<RawVerifyUpiVpaResponse>(
+    'verify-upi-vpa',
+    body,
+    true,   // requireAuth
+    'POST',
+    30_000  // 30s timeout for penny drop
+  );
+
+  if (error) {
+    const base = mapSetupError(error, errorBody);
+    const details = errorBody?.details as Record<string, unknown> | undefined;
+    const fields = (details?.fields ?? errorBody?.fields) as Record<string, string> | undefined;
+    // Extract found_name for name mismatch errors (full name, not truncated)
+    const foundName = (errorBody?.found_name as string) ?? undefined;
+    if (fields && typeof fields === 'object') {
+      const camel: Record<string, string> = {};
+      const map: Record<string, string> = {
+        upi_vpa: 'upiVpa',
+        pan_card: 'panCard',
+      };
+      for (const [key, value] of Object.entries(fields)) {
+        if (typeof value === 'string') {
+          camel[map[key] ?? key] = value;
+        }
+      }
+      if (Object.keys(camel).length > 0) {
+        return { data: null, error: { ...base, fields: camel, foundName } };
+      }
+    }
+    return { data: null, error: { ...base, foundName } };
+  }
+
+  if (!data?.success || !data.data) {
+    return { data: null, error: { code: 'VERIFICATION_FAILED', message: 'UPI verification failed' } };
+  }
+
+  return { data: mapUpiVpaResponse(data), error: null };
 }
 
 /**

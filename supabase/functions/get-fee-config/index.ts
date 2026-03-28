@@ -49,14 +49,20 @@ serve(async (req: Request) => {
 
     const supabase = createServiceClient();
 
-    // Read fee rates from fee_config table
+    // Parse gateway query param (default = 'default' i.e. PayU)
+    const url = new URL(req.url);
+    const requestedGateway = url.searchParams.get("gateway") ?? "default";
+
+    // Read fee rates from fee_config table filtered by gateway
     let feeRates: Record<string, FeeEntry> = { ...DEFAULT_RATES };
     let lastUpdated = new Date().toISOString();
+    let resolvedGateway = requestedGateway;
 
     const { data: rows, error: dbError } = await supabase
       .from("fee_config")
       .select("method, rate, fee_type, updated_at")
-      .eq("is_active", true);
+      .eq("is_active", true)
+      .eq("gateway", requestedGateway);
 
     if (dbError) {
       console.warn("[get-fee-config] DB query failed, using defaults:", dbError.message);
@@ -75,7 +81,37 @@ serve(async (req: Request) => {
       if (dates.length > 0) {
         lastUpdated = dates.sort().pop()!;
       }
+    } else if (requestedGateway !== "default") {
+      // No rows found for the requested gateway — fall back to 'default'
+      console.warn(`[get-fee-config] No rows for gateway '${requestedGateway}', falling back to 'default'`);
+      resolvedGateway = "default";
+
+      const { data: fallbackRows, error: fallbackError } = await supabase
+        .from("fee_config")
+        .select("method, rate, fee_type, updated_at")
+        .eq("is_active", true)
+        .eq("gateway", "default");
+
+      if (fallbackError) {
+        console.warn("[get-fee-config] Fallback DB query failed, using defaults:", fallbackError.message);
+      } else if (fallbackRows && fallbackRows.length > 0) {
+        for (const row of fallbackRows) {
+          feeRates[row.method] = {
+            rate: Number(row.rate),
+            fee_type: row.fee_type ?? 'percentage',
+          };
+        }
+        const dates = fallbackRows
+          .map((r: { updated_at?: string }) => r.updated_at)
+          .filter(Boolean) as string[];
+        if (dates.length > 0) {
+          lastUpdated = dates.sort().pop()!;
+        }
+      }
     }
+
+    // Determine fee billing model based on the resolved gateway
+    const feeBillingModel = resolvedGateway === "cashfree" ? "included" : "pg_billed";
 
     return jsonResponse({
       success: true,
@@ -86,6 +122,8 @@ serve(async (req: Request) => {
           debit_card: feeRates.debit_card ?? DEFAULT_RATES.debit_card,
           netbanking: feeRates.netbanking ?? DEFAULT_RATES.netbanking,
         },
+        fee_billing_model: feeBillingModel,
+        gateway: resolvedGateway,
         last_updated: lastUpdated.split("T")[0],
       },
     });

@@ -91,7 +91,8 @@ serve(async (req: Request) => {
       .select(`
         id, tenancy_id, user_id, status, rent_amount_paise,
         cashback_applied_paise, cashback_earned_paise,
-        pg_fee_paise, total_amount_paise, landlord_payout_paise,
+        pg_fee_paise, convenience_fee_paise, fee_billing_model,
+        total_amount_paise, landlord_payout_paise,
         landlord_payout_status, payu_txn_id, payu_mihpayid,
         payu_status, payu_settlement_status, payu_settlement_utr,
         payment_gateway, gateway_order_id, gateway_payment_id, gateway_status,
@@ -257,6 +258,8 @@ serve(async (req: Request) => {
         cashback_applied_paise: payment.cashback_applied_paise ?? 0,
         cashback_earned_paise: payment.cashback_earned_paise ?? 0,
         pg_fee_paise: payment.pg_fee_paise ?? 0,
+        convenience_fee_paise: payment.convenience_fee_paise ?? 0,
+        fee_billing_model: payment.fee_billing_model ?? "pg_billed",
         total_amount_paise: payment.total_amount_paise,
         landlord_payout_paise: payment.landlord_payout_paise,
         landlord_payout_status: payment.landlord_payout_status ?? null,

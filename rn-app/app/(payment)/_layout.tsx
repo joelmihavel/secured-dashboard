@@ -34,6 +34,12 @@ export default function PaymentLayout() {
         animationDuration: 200,
         contentStyle: { backgroundColor: colors.black[700] },
       }} />
+      <Stack.Screen name="success" options={{
+        presentation: 'card',
+        animation: 'fade',
+        animationDuration: 200,
+        contentStyle: { backgroundColor: colors.black[700] },
+      }} />
     </Stack>
   );
 }

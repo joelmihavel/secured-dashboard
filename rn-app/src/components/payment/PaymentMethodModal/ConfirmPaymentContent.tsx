@@ -24,7 +24,7 @@ import { Pill } from '@/src/components/ui/Pill';
 import { BgLine } from '@/src/components/ui/BgLine';
 import { useDashboard, useFeeRates } from '@/src/hooks';
 import { usePaymentStore } from '@/src/stores';
-import { getGatewayFeeRates, computeFee } from '@/src/services/payment';
+import { getGatewayFeeRates, getPaymentGateway, computeFee } from '@/src/services/payment';
 import type { FeeRateConfig, GatewayFeeRates } from '@/src/services/payment';
 import type { ConfirmPaymentContentProps, PaymentMethodType } from './types';
 import { colors } from '@/src/theme';
@@ -130,10 +130,6 @@ export function ConfirmPaymentContent({
   const maintenance = tenancy?.maintenance ?? 0;
   const totalRent = baseRent + maintenance;
 
-  const rates = feeRates ?? getGatewayFeeRates();
-  const feeConfig = getFeeConfig(rates, methodType);
-  const convenienceFee = computeFee(feeConfig, totalRent);
-
   const cashbackPct = cashback?.discount_rate ?? 0.01;
   const cashbackAmount = Math.round(totalRent * cashbackPct);
   const annualSavings = cashbackAmount * 12;
@@ -148,8 +144,19 @@ export function ConfirmPaymentContent({
     : 0;
   const earnedCashback = !isVerified ? cashbackAmount : 0;
 
-  // Fee NOT included — PayU charges it separately
-  const payableAmount = totalRent - appliedCashback;
+  // Fee computed on net rent (AFTER cashback) — matches backend formula
+  const netRent = totalRent - appliedCashback;
+  const rates = feeRates ?? getGatewayFeeRates();
+  const feeConfig = getFeeConfig(rates, methodType);
+  const convenienceFee = computeFee(feeConfig, netRent);
+
+  // Bank fees pill adds ~72px (pill 48 + gap 24) — shift notches & grid line down
+  const isCard = methodType === 'card';
+  const pillOffset = isCard ? 72 : 0;
+
+  // Convenience fee always shown in payable amount for both gateways
+  const gateway = getPaymentGateway();
+  const payableAmount = netRent + convenienceFee;
 
   const alreadyPaid = upcomingPayment?.already_paid ?? false;
   const daysUntilDue = upcomingPayment?.due_date
@@ -211,7 +218,7 @@ export function ConfirmPaymentContent({
 
         {/* ── Receipt Area with decorative grid lines ──────────────────── */}
         <View style={s.receiptContainer}>
-          <BgLine style={s.gridLines} />
+          <BgLine style={[s.gridLines, { top: 66 + pillOffset }]} />
 
           <View style={s.receiptCard}>
             {/* Section 1: Base rent + Maintenance — Figma 799:3401 */}
@@ -232,7 +239,7 @@ export function ConfirmPaymentContent({
             <View style={s.section2}>
               <View style={s.dividerLine} />
               <BreakdownRow
-                label="Convenience Fees"
+                label="Convenience fees"
                 value={convenienceFee === 0 ? 'Free' : `\u20B9 ${fmt(convenienceFee)}`}
               />
               {isVerified ? (
@@ -250,13 +257,13 @@ export function ConfirmPaymentContent({
               ) : null}
               <View style={s.dividerLine} />
               <BreakdownRow
-                label="Payable Amount"
+                label="Payable amount"
                 value={`\u20B9 ${fmt(payableAmount)}`}
                 isTotal
               />
 
-              {/* Bank fees pill — credit card only */}
-              {methodType === 'card' && (
+              {/* Bank fees pill — credit card only, PayU only (Cashfree bills fee ourselves) */}
+              {methodType === 'card' && gateway !== 'cashfree' && (
                 <View style={s.bankFeePill}>
                   <RNText style={s.bankFeePillText}>Additional bank fees upto 1% might apply</RNText>
                 </View>
@@ -264,9 +271,9 @@ export function ConfirmPaymentContent({
             </View>
 
 
-            {/* Side notches — Figma 799:3444, 799:3445 */}
-            <View style={[s.sideNotch, s.sideNotchLeft]} />
-            <View style={[s.sideNotch, s.sideNotchRight]} />
+            {/* Side notches — shift down when bank fees pill is visible */}
+            <View style={[s.sideNotch, s.sideNotchLeft, { top: 256 + pillOffset }]} />
+            <View style={[s.sideNotch, s.sideNotchRight, { top: 256 + pillOffset }]} />
           </View>
         </View>
 
@@ -280,7 +287,7 @@ export function ConfirmPaymentContent({
             showDivider
           />
           <RNText style={s.footerText}>
-            Settlement will be processed in less than 24 hours.
+            Settlement will be processed in less than 24 hours
           </RNText>
         </View>
       </ScrollView>
@@ -362,8 +369,10 @@ const s = StyleSheet.create({
   },
   gridLines: {
     position: 'absolute' as const,
-    top: 64,
-    left: 12,
+    alignSelf: 'center' as const,
+    width: 369,
+    height: 235,
+    zIndex: -1,
   },
   receiptCard: {
     width: 270,

@@ -56,6 +56,7 @@ async function getFeeConfigForMethod(method: string, supabase: any) {
     .from("fee_config")
     .select("rate, fee_type")
     .eq("method", method)
+    .eq("gateway", "cashfree")
     .eq("is_active", true)
     .maybeSingle();
   if (data) {
@@ -287,6 +288,8 @@ serve(async (req: Request) => {
           user_id: userId,
           rent_amount_paise: demoRentPaise,
           pg_fee_paise: 0,
+          convenience_fee_paise: 0,
+          fee_billing_model: 'included',
           cashback_applied_paise: 0,
           intended_cashback_paise: 0,
           total_amount_paise: demoRentPaise,
@@ -327,6 +330,8 @@ serve(async (req: Request) => {
           cashback_applied_paise: 0,
           total_amount_paise: demoRentPaise,
           landlord_payout_paise: demoRentPaise,
+          convenience_fee_paise: 0,
+          fee_billing_model: 'included',
           payment_method,
         },
       });
@@ -379,17 +384,20 @@ serve(async (req: Request) => {
 
     const feeRateKey = (payment_method === "card" && card_type) ? `${card_type}_card` : payment_method;
     const feeConfig = await getFeeConfigForMethod(feeRateKey, supabase);
-    const estimatedPgFeePaise = feeConfig.fee_type === 'flat_paise'
+    // Convenience fee: calculated on net rent (AFTER cashback deduction)
+    // This fee is included in the Cashfree order amount — tenant pays one combined amount
+    const convenienceFeePaise = feeConfig.fee_type === 'flat_paise'
       ? Math.round(feeConfig.rate)
       : Math.ceil(netRentPaise * feeConfig.rate);
 
-    const totalAmountPaise = netRentPaise;
+    // Cashfree: total includes rent + convenience fee (minus cashback)
+    const totalAmountPaise = netRentPaise + convenienceFeePaise;
     const landlordPayoutPaise = originalRentPaise;
 
     if (
       !Number.isFinite(originalRentPaise) || originalRentPaise <= 0 ||
       !Number.isFinite(netRentPaise) || netRentPaise < 0 ||
-      !Number.isFinite(estimatedPgFeePaise) || estimatedPgFeePaise < 0 ||
+      !Number.isFinite(convenienceFeePaise) || convenienceFeePaise < 0 ||
       !Number.isFinite(totalAmountPaise) || totalAmountPaise <= 0
     ) {
       throw new PaymentError("Internal error: invalid payment amount", "INVALID_AMOUNT");
@@ -406,7 +414,9 @@ serve(async (req: Request) => {
         user_id: userId,
         rent_amount_paise: originalRentPaise,
         pg_fee_paise: 0,
-        estimated_pg_fee_paise: estimatedPgFeePaise,
+        estimated_pg_fee_paise: convenienceFeePaise,
+        convenience_fee_paise: convenienceFeePaise,
+        fee_billing_model: 'included',
         cashback_applied_paise: cashbackDiscountPaise,
         cashback_earned_paise: cashbackEarnedPaise,
         accumulated_redeemed_paise: accumulatedRedeemed,
@@ -443,7 +453,8 @@ serve(async (req: Request) => {
     await audit.logSuccess(AuditActions.PAYMENT_INITIATED, "payment", "payment", payment.id, {
       original_rent_paise: originalRentPaise,
       net_rent_paise: netRentPaise,
-      estimated_pg_fee_paise: estimatedPgFeePaise,
+      estimated_pg_fee_paise: convenienceFeePaise,
+      convenience_fee_paise: convenienceFeePaise,
       cashback_discount_paise: cashbackDiscountPaise,
       cashback_earned_paise: cashbackEarnedPaise,
       accumulated_redeemed_paise: accumulatedRedeemed,
@@ -517,7 +528,9 @@ serve(async (req: Request) => {
       accumulated_redeemed_paise: accumulatedRedeemed,
       net_rent_paise: netRentPaise,
       pg_fee_paise: 0,
-      estimated_pg_fee_paise: estimatedPgFeePaise,
+      estimated_pg_fee_paise: convenienceFeePaise,
+      convenience_fee_paise: convenienceFeePaise,
+      fee_billing_model: 'included',
       landlord_payout_paise: landlordPayoutPaise,
       payment_method,
       cashback_discount: {

@@ -221,8 +221,8 @@ export default function ProfileScreen() {
             />
 
             <Text style={styles.titleBase}>
-              <Text inherit style={styles.titleMy}>{'My '}</Text>
-              <Text inherit style={styles.titleSpace}>{' '}</Text>
+              <Text inherit style={styles.titleMy}>{'My'}</Text>
+              {'\n'}
               <Text inherit style={styles.titleProfile}>{'Profile'}</Text>
             </Text>
           </Animated.View>
@@ -252,28 +252,9 @@ export default function ProfileScreen() {
                 </View>
               </TouchableOpacity>
 
-              {/* User details - read-only input fields */}
-              <View style={styles.userFieldsContainer}>
-                <TextInput
-                  label="Name"
-                  value={fullName}
-                  onChangeText={() => {}}
-                  disabled
-                />
-                {phoneDigits ? (
-                  <PhoneInput
-                    label="Phone Number"
-                    value={phoneDigits}
-                    onChangeText={() => {}}
-                    countryCode={phoneCountryCode}
-                    disabled
-                  />
-                ) : null}
-              </View>
-
               {/* View Agreement (41:8839) */}
               <MenuItem
-                title="View Agreement"
+                title="View agreement details"
                 onPress={handleViewAgreement}
                 testID="view-agreement-button"
               />
@@ -288,7 +269,7 @@ export default function ProfileScreen() {
               </Text>
               <View style={styles.cardContainer}>
                 <CardMenuItem
-                  title="Edit Landlord Bank Details"
+                  title="View bank details"
                   onPress={handleEditBankDetails}
                   testID="edit-bank-details-button"
                 />
@@ -303,13 +284,13 @@ export default function ProfileScreen() {
             </Text>
             <View style={styles.cardContainer}>
               <CardMenuItem
-                title="Contact Support"
+                title="Contact support"
                 onPress={handleContactSupport}
                 testID="contact-support-button"
               />
               <CardDivider />
               <CardMenuItem
-                title="Rate the App"
+                title="Rate the app"
                 onPress={handleRateApp}
                 testID="rate-app-button"
               />
@@ -323,25 +304,25 @@ export default function ProfileScreen() {
             </Text>
             <View style={styles.cardContainer}>
               <CardMenuItem
-                title="Terms & Conditions"
+                title="Terms & conditions"
                 onPress={() => Linking.openURL('https://www.flent.in/secured-tnc')}
                 testID="terms-conditions-button"
               />
               <CardDivider />
               <CardMenuItem
-                title="Privacy Policy"
+                title="Privacy policy"
                 onPress={() => Linking.openURL('https://www.flent.in/secured-privacy-policy')}
                 testID="privacy-policy-button"
               />
               <CardDivider />
               <CardMenuItem
-                title="Sign Out"
+                title="Sign out"
                 onPress={handleSignOut}
                 testID="sign-out-button"
               />
               <CardDivider />
               <CardMenuItem
-                title="Delete Account"
+                title="Delete account"
                 onPress={handleDeleteAccount}
                 testID="delete-account-button"
               />
@@ -451,8 +432,9 @@ const styles = StyleSheet.create({
   },
   // Divider inside card: #4D4D4D, 0.25 weight
   cardDivider: {
-    height: 0.25,
+    height: StyleSheet.hairlineWidth,
     backgroundColor: colors.black[400],
+    marginHorizontal: 16,
   },
   // User info row (41:8831): row, gap=16, padding 16/24, bg #202020, radius=12
   userInfoRow: {

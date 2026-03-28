@@ -297,7 +297,7 @@ const STATE_CONFIG = {
     buttonTitle: 'Upload again',
     buttonEnabled: true,
     // From 1-30178 - message appears OUTSIDE the card
-    errorMessage: 'The agreement is invalid or expired. Please upload a valid one.',
+    errorMessage: 'The agreement is invalid or expired. Please upload a valid one',
     showDivider: true, // Figma: divider pill above active button
     fileNameColor: FIGMA.colors.iconError, // Figma 1:30178: red filename
     showTrashIcon: true,
@@ -311,7 +311,7 @@ const STATE_CONFIG = {
     buttonTitle: 'Upload again',
     buttonEnabled: true,
     // From 1-30268 - message appears OUTSIDE the card
-    errorMessage: 'This file is too large. Maximum size is 10MB.',
+    errorMessage: 'This file is too large. Maximum size is 10MB',
     showDivider: true, // Figma: divider pill above active button
     fileNameColor: FIGMA.colors.iconError, // red filename
     showTrashIcon: true,
@@ -947,8 +947,7 @@ export default function UploadScreen() {
 
       // Brief pause at 100% before navigating
       await new Promise((resolve) => setTimeout(resolve, 300));
-      advanceJourneyStage(); // agreement_upload → agreement_review
-      advanceJourneyStage(); // agreement_review → waitlist
+      advanceJourneyStage(); // agreement_upload → setup
       router.replace('/(waitlist)' as never);
       return;
     }

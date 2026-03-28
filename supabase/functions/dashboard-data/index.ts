@@ -97,6 +97,8 @@ interface DashboardData {
     paid_at: string | null;
     cashback_earned: number;
     cashback_applied: number;
+    payment_method: string | null;
+    settlement_status: string | null;
   }>;
   notifications: Array<{
     id: string;
@@ -117,6 +119,8 @@ interface DashboardData {
     verified: boolean;
     pan_number_masked: string | null;
     pan_verified: boolean;
+    upi_vpa: string | null;
+    verification_method: string | null;
   } | null;
   unread_notification_count: number;
   payment_stamps: {
@@ -295,7 +299,7 @@ serve(async (req: Request) => {
       // 5. Recent payments (last 5)
       supabase
         .from("payments")
-        .select("id, rent_amount_paise, status, payment_month, paid_at, cashback_earned_paise, cashback_applied_paise, payment_method")
+        .select("id, rent_amount_paise, status, payment_month, paid_at, cashback_earned_paise, cashback_applied_paise, payment_method, landlord_payout_status")
         .eq("user_id", userId)
         .neq("status", "initiated")
         .order("created_at", { ascending: false })
@@ -317,7 +321,7 @@ serve(async (req: Request) => {
       // 8. Landlord bank account (for edit bank details)
       supabase
         .from("bank_accounts")
-        .select("id, account_holder_name, account_number_masked, ifsc_code, bank_name, verified, pan_number_masked, pan_verified")
+        .select("id, account_holder_name, account_number_masked, ifsc_code, bank_name, verified, pan_number_masked, pan_verified, upi_vpa, verification_method")
         .eq("user_id", userId)
         .eq("party_type", "landlord")
         .eq("is_primary", true)
@@ -433,6 +437,7 @@ serve(async (req: Request) => {
       cashback_earned: (p.cashback_earned_paise ?? 0) / 100,
       cashback_applied: (p.cashback_applied_paise ?? 0) / 100,
       payment_method: p.payment_method ?? null,
+      settlement_status: p.landlord_payout_status ?? null,
     }));
 
     // Format notifications

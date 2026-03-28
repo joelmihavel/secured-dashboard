@@ -186,17 +186,13 @@ const PaymentMethodRow = memo(({
         </View>
       </Pressable>
 
-      {/* Disabled banner below row */}
+      {/* Setup prompt pill below disabled credit card */}
       {isDisabled && method.disabledReason && (
-        <View style={styles.disabledBanner}>
-          <RNText style={styles.disabledBannerText}>
-            {method.disabledReason}
-          </RNText>
-          <Pressable onPress={() => Linking.openURL('https://flent.in/secured/how-it-works')}>
-            <RNText style={styles.learnMoreText}>Learn More</RNText>
-          </Pressable>
+        <View style={styles.disabledPillContainer}>
+          <RNText style={styles.disabledPillLabel}>{method.disabledReason}</RNText>
         </View>
       )}
+
     </View>
   );
 });
@@ -210,7 +206,7 @@ export function MethodSelectorContent({
   onProceed,
   isInitiating,
 }: MethodSelectorContentProps) {
-  const { tenancy } = useDashboard();
+  const { tenancy, cashback } = useDashboard();
   const storedAmount = usePaymentStore((state) => state.amount);
   const { data: dynamicRates } = useFeeRates();
 
@@ -218,11 +214,9 @@ export function MethodSelectorContent({
   const landlordApproved = tenancy?.verification_status?.landlord_approved ?? false;
   const utilityVerified = tenancy?.verification_status?.utility_verified ?? false;
   const creditCardDisabled = !landlordApproved || !utilityVerified;
-  const creditCardDisabledReason = !landlordApproved
-    ? 'Available after landlord accepts tenancy'
-    : !utilityVerified
-      ? 'Available after utility bill verification'
-      : undefined;
+  const creditCardDisabledReason = creditCardDisabled
+    ? 'Complete setup to pay with credit cards'
+    : undefined;
 
   const [selectedMethod, setSelectedMethod] = useState<string>('upi-1');
   const rentAmount = storedAmount || tenancy?.monthly_rent || 32500;
@@ -444,23 +438,26 @@ const styles = StyleSheet.create({
     lineHeight: 20,
     color: '#878787',
   },
-
-  // Disabled banner
-  disabledBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+  // Setup prompt pill — Figma 4109:65992
+  disabledPillContainer: {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    alignSelf: 'stretch' as const,
+    backgroundColor: '#202020',
+    borderRadius: 200, // Pill — matches dashboard announcement pill
+    paddingVertical: 8,
+    paddingHorizontal: 20,
     gap: 10,
-    marginTop: 8,
+    marginTop: 20,
   },
-  disabledBannerText: {
+  disabledPillLabel: {
     fontFamily: 'PlusJakartaSans-Regular',
     fontSize: 12,
     lineHeight: 20,
     color: '#FF9A6D',
     flex: 1,
   },
-  learnMoreText: {
+  disabledPillLink: {
     fontFamily: 'PlusJakartaSans-Regular',
     fontSize: 12,
     lineHeight: 20,

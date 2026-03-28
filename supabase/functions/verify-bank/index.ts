@@ -218,7 +218,8 @@ serve(async (req: Request) => {
       const maskedAccount = maskAccountNumber(account_number);
       const encryptedAccount = await encrypt(account_number);
 
-      const demoName = account_holder_name || "DEMO ACCOUNT";
+      // Simulate penny drop: use account_holder_name if provided, else a realistic demo name
+      const demoName = account_holder_name || "RISHABH AGNIHOTRI";
       const { data: demoBankAccount, error: demoErr } = await supabase
         .from("bank_accounts")
         .insert({
@@ -259,10 +260,15 @@ serve(async (req: Request) => {
           verified: true,
           account_number_masked: maskedAccount,
           ifsc_code: sanitizedIfsc,
-          verified_name: account_holder_name,
+          verified_name: demoName,
           name_match_score: 100,
+          name_match_threshold: 80,
           verification_status: "SUCCESS",
+          bank_name: "Demo Bank",
+          branch: null,
           agreement_name_matched: true,
+          matched_landlord_name: demoName,
+          agreement_match_score: 100,
           message: "Bank account verified successfully",
         },
       });

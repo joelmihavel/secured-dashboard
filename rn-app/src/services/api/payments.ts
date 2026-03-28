@@ -962,9 +962,9 @@ function mapPaymentError(errorMessage: string, errorBody?: Record<string, unknow
       case 'AUTH_ERROR':
         return { code: 'NOT_AUTHENTICATED', message: 'Please sign in to continue' };
       case 'RATE_LIMITED':
-        return { code: 'RATE_LIMITED', message: 'Too many requests. Please wait a moment.' };
+        return { code: 'RATE_LIMITED', message: 'Too many requests. Please wait a moment' };
       case 'IDEMPOTENCY_CONFLICT':
-        return { code: 'IDEMPOTENCY_CONFLICT', message: 'Please wait a moment and try again.' };
+        return { code: 'IDEMPOTENCY_CONFLICT', message: 'Please wait a moment and try again' };
       // Fall through for unknown structured codes — use string matching below
     }
   }
@@ -1538,11 +1538,11 @@ const _getPayuStoredCards = __DEV__
 export const getPayuStoredCards = _getPayuStoredCards;
 
 export function sanitizeErrorForUI(errorMessage: string): string {
-  if (!errorMessage) return 'Something went wrong. Please try again.';
+  if (!errorMessage) return 'Something went wrong. Please try again';
 
   for (const pattern of DB_INTERNAL_PATTERNS) {
     if (pattern.test(errorMessage)) {
-      return 'Something went wrong. Please try again.';
+      return 'Something went wrong. Please try again';
     }
   }
 

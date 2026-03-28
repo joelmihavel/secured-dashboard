@@ -21,7 +21,7 @@ export interface EmptyPaymentsStateProps {
 }
 
 function EmptyPaymentsStateComponent({
-  title = 'No Payments Yet',
+  title = 'No payments yet',
   description = 'Pay your rent before the due date; receipts will appear here.',
 }: EmptyPaymentsStateProps) {
   return (

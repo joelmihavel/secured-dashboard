@@ -265,6 +265,19 @@ export async function signOut(): Promise<{ success: boolean; error: string | nul
     deactivateJourneyMode();
   }
 
+  // Deactivate push token before signing out (H6: prevent ghost notifications)
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session?.user?.id) {
+      await supabase
+        .from('device_tokens')
+        .update({ is_active: false })
+        .eq('user_id', session.user.id);
+    }
+  } catch {
+    // Best-effort — don't block sign-out
+  }
+
   const result = await tryCatch(
     async () => {
       const { error } = await supabase.auth.signOut();
@@ -416,7 +429,7 @@ function mapAuthError(errorMessage: string): AuthError {
   const lowerMessage = errorMessage.toLowerCase();
 
   if (lowerMessage.includes('timed out') || lowerMessage.includes('aborted')) {
-    return { code: 'TIMEOUT', message: 'Request timed out. Please try again.' };
+    return { code: 'TIMEOUT', message: 'Request timed out. Please try again' };
   }
 
   if (lowerMessage.includes('already exists') || lowerMessage.includes('already registered')) {
@@ -428,7 +441,7 @@ function mapAuthError(errorMessage: string): AuthError {
   }
 
   if (lowerMessage.includes('rate') || lowerMessage.includes('too many') || lowerMessage.includes('exceeded')) {
-    return { code: 'RATE_LIMITED', message: 'Too many attempts. Please wait before trying again.' };
+    return { code: 'RATE_LIMITED', message: 'Too many attempts. Please wait before trying again' };
   }
 
   if ((lowerMessage.includes('invalid') && lowerMessage.includes('otp')) || lowerMessage.includes('wrong code') || lowerMessage.includes('token')) {
@@ -436,11 +449,11 @@ function mapAuthError(errorMessage: string): AuthError {
   }
 
   if (lowerMessage.includes('expired')) {
-    return { code: 'OTP_EXPIRED', message: 'This code has expired. Please request a new one.' };
+    return { code: 'OTP_EXPIRED', message: 'This code has expired. Please request a new one' };
   }
 
   if (lowerMessage.includes('max attempt') || lowerMessage.includes('too many attempts')) {
-    return { code: 'MAX_ATTEMPTS', message: 'Too many incorrect attempts. Please request a new code.' };
+    return { code: 'MAX_ATTEMPTS', message: 'Too many incorrect attempts. Please request a new code' };
   }
 
   if (lowerMessage.includes('network') || lowerMessage.includes('fetch')) {
@@ -448,11 +461,11 @@ function mapAuthError(errorMessage: string): AuthError {
   }
 
   if (lowerMessage.includes('already used') || lowerMessage.includes('already_used')) {
-    return { code: 'OTP_EXPIRED', message: 'This code has already been used. Request a new one.' };
+    return { code: 'OTP_EXPIRED', message: 'This code has already been used. Request a new one' };
   }
 
   if (lowerMessage.includes('already processed') || lowerMessage.includes('already_processed')) {
-    return { code: 'RATE_LIMITED', message: 'OTP already sent. Please check your SMS.' };
+    return { code: 'RATE_LIMITED', message: 'OTP already sent. Please check your SMS' };
   }
 
   return { code: 'UNKNOWN_ERROR', message: errorMessage };

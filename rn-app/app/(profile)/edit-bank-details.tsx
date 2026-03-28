@@ -1,39 +1,29 @@
 /**
- * Edit Bank Details Screen
+ * View Bank Details Screen
  *
- * Allows users to update their landlord's bank details after onboarding.
- * Reuses the same Cashfree penny drop + name matching verification pipeline.
- * PAN is frozen (read-only) — carried over on the backend.
- *
- * Flow:
- * 1. Pre-fills from dashboard landlordBank data
- * 2. User edits account holder name, account number (+ confirm), IFSC
- * 3. "Verify & Save" fires verify-bank with existing_bank_account_id
- * 4. Backend: safety reset → penny drop → insert new row → copy PAN → set bank_verified
- * 5. On success: fields lock, haptic, 1200ms delay, router.back()
+ * Displays the landlord's bank details (read-only).
+ * Original layout from onboarding edit screen, but all fields disabled.
+ * Users must contact support to make changes.
  */
 
-import React, { useCallback, useState } from 'react';
+import React, { useCallback } from 'react';
 import {
   View,
   StyleSheet,
   ScrollView,
   Platform,
-  TouchableOpacity,
+  Linking,
 } from 'react-native';
 import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
-import Svg, { Path } from 'react-native-svg';
 
-import { Screen, Text, TextInput, PrimaryButton, ScreenTitle, AlertBanner, BackButton } from '@/src/components';
+import { Screen, Text, TextInput, PrimaryButton, ScreenTitle, BackButton } from '@/src/components';
 import { DottedGridPattern } from '@/src/components/patterns';
-import { useDashboard, useVerifyBank, validateAccountNumber, validateIfscCode } from '@/src/hooks';
-import type { BankVerificationResponse, SetupError } from '@/src/types/setup';
+import { useDashboard } from '@/src/hooks';
 import { colors } from '@/src/theme';
 
-// Colors consistent with profile group screens
 const FIGMA_COLORS = {
   background: colors.black[700],
   white: colors.white,
@@ -43,139 +33,17 @@ const FIGMA_COLORS = {
 export default function EditBankDetailsScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { tenancy, landlordBank } = useDashboard();
-  const verifyBank = useVerifyBank();
-
-  // Form state — pre-filled from existing bank data
-  const [accountHolderName, setAccountHolderName] = useState(
-    landlordBank?.account_holder_name ?? ''
-  );
-  const [accountNumber, setAccountNumber] = useState(
-    landlordBank?.account_number_masked ?? ''
-  );
-  const [ifscCode, setIfscCode] = useState(landlordBank?.ifsc_code ?? '');
-  const [errors, setErrors] = useState<Record<string, string>>({});
-  const [apiError, setApiError] = useState<string | null>(null);
-
-  // Verification result
-  const [verificationResult, setVerificationResult] = useState<BankVerificationResponse | null>(null);
-  const bankVerified = verificationResult?.verified === true;
-
-  // Loading
-  const isLoading = verifyBank.isPending;
-
-  // Clear field errors on change
-  const handleAccountHolderNameChange = useCallback((text: string) => {
-    setAccountHolderName(text);
-    setErrors((prev) => { const { accountHolderName: _, ...rest } = prev; return rest; });
-    setApiError(null);
-  }, []);
-
-  const handleAccountNumberChange = useCallback((text: string) => {
-    setAccountNumber(text);
-    setErrors((prev) => { const { accountNumber: _, ...rest } = prev; return rest; });
-    setApiError(null);
-  }, []);
-
-  const handleIfscCodeChange = useCallback((text: string) => {
-    setIfscCode(text);
-    setErrors((prev) => { const { ifscCode: _, ...rest } = prev; return rest; });
-    setApiError(null);
-  }, []);
-
-  // Validation
-  const validateAllFields = useCallback((): boolean => {
-    const newErrors: Record<string, string> = {};
-    if (!accountHolderName.trim()) newErrors.accountHolderName = 'Required';
-    if (!accountNumber.trim()) {
-      newErrors.accountNumber = 'Required';
-    } else if (!validateAccountNumber(accountNumber)) {
-      newErrors.accountNumber = '9-18 digits required';
-    }
-    if (!ifscCode.trim()) {
-      newErrors.ifscCode = 'Required';
-    } else if (!validateIfscCode(ifscCode)) {
-      newErrors.ifscCode = 'Invalid IFSC format';
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  }, [accountHolderName, accountNumber, ifscCode]);
-
-  // Can save: all fields filled and not already verified
-  const canSave =
-    accountHolderName.length > 0 &&
-    accountNumber.length > 0 &&
-    ifscCode.length > 0 &&
-    !bankVerified;
-
-  // Submit handler
-  const handleSave = useCallback(() => {
-    if (!validateAllFields()) {
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-      return;
-    }
-
-    if (!tenancy?.id) {
-      setApiError('No active tenancy found.');
-      return;
-    }
-
-    if (!landlordBank?.id) {
-      setApiError('No existing bank account found.');
-      return;
-    }
-
-    setApiError(null);
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-
-    verifyBank.mutate(
-      {
-        tenancyId: tenancy.id,
-        accountNumber: accountNumber.replace(/\s/g, ''),
-        ifscCode: ifscCode.toUpperCase(),
-        accountHolderName: accountHolderName.trim(),
-        existingBankAccountId: landlordBank.id,
-      },
-      {
-        onSuccess: (data) => {
-          setVerificationResult(data);
-          if (data.verified) {
-            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-            setTimeout(() => router.back(), 1200);
-          } else {
-            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-            const bankError = data.message ||
-              (data.agreementNameMatched === false
-                ? `Account holder "${data.verifiedName ?? 'unknown'}" doesn't match any landlord in your agreement.`
-                : `Name mismatch: verified as "${data.verifiedName ?? 'unknown'}".`);
-            setErrors((prev) => ({
-              ...prev,
-              accountHolderName: bankError,
-            }));
-          }
-        },
-        onError: (error: SetupError) => {
-          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-          setApiError(error.message || 'Bank verification failed. Please try again.');
-          if (error.fields && typeof error.fields === 'object') {
-            setErrors((prev) => ({ ...prev, ...error.fields }));
-          }
-        },
-      }
-    );
-  }, [validateAllFields, tenancy?.id, landlordBank?.id, verifyBank, accountNumber, ifscCode, accountHolderName, router]);
+  const { landlordBank } = useDashboard();
 
   const handleBack = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     router.back();
   }, [router]);
 
-  // Field disabled states
-  const fieldsDisabled = isLoading || bankVerified;
-
-  // Per-field success indicator
-  const bankFieldSuccess = bankVerified ? 'Verified' : undefined;
+  const handleContactSupport = useCallback(() => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    Linking.openURL('mailto:secured@flent.in?subject=Edit%20Bank%20Details%20Request');
+  }, []);
 
   return (
     <Screen testID="edit-bank-details-screen" padded={false}>
@@ -203,69 +71,60 @@ export default function EditBankDetailsScreen() {
           />
 
           <View style={styles.titleContainer}>
-            <ScreenTitle gray="Edit your Landlord's " accent="Bank Details" />
+            <ScreenTitle gray="Your landlord's " accent="bank details" />
           </View>
 
-          {/* API Error Banner */}
-          {apiError && <AlertBanner type="error" message={apiError} />}
-
-          {/* Form */}
+          {/* Form — all fields read-only, adapts to bank vs UPI */}
           <View style={styles.formContainer}>
             <TextInput
-              label="Account Holder Name"
-              value={accountHolderName}
-              onChangeText={handleAccountHolderNameChange}
-              placeholder="e.g. John Smith"
-              error={errors.accountHolderName}
-              success={bankFieldSuccess}
-              disabled={fieldsDisabled}
-              autoCapitalize="words"
+              label="Account holder name"
+              value={landlordBank?.account_holder_name ?? ''}
+              onChangeText={() => {}}
+              disabled
             />
 
-            <TextInput
-              label="Account Number"
-              value={accountNumber}
-              onChangeText={handleAccountNumberChange}
-              placeholder="Enter account number"
-              error={errors.accountNumber}
-              success={bankFieldSuccess}
-              disabled={fieldsDisabled}
-              keyboardType="number-pad"
-            />
+            {landlordBank?.verification_method === 'upi' ? (
+              <TextInput
+                label="UPI ID"
+                value={landlordBank?.upi_vpa ?? ''}
+                onChangeText={() => {}}
+                disabled
+              />
+            ) : (
+              <>
+                <TextInput
+                  label="Account number"
+                  value={landlordBank?.account_number_masked ?? ''}
+                  onChangeText={() => {}}
+                  disabled
+                />
+
+                <TextInput
+                  label="IFSC code"
+                  value={landlordBank?.ifsc_code ?? ''}
+                  onChangeText={() => {}}
+                  disabled
+                />
+              </>
+            )}
 
             <TextInput
-              label="IFSC Code"
-              value={ifscCode}
-              onChangeText={handleIfscCodeChange}
-              placeholder="e.g. SBIN0002125"
-              error={errors.ifscCode}
-              success={bankFieldSuccess}
-              disabled={fieldsDisabled}
-              autoCapitalize="characters"
-            />
-
-            <TextInput
-              label="PAN Card"
+              label="PAN card"
               value={landlordBank?.pan_number_masked ?? ''}
               onChangeText={() => {}}
               disabled
-              success={landlordBank?.pan_verified ? 'Verified' : undefined}
             />
           </View>
 
-          {/* Button + Footer */}
+          {/* Contact Support */}
           <View style={styles.buttonSection}>
             <PrimaryButton
-              title="Verify & Save"
-              onPress={handleSave}
-              showDivider
-              loading={isLoading}
-              disabled={!canSave || isLoading}
-              testID="save-changes-button"
+              title="Contact support"
+              onPress={handleContactSupport}
             />
 
             <Text style={styles.footerText}>
-              Ensure these details are correct as rent payments will be credited to this account.
+              To update your landlord's bank details, please contact support.
             </Text>
           </View>
         </ScrollView>
@@ -290,7 +149,7 @@ const styles = StyleSheet.create({
   },
   buttonSection: {
     gap: 16,
-    marginTop: 16,
+    marginTop: 32,
     alignItems: 'center',
   },
   footerText: {
@@ -298,7 +157,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     lineHeight: 20,
     color: FIGMA_COLORS.footer,
-    textAlign: 'left',
-    alignSelf: 'flex-start',
+    textAlign: 'center',
   },
 });

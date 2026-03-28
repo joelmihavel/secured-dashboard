@@ -111,9 +111,9 @@ function AgreementUploadSectionComponent({
           size: asset.size || 0,
           status: 'error',
           progress: 0,
-          error: 'File is too large. Maximum size is 10MB.',
+          error: 'File is too large. Maximum size is 10MB',
         });
-        onUploadError?.('File is too large. Maximum size is 10MB.');
+        onUploadError?.('File is too large. Maximum size is 10MB');
         return;
       }
 
@@ -143,7 +143,7 @@ function AgreementUploadSectionComponent({
       <View style={styles.header}>
         <Text style={styles.title}>One More Step</Text>
         <Text style={styles.subtitle}>
-          Your rental agreement helps us confirm your eligibility and unlock your Secured benefits.
+          Your rental agreement helps us confirm your eligibility and unlock your Secured benefits
         </Text>
       </View>
 

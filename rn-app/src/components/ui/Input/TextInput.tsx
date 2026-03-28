@@ -75,6 +75,8 @@ export interface TextInputProps extends Omit<RNTextInputProps, 'style'> {
   value: string;
   onChangeText: (text: string) => void;
   error?: string;
+  /** Full-width detail text below the input (e.g. "Account holder: RAJESH KUMAR SHARMA") */
+  errorDetail?: string;
   success?: string;
   disabled?: boolean;
   variant?: 'dark' | 'light';
@@ -84,7 +86,7 @@ export interface TextInputProps extends Omit<RNTextInputProps, 'style'> {
 }
 
 const TextInputComponent = forwardRef<RNTextInput, TextInputProps>(
-  ({ label, value, onChangeText, error, success, disabled, placeholder, variant = 'dark', hintText, onHintPress, testID, ...props }, ref) => {
+  ({ label, value, onChangeText, error, errorDetail, success, disabled, placeholder, variant = 'dark', hintText, onHintPress, testID, ...props }, ref) => {
     const [isFocused, setIsFocused] = useState(false);
     const INPUT_COLORS = variant === 'light' ? INPUT_COLORS_LIGHT : INPUT_COLORS_DARK;
 
@@ -195,6 +197,12 @@ const TextInputComponent = forwardRef<RNTextInput, TextInputProps>(
           />
         </View>
 
+        {hasError && errorDetail ? (
+          <Text style={[styles.errorDetail, { color: INPUT_COLORS.textError }]}>
+            {errorDetail}
+          </Text>
+        ) : null}
+
       </View>
     );
   }
@@ -230,6 +238,13 @@ const styles = StyleSheet.create({
     lineHeight: 20,
     textAlign: 'right' as const,  // Figma: textAlignHorizontal: RIGHT
     // Color applied dynamically via dynamicStyles.inputError (#E5484D)
+  },
+  errorDetail: {
+    fontFamily: 'PlusJakartaSans-Regular',
+    fontSize: 12,
+    lineHeight: 16,
+    paddingHorizontal: 12,
+    marginTop: 6,
   },
   successText: {
     fontFamily: 'PlusJakartaSans-Regular',

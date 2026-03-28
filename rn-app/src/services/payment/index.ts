@@ -66,6 +66,10 @@ export interface UnifiedInitiateResult {
   cfOrderId?: string;
   totalAmountPaise: number;
   cashbackAppliedPaise: number;
+  /** Convenience fee included in totalAmountPaise (Cashfree only, 0 for PayU) */
+  convenienceFeePaise: number;
+  /** 'included' = fee in order amount (Cashfree), 'pg_billed' = PG charges separately (PayU) */
+  feeBillingModel: 'included' | 'pg_billed';
   demoMode?: boolean;
   /** True when backend sent a S2S UPI collect request — skip SDK, go to status polling */
   upiS2sCollect?: boolean;
@@ -151,12 +155,14 @@ function normalizeFeeRate(value: unknown): FeeRateConfig {
 }
 
 export async function fetchFeeConfig(): Promise<GatewayFeeRates> {
+  const gateway = getPaymentGateway();
   const { data, error, errorBody } = await callEdgeFunction<{
     success: boolean;
     data: {
       fee_rates: Record<string, unknown>;
+      fee_billing_model?: string;
     };
-  }>('get-fee-config', {}, true, 'GET');
+  }>('get-fee-config', { gateway }, true, 'GET');
 
   if (error || !data?.success || !data.data) {
     return PAYU_FEE_RATES; // Fallback to hardcoded defaults
@@ -214,6 +220,8 @@ export async function initiatePayment(params: {
       txn_id: string;
       total_amount_paise: number;
       cashback_applied_paise: number;
+      convenience_fee_paise?: number;
+      fee_billing_model?: string;
       payu?: Record<string, unknown>;
       cashfree?: { payment_session_id: string; cf_order_id: string };
     };
@@ -282,6 +290,8 @@ export async function initiatePayment(params: {
       cfOrderId: d.cashfree?.cf_order_id,
       totalAmountPaise: d.total_amount_paise,
       cashbackAppliedPaise: d.cashback_applied_paise,
+      convenienceFeePaise: d.convenience_fee_paise ?? 0,
+      feeBillingModel: (d.fee_billing_model as 'included' | 'pg_billed') ?? 'pg_billed',
       demoMode: raw.demo_mode === true,
       upiS2sCollect: raw.upi_s2s_collect === true,
     },

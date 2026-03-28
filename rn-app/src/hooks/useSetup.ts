@@ -12,6 +12,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useMemo } from 'react';
 import {
   verifyBank,
+  verifyUpiVpa,
   verifyPan,
   verifyUtility,
   getUtilityOperators,
@@ -23,6 +24,8 @@ import {
 import type {
   BankVerificationRequest,
   BankVerificationResponse,
+  UpiVerificationRequest,
+  UpiVerificationResponse,
   PanVerificationRequest,
   PanVerificationResponse,
   UtilityVerificationRequest,
@@ -77,6 +80,71 @@ export function useVerifyBank() {
     retryDelay: (attempt) => Math.min(2000 * 2 ** attempt, 8000),
     onSuccess: (_data, _variables) => {
       // Optimistic update: mark bank as verified in cached dashboard data
+      queryClient.setQueryData(
+        dashboardKeys.data(),
+        (prev: DashboardData | undefined) => {
+          if (!prev?.tenancy) return prev;
+          const vs = { ...prev.tenancy.verification_status, bank_verified: true };
+          const allDone = vs.bank_verified && vs.utility_verified && vs.landlord_approved;
+          return {
+            ...prev,
+            tenancy: { ...prev.tenancy, verification_status: vs },
+            cashback: { ...prev.cashback, verification_complete: allDone },
+          };
+        }
+      );
+      queryClient.invalidateQueries({ queryKey: dashboardKeys.all });
+    },
+    meta: { suppressGlobalError: true },
+  });
+}
+
+// ==============================================
+// UPI VPA VERIFICATION
+// ==============================================
+
+/**
+ * Validate UPI VPA format.
+ * Pattern: username@bankhandle, 5-50 chars, one @ exactly.
+ */
+export function validateUpiVpa(vpa: string): { valid: boolean; message?: string } {
+  const trimmed = vpa.trim();
+  if (trimmed.length < 5 || trimmed.length > 50) {
+    return { valid: false, message: 'UPI ID must be 5-50 characters' };
+  }
+  const atCount = (trimmed.match(/@/g) || []).length;
+  if (atCount !== 1) {
+    return { valid: false, message: 'Invalid UPI ID format' };
+  }
+  if (!/^[a-zA-Z0-9._-]+@[a-zA-Z0-9]+$/.test(trimmed)) {
+    return { valid: false, message: 'Invalid UPI ID format' };
+  }
+  return { valid: true };
+}
+
+/**
+ * Hook for UPI VPA verification via Cashfree UPI Penny Drop.
+ *
+ * Usage:
+ *   const verifyUpi = useVerifyUpiVpa();
+ *   verifyUpi.mutate(request, { onSuccess, onError });
+ */
+export function useVerifyUpiVpa() {
+  const queryClient = useQueryClient();
+
+  return useMutation<UpiVerificationResponse, SetupError, UpiVerificationRequest>({
+    mutationFn: async (request) => {
+      const { data, error } = await verifyUpiVpa(request);
+      if (error) throw error;
+      if (!data) throw { code: 'UNKNOWN_ERROR', message: 'No response data' } as SetupError;
+      return data;
+    },
+    retry: (failureCount, error) => {
+      if (error?.code === 'IDEMPOTENCY_CONFLICT' && failureCount < 2) return true;
+      return false;
+    },
+    retryDelay: (attempt) => Math.min(2000 * 2 ** attempt, 8000),
+    onSuccess: (_data, _variables) => {
       queryClient.setQueryData(
         dashboardKeys.data(),
         (prev: DashboardData | undefined) => {

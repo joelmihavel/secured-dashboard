@@ -97,27 +97,6 @@ export function getJourneyResponse(
     }
   }
 
-  // ── Stage: agreement_review ──
-  if (stage === 'agreement_review') {
-    if (baseName === 'confirm-extraction') {
-      advanceJourneyStage(); // review → waitlist
-      return {
-        extraction_id: JOURNEY_EXTRACTION_ID,
-        confirmed_role: 'tenant',
-        contract_status: 'confirmed',
-        tenancy_id: JOURNEY_TENANCY_ID,
-        user_status: 'waitlisted',
-      };
-    }
-    if (baseName === 'update-extraction') {
-      return {
-        extraction_id: JOURNEY_EXTRACTION_ID,
-        modified_fields: [],
-        success: true,
-      };
-    }
-  }
-
   // ── Stage: setup ──
   if (stage === 'setup') {
     if (baseName === 'get-waitlist-status') {

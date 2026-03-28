@@ -37,6 +37,7 @@ export const SCREEN_STATE_MAP: Record<string, ScreenSeedConfig> = {
   // Waitlist
   '/(waitlist)':          { targetState: 'waitlisted' },
   '/(waitlist)/approved': { targetState: 'approved' },
+  '/(waitlist)/rejected': { targetState: 'waitlisted_rejected' },
 
   // Setup
   '/(setup)':                { targetState: 'approved' },
