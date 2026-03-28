@@ -420,8 +420,8 @@ const styles = StyleSheet.create({
     marginVertical: 0,
   },
   settlementInfoBox: {
-    marginTop: sv(17), // Figma: 23px itemSpacing minus 6px gap increase (gap changed 10→16)
-    marginBottom: sv(19), // Figma: 19px from box bottom (y=686) to card bottom (y=705)
+    marginTop: sv(7), // Figma: 23px group gap = parent gap(16) + this(7)
+    marginBottom: sv(-5), // Figma: 19px to card bottom, card padding is 24px → 24-5=19
     backgroundColor: '#1A1A1A',
     borderRadius: 8,
     paddingVertical: sv(8),
@@ -439,7 +439,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: s(16),
     gap: sv(16),
     alignItems: 'center',
-    marginTop: sv(40),
+    marginTop: sv(33), // Figma: 921 - 888(card bottom) = 33px
     paddingBottom: sv(48),
   },
   contactSupportText: {
