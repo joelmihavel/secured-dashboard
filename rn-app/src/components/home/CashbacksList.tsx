@@ -130,7 +130,6 @@ function CashbacksListComponent({
             </Text>
             <CashbackSetupSteps
               steps={setupSteps}
-              layout="horizontal"
               onStepPress={onStepPress}
             />
 

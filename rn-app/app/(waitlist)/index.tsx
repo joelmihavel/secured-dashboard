@@ -18,7 +18,7 @@
  */
 
 import React, { useEffect, useState, useRef } from 'react';
-import { View, ScrollView, StyleSheet, RefreshControl, Text as RNText, TouchableOpacity, Linking } from 'react-native';
+import { View, ScrollView, StyleSheet, RefreshControl, Text as RNText, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -32,7 +32,6 @@ import {
   ApplicationTimeline,
   ReferralCodeInput,
   ProgressArc,
-  BenefitsCard,
   BenefitsCarousel,
   DottedGridPattern,
   SkeletonLoader,
@@ -261,7 +260,6 @@ export default function WaitlistScreen() {
     isReferralComplete,
     referralApplied,
     referralError,
-    countdownText,
     isLoading,
     isRefetching,
     error,
@@ -287,6 +285,10 @@ export default function WaitlistScreen() {
     router.replace('/(agreement)/upload' as never);
   }, [router]);
 
+  const navigateToRejected = React.useCallback(() => {
+    router.replace('/(waitlist)/rejected');
+  }, [router]);
+
   // Redirect to approved screen when approved
   useEffect(() => {
     if (viewState === 'approved' && !isNavigating) {
@@ -298,6 +300,18 @@ export default function WaitlistScreen() {
       });
     }
   }, [viewState, navigateToApproved, isNavigating, transitionOpacity]);
+
+  // Redirect to rejected screen when rejected
+  useEffect(() => {
+    if (viewState === 'rejected' && !isNavigating) {
+      setIsNavigating(true);
+      transitionOpacity.value = withTiming(1, { duration: 300 }, (finished) => {
+        if (finished) {
+          runOnJS(navigateToRejected)();
+        }
+      });
+    }
+  }, [viewState, navigateToRejected, isNavigating, transitionOpacity]);
 
   useEffect(() => {
     if (!status?.requiresReupload || isNavigating) {
@@ -459,157 +473,6 @@ export default function WaitlistScreen() {
             />
           </Animated.View>
         </View>
-      </View>
-    );
-  }
-
-  // ============================================
-  // REJECTED STATE
-  // Figma: 41-11410 "Onboarding / Waitlist Screen -- Rejected"
-  // ============================================
-  if (viewState === 'rejected') {
-    // Figma 41:11410 statically shows 3 reasons
-    const rejectionReasons = [
-      "You're renting outside Bangalore",
-      "You did not use an invite code.",
-      "You rent agreement didn't qualify.",
-    ];
-    const canReapply = countdownText === '';
-
-    // Timeline for rejected state
-    // From Figma nodes 41:11430-41:11444
-    const rejectedTimelineItems: TimelineItemData[] = [
-      {
-        label: 'Application Sent',
-        value: `Submitted on ${submissionDate}`,
-        status: 'complete',
-      },
-      {
-        label: 'In Review',
-        value: reviewTime,
-        status: 'complete',
-      },
-      {
-        label: 'Account Status',
-        value: 'Rejected',
-        status: 'rejected',
-      },
-    ];
-
-    return (
-      <View style={styles.screen}>
-        <DottedGridPattern fadeMask={false} />
-
-      <ScrollView
-        ref={scrollViewRef}
-        style={styles.scrollView}
-        contentContainerStyle={[
-          styles.scrollContent,
-          {
-            paddingTop: insets.top + spacing.huge,
-            paddingBottom: insets.bottom + s(32), // Using 32px to match Figma typical bottom spacing
-          },
-        ]}
-        showsVerticalScrollIndicator={false}
-        onScroll={handleScroll}
-        scrollEventThrottle={16}
-        refreshControl={
-          <RefreshControl refreshing={isRefetching} onRefresh={refresh} tintColor="#FF9A6D" />
-        }
-      >
-          {/* All content - single wrapper with gap 40 matching Figma */}
-          <View style={styles.contentWrapper}>
-            {/* Header Section */}
-            <Animated.View
-              entering={FadeInDown.delay(FIGMA.animation.stagger).duration(FIGMA.animation.duration)}
-              style={styles.headerSection}
-            >
-              <View style={styles.logoContainer}>
-                <Logo size={38} color={FIGMA.colors.textPrimary} />
-              </View>
-
-              {/* Text Block - Figma node 41:11421 */}
-              <View style={styles.textBlock}>
-                {/* Title: "We can't approve you right now" */}
-                {/* Figma: #FFFFFF base, "right now" in orange #FF9A6D */}
-                <Text style={styles.titleBase}>
-                  <RNText style={{ color: FIGMA.colors.textPrimary }}>We can't approve you </RNText>
-                  <RNText style={styles.titleAccent}>right now</RNText>
-                </Text>
-
-                {/* Subtitle: "We're opening access in batches. Stay tuned." */}
-                {/* Figma: #A6A6A6, fontSize 14, lineHeight 20 */}
-                <Text style={styles.subtitle}>
-                  We're opening access in batches. Stay tuned.
-                </Text>
-              </View>
-            </Animated.View>
-
-            {/* Timeline Card - same structure as pending */}
-            {/* Figma node 41:11424: fill=#202020, radius=12, padding 24/16, gap 24 */}
-            <Animated.View
-              entering={FadeInDown.delay(FIGMA.animation.stagger * 2).duration(FIGMA.animation.duration)}
-              style={styles.timelineCard}
-            >
-              <ApplicationTimeline items={rejectedTimelineItems} />
-            </Animated.View>
-
-            {/* Rejection Reasons Card */}
-            {/* Figma node 160:3051: fill=#202020, radius=12, padding 32/24, gap 24 */}
-            <Animated.View
-              entering={FadeInDown.delay(FIGMA.animation.stagger * 3).duration(FIGMA.animation.duration)}
-            >
-              <BenefitsCard variant="rejected" />
-            </Animated.View>
-
-            {/* Contact Support + Countdown */}
-            {/* Figma node 41:11468: gap 16 */}
-            <Animated.View
-              entering={FadeInDown.delay(FIGMA.animation.stagger * 4).duration(FIGMA.animation.duration)}
-              style={styles.rejectionActionsContainer}
-            >
-              <PrimaryButton
-                title="Contact support"
-                onPress={() => Linking.openURL('mailto:secured@flent.in')}
-              />
-
-              {/* Countdown text */}
-              {/* Figma node 41:11470 */}
-              {!canReapply && (
-                <Text style={styles.countdownText}>
-                  You can try again in next batch, applications open in {countdownText}
-                </Text>
-              )}
-            </Animated.View>
-
-          </View>
-        </ScrollView>
-
-        {/* Scroll Down Indicator */}
-        {!isScrolledToBottom && !isNavigating && (
-          <TouchableOpacity
-            onPress={scrollToBottom}
-            activeOpacity={0.7}
-            style={styles.scrollIndicatorContainer}
-          >
-            <Animated.View
-              entering={FadeIn.duration(300)}
-              exiting={FadeOut.duration(300)}
-              style={animatedStyle}
-            >
-              <Ionicons name="chevron-down" size={32} color="#FF9A6D" />
-            </Animated.View>
-          </TouchableOpacity>
-        )}
-
-      {/* Transition Overlay */}
-      <Animated.View
-        style={[
-          StyleSheet.absoluteFill,
-          { backgroundColor: '#131313', pointerEvents: 'none', zIndex: 999 },
-          transitionAnimatedStyle
-        ]}
-      />
       </View>
     );
   }
@@ -1100,25 +963,6 @@ const styles = StyleSheet.create({
   retryButtonContainer: {
     width: FIGMA.layout.contentWidth,
     alignSelf: 'center',
-  },
-
-  // ============================================
-  // REJECTED STATE STYLES
-  // All values from Figma node 41-11410
-  // ============================================
-
-  // Actions container - node 41:11468, gap 16
-  rejectionActionsContainer: {
-    gap: spacing.md, // 16
-  },
-
-  // Countdown text - node 41:11470
-  countdownText: {
-    fontFamily: FIGMA.typography.value.fontFamily,
-    fontSize: FIGMA.typography.value.fontSize,
-    lineHeight: FIGMA.typography.value.lineHeight,
-    color: FIGMA.colors.textHint,
-    textAlign: 'center',
   },
 
   // "Once you're in / keep these things handy" — Figma 4109:24272

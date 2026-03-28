@@ -129,16 +129,8 @@ serve(async (req: Request) => {
 
     const backgroundWork = (async () => {
       try {
-        await notifyUser(supabaseUrl, serviceKey, {
-          user_id: tenancy.user_id,
-          notification_type: "landlord_confirmed" as any,
-          template_vars: {
-            landlord_name: landlordUser.full_name ?? tenancy.landlord_name ?? "Your landlord",
-          },
-          priority: "high",
-          related_entity_type: "tenancy",
-          related_entity_id: tenancy.id,
-        });
+        // Notification to tenant is handled by landlord-confirm/index.ts
+        // to prevent duplicate push notifications (M8 fix)
 
         await audit!.logSuccess(
           AuditActions.LANDLORD_OTP_VERIFIED,

@@ -94,7 +94,6 @@ const SECTIONS: Section[] = [
       { name: 'Add Landlord Bank Details', path: '/(setup)/add-bank', description: 'Bank/UPI + PAN verification → dashboard' },
       { name: 'Verify Your Address', path: '/(setup)/add-utility', description: 'Upload utility bill for address proof' },
       { name: 'Invite Landlord', path: '/(setup)/invite-landlord', description: 'Send WhatsApp invite to landlord' },
-      { name: 'Pending Steps', path: '/(setup)/pending-steps', description: 'Overview of remaining verification steps' },
     ],
   },
   {
@@ -102,7 +101,8 @@ const SECTIONS: Section[] = [
     icon: 'W',
     screens: [
       { name: 'Waitlist', path: '/(waitlist)', figmaNode: '41:11206' },
-      { name: 'Approved', path: '/(waitlist)/approved' },
+      { name: 'Approved', path: '/(waitlist)/approved', figmaNode: '41:11313' },
+      { name: 'Rejected', path: '/(waitlist)/rejected', figmaNode: '41:11410', description: 'Rejection with countdown timer' },
     ],
   },
   {
@@ -110,7 +110,6 @@ const SECTIONS: Section[] = [
     icon: 'D',
     screens: [
       { name: 'Upload Agreement', path: '/(agreement)/upload' },
-      { name: 'Review Agreement', path: '/(agreement)/review' },
     ],
   },
 ];

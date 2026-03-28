@@ -108,9 +108,6 @@ export function useWaitlistStatus(options: UseWaitlistStatusOptions = {}) {
     retry: 2,
   });
 
-  // Track whether confetti has already been shown this mount
-  const confettiFiredRef = useRef(false);
-
   // Update store when data changes
   useEffect(() => {
     if (query.data) {
@@ -127,12 +124,6 @@ export function useWaitlistStatus(options: UseWaitlistStatusOptions = {}) {
           break;
         case 'approved':
           store.setViewState('approved');
-          // Trigger confetti celebration — only once per mount
-          if (!confettiFiredRef.current) {
-            confettiFiredRef.current = true;
-            store.setShowConfetti(true);
-            setTimeout(() => store.setShowConfetti(false), 3000);
-          }
           break;
         case 'rejected':
           store.setViewState('rejected');

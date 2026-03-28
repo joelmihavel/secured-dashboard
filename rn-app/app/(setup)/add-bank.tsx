@@ -410,7 +410,7 @@ export default function AddBankScreen() {
     }
   }, [validateAllFields, tenancy?.id, paymentMethod, bankVerified, verificationResult?.bankAccountId, upiVerificationResult, firePanVerification, verifyBankMutation, verifyUpiMutation, accountNumber, ifscCode, upiVpa]);
 
-  // "Confirm and continue" on success screen
+  // "Confirm and continue" on success screen → next setup step
   const handleConfirm = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     router.replace('/(main)' as never);

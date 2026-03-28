@@ -947,8 +947,7 @@ export default function UploadScreen() {
 
       // Brief pause at 100% before navigating
       await new Promise((resolve) => setTimeout(resolve, 300));
-      advanceJourneyStage(); // agreement_upload → agreement_review
-      advanceJourneyStage(); // agreement_review → waitlist
+      advanceJourneyStage(); // agreement_upload → setup
       router.replace('/(waitlist)' as never);
       return;
     }

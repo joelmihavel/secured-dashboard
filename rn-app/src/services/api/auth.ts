@@ -265,6 +265,19 @@ export async function signOut(): Promise<{ success: boolean; error: string | nul
     deactivateJourneyMode();
   }
 
+  // Deactivate push token before signing out (H6: prevent ghost notifications)
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session?.user?.id) {
+      await supabase
+        .from('device_tokens')
+        .update({ is_active: false })
+        .eq('user_id', session.user.id);
+    }
+  } catch {
+    // Best-effort — don't block sign-out
+  }
+
   const result = await tryCatch(
     async () => {
       const { error } = await supabase.auth.signOut();

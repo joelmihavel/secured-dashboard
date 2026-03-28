@@ -132,9 +132,10 @@ function PaymentBadgeComponent({
   const cfg = BADGE_CONFIGS[variant];
   const pathId = `badge-text-${variant}`;
 
-  // Overfill the circumference — SVG TextPath clips at path end, so extra text is harmless.
-  // This guarantees no visible gap in the circular text ring.
-  const repeatCount = Math.max(Math.ceil((2 * Math.PI * TEXT_R) / (cfg.label.length * 5.5)) + 1, 5);
+  // Overfill the circumference generously — SVG TextPath clips at path end.
+  // At fontSize 12 in 128 viewBox, avg char ≈ 5-7 units. Circumference ≈ 314.
+  // Use 15 repeats minimum to guarantee no visible gap for any label length.
+  const repeatCount = Math.max(Math.ceil(400 / (cfg.label.length * 5)) + 2, 15);
   const fullLabel = cfg.label.repeat(repeatCount);
 
   return (

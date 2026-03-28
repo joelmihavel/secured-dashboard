@@ -24,7 +24,7 @@ import { Pill } from '@/src/components/ui/Pill';
 import { BgLine } from '@/src/components/ui/BgLine';
 import { useDashboard, useFeeRates } from '@/src/hooks';
 import { usePaymentStore } from '@/src/stores';
-import { getGatewayFeeRates, computeFee } from '@/src/services/payment';
+import { getGatewayFeeRates, getPaymentGateway, computeFee } from '@/src/services/payment';
 import type { FeeRateConfig, GatewayFeeRates } from '@/src/services/payment';
 import type { ConfirmPaymentContentProps, PaymentMethodType } from './types';
 import { colors } from '@/src/theme';
@@ -130,17 +130,9 @@ export function ConfirmPaymentContent({
   const maintenance = tenancy?.maintenance ?? 0;
   const totalRent = baseRent + maintenance;
 
-  const rates = feeRates ?? getGatewayFeeRates();
-  const feeConfig = getFeeConfig(rates, methodType);
-  const convenienceFee = computeFee(feeConfig, totalRent);
-
   const cashbackPct = cashback?.discount_rate ?? 0.01;
   const cashbackAmount = Math.round(totalRent * cashbackPct);
   const annualSavings = cashbackAmount * 12;
-
-  // Bank fees pill adds ~72px (pill 48 + gap 24) — shift notches & grid line down
-  const isCard = methodType === 'card';
-  const pillOffset = isCard ? 72 : 0;
 
   // Accumulated balance from previous unverified payments (stored in paise)
   const accumulatedBalanceRupees = Math.floor((user?.cashback_balance_paise ?? 0) / 100);
@@ -152,8 +144,19 @@ export function ConfirmPaymentContent({
     : 0;
   const earnedCashback = !isVerified ? cashbackAmount : 0;
 
-  // Fee NOT included — PayU charges it separately
-  const payableAmount = totalRent - appliedCashback;
+  // Fee computed on net rent (AFTER cashback) — matches backend formula
+  const netRent = totalRent - appliedCashback;
+  const rates = feeRates ?? getGatewayFeeRates();
+  const feeConfig = getFeeConfig(rates, methodType);
+  const convenienceFee = computeFee(feeConfig, netRent);
+
+  // Bank fees pill adds ~72px (pill 48 + gap 24) — shift notches & grid line down
+  const isCard = methodType === 'card';
+  const pillOffset = isCard ? 72 : 0;
+
+  // Convenience fee always shown in payable amount for both gateways
+  const gateway = getPaymentGateway();
+  const payableAmount = netRent + convenienceFee;
 
   const alreadyPaid = upcomingPayment?.already_paid ?? false;
   const daysUntilDue = upcomingPayment?.due_date
@@ -259,8 +262,8 @@ export function ConfirmPaymentContent({
                 isTotal
               />
 
-              {/* Bank fees pill — credit card only */}
-              {methodType === 'card' && (
+              {/* Bank fees pill — credit card only, PayU only (Cashfree bills fee ourselves) */}
+              {methodType === 'card' && gateway !== 'cashfree' && (
                 <View style={s.bankFeePill}>
                   <RNText style={s.bankFeePillText}>Additional bank fees upto 1% might apply</RNText>
                 </View>

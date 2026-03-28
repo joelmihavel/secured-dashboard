@@ -74,28 +74,39 @@ export default function EditBankDetailsScreen() {
             <ScreenTitle gray="Your landlord's " accent="bank details" />
           </View>
 
-          {/* Form — all fields read-only */}
+          {/* Form — all fields read-only, adapts to bank vs UPI */}
           <View style={styles.formContainer}>
             <TextInput
-              label="Account Holder Name"
+              label="Account holder name"
               value={landlordBank?.account_holder_name ?? ''}
               onChangeText={() => {}}
               disabled
             />
 
-            <TextInput
-              label="Account Number"
-              value={landlordBank?.account_number_masked ?? ''}
-              onChangeText={() => {}}
-              disabled
-            />
+            {landlordBank?.verification_method === 'upi' ? (
+              <TextInput
+                label="UPI ID"
+                value={landlordBank?.upi_vpa ?? ''}
+                onChangeText={() => {}}
+                disabled
+              />
+            ) : (
+              <>
+                <TextInput
+                  label="Account number"
+                  value={landlordBank?.account_number_masked ?? ''}
+                  onChangeText={() => {}}
+                  disabled
+                />
 
-            <TextInput
-              label="IFSC Code"
-              value={landlordBank?.ifsc_code ?? ''}
-              onChangeText={() => {}}
-              disabled
-            />
+                <TextInput
+                  label="IFSC code"
+                  value={landlordBank?.ifsc_code ?? ''}
+                  onChangeText={() => {}}
+                  disabled
+                />
+              </>
+            )}
 
             <TextInput
               label="PAN card"

@@ -22,7 +22,7 @@ export interface ForceUpdateState {
  * Compare two semver strings.
  * Returns negative if a < b, 0 if equal, positive if a > b.
  */
-function compareVersions(a: string, b: string): number {
+export function compareVersions(a: string, b: string): number {
   const partsA = a.split('.').map(Number);
   const partsB = b.split('.').map(Number);
   for (let i = 0; i < Math.max(partsA.length, partsB.length); i++) {

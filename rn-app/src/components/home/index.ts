@@ -75,9 +75,6 @@ export type { LandlordStatusCardProps, LandlordStatus } from './LandlordStatusCa
 export { EmptyPaymentsState } from './EmptyPaymentsState';
 export type { EmptyPaymentsStateProps } from './EmptyPaymentsState';
 
-export { CashbackEmptyState } from './CashbackEmptyState';
-export type { CashbackEmptyStateProps } from './CashbackEmptyState';
-
 export { HomeEmptyState } from './HomeEmptyState';
 export type { HomeEmptyStateProps, EmptyStateVariant } from './HomeEmptyState';
 

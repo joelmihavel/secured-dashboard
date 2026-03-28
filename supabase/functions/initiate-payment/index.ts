@@ -598,6 +598,8 @@ serve(async (req: Request) => {
         rent_amount_paise: originalRentPaise,
         pg_fee_paise: 0,
         estimated_pg_fee_paise: estimatedPgFeePaise,
+        convenience_fee_paise: 0,
+        fee_billing_model: 'pg_billed',
         cashback_applied_paise: cashbackDiscountPaise,
         cashback_earned_paise: cashbackEarnedPaise,
         accumulated_redeemed_paise: accumulatedRedeemed,

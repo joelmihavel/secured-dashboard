@@ -25,6 +25,7 @@ export interface DashboardUser {
   kyc_status?: string | null;
   cashback_balance_paise?: number;
   avatar_url?: string | null;
+  created_at?: string;
 }
 
 export interface TenancyVerificationStatus {
@@ -117,6 +118,8 @@ export interface LandlordBankAccount {
   verified: boolean;
   pan_number_masked: string | null;
   pan_verified: boolean;
+  upi_vpa: string | null;
+  verification_method: 'bank' | 'upi' | null;
 }
 
 export interface DashboardPaymentStamps {
@@ -489,6 +492,10 @@ function computeChartBars(
   const start = new Date(leaseStart);
   if (isNaN(start.getTime())) return bars;
 
+  // Zero-state: no payments at all → all bars are 'future' (empty chart)
+  // A new user who just joined hasn't "missed" anything yet
+  if (payments.length === 0) return bars;
+
   const now = new Date();
 
   // Build a lookup of rent_month → payment
@@ -502,12 +509,26 @@ function computeChartBars(
     }
   }
 
+  // Find the first month the user actually made a payment — only mark 'missed'
+  // from that month onwards, not from lease start
+  let firstPaymentMonth: Date | null = null;
+  for (const p of payments) {
+    const d = new Date(p.rent_month.substring(0, 7) + '-01');
+    if (!firstPaymentMonth || d < firstPaymentMonth) firstPaymentMonth = d;
+  }
+
   for (let i = 0; i < 12; i++) {
     const monthDate = new Date(start.getFullYear(), start.getMonth() + i, 1);
     const monthKey = `${monthDate.getFullYear()}-${String(monthDate.getMonth() + 1).padStart(2, '0')}`;
 
     // Future month — hasn't happened yet
     if (monthDate > now) {
+      bars[i] = 'future';
+      continue;
+    }
+
+    // Month before user's first payment — don't mark as missed
+    if (firstPaymentMonth && monthDate < firstPaymentMonth) {
       bars[i] = 'future';
       continue;
     }
@@ -521,9 +542,9 @@ function computeChartBars(
     }
 
     if (payment.status === 'failed') {
-      bars[i] = 'missed';
+      bars[i] = 'missed'; // Payment failed — no cashback → red
     } else if (payment.status === 'success') {
-      bars[i] = didEarnCashback(payment, cutoffDay) ? 'earned' : 'missed';
+      bars[i] = didEarnCashback(payment, cutoffDay) ? 'earned' : 'missed'; // Paid on time → orange, paid late → red (no cashback)
     } else {
       // processing/pending/initiated — still in flight
       bars[i] = 'future';

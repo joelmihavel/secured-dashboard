@@ -15,6 +15,8 @@ export type NotificationType =
   | "waitlist_approved"
   | "waitlist_rejected"
   | "rent_due"
+  | "payment_success"
+  | "payment_failed"
   | "settlement_complete"
   | "settlement_failed"
   | "rent_due_tomorrow"
@@ -46,6 +48,14 @@ export const NOTIFICATION_TEMPLATES: Record<
   waitlist_rejected: {
     title: "We couldn't approve your application",
     body: "Sorry, your current rental contract doesn't qualify our eligibility criteria.",
+  },
+  payment_success: {
+    title: "Rent paid, {name}",
+    body: "₹{amount} received. You saved ₹{cashback} with Flent.",
+  },
+  payment_failed: {
+    title: "Payment didn't go through",
+    body: "Your rent payment of ₹{amount} couldn't be processed. Tap to retry.",
   },
   rent_due: {
     title: "Rent's coming up",
@@ -81,7 +91,7 @@ export const NOTIFICATION_TEMPLATES: Record<
   },
   reminder_utility: {
     title: "One step left — utility verification",
-    body: "Add your electricity or water bill ID to complete setup. Takes 30 seconds.",
+    body: "Add your electricity bill ID to complete setup. Takes 30 seconds.",
   },
   reminder_landlord_invite: {
     title: "Your landlord's waiting",
@@ -117,8 +127,10 @@ export function interpolateTemplate(
  * Used to set `data.route` on push payloads so the app opens the right screen.
  */
 export const NOTIFICATION_ROUTES: Record<NotificationType, string> = {
-  waitlist_approved: "/(main)",
-  waitlist_rejected: "/(waitlist)",
+  waitlist_approved: "/(waitlist)/approved",
+  waitlist_rejected: "/(waitlist)/rejected",
+  payment_success: "/(payment)/status",
+  payment_failed: "/(payment)/status",
   rent_due: "/(payment)/enter-rent",
   settlement_complete: "/(main)",
   settlement_failed: "/(main)",
@@ -143,6 +155,8 @@ export const NOTIFICATION_ROUTES: Record<NotificationType, string> = {
 export const PREFERENCE_MAP: Record<NotificationType, string | null> = {
   waitlist_approved: null, // always send
   waitlist_rejected: null, // always send
+  payment_success: "payment_confirmations",
+  payment_failed: "payment_confirmations",
   rent_due: "payment_reminders",
   settlement_complete: "payment_confirmations",
   settlement_failed: "payment_confirmations",
@@ -167,6 +181,8 @@ export const PREFERENCE_MAP: Record<NotificationType, string | null> = {
 export const DB_TYPE_MAP: Record<NotificationType, string> = {
   waitlist_approved: "waitlist_approved",
   waitlist_rejected: "waitlist_rejected",
+  payment_success: "payment_success",
+  payment_failed: "payment_failed",
   rent_due: "rent_due",
   settlement_complete: "settlement_complete",
   settlement_failed: "settlement_failed",

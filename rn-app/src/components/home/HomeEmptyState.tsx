@@ -28,7 +28,6 @@ import { RentStatusCarousel, CarouselCardItem } from './RentStatusCarousel';
 import { FinishSetupSection } from './FinishSetupSection';
 import { TabSwitcher, Tab } from './TabSwitcher';
 import { EmptyPaymentsState } from './EmptyPaymentsState';
-import { CashbackEmptyState } from './CashbackEmptyState';
 import { LandlordStatus } from './LandlordStatusCard';
 import { PaymentMethod } from './PaymentMethodCard';
 
@@ -169,11 +168,6 @@ function HomeEmptyStateComponent({
             <EmptyPaymentsState />
           ) : (
             <View style={styles.cashbackTabContent}>
-              <CashbackEmptyState
-                accruedAmount={cashbackAccrued}
-                allTimeTotal={cashbackAllTime}
-                cashbackRate={cashbackRate}
-              />
               {/* Setup Progress Card inside Cashbacks tab if setup incomplete */}
               {showSetupProgress ? (
                 <SetupProgressCard

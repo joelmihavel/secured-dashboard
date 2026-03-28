@@ -362,10 +362,14 @@ export async function createRefund(params: {
     throw new CashfreeError("Refund amount must be greater than 0", 0);
   }
 
+  // Cashfree limits: refund_id = 3-40 chars alphanumeric/underscore, refund_note = max 100 chars
+  const safeRefundId = refundId.replace(/-/g, "_").slice(0, 40);
+  const safeNote = (note ?? "Settlement failed - automatic refund").slice(0, 100);
+
   const body: Record<string, unknown> = {
     refund_amount: parseFloat((amountPaise / 100).toFixed(2)),
-    refund_id: refundId,
-    refund_note: note ?? "Settlement failed - automatic refund",
+    refund_id: safeRefundId,
+    refund_note: safeNote,
     refund_speed: "STANDARD",
   };
 

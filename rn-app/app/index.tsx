@@ -26,9 +26,9 @@ import { getWaitlistStatus } from '@/src/services/api/waitlist';
 const DISABLE_SCREEN_PICKER = __DEV__ ? require('./(dev)/screen-picker').DISABLE_SCREEN_PICKER : true;
 const DEV_DIRECT_SCREEN = __DEV__ ? require('./(dev)/screen-picker').DEV_DIRECT_SCREEN : null;
 import { SkeletonLoader } from '@/src/components';
-import { ForceUpdateModal } from '@/src/components/ui/ForceUpdateModal';
+import { CriticalUpdateScreen } from '@/src/components/ui/CriticalUpdateScreen';
 import { useAuthContext } from '@/src/providers';
-import { useForceUpdate } from '@/src/hooks/useForceUpdate';
+import { useUpdatePolicy, clearUpdatePolicyCache } from '@/src/hooks/useUpdatePolicy';
 import { useUploadStore } from '@/src/stores/upload';
 import { usePaymentStore } from '@/src/stores/payment';
 import { isReviewMode } from '@/src/review/reviewMode';
@@ -47,7 +47,7 @@ type JourneyTarget =
   | '/(auth)/splash'
   | '/(agreement)/upload'
   | '/(waitlist)'
-  | '/(setup)'
+  | '/(setup)/add-bank'
   | '/(main)'
   | '/(dev)/screen-picker';
 
@@ -115,7 +115,7 @@ async function queryUserStatus(userId: string): Promise<string | null> {
 function statusToTarget(userStatus: string): JourneyTarget | null {
   switch (userStatus) {
     case 'approved':
-      return '/(main)'; // Bank verification done → go straight to dashboard
+      return '/(setup)/add-bank'; // Waitlist approved → start setup flow
     case 'active':
       return '/(main)';
     case 'agreement_confirmed':
@@ -175,7 +175,7 @@ export default function Index() {
   const router = useRouter();
   const rootNavigationState = useRootNavigationState();
   const { isAuthenticated, isLoading: authLoading, session: authSession } = useAuthContext();
-  const { isRequired: forceUpdateRequired, message: forceUpdateMessage, isLoading: forceUpdateLoading } = useForceUpdate();
+  const updatePolicy = useUpdatePolicy();
   const [journeyResolved, setJourneyResolved] = useState(false);
   const [target, setTarget] = useState<JourneyTarget | string | null>(null);
   const hasNavigatedRef = useRef(false);
@@ -230,7 +230,7 @@ export default function Index() {
       // The cached route is validated in background; if stale, user gets
       // redirected on next render cycle.
       const cachedRoute = await SecureStore.getItemAsync(LAST_ROUTE_KEY).catch(() => null);
-      if (cachedRoute && (cachedRoute === '/(main)' || cachedRoute === '/(setup)' || cachedRoute === '/(waitlist)')) {
+      if (cachedRoute && (cachedRoute === '/(main)' || cachedRoute === '/(setup)/add-bank' || cachedRoute === '/(waitlist)')) {
         console.log('[journey-router] Fast path: using cached route', cachedRoute);
         setTarget(cachedRoute);
         setJourneyResolved(true);
@@ -294,7 +294,7 @@ export default function Index() {
         // Trust the cached route if available (user was here before).
         // Only default to upload if there's no prior history at all.
         const fallbackRoute = await SecureStore.getItemAsync(LAST_ROUTE_KEY).catch(() => null);
-        if (fallbackRoute && (fallbackRoute === '/(main)' || fallbackRoute === '/(setup)' || fallbackRoute === '/(waitlist)')) {
+        if (fallbackRoute && (fallbackRoute === '/(main)' || fallbackRoute === '/(setup)/add-bank' || fallbackRoute === '/(waitlist)')) {
           console.warn('[journey-router] Routing failed — using cached route:', fallbackRoute);
           setTarget(fallbackRoute);
         } else {
@@ -351,7 +351,7 @@ export default function Index() {
       console.error('[journey-router] resolveAuthenticatedJourney error:', err);
       // Trust cached route on exceptions — don't send active users to upload
       const fallbackRoute = await SecureStore.getItemAsync(LAST_ROUTE_KEY).catch(() => null);
-      if (fallbackRoute && (fallbackRoute === '/(main)' || fallbackRoute === '/(setup)' || fallbackRoute === '/(waitlist)')) {
+      if (fallbackRoute && (fallbackRoute === '/(main)' || fallbackRoute === '/(setup)/add-bank' || fallbackRoute === '/(waitlist)')) {
         setTarget(fallbackRoute);
       } else {
         setTarget('/(agreement)/upload');
@@ -454,13 +454,13 @@ export default function Index() {
     if (!journeyResolved || !target || hasNavigatedRef.current) return;
     if (!rootNavigationState?.key) return;
     // Don't navigate if force update modal should be showing — the render
-    // returns ForceUpdateModal instead. Without this guard, the navigation
+    // returns CriticalUpdateScreen instead. Without this guard, the navigation
     // effect can race with the force update check on the same render cycle.
-    if (forceUpdateRequired) return;
+    if (updatePolicy.isRequired) return;
     hasNavigatedRef.current = true;
     router.replace(target as never);
     // Cache the route for instant navigation on next app launch
-    if (target === '/(main)' || target === '/(setup)' || target === '/(waitlist)') {
+    if (target === '/(main)' || target === '/(setup)/add-bank' || target === '/(waitlist)') {
       SecureStore.setItemAsync(LAST_ROUTE_KEY, target).catch(() => {});
     } else if (target === '/(auth)/splash') {
       // User signed out — clear cached route
@@ -491,11 +491,16 @@ export default function Index() {
       // No OTA update (or reload failed) -- hide splash after brief delay
       setTimeout(() => SplashScreen.hideAsync().catch(() => {}), 300);
     });
-  }, [journeyResolved, target, router, rootNavigationState?.key, forceUpdateRequired]);
+  }, [journeyResolved, target, router, rootNavigationState?.key, updatePolicy.isRequired]);
 
-  // Force update blocks ALL navigation — user must update from App Store
-  if (forceUpdateRequired) {
-    return <ForceUpdateModal message={forceUpdateMessage} />;
+  // Critical update blocks ALL navigation — user must update (OTA or native)
+  if (updatePolicy.isRequired) {
+    return (
+      <CriticalUpdateScreen
+        policy={updatePolicy}
+        onDismiss={() => clearUpdatePolicyCache()}
+      />
+    );
   }
 
   // Always render skeleton — invisible behind navigated screen, avoids ghost screen in Stack

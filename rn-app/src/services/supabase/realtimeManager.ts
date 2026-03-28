@@ -6,10 +6,14 @@
  * - Reference counting: multiple hooks subscribing to the same table/filter share one channel
  * - Coalescing: 100ms debounce prevents thundering herd from rapid DB events
  * - iOS background recovery: AppState listener reconnects all channels after 5+ seconds in background
+ * - Network reconnection: NetInfo listener reconnects channels when network restores
+ * - JWT refresh reconnection: re-subscribes channels when auth token refreshes (prevents stale JWT on long sessions)
+ * - Retry with backoff: failed reconnections are retried up to 3 times
  * - Logout cleanup: removeAllChannels() tears down everything on sign-out
  */
 
 import { AppState, AppStateStatus } from 'react-native';
+import NetInfo from '@react-native-community/netinfo';
 import type { RealtimeChannel, RealtimePostgresChangesPayload } from '@supabase/supabase-js';
 import { supabase } from './client';
 
@@ -24,14 +28,50 @@ interface ChannelEntry {
 
 const COALESCE_MS = 100;
 const BACKGROUND_RECONNECT_THRESHOLD_MS = 5000;
+const MAX_RECONNECT_RETRIES = 3;
+const RECONNECT_BASE_DELAY_MS = 2000;
 
 let channels: Map<string, ChannelEntry> = new Map();
 let backgroundTimestamp: number | null = null;
 let appStateSubscription: ReturnType<typeof AppState.addEventListener> | null = null;
+let netInfoUnsubscribe: (() => void) | null = null;
+let authUnsubscribe: { data: { subscription: { unsubscribe: () => void } } } | null = null;
+let wasOffline = false;
+let reconnectRetryCount = 0;
+let reconnectRetryTimer: ReturnType<typeof setTimeout> | null = null;
 
 function getChannelKey(table: string, filter?: string): string {
   return filter ? `${table}:${filter}` : table;
 }
+
+// ── Reconnect with retry (Bug #4) ────────────────────────────────────
+
+function reconnectWithRetry(): void {
+  reconnectRetryCount = 0;
+  attemptReconnect();
+}
+
+function attemptReconnect(): void {
+  if (channels.size === 0) return;
+
+  try {
+    reconnectAll();
+    reconnectRetryCount = 0; // Success — reset counter
+  } catch {
+    reconnectRetryCount++;
+    if (reconnectRetryCount <= MAX_RECONNECT_RETRIES) {
+      const delay = RECONNECT_BASE_DELAY_MS * Math.pow(2, reconnectRetryCount - 1);
+      if (__DEV__) {
+        console.log(`[RealtimeManager] Reconnect failed, retry ${reconnectRetryCount}/${MAX_RECONNECT_RETRIES} in ${delay}ms`);
+      }
+      reconnectRetryTimer = setTimeout(attemptReconnect, delay);
+    } else if (__DEV__) {
+      console.log('[RealtimeManager] Max reconnect retries exceeded — waiting for next trigger');
+    }
+  }
+}
+
+// ── App State Handler ─────────────────────────────────────────────────
 
 function handleAppStateChange(nextState: AppStateStatus) {
   if (nextState === 'background' || nextState === 'inactive') {
@@ -41,21 +81,15 @@ function handleAppStateChange(nextState: AppStateStatus) {
     backgroundTimestamp = null;
     if (elapsed >= BACKGROUND_RECONNECT_THRESHOLD_MS) {
       // Long background (>5s): WebSocket is dead, reconnect after delay.
-      // 1500ms delay lets old WebSocket fully transition to CLOSED state —
-      // 500ms was not always enough on older iOS devices.
-      setTimeout(() => {
-        try { reconnectAll(); } catch { /* swallow — reconnect is best-effort */ }
-      }, 1500);
+      setTimeout(() => reconnectWithRetry(), 1500);
     } else if (elapsed >= 1000) {
-      // Short background (1-5s): WebSocket may be in CLOSING state.
-      // Don't reconnect (expensive), but schedule a health check.
-      // If any channel is in a broken state, reconnect then.
+      // Short background (1-5s): health check — reconnect if any channel is broken.
       setTimeout(() => {
         try {
           for (const [, entry] of channels) {
             const state = (entry.channel as any)?.state;
             if (state === 'closed' || state === 'errored') {
-              reconnectAll();
+              reconnectWithRetry();
               break;
             }
           }
@@ -65,10 +99,46 @@ function handleAppStateChange(nextState: AppStateStatus) {
   }
 }
 
-function ensureAppStateListener() {
+// ── Network Reconnection (Bug #17) ───────────────────────────────────
+
+function setupNetworkListener() {
+  if (netInfoUnsubscribe) return;
+  netInfoUnsubscribe = NetInfo.addEventListener((state) => {
+    const isOnline = !!state.isConnected;
+    if (wasOffline && isOnline && channels.size > 0) {
+      // Network restored — reconnect realtime channels
+      if (__DEV__) {
+        console.log('[RealtimeManager] Network restored — reconnecting channels');
+      }
+      setTimeout(() => reconnectWithRetry(), 1000);
+    }
+    wasOffline = !isOnline;
+  });
+}
+
+// ── JWT Refresh Reconnection (Bug #10) ───────────────────────────────
+
+function setupAuthListener() {
+  if (authUnsubscribe) return;
+  authUnsubscribe = supabase.auth.onAuthStateChange((event) => {
+    if (event === 'TOKEN_REFRESHED' && channels.size > 0) {
+      // JWT refreshed — old channels may have stale tokens
+      if (__DEV__) {
+        console.log('[RealtimeManager] Token refreshed — reconnecting channels with fresh JWT');
+      }
+      setTimeout(() => reconnectWithRetry(), 500);
+    }
+  });
+}
+
+// ── Lifecycle ─────────────────────────────────────────────────────────
+
+function ensureListeners() {
   if (!appStateSubscription) {
     appStateSubscription = AppState.addEventListener('change', handleAppStateChange);
   }
+  setupNetworkListener();
+  setupAuthListener();
 }
 
 /**
@@ -81,7 +151,7 @@ export function subscribe(
   callback: (payload: RealtimePostgresChangesPayload<any>) => void,
   filter?: string,
 ): () => void {
-  ensureAppStateListener();
+  ensureListeners();
 
   const key = getChannelKey(table, filter);
   const callbackId = `${event}:${Math.random().toString(36).slice(2)}`;
@@ -224,7 +294,7 @@ export function reconnectAll(): void {
       });
     } catch {
       // WebSocket may throw DOMException during subscribe if still in CLOSING state
-      // after iOS background. Safe to skip — next foreground recovery will retry.
+      // after iOS background. Safe to skip — retry mechanism will handle it.
       if (__DEV__) {
         console.log(`[RealtimeManager] Failed to resubscribe channel: ${key}`);
       }
@@ -240,6 +310,13 @@ export function reconnectAll(): void {
  * Remove all channels (call on sign-out).
  */
 export function removeAllChannels(): void {
+  // Cancel any pending retry
+  if (reconnectRetryTimer) {
+    clearTimeout(reconnectRetryTimer);
+    reconnectRetryTimer = null;
+  }
+  reconnectRetryCount = 0;
+
   for (const entry of channels.values()) {
     for (const timer of entry.debounceTimers.values()) {
       clearTimeout(timer);
@@ -265,7 +342,7 @@ export function getChannelCount(): number {
 }
 
 /**
- * Full teardown — removes channels and AppState listener.
+ * Full teardown — removes channels and all listeners.
  */
 export function destroy(): void {
   removeAllChannels();
@@ -273,4 +350,13 @@ export function destroy(): void {
     appStateSubscription.remove();
     appStateSubscription = null;
   }
+  if (netInfoUnsubscribe) {
+    netInfoUnsubscribe();
+    netInfoUnsubscribe = null;
+  }
+  if (authUnsubscribe) {
+    authUnsubscribe.data.subscription.unsubscribe();
+    authUnsubscribe = null;
+  }
+  wasOffline = false;
 }

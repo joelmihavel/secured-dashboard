@@ -26,7 +26,6 @@ export default function SetupLayout() {
       <Stack.Screen name="add-bank" />
       <Stack.Screen name="add-utility" />
       <Stack.Screen name="invite-landlord" />
-      <Stack.Screen name="pending-steps" />
     </Stack>
   );
 }

@@ -45,6 +45,7 @@ import { queryClient } from '@/src/providers/QueryProvider';
 import { sendOtp, verifyOtp } from '@/src/services/api/auth';
 import { jumpToScreen, getSeedConfig } from '@/src/__dev__/jumpToScreen';
 import { paymentKeys } from '@/src/hooks/usePayments';
+import { waitlistKeys } from '@/src/hooks/useWaitlist';
 import type { StoreApi, UseBoundStore } from 'zustand';
 
 /**
@@ -170,7 +171,6 @@ const SECTIONS: Section[] = [
       { name: 'Add Bank', path: '/(setup)/add-bank' },
       { name: 'Add Utility Bill', path: '/(setup)/add-utility' },
       { name: 'Invite Landlord', path: '/(setup)/invite-landlord' },
-      { name: 'Pending Steps', path: '/(setup)/pending-steps' },
     ],
   },
   {
@@ -186,13 +186,19 @@ const SECTIONS: Section[] = [
         ],
       },
       { name: 'Approved', path: '/(waitlist)/approved' },
+      { name: 'Rejected', path: '/(waitlist)/rejected' },
     ],
   },
   {
     label: 'Agreement',
     screens: [
       { name: 'Upload Agreement', path: '/(agreement)/upload' },
-      { name: 'Review Agreement', path: '/(agreement)/review' },
+    ],
+  },
+  {
+    label: 'System',
+    screens: [
+      { name: 'Critical Update Preview', path: '/(dev)/critical-update-preview' },
     ],
   },
 ];
@@ -373,7 +379,7 @@ export function DevNavigator() {
         });
       }
       if ('waitlist' in scenario) {
-        queryClient.setQueryData(['waitlist-status'], {
+        queryClient.setQueryData(waitlistKeys.status(), {
           data: scenario.waitlist,
           error: null,
         });

@@ -483,7 +483,14 @@ async function getWaitlistStatusMock(): Promise<{
   error: WaitlistError | null;
 }> {
   const { createMockWaitlistStatus } = await import('@/src/__mocks__/testDataFactory');
-  return { data: createMockWaitlistStatus('pending'), error: null };
+  const { useDevStore } = await import('@/src/__dev__/devStore');
+  const activeScenario = (useDevStore as any).getState().activeScenario as string | null;
+  let mockState: 'pending' | 'pending_long' | 'approved' | 'rejected' = 'pending';
+  if (activeScenario?.startsWith('waitlist:')) {
+    const s = activeScenario.split(':')[1];
+    if (s === 'rejected' || s === 'approved' || s === 'pending_long') mockState = s;
+  }
+  return { data: createMockWaitlistStatus(mockState), error: null };
 }
 
 // withMock() enforces same return type + __DEV__ compile-time gate

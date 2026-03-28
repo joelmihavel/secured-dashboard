@@ -163,7 +163,7 @@ export default function InviteLandlordScreen() {
             if (reentry) {
               router.replace('/(main)' as never);
             } else {
-              router.push('/(setup)/pending-steps' as never);
+              router.replace('/(main)' as never);
             }
           }, 1500);
         },
@@ -180,7 +180,7 @@ export default function InviteLandlordScreen() {
     if (reentry) {
       router.replace('/(main)' as never);
     } else {
-      router.push('/(setup)/pending-steps' as never);
+      router.replace('/(main)' as never);
     }
   }, [router, reentry]);
 

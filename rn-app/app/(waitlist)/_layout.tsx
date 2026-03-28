@@ -24,6 +24,7 @@ export default function WaitlistLayout() {
     >
       <Stack.Screen name="index" />
       <Stack.Screen name="approved" />
+      <Stack.Screen name="rejected" />
     </Stack>
   );
 }

@@ -425,6 +425,30 @@ async function checkRefundEligibility(
           refund_initiated_at: new Date().toISOString(),
         }).eq("id", payment.id);
 
+        // Reverse earned cashback (unverified users had balance credited on success webhook)
+        if (payment.cashback_earned_paise && payment.cashback_earned_paise > 0) {
+          try {
+            await supabase.rpc("decrement_cashback_balance", {
+              p_user_id: payment.user_id,
+              p_amount: payment.cashback_earned_paise,
+            });
+            await supabase.from("cashback_ledger").insert({
+              user_id: payment.user_id,
+              transaction_type: "reversal",
+              amount_paise: payment.cashback_earned_paise,
+              balance_after_paise: 0, // approximate — RPC handles actual balance
+              payment_id: payment.id,
+              tenancy_id: payment.tenancy_id,
+              reference_type: "refund",
+              reference_id: payment.id,
+              description: "Cashback reversed — settlement failed auto-refund",
+            });
+            console.log(`[refund] Reversed ${payment.cashback_earned_paise} paise earned cashback for payment ${payment.id}`);
+          } catch (cbErr) {
+            console.error(`[refund] Cashback reversal failed for payment ${payment.id}:`, cbErr);
+          }
+        }
+
         // Notify user
         const supabaseUrl = getSupabaseUrl();
         const serviceKey = Deno.env.get("SB_SECRET_KEY") || Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;

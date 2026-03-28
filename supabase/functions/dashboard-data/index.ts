@@ -119,6 +119,8 @@ interface DashboardData {
     verified: boolean;
     pan_number_masked: string | null;
     pan_verified: boolean;
+    upi_vpa: string | null;
+    verification_method: string | null;
   } | null;
   unread_notification_count: number;
   payment_stamps: {
@@ -319,7 +321,7 @@ serve(async (req: Request) => {
       // 8. Landlord bank account (for edit bank details)
       supabase
         .from("bank_accounts")
-        .select("id, account_holder_name, account_number_masked, ifsc_code, bank_name, verified, pan_number_masked, pan_verified")
+        .select("id, account_holder_name, account_number_masked, ifsc_code, bank_name, verified, pan_number_masked, pan_verified, upi_vpa, verification_method")
         .eq("user_id", userId)
         .eq("party_type", "landlord")
         .eq("is_primary", true)

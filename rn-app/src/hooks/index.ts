@@ -142,6 +142,8 @@ export type { BannerState, UseOTAUpdatesReturn } from './useOTAUpdates';
 // Force Update
 export { useForceUpdate } from './useForceUpdate';
 export type { ForceUpdateState } from './useForceUpdate';
+export { useUpdatePolicy, clearUpdatePolicyCache } from './useUpdatePolicy';
+export type { UpdatePolicy } from './useUpdatePolicy';
 
 // Waitlist
 export {

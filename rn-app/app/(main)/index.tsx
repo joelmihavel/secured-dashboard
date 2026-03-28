@@ -56,7 +56,6 @@ import { Screen, Text, Logo, PrimaryButton, DottedGridPattern } from '@/src/comp
 import {
   HomeHeader,
   HeadlineSection,
-  WarningBanner,
   StatusNotificationBanner,
   RentStatusCarousel,
   CarouselCardItem,
@@ -64,11 +63,8 @@ import {
   RecentPaymentsList,
   CashbacksList,
   BottomFooter,
-  HomeEmptyState,
   VerificationCheckSheet,
     EmptyPaymentsState,
-  CashbackEmptyState,
-
   SetupProgressCard,
   // Import types from home components
   PaymentMethod,
@@ -135,6 +131,15 @@ export default function HomeScreen() {
   const cashback = resolvedData?.cashback ?? null;
   const unreadCount = resolvedData?.unread_notification_count ?? 0;
   const paymentStamps = resolvedData?.payment_stamps ?? null;
+
+  // Mark all notifications as read when dashboard loads with unread count
+  useEffect(() => {
+    if (unreadCount > 0) {
+      import('@/src/services/api/notifications').then(({ markAllNotificationsRead }) => {
+        markAllNotificationsRead();
+      });
+    }
+  }, [unreadCount > 0]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const recentPayments = useMemo(
     () => mapRecentPayments(resolvedData?.recent_payments ?? []),
@@ -351,8 +356,28 @@ export default function HomeScreen() {
         });
       } else {
         // Not paid: past cutoff → missed, otherwise → upcoming
+        //
+        // Grace period logic for new users:
+        // - If user signed up in the same month as the upcoming payment AND has
+        //   no payment history → treat as 'upcoming' (they just joined, can't
+        //   have "missed" a month they weren't on the platform for)
+        // - From the NEXT month onwards, normal missed logic applies even with
+        //   zero payments — the user had a full month to pay and didn't
         const pastCutoff = upcomingPayment.past_cutoff ?? false;
-        const unpaidStatus: 'upcoming' | 'missed' = pastCutoff ? 'missed' : 'upcoming';
+        const hasAnyPayments = (resolvedData?.recent_payments?.length ?? 0) > 0;
+
+        let isGracePeriod = false;
+        if (!hasAnyPayments && pastCutoff) {
+          // Check if tenancy was created in the same month as this payment
+          const tenancyCreated = (tenancy as Record<string, unknown>)?.created_at as string | undefined;
+          if (tenancyCreated) {
+            const createdMonth = tenancyCreated.substring(0, 7); // "YYYY-MM"
+            const paymentMonth = upcomingPayment.rent_month.substring(0, 7);
+            isGracePeriod = createdMonth === paymentMonth;
+          }
+        }
+
+        const unpaidStatus: 'upcoming' | 'missed' = (pastCutoff && !isGracePeriod) ? 'missed' : 'upcoming';
 
         items.push({
           type: 'payment',
@@ -520,7 +545,7 @@ export default function HomeScreen() {
           } else if (!verificationStatus?.landlord_approved) {
             router.push({ pathname: '/(setup)/invite-landlord', params: { reentry: '1' } } as never);
           } else {
-            router.push('/(setup)/pending-steps' as never);
+            router.replace('/(main)' as never);
           }
         }, [router, verificationStatus]);
 
@@ -539,7 +564,7 @@ export default function HomeScreen() {
           } else if (!verificationStatus?.landlord_approved) {
             router.push({ pathname: '/(setup)/invite-landlord', params: { reentry: '1' } } as never);
           } else {
-            router.push('/(setup)/pending-steps' as never);
+            router.replace('/(main)' as never);
           }
         }, [router, verificationStatus]);
 
@@ -1076,30 +1101,15 @@ function renderDashboardContent(state: DashboardState, props: ContentProps) {
             <EmptyPaymentsState />
           )
         ) : (
-          cashbackModule.entries.length > 0 || cashbackModule.moduleState !== 'active' ? (
             <CashbacksList
               {...cashbackModule}
               onEntryPress={onCashbackEntryPress}
               onStepPress={onSetupStepPress}
               onMemberStatusPress={onMemberStatusPress}
             />
-          ) : (
-            <CashbackEmptyState
-              accruedAmount={cashbackBalance}
-              allTimeTotal={allTimeCashback}
-              cashbackRate={cashbackRate}
-            />
-          )
         )}
       </View>
 
-          {/* Warning Banner — below tabs, only for overdue/missed active states */}
-          {(() => {
-            if (isMultipleOverdue) return <WarningBanner type="multiple" />;
-            if (isMissed) return <WarningBanner type="missed" />;
-            if (isOverdue) return <WarningBanner type="late" />;
-            return null;
-          })()}
 
         </View>
       );

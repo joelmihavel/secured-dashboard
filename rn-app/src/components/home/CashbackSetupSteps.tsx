@@ -1,13 +1,11 @@
 /**
  * CashbackSetupSteps Component
- * Setup steps with two layout variants: horizontal cards (pending) or vertical list (active).
- * Figma Reference: 4109:66469 (horizontal), 4109:67067 (vertical)
+ * Horizontal setup step cards for the "COMPLETE SETUP TO ACCESS YOUR CASHBACK" section.
+ * Figma Reference: 4111:71008
  *
- * Horizontal (State 1/2): 3 cards, 107px each, gap=4, icon + text
- *   - Completed: opacity=0.48, strikethrough, #FF9A6D
- *   - Pending: opacity=1.0, #878787
- * Vertical (State 3): 3 rows 329x49, gap=4, checkbox + text + arrow
- *   - Checkbox: 11x11, r=4, filled=#FF9A6D (done), #202020 (pending)
+ * 3 cards, flex=1 each, gap=4, icon + text
+ * - Completed: opacity=0.48, strikethrough, #FF9A6D
+ * - Pending: opacity=1.0, #878787
  */
 
 import React, { memo } from 'react';
@@ -22,15 +20,13 @@ export type { SetupStep, SetupStepStatus };
 
 export interface CashbackSetupStepsProps {
   steps: SetupStep[];
-  /** 'horizontal' for setup pending states, 'vertical' for active/verified */
-  layout: 'horizontal' | 'vertical';
   onStepPress?: (step: SetupStep) => void;
 }
 
-// Figma visual states for horizontal cards (4111:71008):
-// completed = filled checkmark #FF9A6D, text strikethrough, opacity 0.48
-// active/in_progress/not_started = circle outline (pending), text #878787
-// Icon color: completed & active/in_progress = #FF9A6D, not_started = #4D4D4D
+// Figma visual states (4111:71008):
+// completed = filled checkmark #FF9A6D with #131313 tick, text strikethrough, opacity 0.48
+// active/in_progress = circle outline #FF9A6D, text #878787
+// not_started = circle outline #4D4D4D, text #878787
 function StepIcon({ status }: { status: SetupStepStatus }) {
   switch (status) {
     case 'completed':
@@ -40,12 +36,11 @@ function StepIcon({ status }: { status: SetupStepStatus }) {
             d="M14.65 8C14.65 11.672 11.672 14.65 8 14.65C4.328 14.65 1.35 11.672 1.35 8C1.35 4.328 4.328 1.35 8 1.35C11.672 1.35 14.65 4.328 14.65 8Z"
             fill={colors.brand[500]}
           />
-          <Path d="M11 5.5L7 10L5 8" stroke="#FFFFFF" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" />
+          <Path d="M11 5.5L7 10L5 8" stroke="#131313" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" />
         </Svg>
       );
     case 'active':
     case 'in_progress':
-      // Figma: empty circle outline, stroke #FF9A6D, weight 1
       return (
         <Svg width={16} height={16} viewBox="0 0 16 16" fill="none">
           <Path
@@ -69,96 +64,37 @@ function StepIcon({ status }: { status: SetupStepStatus }) {
   }
 }
 
-// Text color per status — Figma: completed=#FF9A6D, all pending states=#878787
+// Text color per status
 const TEXT_COLOR: Record<SetupStepStatus, string> = {
-  completed: colors.brand[500],   // Figma: #FF9A6D
-  active: colors.neutral[600],    // Figma: #878787 (pending)
-  in_progress: colors.neutral[600], // Figma: #878787 (pending)
-  not_started: colors.neutral[600], // Figma: #878787 (inactive)
+  completed: colors.brand[500],     // #FF9A6D
+  active: colors.neutral[600],      // #878787
+  in_progress: colors.neutral[600], // #878787
+  not_started: colors.neutral[600], // #878787
 };
 
-function CashbackSetupStepsComponent({ steps, layout, onStepPress }: CashbackSetupStepsProps) {
-  if (layout === 'horizontal') {
-    return (
-      <View style={styles.horizontalContainer}>
-        {steps.map((step) => {
-          const isCompleted = step.status === 'completed';
-          return (
-            <TouchableOpacity
-              key={step.id}
-              style={[styles.horizontalCard, isCompleted && styles.completedCard]}
-              onPress={() => !isCompleted && onStepPress?.(step)}
-              activeOpacity={isCompleted ? 1 : 0.7}
-              disabled={isCompleted}
-            >
-              <StepIcon status={step.status} />
-              <Text
-                style={[
-                  styles.horizontalText,
-                  { color: TEXT_COLOR[step.status] },
-                  isCompleted && styles.completedTextDecoration,
-                ]}
-              >
-                {step.label}
-              </Text>
-            </TouchableOpacity>
-          );
-        })}
-      </View>
-    );
-  }
-
-  // Vertical layout (active/verified state)
+function CashbackSetupStepsComponent({ steps, onStepPress }: CashbackSetupStepsProps) {
   return (
-    <View style={styles.verticalContainer}>
+    <View style={styles.container}>
       {steps.map((step) => {
         const isCompleted = step.status === 'completed';
         return (
           <TouchableOpacity
             key={step.id}
-            style={[styles.verticalRow, isCompleted && styles.completedCard]}
+            style={[styles.card, isCompleted && styles.completedCard]}
             onPress={() => !isCompleted && onStepPress?.(step)}
             activeOpacity={isCompleted ? 1 : 0.7}
             disabled={isCompleted}
           >
-            {/* Checkbox — Figma: filled #FF9A6D (completed), outline #FF9A6D (pending) */}
-            <View
-              style={[
-                styles.checkbox,
-                isCompleted ? styles.checkboxFilled : styles.checkboxEmpty,
-              ]}
-            >
-              {isCompleted && (
-                <Svg width={10} height={10} viewBox="0 0 10 10" fill="none">
-                  <Path
-                    d="M8.5 2.5L4 7.5L1.5 5"
-                    stroke="#FFFFFF"
-                    strokeWidth={1.5}
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </Svg>
-              )}
-            </View>
-
-            {/* Label */}
+            <StepIcon status={step.status} />
             <Text
               style={[
-                styles.verticalText,
+                styles.labelText,
                 { color: TEXT_COLOR[step.status] },
                 isCompleted && styles.completedTextDecoration,
               ]}
-              numberOfLines={1}
             >
               {step.label}
             </Text>
-
-            {/* Arrow for actionable items */}
-            {!isCompleted && (
-              <Svg width={12} height={12} viewBox="0 0 12 12" fill="none" style={styles.chevron}>
-                <Path d="M4.5 2.5L8 6L4.5 9.5" stroke={TEXT_COLOR[step.status]} strokeWidth={1.2} strokeLinecap="round" strokeLinejoin="round" />
-              </Svg>
-            )}
           </TouchableOpacity>
         );
       })}
@@ -167,74 +103,30 @@ function CashbackSetupStepsComponent({ steps, layout, onStepPress }: CashbackSet
 }
 
 const styles = StyleSheet.create({
-  // Horizontal layout (State 1/2)
-  horizontalContainer: {
+  container: {
     flexDirection: 'row',
-    gap: 4, // Figma: 4px between cards
+    gap: 4,
   },
-  horizontalCard: {
+  card: {
     flex: 1,
-    minHeight: 115, // Figma: 107x115 card height
-    backgroundColor: colors.black[500], // Figma: #202020
-    borderRadius: 12, // Figma: 12px
-    padding: 16, // Figma: 16px all sides
-    gap: 16, // Figma: 16px between icon and text
+    minHeight: 115,
+    backgroundColor: colors.black[500], // #202020
+    borderRadius: 12,
+    padding: 16,
+    gap: 16,
   },
-  horizontalText: {
-    fontFamily: 'PlusJakartaSans-Regular', // Figma: fontWeight 400
-    fontSize: 12, // Figma: 12px
-    lineHeight: 16.92, // Figma: 16.92
-    letterSpacing: -0.24, // Figma: -0.24
-    textAlign: 'left', // Figma: LEFT aligned
-  },
-
-  // Vertical layout (State 3)
-  verticalContainer: {
-    gap: 4, // Figma: 4px between rows
-  },
-  verticalRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.black[500], // Figma: #202020
-    borderRadius: 12, // Figma: 12px
-    padding: 16, // Figma: 16px all sides
-    gap: 16, // Figma: 16px between checkbox and text
-  },
-  verticalText: {
+  labelText: {
     fontFamily: 'PlusJakartaSans-Regular',
     fontSize: 12,
     lineHeight: 16.92,
     letterSpacing: -0.24,
-    flex: 1,
+    textAlign: 'left',
   },
-
-  // Checkbox (vertical layout)
-  checkbox: {
-    width: 16, // Enough to contain the 10px check SVG
-    height: 16,
-    borderRadius: 4, // Figma: cornerRadius 4
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  checkboxFilled: {
-    backgroundColor: colors.brand[500], // Figma: #FF9A6D completed
-  },
-  checkboxEmpty: {
-    backgroundColor: colors.black[500], // Figma: #202020
-    borderWidth: 1,
-    borderColor: colors.brand[500], // Figma: #FF9A6D (pending outline)
-  },
-
-  // States
   completedCard: {
-    opacity: 0.48, // Figma: dimmed for completed
+    opacity: 0.48,
   },
   completedTextDecoration: {
-    textDecorationLine: 'line-through', // Figma: STRIKETHROUGH on completed
-  },
-  // SVG chevron arrow
-  chevron: {
-    marginLeft: 'auto',
+    textDecorationLine: 'line-through',
   },
 });
 

@@ -75,7 +75,7 @@ serve(async (req: Request) => {
     const { data: users, error: usersError } = await supabase
       .from("device_tokens")
       .select("user_id")
-      .eq("status", "active");
+      .eq("is_active", true);
 
     if (usersError) {
       throw new Error(`Failed to query device_tokens: ${usersError.message}`);

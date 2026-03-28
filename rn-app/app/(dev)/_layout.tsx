@@ -22,6 +22,7 @@ export default function DevLayout() {
       }}
     >
       <Stack.Screen name="screen-picker" />
+      <Stack.Screen name="critical-update-preview" />
     </Stack>
   );
 }

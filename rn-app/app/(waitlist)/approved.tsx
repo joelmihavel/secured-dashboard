@@ -127,8 +127,16 @@ export default function WaitlistApprovedScreen() {
   const {
     userName,
     showConfetti,
+    viewState,
     status,
   } = useWaitlist();
+
+  // Guard: if admin reverts approval, redirect back to waitlist
+  useEffect(() => {
+    if (viewState && viewState !== 'approved' && viewState !== 'loading') {
+      router.replace('/(waitlist)' as never);
+    }
+  }, [viewState, router]);
 
   const displayName = userName || 'there';
   const submissionDate = status?.submissionDate ?? '';
@@ -223,7 +231,7 @@ export default function WaitlistApprovedScreen() {
 
   // Stable navigation callback for runOnJS (Reanimated v4 requires standalone functions, not method refs)
   const navigateToSetup = useCallback(() => {
-    router.replace('/(setup)' as never);
+    router.replace('/(setup)/add-bank' as never);
   }, [router]);
 
   // Handle "Step Inside" button
