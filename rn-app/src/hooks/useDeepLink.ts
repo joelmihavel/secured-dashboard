@@ -84,7 +84,7 @@ const DEEP_LINK_ROUTES: Record<string, string> = {
 
   // Setup
   '/setup': '/(main)',
-  '/setup/onboarding': '/(setup)',
+  '/setup/onboarding': '/(setup)/add-bank',
   '/setup/bank': '/(setup)/add-bank',
   '/setup/utility': '/(setup)/add-utility',
   '/setup/landlord': '/(setup)/invite-landlord',
@@ -103,7 +103,6 @@ const DEEP_LINK_ROUTES: Record<string, string> = {
   // Profile
   '/profile': '/(profile)',
   '/profile/edit': '/(profile)/edit',
-  '/profile/payment-methods': '/(profile)/payment-methods',
   '/profile/agreement': '/(profile)/agreement',
 };
 

@@ -167,7 +167,6 @@ const SECTIONS: Section[] = [
   {
     label: 'Setup',
     screens: [
-      { name: 'Setup Dashboard', path: '/(setup)' },
       { name: 'Add Bank', path: '/(setup)/add-bank' },
       { name: 'Add Utility Bill', path: '/(setup)/add-utility' },
       { name: 'Invite Landlord', path: '/(setup)/invite-landlord' },
