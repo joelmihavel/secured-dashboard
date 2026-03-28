@@ -310,7 +310,7 @@ export default function PaymentSuccessScreen() {
           <View style={styles.receiptDetails}>
             <ReceiptRow label="Rent paid" value={`\u20B9  ${displayData.amount}`} />
             <DashedDivider color={FIGMA_COLORS.dividerColor} style={styles.divider} />
-            <ReceiptRow label="Cashback Applied" value={`- \u20B9  ${displayData.cashbackApplied}`} isCashback />
+            <ReceiptRow label="Cashback" value={`- \u20B9  ${displayData.cashbackApplied}`} isCashback />
             <DashedDivider color={FIGMA_COLORS.dividerColor} style={styles.divider} />
             <ReceiptRow label="Date" value={displayData.date} />
             <DashedDivider color={FIGMA_COLORS.dividerColor} style={styles.divider} />
