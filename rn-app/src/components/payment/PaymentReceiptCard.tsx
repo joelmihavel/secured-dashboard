@@ -42,8 +42,10 @@ export interface PaymentReceiptCardProps {
   topMargin?: number;
   /** Override title left margin (default: s(-5) = 19px from card edge) */
   titleMarginLeft?: number;
-  /** Override content area top padding (default: sv(80)) */
+  /** Override content area top padding (default: sv(68)) */
   contentPaddingTop?: number;
+  /** Override title bottom margin (default: sv(24)) */
+  titleMarginBottom?: number;
 }
 
 // ============================================
@@ -150,6 +152,7 @@ function PaymentReceiptCardComponent({
   topMargin,
   titleMarginLeft,
   contentPaddingTop,
+  titleMarginBottom,
 }: PaymentReceiptCardProps) {
   const insets = useSafeAreaInsets();
   const cardMarginTop = topMargin ?? Math.max(0, 183 - insets.top);
@@ -182,7 +185,7 @@ function PaymentReceiptCardComponent({
           )}
 
           {/* Title */}
-          <View style={[styles.titleSection, titleMarginLeft != null && { marginLeft: titleMarginLeft }]}>
+          <View style={[styles.titleSection, titleMarginLeft != null && { marginLeft: titleMarginLeft }, titleMarginBottom != null && { marginBottom: titleMarginBottom }]}>
             <Text style={styles.titleWhite}>
               {titleLine1}
               {'\n'}
@@ -213,7 +216,7 @@ const styles = StyleSheet.create({
   },
   gridContainer: {
     position: 'absolute',
-    top: 0,
+    top: sv(64), // Figma: vector starts 64px below card top (card y=307, vector y=371)
     alignSelf: 'center',
     width: s(369),
     height: sv(235),
@@ -227,7 +230,6 @@ const styles = StyleSheet.create({
   },
   cardShadowWrapper: {
     width: s(270),
-    minHeight: sv(481),
     shadowColor: '#000000',
     shadowOffset: { width: 0, height: sv(24) },
     shadowOpacity: 0.15,
@@ -240,9 +242,8 @@ const styles = StyleSheet.create({
     borderRadius: 0,
   },
   receiptCardContent: {
-    flex: 1,
     padding: s(24),
-    paddingTop: sv(80),
+    paddingTop: sv(68),
     position: 'relative',
     overflow: 'visible',
   },

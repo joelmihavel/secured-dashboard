@@ -440,7 +440,6 @@ const styles = StyleSheet.create({
     gap: sv(16),
     alignItems: 'center',
     marginTop: sv(33), // Figma: 921 - 888(card bottom) = 33px
-    paddingBottom: sv(48),
   },
   contactSupportText: {
     fontFamily: 'PlusJakartaSans-Regular',
