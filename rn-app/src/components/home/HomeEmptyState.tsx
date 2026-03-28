@@ -26,7 +26,7 @@ import { HeadlineSection } from './HeadlineSection';
 import { SetupProgressCard } from './SetupProgressCard';
 import { RentStatusCarousel, CarouselCardItem } from './RentStatusCarousel';
 import { FinishSetupSection } from './FinishSetupSection';
-import { TabSwitcher, TabId } from './TabSwitcher';
+import { TabSwitcher, Tab } from './TabSwitcher';
 import { EmptyPaymentsState } from './EmptyPaymentsState';
 import { CashbackEmptyState } from './CashbackEmptyState';
 import { LandlordStatus } from './LandlordStatusCard';
@@ -97,7 +97,11 @@ function HomeEmptyStateComponent({
   onPaymentMethodPress,
   onPaymentMethodEdit,
 }: HomeEmptyStateProps) {
-  const [activeTab, setActiveTab] = useState<TabId>('recent_payments');
+  const emptyStateTabs: Tab[] = [
+    { id: 'recent_payments', label: 'Recent Payments' },
+    { id: 'cashbacks', label: 'Cashbacks' },
+  ];
+  const [activeTab, setActiveTab] = useState<string>('recent_payments');
 
   // Map variant to LandlordStatus for FinishSetupSection
   const getLandlordStatus = (): LandlordStatus | null => {
@@ -160,7 +164,7 @@ function HomeEmptyStateComponent({
           gap 48, paddingTop 8, alignItems center */}
       {showTabSwitcher ? (
         <View style={styles.tabSection}>
-          <TabSwitcher activeTab={activeTab} onTabChange={setActiveTab} />
+          <TabSwitcher tabs={emptyStateTabs} activeTabId={activeTab} onTabChange={setActiveTab} />
           {activeTab === 'recent_payments' ? (
             <EmptyPaymentsState />
           ) : (

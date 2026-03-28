@@ -70,9 +70,9 @@ function SetupProgressCardComponent({
       isComplete: addressProofComplete,
     },
     {
-      title: 'Confirm your Tenancy',
+      title: 'Confirm your tenancy',
       subtitle: landlordInvited
-        ? 'Landlord is invited'
+        ? 'landlord is invited'
         : 'complete landlord verification',
       isComplete: landlordInvited,
     },
@@ -138,9 +138,9 @@ function SetupProgressCardComponent({
           testID="setup-progress-cta"
         >
           <Text style={styles.infoBarText}>
-            {ctaLabel ?? 'How to Invite your Landlord?'}
+            {ctaLabel ?? 'How to invite your landlord?'}
           </Text>
-          <Text style={styles.infoBarLink}>Learn More</Text>
+          <Text style={styles.infoBarLink}>Learn more</Text>
         </TouchableOpacity>
       )}
     </Wrapper>

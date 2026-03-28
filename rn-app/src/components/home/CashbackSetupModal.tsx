@@ -13,7 +13,7 @@
  * - Sheet: bg #1A1A1A, borderTopRadius ~23
  * - Handle: 48x4, #4D4D4D, radius 200
  * - Title: 28/40, Medium (500), letterSpacing -1, #A9A9A9, px-48
- *   "Complete setup to get cashback from your rent payments"
+ *   "Complete setup and use cashback"
  * - Setup cards: 3 horizontal, gap=4, same as CashbackSetupSteps
  * - CTA button: 297px, r=8, bg implied, "Upload address proof →" 14/20 Medium #FFFFFF
  * - Skip: "I'll do it later" 12/20 Regular #FFFFFF, px-48
@@ -22,6 +22,7 @@
 import React, { useEffect, useMemo } from 'react';
 import {
   View,
+  Text as RNText,
   StyleSheet,
   Modal,
   TouchableOpacity,
@@ -37,10 +38,8 @@ import Animated, {
 import { BlurView } from 'expo-blur';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { Text } from '@/src/components/ui/Typography/Text';
 import { PrimaryButton } from '@/src/components/ui/Button/PrimaryButton';
-import { CashbackSetupSteps } from './CashbackSetupSteps';
-import type { SetupStep } from './CashbackSetupSteps';
+import { colors } from '@/src/theme';
 
 // ── Public API ──────────────────────────────────────────────────────────────
 
@@ -103,18 +102,18 @@ export function VerificationCheckSheet({
     transform: [{ translateY: slideAnim.value }],
   }));
 
-  // Setup steps for the horizontal cards
-  const steps: SetupStep[] = useMemo(() => [
-    { id: 'bank', label: "Add your landlord's bank details", completed: true },
-    { id: 'utility', label: 'Upload address proof', completed: utilityVerified },
-    { id: 'landlord', label: 'Awaiting Landlord Approval', completed: landlordApproved },
+  // Setup steps for progress bar
+  const steps = useMemo(() => [
+    { label: "Add landlord's\nbank details", completed: true },
+    { label: 'Verify your\naddress', completed: utilityVerified },
+    { label: 'Invite your\nlandlord', completed: landlordApproved },
   ], [utilityVerified, landlordApproved]);
 
   // Dynamic CTA label — points to next incomplete step
   const ctaLabel = useMemo(() => {
-    if (!utilityVerified) return 'Upload address proof →';
-    if (!landlordApproved) return 'Invite your landlord →';
-    return 'Finish Setup →';
+    if (!utilityVerified) return 'Verify address →';
+    if (!landlordApproved) return 'Invite landlord →';
+    return 'Finish setup →';
   }, [utilityVerified, landlordApproved]);
 
   if (!visible) return null;
@@ -155,18 +154,29 @@ export function VerificationCheckSheet({
 
           {/* Content */}
           <View style={styles.content}>
-            {/* Title — Figma: 28px/500, #A9A9A9, px-48 */}
+            {/* Title — Figma: 28px/500, mixed colors, px-48 */}
             <View style={styles.titleContainer}>
-              <Text style={styles.title}>
-                Complete setup to get cashback from your rent payments
-              </Text>
+              <RNText style={styles.title}>
+                {'Complete setup and '}
+                <RNText style={styles.titleAccent}>use cashback</RNText>
+              </RNText>
             </View>
 
-            {/* Setup Steps — 3 horizontal cards */}
-            <CashbackSetupSteps
-              steps={steps}
-              layout="horizontal"
-            />
+            {/* Progress Bar — same dot+line pattern as TransactionProgressBar */}
+            <View style={styles.progressBar}>
+              <View style={styles.trackRow}>
+                <View style={[styles.dot, steps[0].completed && styles.dotCompleted]} />
+                <View style={[styles.progressLine, steps[0].completed && styles.lineCompleted]} />
+                <View style={[styles.dot, steps[1].completed && styles.dotCompleted]} />
+                <View style={[styles.progressLine, steps[1].completed && styles.lineCompleted]} />
+                <View style={[styles.dot, steps[2].completed && styles.dotCompleted]} />
+              </View>
+              <View style={styles.labelRow}>
+                <RNText style={[styles.stepLabel, styles.labelLeft]}>{steps[0].label}</RNText>
+                <RNText style={[styles.stepLabel, styles.labelCenter]}>{steps[1].label}</RNText>
+                <RNText style={[styles.stepLabel, styles.labelRight]}>{steps[2].label}</RNText>
+              </View>
+            </View>
 
             {/* Actions — Figma: px-48, gap-32 */}
             <View style={styles.actions}>
@@ -180,7 +190,7 @@ export function VerificationCheckSheet({
                 style={styles.skipButton}
                 activeOpacity={0.7}
               >
-                <Text style={styles.skipText}>I'll do it later</Text>
+                <RNText style={styles.skipText}>I'll do it later</RNText>
               </TouchableOpacity>
             </View>
           </View>
@@ -231,32 +241,86 @@ const styles = StyleSheet.create({
   },
   // Content wrapper
   content: {
-    gap: 30, // Figma: ~30px gap between major sections
+    gap: 24, // Figma: gap between sections
   },
-  // Title — Figma: 28px Medium, #A9A9A9, px-48
+  // Title — Figma: 28px Medium, mixed colors, px-48
   titleContainer: {
     paddingHorizontal: 48,
   },
   title: {
-    fontFamily: 'PlusJakartaSans-Medium', // Figma: fontWeight 500
-    fontSize: 28, // Figma: 28px
-    lineHeight: 40, // Figma: 40
-    letterSpacing: -1, // Figma: -1
-    color: '#A9A9A9', // Figma: #A9A9A9
+    fontFamily: 'PlusJakartaSans-Medium',
+    fontSize: 28,
+    lineHeight: 40,
+    letterSpacing: -1,
+    color: '#A9A9A9', // Figma: gray for first part
   },
-  // Actions — Figma: px-48, gap-32
+  titleAccent: {
+    fontSize: 28,
+    lineHeight: 40,
+    letterSpacing: -1,
+    color: colors.brand[500], // Figma: #FF9A6D for second part
+  },
+  // Progress bar — same dot+line pattern as TransactionProgressBar
+  progressBar: {
+    paddingHorizontal: 48,
+    gap: 8,
+  },
+  trackRow: {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+  },
+  dot: {
+    width: 11,
+    height: 11,
+    borderRadius: 4, // Figma: r=4 (rounded square)
+    backgroundColor: colors.black[500], // #202020 — pending
+    borderWidth: 1,
+    borderColor: colors.brand[500], // #FF9A6D outline
+  },
+  dotCompleted: {
+    backgroundColor: colors.brand[500], // #FF9A6D — filled
+    borderColor: colors.brand[500],
+  },
+  progressLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: colors.black[400], // #4D4D4D
+  },
+  lineCompleted: {
+    backgroundColor: colors.brand[500], // #FF9A6D
+  },
+  labelRow: {
+    flexDirection: 'row' as const,
+    justifyContent: 'space-between' as const,
+  },
+  stepLabel: {
+    fontFamily: 'PlusJakartaSans-Regular',
+    fontSize: 12,
+    lineHeight: 16.92,
+    letterSpacing: -0.24,
+    color: colors.neutral[600], // #878787
+    width: 97, // Figma: ~97px per label column
+  },
+  labelLeft: { textAlign: 'left' as const },
+  labelCenter: { textAlign: 'center' as const },
+  labelRight: { textAlign: 'right' as const },
+  // Actions — Figma: px-48, centered
   actions: {
     paddingHorizontal: 48,
-    gap: 32, // Figma: 32px between button and skip
-    alignItems: 'center',
+    gap: 12,
+    alignItems: 'center' as const,
   },
   skipButton: {
-    paddingVertical: 8,
+    paddingVertical: 4,
   },
   skipText: {
-    fontFamily: 'PlusJakartaSans-Regular', // Figma: fontWeight 400
-    fontSize: 12, // Figma: 12px
-    lineHeight: 20, // Figma: 20
-    color: '#FFFFFF', // Figma: white
-  },
+    fontFamily: 'PlusJakartaSans-Regular',
+    fontSize: 12,
+    lineHeight: 20,
+    color: '#FFFFFF',
+    textAlign: 'center' as const,
+    textDecorationLine: 'underline',
+    textDecorationColor: '#FFFFFF',
+    textDecorationStyle: 'solid',
+  } as const,
 });

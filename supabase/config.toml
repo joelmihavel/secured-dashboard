@@ -253,6 +253,9 @@ verify_jwt = false
 [functions.verify-pan]
 verify_jwt = false
 
+[functions.verify-upi-vpa]
+verify_jwt = false
+
 [functions.invite-landlord-whatsapp]
 verify_jwt = false
 

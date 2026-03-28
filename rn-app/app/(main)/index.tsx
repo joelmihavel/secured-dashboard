@@ -71,7 +71,6 @@ import {
 
   SetupProgressCard,
   // Import types from home components
-  TabId,
   PaymentMethod,
   EmptyStateVariant,
   NotificationType,
@@ -161,7 +160,7 @@ export default function HomeScreen() {
   );
 
   // Tab state for Recent Payments / Cashbacks
-  const [activeTab, setActiveTab] = useState<TabId>('cashbacks');
+  const [activeTab, setActiveTab] = useState<string>('cashbacks');
   const { showSheet } = useLocalSearchParams<{ showSheet?: string }>();
   const [showVerificationSheet, setShowVerificationSheet] = useState(showSheet === 'cashback-setup');
   const [showStatusSheet, setShowStatusSheet] = useState(false);
@@ -766,7 +765,7 @@ export default function HomeScreen() {
             Something went wrong
           </Text>
           <Text variant="bodyMd2" color="muted" align="center" style={styles.errorMessage}>
-            {error instanceof Error ? error.message : 'Unable to load your dashboard. Please try again.'}
+            {error instanceof Error ? error.message : 'Unable to load your dashboard. Please try again'}
           </Text>
           <PrimaryButton
             title="Retry"
@@ -912,12 +911,12 @@ interface ContentProps {
   isMissed: boolean;
   isMultipleOverdue: boolean;
   missedMonthName: string;
-  activeTab: TabId;
+  activeTab: string;
   cashbackBalance: number;
   allTimeCashback: number;
   cashbackRate: number;
   statusNotification: { type: NotificationType; message?: string } | null;
-  onTabChange: (tab: TabId) => void;
+  onTabChange: (tabId: string) => void;
   onAddPayment: () => void;
   onFinishSetup: () => void;
   onPayNow: () => void;
@@ -937,6 +936,11 @@ interface ContentProps {
   onHowItWorks?: () => void;
   onMemberStatusPress?: () => void;
 }
+
+const DASHBOARD_TABS = [
+  { id: 'cashbacks', label: 'Cashbacks' },
+  { id: 'recent_payments', label: 'Recent Payments' },
+];
 
 function renderDashboardContent(state: DashboardState, props: ContentProps) {
   const {
@@ -1005,7 +1009,7 @@ function renderDashboardContent(state: DashboardState, props: ContentProps) {
           />
           <RentStatusCarousel items={carouselItems} />
           <View style={styles.tabSection}>
-            <TabSwitcher activeTab={activeTab} onTabChange={onTabChange} />
+            <TabSwitcher tabs={DASHBOARD_TABS} activeTabId={activeTab} onTabChange={onTabChange} />
             {activeTab === 'recent_payments' ? (
               transactions.length > 0 ? (
                 <RecentPaymentsList
@@ -1058,7 +1062,7 @@ function renderDashboardContent(state: DashboardState, props: ContentProps) {
 
           {/* Tab Section (Frame 1686557297): wraps Toggle + payment list content */}
           <View style={styles.tabSection}>
-        <TabSwitcher activeTab={activeTab} onTabChange={onTabChange} />
+        <TabSwitcher tabs={DASHBOARD_TABS} activeTabId={activeTab} onTabChange={onTabChange} />
 
         {/* Tab Content - gap 48 separates toggle from content */}
         {activeTab === 'recent_payments' ? (

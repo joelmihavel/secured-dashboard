@@ -48,7 +48,7 @@ export const MOCK_DASHBOARD_DATA: DashboardData = {
   },
 
   tenancy: {
-    id: '213bef95-d248-4d55-874f-2005c5b7089e',
+    id: '2eb931d2-d179-48ec-8ea2-84da78f6c593',
     status: 'active',
     property_address: 'Flat No.B-15, 1st Floor, Rema Sky View Apartments, Murugeshpalya',
     property_city: 'Bangalore',

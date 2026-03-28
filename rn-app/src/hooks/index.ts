@@ -50,6 +50,8 @@ export {
 // Setup
 export {
   useVerifyBank,
+  useVerifyUpiVpa,
+  validateUpiVpa,
   useVerifyPan,
   useVerifyUtility,
   useUtilityOperators,

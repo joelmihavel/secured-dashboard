@@ -699,7 +699,7 @@ export function mapCashbackModule(
     },
     {
       id: 'utility',
-      label: 'Upload address proof',
+      label: 'Verify your address',
       completed: utilityDone,
       status: stepStatus(utilityDone, 1),
     },

@@ -24,7 +24,7 @@ export type { RentStatusCarouselProps, CarouselCardItem } from './RentStatusCaro
 
 // Tab and list components
 export { TabSwitcher } from './TabSwitcher';
-export type { TabSwitcherProps, TabId } from './TabSwitcher';
+export type { TabSwitcherProps, Tab } from './TabSwitcher';
 
 export { RecentPaymentsList } from './RecentPaymentsList';
 export type { RecentPaymentsListProps } from './RecentPaymentsList';

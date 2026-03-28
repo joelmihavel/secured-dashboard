@@ -1,6 +1,6 @@
 /**
  * TabSwitcher Component
- * "Recent Payments" / "Cashbacks" toggle tabs - Figma pixel-perfect
+ * Generic tab toggle - Figma pixel-perfect
  * Figma Reference: 243-5870 (node 243:6026 "Toggle")
  *
  * Figma Pixel-Perfect Values (from 243-5870 blueprint):
@@ -13,50 +13,78 @@
  * - Inactive text: fontSize 14, lineHeight 20, PlusJakartaSans-Medium, color #FFFFFF
  */
 
-import React, { memo } from 'react';
+import React, { memo, useCallback } from 'react';
 import { View, StyleSheet, TouchableOpacity } from 'react-native';
+import * as Haptics from 'expo-haptics';
 
 import { Text } from '@/src/components/ui';
 
-export type TabId = 'recent_payments' | 'cashbacks';
-
-export interface TabSwitcherProps {
-  activeTab: TabId;
-  onTabChange: (tab: TabId) => void;
+export interface Tab {
+  id: string;
+  label: string;
 }
 
-function TabSwitcherComponent({ activeTab, onTabChange }: TabSwitcherProps) {
-  return (
-    <View style={styles.container} accessibilityRole="tablist">
-      {/* Cashbacks tab — shown first */}
-      <TouchableOpacity
-        onPress={() => onTabChange('cashbacks')}
-        activeOpacity={0.8}
-        accessibilityRole="tab"
-        accessibilityState={{ selected: activeTab === 'cashbacks' }}
-        accessibilityLabel="Cashbacks"
-      >
-        <View style={activeTab === 'cashbacks' ? styles.tabActive : styles.tabInactive}>
-          <Text style={activeTab === 'cashbacks' ? styles.tabTextActive : styles.tabTextInactive}>
-            Cashbacks
-          </Text>
-        </View>
-      </TouchableOpacity>
+export interface TabSwitcherProps {
+  tabs: Tab[];
+  activeTabId: string;
+  onTabChange: (tabId: string) => void;
+  disabled?: boolean;
+  /** Smaller padding and font for inline use */
+  compact?: boolean;
+  /** Override container background (default #1A1A1A) */
+  bgColor?: string;
+  /** Override active tab background (default same as container) */
+  activeBgColor?: string;
+}
 
-      {/* Recent Payments tab */}
-      <TouchableOpacity
-        onPress={() => onTabChange('recent_payments')}
-        activeOpacity={0.8}
-        accessibilityRole="tab"
-        accessibilityState={{ selected: activeTab === 'recent_payments' }}
-        accessibilityLabel="Recent Payments"
-      >
-        <View style={activeTab === 'recent_payments' ? styles.tabActive : styles.tabInactive}>
-          <Text style={activeTab === 'recent_payments' ? styles.tabTextActive : styles.tabTextInactive}>
-            Recent Payments
-          </Text>
-        </View>
-      </TouchableOpacity>
+function TabSwitcherComponent({ tabs, activeTabId, onTabChange, disabled = false, compact = false, bgColor, activeBgColor }: TabSwitcherProps) {
+  const handlePress = useCallback(
+    (tabId: string) => {
+      if (disabled) return;
+      if (tabId === activeTabId) return;
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      onTabChange(tabId);
+    },
+    [disabled, activeTabId, onTabChange]
+  );
+
+  return (
+    <View
+      style={[
+        styles.container,
+        compact && styles.containerCompact,
+        bgColor && { backgroundColor: bgColor, borderColor: bgColor },
+        disabled && styles.containerDisabled,
+      ]}
+      accessibilityRole="tablist"
+    >
+      {tabs.map((tab) => {
+        const isActive = tab.id === activeTabId;
+        return (
+          <TouchableOpacity
+            key={tab.id}
+            onPress={() => handlePress(tab.id)}
+            activeOpacity={0.8}
+            accessibilityRole="tab"
+            accessibilityState={{ selected: isActive }}
+            accessibilityLabel={tab.label}
+            disabled={disabled}
+          >
+            <View style={[
+              isActive ? styles.tabActive : styles.tabInactive,
+              compact && (isActive ? styles.tabActiveCompact : styles.tabInactiveCompact),
+              isActive && (activeBgColor || bgColor) && { backgroundColor: activeBgColor || bgColor },
+            ]}>
+              <Text style={[
+                isActive ? styles.tabTextActive : styles.tabTextInactive,
+                compact && styles.tabTextCompact,
+              ]}>
+                {tab.label}
+              </Text>
+            </View>
+          </TouchableOpacity>
+        );
+      })}
     </View>
   );
 }
@@ -64,13 +92,19 @@ function TabSwitcherComponent({ activeTab, onTabChange }: TabSwitcherProps) {
 const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
-    alignSelf: 'center',
+    alignSelf: 'center', // Default: centered. Parent can override via wrapping View
     alignItems: 'center',
     backgroundColor: '#1A1A1A',
     borderRadius: 200,
     borderWidth: 1,
     borderColor: '#202020',
     padding: 4,
+  },
+  containerCompact: {
+    padding: 3,
+  },
+  containerDisabled: {
+    opacity: 0.5,
   },
   tabActive: {
     backgroundColor: '#1A1A1A',
@@ -109,6 +143,19 @@ const styles = StyleSheet.create({
     lineHeight: 20,
     color: '#FFFFFF',
     textAlign: 'center',
+  },
+  // Compact variants
+  tabActiveCompact: {
+    paddingVertical: 6,
+    paddingHorizontal: 16,
+  },
+  tabInactiveCompact: {
+    paddingVertical: 6,
+    paddingHorizontal: 16,
+  },
+  tabTextCompact: {
+    fontSize: 12,
+    lineHeight: 16,
   },
 });
 

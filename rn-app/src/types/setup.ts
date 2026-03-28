@@ -6,10 +6,17 @@
  *
  * Edge functions:
  *   - verify-bank (POST, auth required) - Cashfree Penny Drop bank verification
+ *   - verify-upi-vpa (POST, auth required) - Cashfree UPI Penny Drop verification
  *   - verify-utility (POST, auth required) - API Club electricity bill verification
  *   - verify-utility?action=operators (GET, auth optional) - Electricity operator list
  *   - send-landlord-invite (POST, auth required) - Email invitation to landlord
  */
+
+// ==============================================
+// PAYMENT METHOD SELECTOR
+// ==============================================
+
+export type PaymentMethodType = 'bank' | 'upi';
 
 // ==============================================
 // BANK VERIFICATION
@@ -38,6 +45,35 @@ export interface BankVerificationResponse {
   verificationStatus: 'SUCCESS' | 'FAILURE' | 'PENDING';
   bankName: string | null;
   branch: string | null;
+  message: string;
+  agreementNameMatched: boolean | null;
+  matchedLandlordName: string | null;
+  agreementMatchScore: number | null;
+}
+
+// ==============================================
+// UPI VPA VERIFICATION
+// ==============================================
+
+/** RN client request shape (camelCase) - mapped to snake_case for edge function */
+export interface UpiVerificationRequest {
+  tenancyId: string;
+  upiVpa: string;
+  partyType?: 'landlord' | 'tenant';
+}
+
+/** Mapped RN response from verify-upi-vpa edge function */
+export interface UpiVerificationResponse {
+  success: boolean;
+  bankAccountId: string;
+  verified: boolean;
+  upiVpa: string;
+  verifiedName: string | null;
+  nameMatchScore: number;
+  nameMatchThreshold: number;
+  verificationStatus: 'SUCCESS' | 'FAILURE' | 'PENDING';
+  bankName: string | null;
+  ifsc: string | null;
   message: string;
   agreementNameMatched: boolean | null;
   matchedLandlordName: string | null;
@@ -202,6 +238,7 @@ export type SetupErrorCode =
   | 'FORBIDDEN'
   | 'NETWORK_ERROR'
   | 'IDEMPOTENCY_CONFLICT'
+  | 'UPI_VPA_INVALID'
   | 'SERVICE_UNAVAILABLE'
   | 'EMPTY_RESPONSE'
   | 'UNKNOWN_ERROR';
@@ -224,4 +261,6 @@ export interface SetupError {
   message: string;
   /** Optional field-level errors from backend (camelCase keys after service-layer mapping). */
   fields?: Record<string, string>;
+  /** Full-width detail for name mismatch errors (e.g. the actual name found by penny drop). */
+  foundName?: string;
 }
