@@ -48,7 +48,7 @@ import { useNetworkStatus } from '@/src/hooks/useNetworkStatus';
 import { useRealtimeQuery } from '@/src/hooks/useRealtimeQuery';
 import { checkPaymentStatus, generateReceipt } from '@/src/services/api/payments';
 import type { ReceiptData } from '@/src/services/api/payments';
-import { buildReceiptHtml, buildFallbackReceiptData } from '@/src/utils/receiptHtml';
+import { buildReceiptHtml, buildFallbackReceiptData, loadReceiptFonts } from '@/src/utils/receiptHtml';
 import { usePaymentStore } from '@/src/stores';
 import { PAYMENT_COLORS } from '@/src/theme';
 import { s, sf, sv } from '@/src/theme/scale';
@@ -852,12 +852,11 @@ export default function PaymentStatusScreen() {
           name: receipt.tenant.name,
           phone: receipt.tenant.phone,
           email: receipt.tenant.email,
-          panMasked: receipt.tenant.panMasked ?? null,
         },
         property: receipt.property,
         landlord: {
           name: receipt.landlord.name,
-          panMasked: receipt.landlord.panMasked ?? null,
+          pan: receipt.landlord.panMasked ?? null,
         },
         agreement: {
           certId: receipt.agreement?.certId ?? null,
@@ -875,7 +874,8 @@ export default function PaymentStatusScreen() {
     }
 
     try {
-      const html = buildReceiptHtml(htmlData);
+      const fonts = await loadReceiptFonts();
+      const html = buildReceiptHtml(htmlData, fonts);
       const { uri } = await Print.printToFileAsync({ html, base64: false });
       await Sharing.shareAsync(uri, {
         mimeType: 'application/pdf',
