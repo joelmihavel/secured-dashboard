@@ -5,10 +5,9 @@
  * Extracted: 2026-02-01 via extract-figma-ai-enhanced.ts v3.0
  *
  * Figma Node References:
- * - 41:11206: Onboarding / Waitlist Screen (root) -- pending state
+ * - 41:11206: Onboarding / Waitlist Screen (root) — pending state
  * - 41:11410: Onboarding / Waitlist Screen -- Rejected
  * - 41:11506: Onboarding / Waitlist Screen -- more than 24hrs (pending_long)
- * - 2095586317: Bottom Sheet ("What's Coming your way?")
  *
  * Handles states: loading, pending, pending_long, approved (redirect), rejected, error
  *
@@ -18,8 +17,8 @@
  * - All values are exact Figma pixels with design tokens
  */
 
-import React, { useEffect, useState, useRef, useCallback } from 'react';
-import { View, ScrollView, StyleSheet, RefreshControl, Text as RNText, TouchableOpacity, Linking, Image } from 'react-native';
+import React, { useEffect, useState, useRef } from 'react';
+import { View, ScrollView, StyleSheet, RefreshControl, Text as RNText, TouchableOpacity, Linking } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -36,11 +35,7 @@ import {
   BenefitsCard,
   DottedGridPattern,
   SkeletonLoader,
-  BottomSheet,
 } from '@/src/components';
-import { WaitlistSetupSteps } from '@/src/components/waitlist/WaitlistSetupSteps';
-import { WaitlistBenefitsList } from '@/src/components/waitlist/WaitlistBenefitsList';
-import { WaitlistPositionBadge } from '@/src/components/waitlist/WaitlistPositionBadge';
 import { useWaitlist, waitlistKeys } from '@/src/hooks';
 import { useQueryClient } from '@tanstack/react-query';
 import { colors } from '@/src/theme/colors';
@@ -65,27 +60,27 @@ const FIGMA = {
 
   // Colors - exact Figma values with design token mappings
   colors: {
-    // Background: #131313 -> colors.black[700]
+    // Background: #131313 → colors.black[700]
     // VariableID:b68dbac75b766af96ea05be0f99c98d5ce07c915
     screenBackground: colors.black[700],
 
-    // Card background: #202020 -> colors.black[500]
+    // Card background: #202020 → colors.black[500]
     // VariableID:e3cb66c05a62a8680357c6bba79620d8a57e6f10
     cardBackground: colors.black[500],
 
-    // Secondary card background: #1A1A1A -> colors.black[600]
+    // Secondary card background: #1A1A1A → colors.black[600]
     // From rejected state bottom card (node 41:11473)
     cardBackgroundSecondary: colors.black[600],
 
-    // Text primary (white): #FFFFFF -> colors.white
+    // Text primary (white): #FFFFFF → colors.white
     // VariableID:7b6c2ec8706e73ec1a8d406ce15c18dc86b52293
     textPrimary: colors.white,
 
-    // Text accent (orange): #FF9A6D -> colors.brand[500]
+    // Text accent (orange): #FF9A6D → colors.brand[500]
     // VariableID:0fd77850f1e95a3b4b9c0b7b04fa3f11a2f4a424
     textAccent: colors.brand[500],
 
-    // Text gray (neutral): #A9A9A9 -> colors.neutral[500]
+    // Text gray (neutral): #A9A9A9 → colors.neutral[500]
     // VariableID:a30255c279da5be0e3281358b6555fa3fed99370
     textGray: colors.neutral[500],
 
@@ -103,36 +98,24 @@ const FIGMA = {
     // Maps to colors.neutral[300] per design tokens
     textValue: colors.neutral[300],
 
-    // Timeline indicator: #FF9A6D -> colors.brand[500]
+    // Timeline indicator: #FF9A6D → colors.brand[500]
     // VariableID:e24126eab8468adae09616b40efaa5e79c21d182
     indicatorActive: colors.brand[500],
 
-    // Timeline stroke: #FFAE8A -> colors.brand[400]
+    // Timeline stroke: #FFAE8A → colors.brand[400]
     // VariableID:03b88d49cb997581cabaa8587cb4944eb9fbe70e
     indicatorStroke: colors.brand[400],
 
-    // Divider: #4D4D4D -> colors.black[400]
+    // Divider: #4D4D4D → colors.black[400]
     // VariableID:d0771a90f71f9f9162cc0656f42874451acc6ae7
     divider: colors.black[400],
 
-    // Hint text: #797979 -> colors.black[300]
+    // Hint text: #797979 → colors.black[300]
     textHint: colors.black[300],
 
-    // Error/rejection red: #E5484D -> colors.error.radix
+    // Error/rejection red: #E5484D → colors.error.radix
     // From Figma error state design system (Radix red)
     errorRed: colors.error.radix,
-
-    // Bottom sheet handle: #4D4D4D -> colors.black[400]
-    sheetHandle: colors.black[400],
-
-    // Bottom sheet background: #1A1A1A -> colors.black[600]
-    sheetBackground: colors.black[600],
-
-    // Close button background: #EEEEEE -> colors.neutral[100]
-    closeButtonBg: colors.neutral[100],
-
-    // Benefit list text: #A9A9A9 -> colors.neutral[500]
-    benefitListText: colors.neutral[500],
   },
 
   // Typography - mapped to design tokens from extraction _textStyles
@@ -166,7 +149,7 @@ const FIGMA = {
 
   // Layout from extraction computedStyles._designTokens
   layout: {
-    // Main container padding: paddingLeft/Right 40 -> spacing.xxl
+    // Main container padding: paddingLeft/Right 40 → spacing.xxl
     // From node 41:11212
     containerPadding: s(40), // 40
 
@@ -174,35 +157,35 @@ const FIGMA = {
     // From node 41:11213
     contentWidth: s(313),
 
-    // Section gap: 48 -> spacing.xxxl
+    // Section gap: 48 → spacing.xxxl
     // From node 41:11212 itemSpacing
     sectionGap: s(48), // 48
 
-    // Content gap: 40 -> spacing.xxl
+    // Content gap: 40 → spacing.xxl
     // From node 41:11213 itemSpacing
     contentGap: s(40), // 40
 
-    // Header section gap: 48 -> spacing.xxxl
+    // Header section gap: 48 → spacing.xxxl
     // From node 41:11214 itemSpacing
     headerGap: s(48), // 48
 
-    // Text block gap: 16 -> spacing.md
+    // Text block gap: 16 → spacing.md
     // From node 41:11217 itemSpacing
     textGap: s(16), // 16
   },
 
   // Card styles from extraction (node 41:11220)
   card: {
-    // borderRadius: s(12) -> radius.lg
+    // borderRadius: s(12) → radius.lg
     borderRadius: s(12), // 12
 
-    // paddingTop/Bottom: 24 -> spacing.lg
+    // paddingTop/Bottom: 24 → spacing.lg
     paddingVertical: s(24), // 24
 
-    // paddingLeft/Right: 16 -> spacing.md
+    // paddingLeft/Right: 16 → spacing.md
     paddingHorizontal: s(16), // 16
 
-    // itemSpacing: 24 -> spacing.lg
+    // itemSpacing: 24 → spacing.lg
     gap: s(24), // 24
   },
 
@@ -221,10 +204,10 @@ const FIGMA = {
 
   // Timeline item layout (from node 41:11221)
   timeline: {
-    // Horizontal gap: 8 -> spacing.sm
+    // Horizontal gap: 8 → spacing.sm
     rowGap: spacing.sm, // 8
 
-    // Vertical gap between label/value: 4 -> spacing.xs
+    // Vertical gap between label/value: 4 → spacing.xs
     textGap: spacing.xs, // 4
 
     // Indicator size: 12x12
@@ -258,44 +241,7 @@ const FIGMA = {
     gradientColors: ['transparent', colors.black[700]] as const,
     gradientLocations: [0.5, 1] as const,
   },
-
-  // Bottom sheet constants (Frame 2095586317)
-  bottomSheet: {
-    handleWidth: 48,
-    handleHeight: 4,
-    handleRadius: 200,
-    handleColor: colors.black[400], // #4D4D4D
-    bgColor: colors.black[600], // #1A1A1A
-    contentGap: 24,
-    contentPadTop: 16,
-    benefitsGap: 24,
-    benefitItemPadH: 48,
-    buttonRadius: 8,
-    buttonPad: 16,
-    imageSize: { width: 61, height: 39 },
-    closeButtonSize: 28,
-    closeButtonRadius: 102,
-  },
 } as const;
-
-// ============================================
-// BENEFIT CARD DATA for horizontal row
-// ============================================
-
-const HORIZONTAL_BENEFITS = [
-  {
-    icon: require('@/assets/images/icons/benefit_card_icon.png'),
-    label: 'Cashback\non rent',
-  },
-  {
-    icon: require('@/assets/images/icons/benefit_card_icon.png'),
-    label: 'Rent\nhistory',
-  },
-  {
-    icon: require('@/assets/images/icons/benefit_card_icon.png'),
-    label: 'Smart\nbenefits',
-  },
-];
 
 // ============================================
 // MAIN COMPONENT
@@ -330,10 +276,6 @@ export default function WaitlistScreen() {
 
   const [isNavigating, setIsNavigating] = useState(false);
   const transitionOpacity = useSharedValue(0);
-
-  // Bottom sheet state
-  const [isComingSheetExpanded, setIsComingSheetExpanded] = useState(false);
-  const [isReferralSheetVisible, setIsReferralSheetVisible] = useState(false);
 
   // Stable navigation callbacks for runOnJS (Reanimated v4 requires standalone functions, not method refs)
   const navigateToApproved = React.useCallback(() => {
@@ -385,7 +327,7 @@ export default function WaitlistScreen() {
     transitionOpacity,
   ]);
 
-  // Journey demo mode no longer routes here -- waitlist stage was removed
+  // Journey demo mode no longer routes here — waitlist stage was removed
   // from the journey state machine (mock user has no DB row, so the real
   // API fails and the screen gets stuck). See journeyMode.ts.
 
@@ -406,7 +348,7 @@ export default function WaitlistScreen() {
     }
   }, [isLoading, viewState, status, isJoiningWaitlist, joinWaitlist]);
 
-  // Handle AGREEMENT_NOT_CONFIRMED gate error -- redirect to agreement upload
+  // Handle AGREEMENT_NOT_CONFIRMED gate error — redirect to agreement upload
   useEffect(() => {
     if (error?.code === 'AGREEMENT_NOT_CONFIRMED' && !isNavigating) {
       setIsNavigating(true);
@@ -419,7 +361,7 @@ export default function WaitlistScreen() {
   }, [error?.code, navigateToAgreement, isNavigating, transitionOpacity]);
 
 
-  const displayName = userName || 'there';
+  const displayName = (userName ? userName.split(' ')[0] : '') || 'there';
   const submissionDate = status?.submissionDate ?? '';
   const reviewTime = status?.estimatedReviewTime ?? '';
   const membersOnboarded = status?.currentOnboarded ?? 0;
@@ -457,23 +399,6 @@ export default function WaitlistScreen() {
   const transitionAnimatedStyle = useAnimatedStyle(() => ({
     opacity: transitionOpacity.value,
   }));
-
-  // Sheet callbacks
-  const handleOpenComingSheet = useCallback(() => {
-    setIsComingSheetExpanded(true);
-  }, []);
-
-  const handleCloseComingSheet = useCallback(() => {
-    setIsComingSheetExpanded(false);
-  }, []);
-
-  const handleOpenReferralSheet = useCallback(() => {
-    setIsReferralSheetVisible(true);
-  }, []);
-
-  const handleCloseReferralSheet = useCallback(() => {
-    setIsReferralSheetVisible(false);
-  }, []);
 
   // ============================================
   // LOADING STATE
@@ -723,289 +648,172 @@ export default function WaitlistScreen() {
       {/* DottedPattern renders: dotted image (8% opacity) + background shape (40%) + gradient */}
       <DottedGridPattern fadeMask={false} />
 
-      {/* Scrollable content area -- takes up space above the fixed bottom sheet */}
-      <View style={styles.mainContentArea}>
-        <ScrollView
-          ref={scrollViewRef}
-          style={styles.scrollView}
-          contentContainerStyle={[
-            styles.scrollContent,
-            {
-              paddingTop: insets.top + s(64), // 64px gap below status bar per Figma 41:11210
-              paddingBottom: s(32),
-            },
-          ]}
-          showsVerticalScrollIndicator={false}
-          onScroll={handleScroll}
-          scrollEventThrottle={16}
-          refreshControl={
-            <RefreshControl refreshing={isRefetching} onRefresh={refresh} tintColor="#FF9A6D" />
-          }
-        >
-          {/* ContentWrapper -- pad lr=40, gap=48, cross=CENTER */}
-          <View style={styles.contentWrapperNew}>
+      <ScrollView
+        ref={scrollViewRef}
+        style={styles.scrollView}
+        contentContainerStyle={[
+          styles.scrollContent,
+          {
+            paddingTop: insets.top + s(64), // 64px gap below status bar per Figma 41:11210
+            paddingBottom: insets.bottom + s(32), // Using 32px to match Figma typical bottom spacing
+          },
+        ]}
+        showsVerticalScrollIndicator={false}
+        onScroll={handleScroll}
+        scrollEventThrottle={16}
+        refreshControl={
+          <RefreshControl refreshing={isRefetching} onRefresh={refresh} tintColor="#FF9A6D" />
+        }
+      >
+        {/* All content - Frame 1686557318 (node 41:11213) */}
+        {/* Single wrapper with gap 40 matching Figma structure */}
+        <View style={styles.contentWrapper}>
+          {/* Header Section - Frame 2095586325 (node 41:11214) */}
+          <Animated.View
+            entering={FadeInDown.delay(FIGMA.animation.stagger).duration(FIGMA.animation.duration)}
+            style={styles.headerSection}
+          >
+            {/* Logo - Frame 1686557264 (node 41:11215) */}
+            {/* Extraction: width 32.04, height 38.4 */}
+            <View style={styles.logoContainer}>
+              <Logo size={38} color={FIGMA.colors.textPrimary} />
+            </View>
 
-            {/* ========== HeaderSection (gap=48) ========== */}
-            <Animated.View
-              entering={FadeInDown.delay(FIGMA.animation.stagger).duration(FIGMA.animation.duration)}
-              style={styles.headerSectionNew}
-            >
-              {/* Logo (32x38) */}
-              <View style={styles.logoContainer}>
-                <Logo size={38} color={FIGMA.colors.textPrimary} />
-              </View>
-
-              {/* WelcomeText: "Welcome,\n{Full Name}" -- ALL white, 48px/400, lh=64, ls=-2 */}
+            {/* Text Block - Frame 2095586319 (node 41:11217) */}
+            <View style={styles.textBlock}>
               {isPendingLong ? (
                 <Text style={styles.titleBase}>
-                  <RNText style={styles.titleWhite}>We're still</RNText>
+                  <RNText style={styles.titleGray}>We're still</RNText>
                   {'\n'}
-                  <RNText style={styles.titleWhite}>setting{'\n'}things up</RNText>
+                  <RNText style={styles.titleAccent}>setting{'\n'}things up</RNText>
                 </Text>
               ) : (
                 <Text style={styles.titleBase}>
-                  <RNText style={styles.titleWhite}>Welcome,</RNText>
+                  <RNText style={styles.titleGray}>Welcome,</RNText>
                   {'\n'}
-                  <RNText style={styles.titleWhite}>{displayName}</RNText>
+                  <RNText style={styles.titleAccent}>{displayName}</RNText>
                 </Text>
               )}
-            </Animated.View>
 
-            {/* ========== MainContent (gap=40) ========== */}
-            <View style={styles.mainSectionsWrapper}>
-
-              {/* ProgressSection (gap=32) */}
-              <Animated.View
-                entering={FadeInDown.delay(FIGMA.animation.stagger * 2).duration(FIGMA.animation.duration)}
-                style={styles.progressSection}
-              >
-                {/* Condition: If they have a position, show WaitlistPositionBadge, else ProgressArc */}
-                {status?.position ? (
-                  <WaitlistPositionBadge
-                    position={status.position}
-                    total={totalSlots}
-                    ahead={status.position - 1}
-                  />
-                ) : (
-                  <ProgressArc
-                    current={membersOnboarded}
-                    total={totalSlots}
-                  />
-                )}
-
-                {/* CTA Area */}
-                {(referralApplied || inviteCodeClaimed) ? (
-                  <View style={styles.referralAppliedContainer}>
-                    <View style={styles.referralAppliedBadge}>
-                      <RNText style={styles.referralAppliedText}>
-                        Referral applied ✅
-                      </RNText>
-                    </View>
-                    <RNText style={styles.referralMovedUpText}>
-                      🎉 You moved up 6 spots
-                    </RNText>
-                  </View>
-                ) : (
-                  <PrimaryButton
-                    title="Get early access faster"
-                    onPress={handleOpenReferralSheet}
-                    showDivider={true}
-                  />
-                )}
-              </Animated.View>
-
-              {/* TimelineSection (gap=24) -> Replaced by WaitlistSetupSteps */}
-              <Animated.View
-                entering={FadeInDown.delay(FIGMA.animation.stagger * 3).duration(FIGMA.animation.duration)}
-                style={styles.timelineSectionNew}
-              >
-                <WaitlistSetupSteps />
-              </Animated.View>
-
-              {/* BenefitsSection (gap=24) -> Replaced by WaitlistBenefitsList */}
-              <Animated.View
-                entering={FadeInDown.delay(FIGMA.animation.stagger * 4).duration(FIGMA.animation.duration)}
-                style={styles.benefitsSectionNew}
-              >
-                <WaitlistBenefitsList />
-              </Animated.View>
-
+              {/* Subtitle - node 41:11219 */}
+              {/* computedStyles: fontSize 14, lineHeight 20, color #A6A6A6 */}
+              <Text style={styles.subtitle}>
+                {isPendingLong
+                  ? 'Taking a bit longer than usual. Hang tight!'
+                  : 'Your application is in review'}
+              </Text>
             </View>
-          </View>
-        </ScrollView>
+          </Animated.View>
 
-        {/* Scroll Down Indicator */}
-        {!isScrolledToBottom && !isNavigating && (
-          <TouchableOpacity
-            onPress={scrollToBottom}
-            activeOpacity={0.7}
-            style={styles.scrollIndicatorContainer}
+          {/* Timeline Card - Frame 2095586388 (node 41:11220) */}
+          {/* computedStyles: borderRadius 12, padding 24/16, gap 24 */}
+          <Animated.View
+            entering={FadeInDown.delay(FIGMA.animation.stagger * 2).duration(FIGMA.animation.duration)}
+            style={styles.timelineCard}
           >
-            <Animated.View
-              entering={FadeIn.duration(300)}
-              exiting={FadeOut.duration(300)}
-              style={animatedStyle}
-            >
-              <Ionicons name="chevron-down" size={32} color="#FF9A6D" />
-            </Animated.View>
-          </TouchableOpacity>
-        )}
-      </View>
+            <ApplicationTimeline items={timelineItems} />
+          </Animated.View>
 
-      {/* ========== Fixed Bottom Sheet -- "What's Coming your way?" ========== */}
-      {/* Frame 2095586317: bg=#1A1A1A, gap=24, padTop=~15 */}
-      <Animated.View
-        entering={FadeInDown.delay(FIGMA.animation.stagger * 5).duration(FIGMA.animation.duration)}
-        style={[
-          styles.fixedBottomSheet,
-          { paddingBottom: Math.max(insets.bottom, 24) },
-        ]}
-      >
-        {/* Handle: 48x4 pill, #4D4D4D, borderRadius=200 */}
-        <TouchableOpacity
-          onPress={handleOpenComingSheet}
-          activeOpacity={0.8}
-          style={styles.sheetHandleArea}
-        >
-          <View style={styles.sheetHandle} />
-        </TouchableOpacity>
-
-        {/* Collapsed preview content */}
-        <View style={styles.sheetPreviewContent}>
-          {/* Images row: 3 rectangles (61x39) */}
-          <View style={styles.sheetImagesRow}>
-            {[0, 1, 2].map((i) => (
-              <View key={i} style={styles.sheetImagePlaceholder} />
-            ))}
-          </View>
-
-          {/* Title: "What's Coming your way?" -- 28px/400, lh=40, ls=-1, #FFFFFF */}
-          <RNText style={styles.sheetTitle}>
-            What's Coming your way?
-          </RNText>
-
-          {/* "Notify me on launch" button -- stroke=#FF9A6D, 16px/500, #FFFFFF, r=8, pad=16 */}
-          <TouchableOpacity
-            onPress={() => {}}
-            activeOpacity={0.8}
-            style={styles.notifyButton}
+          {/* Progress & Invite Card - Frame 2095586389 */}
+          <Animated.View
+            entering={FadeInDown.delay(FIGMA.animation.stagger * 3).duration(FIGMA.animation.duration)}
+            style={styles.inviteCard}
           >
-            <RNText style={styles.notifyButtonText}>Notify me on launch</RNText>
-          </TouchableOpacity>
-        </View>
-      </Animated.View>
+            {/* Progress Arc */}
+            <ProgressArc
+              current={membersOnboarded}
+              total={totalSlots}
+            />
 
-      {/* ========== Expanded "Coming your way" BottomSheet ========== */}
-      <BottomSheet
-        visible={isComingSheetExpanded}
-        onClose={handleCloseComingSheet}
-        paddingHorizontal={0}
-      >
-        <View style={styles.comingSheetContent}>
-          {/* Images row */}
-          <View style={styles.sheetImagesRowExpanded}>
-            {[0, 1, 2].map((i) => (
-              <View key={i} style={styles.sheetImagePlaceholder} />
-            ))}
-          </View>
-
-          {/* Title: "What's Coming your way?" */}
-          <RNText style={styles.comingSheetTitle}>
-            What's Coming your way?
-          </RNText>
-
-          {/* Benefits list (3 items, gap=24) */}
-          <View style={styles.comingBenefitsList}>
-            {[
-              'Earn 1% cashback on on-time rent',
-              'Build a stronger rent history',
-              'Unlock smarter benefits over time',
-            ].map((text, index) => (
-              <View key={index} style={styles.comingBenefitItem}>
-                {/* Icon area: 53x40 */}
-                <View style={styles.comingBenefitIcon}>
-                  <Image
-                    source={require('@/assets/images/icons/benefit_card_icon.png')}
-                    style={styles.comingBenefitIconImage}
-                    resizeMode="contain"
-                  />
-                </View>
-                {/* Text: 12px/400, lh=20, #A9A9A9 */}
-                <RNText style={styles.comingBenefitText}>{text}</RNText>
+            {referralApplied || inviteCodeClaimed ? (
+              // Success State - Frame 2095586525 (node 3099:27830)
+              <View style={styles.successBanner}>
+                <Text style={styles.successBannerText}>
+                  Kudos! You've been bumped up 🤌
+                </Text>
               </View>
-            ))}
-          </View>
-
-          {/* "Notify me on launch" button */}
-          <TouchableOpacity
-            onPress={handleCloseComingSheet}
-            activeOpacity={0.8}
-            style={styles.notifyButtonExpanded}
-          >
-            <RNText style={styles.notifyButtonText}>Notify me on launch</RNText>
-          </TouchableOpacity>
-        </View>
-      </BottomSheet>
-
-      {/* ========== Referral Code BottomSheet ========== */}
-      <BottomSheet
-        visible={isReferralSheetVisible}
-        onClose={handleCloseReferralSheet}
-        paddingHorizontal={24}
-      >
-        <View style={styles.referralSheetContent}>
-          {/* Title: "Use a Referral Code" -- 28px/400, #FFFFFF, centered */}
-          <RNText style={styles.referralSheetTitle}>Use a Referral Code</RNText>
-
-          {/* Subtitle: "(+5 spots)" -- 12px/400, #878787 */}
-          <RNText style={styles.referralSheetSubtitle}>(+5 spots)</RNText>
-
-          {/* OTP input (existing ReferralCodeInput component) */}
-          <ReferralCodeInput
-            code={referralCode}
-            onCharacterChange={setReferralCharacter}
-            error={referralError ?? undefined}
-            disabled={referralApplied}
-          />
-
-          {referralError ? (
-            <Text style={styles.referralErrorText}>{referralError}</Text>
-          ) : null}
-
-          {/* Submit button */}
-          <View style={styles.referralSheetButtonContainer}>
-            {referralError ? (
-              <PrimaryButton
-                title="Clear Code"
-                onPress={clearReferralCode}
-                showDivider={true}
-              />
             ) : (
-              <PrimaryButton
-                title="Submit Code"
-                onPress={() => {
-                  claimInviteCode();
-                  // Close sheet after successful claim
-                  if (!referralError) {
-                    // Let the hook handle state; close on next render if success
-                  }
-                }}
-                disabled={!isReferralComplete}
-                loading={isClaimingInviteCode}
-                showDivider={true}
-              />
+              <>
+                {/* Text Block - Frame 1686557332 */}
+                <View style={styles.inviteTextBlock}>
+                  <Text style={styles.inviteLabel}>
+                    Have an Invite Code?
+                  </Text>
+                  <Text style={styles.inviteDescription}>
+                    Get priority access to the platform if you use a referral code
+                  </Text>
+                </View>
+
+                {/* Referral Code Input */}
+                <ReferralCodeInput
+                  code={referralCode}
+                  onCharacterChange={setReferralCharacter}
+                  error={referralError ?? undefined}
+                  disabled={referralApplied}
+                />
+
+                {referralError ? (
+                  <Text style={styles.referralErrorText}>{referralError}</Text>
+                ) : null}
+
+                <View style={styles.buttonGroup}>
+                  {referralError ? (
+                    // Error State - button instance (node 3099:27758)
+                    <PrimaryButton
+                      title="Clear Code"
+                      onPress={clearReferralCode}
+                      showDivider={true}
+                    />
+                  ) : (
+                    // Default State
+                    <PrimaryButton
+                      title="Enter Invite Code"
+                      onPress={claimInviteCode}
+                      disabled={false}
+                      loading={isClaimingInviteCode}
+                      showDivider={true}
+                    />
+                  )}
+                </View>
+              </>
             )}
-          </View>
+          </Animated.View>
+
+          {/* Benefits Card - Frame 2095586390 (node 41:11255) */}
+          {/* computedStyles: width 313, height 342, borderRadius 12, backgroundColor #202020 */}
+          <Animated.View
+            entering={FadeInDown.delay(FIGMA.animation.stagger * 4).duration(FIGMA.animation.duration)}
+          >
+            <BenefitsCard variant="benefits" />
+          </Animated.View>
+
         </View>
-      </BottomSheet>
+      </ScrollView>
+
+      {/* Scroll Down Indicator */}
+      {!isScrolledToBottom && !isNavigating && (
+        <TouchableOpacity
+          onPress={scrollToBottom}
+          activeOpacity={0.7}
+          style={styles.scrollIndicatorContainer}
+        >
+          <Animated.View
+            entering={FadeIn.duration(300)}
+            exiting={FadeOut.duration(300)}
+            style={animatedStyle}
+          >
+            <Ionicons name="chevron-down" size={32} color="#FF9A6D" />
+          </Animated.View>
+        </TouchableOpacity>
+      )}
 
       {/* Transition Overlay */}
-      <Animated.View
+      <Animated.View 
         style={[
-          StyleSheet.absoluteFill,
+          StyleSheet.absoluteFill, 
           { backgroundColor: '#131313', pointerEvents: 'none', zIndex: 999 },
           transitionAnimatedStyle
-        ]}
+        ]} 
       />
     </View>
   );
@@ -1031,11 +839,6 @@ const styles = StyleSheet.create({
     backgroundColor: FIGMA.colors.screenBackground,
   },
 
-  // Main content area -- flex to take space above the fixed bottom sheet
-  mainContentArea: {
-    flex: 1,
-  },
-
   scrollView: {
     flex: 1,
   },
@@ -1047,287 +850,6 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     paddingHorizontal: FIGMA.layout.containerPadding,
   },
-
-  // ============================================
-  // NEW PENDING STATE LAYOUT STYLES
-  // ============================================
-
-  // ContentWrapper -- pad lr=40 (handled by scrollContent paddingH), gap=48, cross=CENTER
-  contentWrapperNew: {
-    width: FIGMA.layout.contentWidth,
-    alignSelf: 'center',
-    gap: FIGMA.layout.sectionGap, // 48
-    alignItems: 'center',
-  },
-
-  // HeaderSection -- gap=48
-  headerSectionNew: {
-    width: FIGMA.layout.contentWidth,
-    alignSelf: 'center',
-    gap: FIGMA.layout.headerGap, // 48
-  },
-
-  // Title ALL white -- new design
-  titleWhite: {
-    color: FIGMA.colors.textPrimary, // #FFFFFF
-  },
-
-  // MainContent sections wrapper -- gap=40
-  mainSectionsWrapper: {
-    width: '100%',
-    gap: FIGMA.layout.contentGap, // 40
-  },
-
-  // ProgressSection -- gap=32
-  progressSection: {
-    width: '100%',
-    alignItems: 'center',
-    gap: s(32), // 32
-  },
-
-  // TimelineSection -- gap=24
-  timelineSectionNew: {
-    width: '100%',
-    gap: s(24),
-    alignItems: 'center',
-  },
-
-  // BenefitsSection -- gap=24, main=CENTER
-  benefitsSectionNew: {
-    width: '100%',
-    gap: s(24),
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-
-  // "Your benefits with secured" -- 28px/400, lh=40, ls=-1, #FFFFFF
-  benefitsSectionTitle: {
-    fontSize: 28,
-    lineHeight: 40,
-    letterSpacing: -1,
-    fontFamily: 'PlusJakartaSans-Regular',
-    color: FIGMA.colors.textPrimary,
-    textAlign: 'center',
-  },
-
-  // BenefitsRow -- HORIZONTAL, gap=16, cross=CENTER
-  benefitsRow: {
-    flexDirection: 'row',
-    gap: s(16),
-    alignItems: 'center',
-    justifyContent: 'center',
-    width: '100%',
-  },
-
-  // Individual benefit card in horizontal row
-  benefitCardSmall: {
-    flex: 1,
-    backgroundColor: FIGMA.colors.cardBackground, // #202020
-    borderRadius: FIGMA.card.borderRadius, // 12
-    paddingVertical: s(16),
-    paddingHorizontal: s(12),
-    alignItems: 'center',
-    gap: s(8),
-  },
-
-  benefitCardIcon: {
-    width: s(39),
-    height: s(39),
-  },
-
-  benefitCardLabel: {
-    fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: 12,
-    lineHeight: 16,
-    color: FIGMA.colors.textGray, // #A9A9A9
-    textAlign: 'center',
-  },
-
-  // ============================================
-  // FIXED BOTTOM SHEET STYLES (Frame 2095586317)
-  // ============================================
-
-  fixedBottomSheet: {
-    backgroundColor: FIGMA.colors.sheetBackground, // #1A1A1A
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    paddingTop: 0,
-  },
-
-  sheetHandleArea: {
-    alignItems: 'center',
-    paddingTop: 12,
-    paddingBottom: 8,
-  },
-
-  sheetHandle: {
-    width: FIGMA.bottomSheet.handleWidth, // 48
-    height: FIGMA.bottomSheet.handleHeight, // 4
-    backgroundColor: FIGMA.colors.sheetHandle, // #4D4D4D
-    borderRadius: FIGMA.bottomSheet.handleRadius, // 200
-  },
-
-  sheetPreviewContent: {
-    gap: s(16),
-    paddingTop: s(16),
-    paddingHorizontal: s(24),
-    alignItems: 'center',
-  },
-
-  sheetImagesRow: {
-    flexDirection: 'row',
-    gap: s(8),
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-
-  sheetImagePlaceholder: {
-    width: s(61),
-    height: s(39),
-    backgroundColor: FIGMA.colors.cardBackground, // #202020
-    borderRadius: 6,
-  },
-
-  // "What's Coming your way?" -- 28px/400, lh=40, ls=-1, #FFFFFF, centered
-  sheetTitle: {
-    fontSize: 28,
-    lineHeight: 40,
-    letterSpacing: -1,
-    fontFamily: 'PlusJakartaSans-Regular',
-    color: FIGMA.colors.textPrimary,
-    textAlign: 'center',
-  },
-
-  // "Notify me on launch" button -- stroke=#FF9A6D, 16px/500, #FFFFFF, r=8, pad=16
-  notifyButton: {
-    borderWidth: 1,
-    borderColor: FIGMA.colors.textAccent, // #FF9A6D
-    borderRadius: 8,
-    paddingVertical: 16,
-    paddingHorizontal: 24,
-    alignItems: 'center',
-    justifyContent: 'center',
-    width: '100%',
-  },
-
-  notifyButtonText: {
-    fontFamily: 'PlusJakartaSans-Medium',
-    fontSize: 16,
-    lineHeight: 24, // Figma: lh=24
-    color: FIGMA.colors.textPrimary, // #FFFFFF
-  },
-
-  // ============================================
-  // EXPANDED "COMING YOUR WAY" SHEET STYLES
-  // ============================================
-
-  comingSheetContent: {
-    gap: s(24),
-    paddingTop: s(16),
-    alignItems: 'center',
-    paddingHorizontal: s(24),
-  },
-
-  sheetImagesRowExpanded: {
-    flexDirection: 'row',
-    gap: s(8),
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-
-  comingSheetTitle: {
-    fontSize: 28,
-    lineHeight: 40,
-    letterSpacing: -1,
-    fontFamily: 'PlusJakartaSans-Regular',
-    color: FIGMA.colors.textPrimary,
-    textAlign: 'center',
-  },
-
-  comingBenefitsList: {
-    width: '100%',
-    gap: s(24),
-    paddingHorizontal: s(24), // padH=48 total (24 from BottomSheet + 24 here)
-  },
-
-  comingBenefitItem: {
-    flexDirection: 'row',
-    gap: s(16),
-    alignItems: 'center',
-    width: '100%',
-  },
-
-  comingBenefitIcon: {
-    width: s(53),
-    height: s(40),
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-
-  comingBenefitIconImage: {
-    width: s(39),
-    height: s(39),
-  },
-
-  comingBenefitText: {
-    flex: 1,
-    fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: 12,
-    lineHeight: 20,
-    color: FIGMA.colors.benefitListText, // #A9A9A9
-  },
-
-  notifyButtonExpanded: {
-    borderWidth: 1,
-    borderColor: FIGMA.colors.textAccent, // #FF9A6D
-    borderRadius: 8,
-    paddingVertical: 16,
-    paddingHorizontal: 24,
-    alignItems: 'center',
-    justifyContent: 'center',
-    width: '100%',
-    marginHorizontal: s(24),
-  },
-
-  // ============================================
-  // REFERRAL BOTTOM SHEET STYLES
-  // ============================================
-
-  referralSheetContent: {
-    gap: s(24),
-    paddingTop: s(8),
-    alignItems: 'center',
-  },
-
-  // "Use a Referral Code" -- 28px/400, #FFFFFF, centered
-  referralSheetTitle: {
-    fontSize: 28,
-    lineHeight: 40,
-    letterSpacing: -1,
-    fontFamily: 'PlusJakartaSans-Regular',
-    color: FIGMA.colors.textPrimary,
-    textAlign: 'center',
-  },
-
-  // "(+5 spots)" -- 12px/400, #878787
-  referralSheetSubtitle: {
-    fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: 12,
-    lineHeight: 20,
-    color: FIGMA.colors.textLabel, // #878787
-    textAlign: 'center',
-    marginTop: -16, // Pull closer to title (since gap is 24 but visual should be tight)
-  },
-
-  referralSheetButtonContainer: {
-    width: '100%',
-    alignItems: 'center',
-    gap: 8,
-  },
-
-  // ============================================
-  // LEGACY SHARED STYLES (kept for error/rejected/pending_long states)
-  // ============================================
 
   // Header section - Frame 2095586325 (node 41:11214)
   // computedStyles: width 313, gap 48
@@ -1454,35 +976,6 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
 
-  referralAppliedContainer: {
-    width: '100%',
-    alignItems: 'center',
-    gap: 12,
-  },
-  referralAppliedBadge: {
-    width: '100%',
-    backgroundColor: '#1A1A1A',
-    borderRadius: 8,
-    paddingVertical: 16,
-    paddingHorizontal: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  referralAppliedText: {
-    fontFamily: 'PlusJakartaSans-Medium',
-    fontSize: 16,
-    lineHeight: 24,
-    color: '#656565',
-    textAlign: 'center',
-  },
-  referralMovedUpText: {
-    fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: 14,
-    lineHeight: 20,
-    color: '#A9A9A9',
-    textAlign: 'center',
-  },
-
   successBanner: {
     backgroundColor: FIGMA.colors.cardBackgroundSecondary, // #1A1A1A
     borderRadius: 12,
@@ -1499,14 +992,14 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
 
-  // Button group -- Figma node 41:11554: gap 8px between divider and button
+  // Button group — Figma node 41:11554: gap 8px between divider and button
   buttonGroup: {
     width: '100%',
     alignItems: 'center',
     gap: 8,
   },
 
-  // Divider -- 24x2, #4D4D4D, borderRadius 200
+  // Divider — 24x2, #4D4D4D, borderRadius 200
   divider: {
     width: FIGMA.divider.width,
     height: FIGMA.divider.height,
