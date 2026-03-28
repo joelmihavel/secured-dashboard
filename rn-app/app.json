@@ -7,6 +7,7 @@
     "icon": "./assets/images/icon.png",
     "scheme": "flentsecured",
     "userInterfaceStyle": "dark",
+    "backgroundColor": "#131313",
     "newArchEnabled": true,
     "splash": {
       "image": "./assets/images/splash-icon.png",

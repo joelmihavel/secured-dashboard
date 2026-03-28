@@ -243,13 +243,11 @@ export async function checkForUpdates(): Promise<UpdateCheckResult> {
       return { status: 'no_update', isCritical: false };
     }
 
-    // Signal cold-start gate immediately — don't wait for the React hook to
-    // react to isUpdateAvailable. If waitForColdStartOTA() runs before the hook,
-    // without this the function returns false and misses the update entirely.
+    // Check if critical BEFORE downloading — manifest is available from checkForUpdateAsync
+    const critical = isCriticalUpdate(update.manifest);
     notifyUpdateDetected();
-    // Download and UI are handled by useOTAUpdates hook
-    addBreadcrumb('OTA update available, hook will handle download', 'updates');
-    return { status: 'downloading', isCritical: false };
+    addBreadcrumb(`OTA update available (critical: ${critical}), hook will handle download`, 'updates');
+    return { status: 'downloading', isCritical: critical };
   } catch (err) {
     const errorMsg = err instanceof Error ? err.message : 'Unknown error';
     addBreadcrumb(`OTA check failed: ${errorMsg}`, 'updates');
@@ -349,7 +347,19 @@ export async function reloadApp(): Promise<boolean> {
     await SecureStore.setItemAsync(OTA_RELOAD_MARKER_KEY, String(Date.now())).catch(() => {});
 
     trackEvent('ota_reload');
-    await Updates.reloadAsync();
+    await Updates.reloadAsync({
+      reloadScreenOptions: {
+        backgroundColor: '#131313',
+        image: require('../../assets/images/splash-icon.png'),
+        imageResizeMode: 'contain',
+        fade: true,
+        spinner: {
+          enabled: true,
+          color: '#FF9A6D',  // Brand accent — small loader at bottom
+          size: 'small',
+        },
+      },
+    });
     return true;
   } catch {
     // Restart auto-refresh if we stopped it but reload failed.

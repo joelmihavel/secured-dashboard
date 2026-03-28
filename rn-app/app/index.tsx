@@ -25,7 +25,9 @@ import * as SecureStore from 'expo-secure-store';
 import { getWaitlistStatus } from '@/src/services/api/waitlist';
 const DISABLE_SCREEN_PICKER = __DEV__ ? require('./(dev)/screen-picker').DISABLE_SCREEN_PICKER : true;
 const DEV_DIRECT_SCREEN = __DEV__ ? require('./(dev)/screen-picker').DEV_DIRECT_SCREEN : null;
-import { SkeletonLoader } from '@/src/components';
+import { View, ActivityIndicator, StyleSheet } from 'react-native';
+import { Logo } from '@/src/components';
+import { colors } from '@/src/theme';
 import { CriticalUpdateScreen } from '@/src/components/ui/CriticalUpdateScreen';
 import { useAuthContext } from '@/src/providers';
 import { useUpdatePolicy, clearUpdatePolicyCache } from '@/src/hooks/useUpdatePolicy';
@@ -35,7 +37,7 @@ import { isReviewMode } from '@/src/review/reviewMode';
 import { isJourneyMode, getJourneyRouteTarget } from '@/src/review/journeyMode';
 import { addBreadcrumb } from '@/src/config/sentry';
 import { supabase } from '@/src/services/supabase/client';
-import { waitForColdStartOTA, reloadApp } from '@/src/config/updates';
+// OTA updates handled by useOTAUpdates hook — no cold-start blocking
 
 const LAST_ROUTE_KEY = 'flent_last_journey_target';
 
@@ -474,23 +476,11 @@ export default function Index() {
       setTimeout(() => SplashScreen.hideAsync().catch(() => {}), 300);
       return;
     }
-    // If an OTA update finished downloading (or is close to finishing) during
-    // auth resolution, reload behind the still-visible splash for a seamless
-    // update. The bounded wait (default 2s) keeps the native splash visible
-    // a bit longer — invisible to the user. Dynamically cap to stay well
-    // under the 6s safety timeout that hides splash unconditionally.
-    const navTimestamp = Date.now();
-    const maxOtaWait = Math.max(0, 5000 - (navTimestamp - _mountTimestamp));
-    waitForColdStartOTA(maxOtaWait).then(async (shouldReload) => {
-      if (shouldReload) {
-        console.log('[journey-router] OTA update ready — reloading behind splash');
-        const reloaded = await reloadApp();
-        if (reloaded) return; // App is restarting — nothing more to do
-        // reloadApp failed — fall through to hide splash normally
-      }
-      // No OTA update (or reload failed) -- hide splash after brief delay
-      setTimeout(() => SplashScreen.hideAsync().catch(() => {}), 300);
-    });
+    // Don't block cold start for OTA updates. Non-critical updates apply on
+    // next launch silently. Critical updates are handled by useOTAUpdates hook
+    // after the app is visible (with native reload screen). This ensures users
+    // are never blocked or delayed on app open.
+    setTimeout(() => SplashScreen.hideAsync().catch(() => {}), 300);
   }, [journeyResolved, target, router, rootNavigationState?.key, updatePolicy.isRequired]);
 
   // Critical update blocks ALL navigation — user must update (OTA or native)
@@ -503,6 +493,37 @@ export default function Index() {
     );
   }
 
-  // Always render skeleton — invisible behind navigated screen, avoids ghost screen in Stack
-  return <SkeletonLoader />;
+  // OTA splash — matches native splash appearance with a subtle loader.
+  // Invisible behind native splash on cold start; visible as fallback if
+  // native splash hides before navigation completes (safety timeout).
+  return (
+    <View style={otaSplashStyles.container}>
+      <View style={otaSplashStyles.logoArea}>
+        <Logo size={48} />
+      </View>
+      <ActivityIndicator
+        size="small"
+        color={colors.brand[500]}
+        style={otaSplashStyles.loader}
+      />
+    </View>
+  );
 }
+
+const otaSplashStyles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: colors.black[700], // #131313 — matches native splash
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  logoArea: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loader: {
+    position: 'absolute',
+    bottom: 80, // Aesthetically placed towards bottom center
+  },
+});
