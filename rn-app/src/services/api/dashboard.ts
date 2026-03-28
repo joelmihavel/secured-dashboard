@@ -193,6 +193,7 @@ export interface MappedCashbackEntry {
 export type CashbackModuleState = 'setup_pending' | 'landlord_rejected' | 'active';
 export type BarStatus = 'earned' | 'missed' | 'future';
 export type InviteState = 'sent' | 'rejected';
+export type LandlordInviteState = 'pre_invite' | 'invited' | 'not_approved';
 export type CashbackCardStatus = 'received' | 'accrued' | 'missed';
 
 export type SetupStepStatus = 'not_started' | 'active' | 'in_progress' | 'completed';
@@ -222,6 +223,7 @@ export interface MappedCashbackModule {
   infoText: string;
   setupSteps: SetupStep[];
   inviteState: InviteState | undefined;
+  landlordInviteState: LandlordInviteState;
   entries: CashbackEarningsEntry[];
 }
 
@@ -629,11 +631,10 @@ export function mapCashbackModule(
     // Figma State 3: "💰 Earn ₹400 by paying your rent on time"
     announcementText = `💰 Earn ₹${monthlyDiscount.toLocaleString('en-IN')} by paying your rent on time`;
   } else if (earned > 0) {
-    // Figma State 2: "🔒 Complete verifications to use  ₹1,200"
-    announcementText = `🔒 Complete verifications to use  ₹${earned.toLocaleString('en-IN')}`;
+    announcementText = `🔒 Complete setup to use  ₹${earned.toLocaleString('en-IN')}`;
   } else {
-    // Figma State 1: "🔒 Start earning ₹400 this month"
-    announcementText = `🔒 Start earning ₹${monthlyDiscount.toLocaleString('en-IN')} this month`;
+    // Empty state pill
+    announcementText = `💸 Reduce your monthly rent by ₹${monthlyDiscount.toLocaleString('en-IN')}`;
   }
 
   // ── Info text (below chart) — always shown per Figma ─────────
@@ -680,24 +681,44 @@ export function mapCashbackModule(
     },
     {
       id: 'landlord',
-      label: 'Awaiting Landlord Approval',
+      // "Invite your landlord" until invite sent, then "Awaiting landlord's approval"
+      label: (bankDone && utilityDone && landlordPending)
+        ? "Awaiting landlord's approval"
+        : 'Invite your landlord',
       completed: landlordDone,
       status: stepStatus(landlordDone, 2),
     },
   ];
 
-  // ── Invite state ──────────────────────────────────────────────
+  // ── Invite state (legacy) ─────────────────────────────────────
   let inviteState: InviteState | undefined;
   if (!isVerified) {
     const response = vs?.landlord_response;
     if (response === 'disputed') {
       inviteState = 'rejected';
     } else if (response === 'pending' || response === null || response === undefined) {
-      // Only show invite status if bank+utility are done (landlord step is next)
       if (vs?.bank_verified && vs?.utility_verified) {
         inviteState = 'sent';
       }
     }
+  }
+
+  // ── Landlord invite state (unified 3-state row) ─────────────
+  let landlordInviteState: LandlordInviteState;
+  if (!isVerified) {
+    const response = vs?.landlord_response;
+    if (response === 'disputed') {
+      // Landlord rejected/disputed
+      landlordInviteState = 'not_approved';
+    } else if (bankDone && utilityDone && landlordPending) {
+      // Invite sent, awaiting response
+      landlordInviteState = 'invited';
+    } else {
+      // Haven't invited yet (or bank/utility not done)
+      landlordInviteState = 'pre_invite';
+    }
+  } else {
+    landlordInviteState = 'pre_invite'; // won't render anyway (setup hidden when verified)
   }
 
   // ── Earnings entries ──────────────────────────────────────────
@@ -713,6 +734,7 @@ export function mapCashbackModule(
     infoText,
     setupSteps,
     inviteState,
+    landlordInviteState,
     entries,
   };
 }

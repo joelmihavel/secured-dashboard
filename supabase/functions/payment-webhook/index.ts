@@ -266,8 +266,7 @@ serve(async (req: Request) => {
         await supabase.from('processed_webhooks').insert({
           event_id: String(eventId),
           payment_id: cfPayment.id,
-          gateway: 'cashfree',
-          raw_payload: event,
+          payment_gateway: 'cashfree',
         });
         return jsonResponse({ success: true, message: 'Transition not allowed' });
       }
@@ -322,8 +321,7 @@ serve(async (req: Request) => {
       await supabase.from('processed_webhooks').insert({
         event_id: String(eventId),
         payment_id: cfPayment.id,
-        gateway: 'cashfree',
-        raw_payload: event,
+        payment_gateway: 'cashfree',
       });
 
       // On success: handle cashback and notifications

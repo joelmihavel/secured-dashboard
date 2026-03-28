@@ -78,7 +78,7 @@ serve(async (req: Request) => {
       return jsonResponse({ status: "ignored", reason: "missing headers" });
     }
 
-    const expectedSignature = await hmacSha256Base64(timestamp + "." + rawBody, CF_SPLIT_WEBHOOK_SECRET);
+    const expectedSignature = await hmacSha256Base64(timestamp + rawBody, CF_SPLIT_WEBHOOK_SECRET);
     if (!timingSafeCompare(receivedSignature, expectedSignature)) {
       console.error("[cashfree-split-webhook] Signature verification failed");
       return jsonResponse({ status: "ignored", reason: "invalid signature" });

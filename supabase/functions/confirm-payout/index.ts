@@ -92,7 +92,7 @@ serve(async (req: Request) => {
       .from("payments")
       .select(`
         id, user_id, rent_amount_paise, landlord_payout_paise,
-        landlord_payout_status, landlord_payout_ref,
+        landlord_payout_status,
         tenancy:tenancies(landlord_name)
       `)
       .in("id", paymentIds);

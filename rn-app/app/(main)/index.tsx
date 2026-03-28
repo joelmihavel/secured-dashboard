@@ -669,23 +669,18 @@ export default function HomeScreen() {
 
   const handleCashbackEntryPress = useCallback((entry: CashbackEarningsEntry) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    // Find matching raw payment to navigate to receipt
-    const rawPayment = resolvedData?.recent_payments?.find((p: RawRecentPayment) => p.id === entry.id);
+    // entry.id is "cbe_{paymentId}" — strip prefix to find raw payment
+    const rawId = entry.id.replace(/^cbe_/, '');
+    const rawPayment = resolvedData?.recent_payments?.find((p: RawRecentPayment) => p.id === rawId);
     if (!rawPayment) return;
-
-    const statusMap: Record<string, string> = {
-      received: 'success',
-      accrued: 'pending',
-      missed: 'failed',
-    };
 
     router.push({
       pathname: '/(payment)/status',
       params: {
-        paymentId: entry.id,
+        paymentId: rawId,
         amount: String(rawPayment.amount ?? 0),
         method: rawPayment.payment_method ?? '',
-        initialStatus: statusMap[entry.status] ?? 'pending',
+        initialStatus: 'success',
         cashback: String(rawPayment.cashback_applied ?? rawPayment.cashback_earned ?? 0),
         source: 'receipt_view',
         landlordName: tenancy?.landlord_name ?? '',
@@ -719,11 +714,13 @@ export default function HomeScreen() {
     if (route) router.push(route as never);
   }, [router]);
 
-  const handleLearnMore = useCallback(() => {
+  const handleLearnMore = useCallback(async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    Linking.openURL('mailto:secured@flent.in?subject=How to invite my landlord').catch(() => {
-      Alert.alert('Contact Support', 'Email us at secured@flent.in');
-    });
+    try {
+      await Linking.openURL('https://flent.in/secured/how-it-works');
+    } catch (e) {
+      console.warn('Failed to open URL:', e);
+    }
   }, []);
 
   const handleStatusPress = useCallback(() => {
@@ -731,10 +728,6 @@ export default function HomeScreen() {
     setShowStatusSheet(true);
   }, []);
 
-  const handleStartSaving = useCallback(() => {
-    setShowStatusSheet(false);
-    router.push('/(setup)/pending-steps' as never);
-  }, [router]);
 
   // ==============================================
   // LOADING STATE
@@ -859,6 +852,7 @@ export default function HomeScreen() {
             onSetupStepPress: handleSetupStepPress,
             onLearnMore: handleLearnMore,
             onHowItWorks: handleHowItWorks,
+            onMemberStatusPress: handleStatusPress,
           })}
         </Animated.View>
       </ScrollView>
@@ -891,7 +885,6 @@ export default function HomeScreen() {
       <VerificationStatusSheet
         visible={showStatusSheet}
         onClose={() => setShowStatusSheet(false)}
-        onStartSaving={handleStartSaving}
       />
     </Screen>
   );
@@ -942,6 +935,7 @@ interface ContentProps {
   onSetupStepPress?: (step: SetupStep) => void;
   onLearnMore?: () => void;
   onHowItWorks?: () => void;
+  onMemberStatusPress?: () => void;
 }
 
 function renderDashboardContent(state: DashboardState, props: ContentProps) {
@@ -986,6 +980,7 @@ function renderDashboardContent(state: DashboardState, props: ContentProps) {
     onSetupStepPress,
     onLearnMore,
     onHowItWorks,
+    onMemberStatusPress,
   } = props;
 
   switch (state) {
@@ -1022,13 +1017,6 @@ function renderDashboardContent(state: DashboardState, props: ContentProps) {
               onPaymentMethodPress={onPaymentMethodPress}
               onPaymentMethodEdit={onPaymentMethodEdit}
             />
-            {statusNotification ? (
-                <StatusNotificationBanner
-                  type={statusNotification.type}
-                  customMessage={statusNotification.message}
-                  onPress={onFinishSetup}
-                />
-            ) : null}
           </View>
         );
       }
@@ -1045,13 +1033,6 @@ function renderDashboardContent(state: DashboardState, props: ContentProps) {
             daysOverdue={pvHeadlineVariant === 'overdue' ? pvDaysValue : undefined}
           />
           <RentStatusCarousel items={carouselItems} />
-          {statusNotification ? (
-              <StatusNotificationBanner
-                type={statusNotification.type}
-                customMessage={statusNotification.message}
-                onPress={onFinishSetup}
-              />
-          ) : null}
           <View style={styles.tabSection}>
             <TabSwitcher activeTab={activeTab} onTabChange={onTabChange} />
             {activeTab === 'recent_payments' ? (
@@ -1067,11 +1048,8 @@ function renderDashboardContent(state: DashboardState, props: ContentProps) {
                 <CashbacksList
                   {...cashbackModule}
                   onEntryPress={onCashbackEntryPress}
-                  onCopyInviteLink={onCopyInviteLink}
-                  onNeedHelp={onNeedHelp}
                   onStepPress={onSetupStepPress}
-                  onLearnMore={onLearnMore}
-                  onMemberStatusPress={handleStatusPress}
+                  onMemberStatusPress={onMemberStatusPress}
                 />
               ) : (
                 <CashbackEmptyState
@@ -1082,15 +1060,6 @@ function renderDashboardContent(state: DashboardState, props: ContentProps) {
               )
             )}
           </View>
-          {/* Divider — Figma 684:9207 */}
-          <View style={styles.sectionDivider} />
-          <SetupProgressCard
-            bankDetailsComplete={verificationStatus?.bank_verified ?? false}
-            addressProofComplete={verificationStatus?.utility_verified ?? false}
-            landlordInvited={verificationStatus?.landlord_approved ?? false}
-            onPress={onFinishSetup}
-            onCtaPress={onHowItWorks}
-          />
         </View>
       );
     }
@@ -1119,12 +1088,6 @@ function renderDashboardContent(state: DashboardState, props: ContentProps) {
               paddingLeft: 64, paddingRight: 32, gap: 16 -- DO NOT add parent padding */}
           <RentStatusCarousel items={carouselItems} />
 
-          {statusNotification ? (
-              <StatusNotificationBanner
-                type={statusNotification.type}
-                customMessage={statusNotification.message}
-              />
-          ) : null}
 
           {/* Tab Section (Frame 1686557297): wraps Toggle + payment list content */}
           <View style={styles.tabSection}>
@@ -1147,10 +1110,8 @@ function renderDashboardContent(state: DashboardState, props: ContentProps) {
             <CashbacksList
               {...cashbackModule}
               onEntryPress={onCashbackEntryPress}
-              onCopyInviteLink={onCopyInviteLink}
-              onNeedHelp={onNeedHelp}
               onStepPress={onSetupStepPress}
-              onLearnMore={onLearnMore}
+              onMemberStatusPress={onMemberStatusPress}
             />
           ) : (
             <CashbackEmptyState
@@ -1170,24 +1131,6 @@ function renderDashboardContent(state: DashboardState, props: ContentProps) {
             return null;
           })()}
 
-          {/* Setup Progress Card — shown until all 3 verifications complete */}
-          {(() => {
-            const vs = tenancy?.verification_status;
-            const setupComplete = vs?.bank_verified && vs?.utility_verified && vs?.landlord_approved;
-            if (setupComplete) return null;
-            return (
-              <>
-                <View style={styles.sectionDivider} />
-                <SetupProgressCard
-                  bankDetailsComplete={vs?.bank_verified ?? false}
-                  addressProofComplete={vs?.utility_verified ?? false}
-                  landlordInvited={vs?.landlord_approved ?? false}
-                  onPress={onFinishSetup}
-                  onCtaPress={onHowItWorks}
-                />
-              </>
-            );
-          })()}
         </View>
       );
 

@@ -42,35 +42,29 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Text } from '@/src/components/ui/Typography/Text';
 import { colors } from '@/src/theme';
-import { PrimaryButton } from '@/src/components/ui/Button/PrimaryButton';
 
 // ── Types ───────────────────────────────────────────────────────────────────
 
 export interface VerificationStatusSheetProps {
   visible: boolean;
   onClose: () => void;
-  onStartSaving: () => void;
 }
 
 // ── Status Icons ────────────────────────────────────────────────────────────
 
+/** Figma: rounded square + clock hand + dot, stroke #FF9A6D (matches chip icon) */
 function PendingIcon() {
   return (
     <Svg width={16} height={16} viewBox="0 0 16 16" fill="none">
       <Path
-        d="M14 8C14 11.314 11.314 14 8 14C4.686 14 2 11.314 2 8C2 4.686 4.686 2 8 2C11.314 2 14 4.686 14 8Z"
+        d="M8 2H8C10.4 2 11.7 2.31 12.45 3.55C13.19 4.29 13.5 5.6 13.5 8C13.5 10.4 13.19 11.71 12.45 12.45C11.7 13.19 10.4 13.5 8 13.5C5.6 13.5 4.29 13.19 3.55 12.45C2.81 11.71 2.5 10.4 2.5 8C2.5 5.6 2.81 4.29 3.55 3.55C4.29 2.81 5.6 2.5 8 2.5"
         stroke="#FF9A6D"
         strokeWidth={1}
+        strokeLinecap="round"
+        strokeLinejoin="round"
       />
-      <Path d="M8 5V8L10 10" stroke="#FF9A6D" strokeWidth={1} strokeLinecap="round" strokeLinejoin="round" />
-    </Svg>
-  );
-}
-
-function CloseIcon() {
-  return (
-    <Svg width={12} height={12} viewBox="0 0 12 12" fill="none">
-      <Path d="M9 3L3 9M3 3L9 9" stroke="#000000" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" />
+      <Path d="M8 5.33V8" stroke="#FF9A6D" strokeWidth={1} strokeLinecap="round" strokeLinejoin="round" />
+      <Path d="M8 10.67H8.007" stroke="#FF9A6D" strokeWidth={1} strokeLinecap="round" strokeLinejoin="round" />
     </Svg>
   );
 }
@@ -99,7 +93,6 @@ function VerifiedIcon() {
 export function VerificationStatusSheet({
   visible,
   onClose,
-  onStartSaving,
 }: VerificationStatusSheetProps) {
   const insets = useSafeAreaInsets();
   const slideAnim = useSharedValue(SCREEN_HEIGHT);
@@ -165,17 +158,6 @@ export function VerificationStatusSheet({
             <View style={styles.handle} />
           </View>
 
-          {/* Close Button — Figma: 28.5x28.5, r:101, bg:#EEEEEE */}
-          <TouchableOpacity
-            style={styles.closeButton}
-            onPress={onClose}
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-            accessibilityRole="button"
-            accessibilityLabel="Close"
-          >
-            <CloseIcon />
-          </TouchableOpacity>
-
           {/* Scrollable Content — Figma: gap=40, scrolls under fixed CTA */}
           <ScrollView
             style={styles.scrollContent}
@@ -183,9 +165,13 @@ export function VerificationStatusSheet({
             showsVerticalScrollIndicator={false}
             bounces={false}
           >
-            {/* Title Section — Figma: pad=48, gap=4 */}
+            {/* Title Section — Figma: pad=48, gap=4, "Status" in #FF9A6D */}
             <View style={styles.header}>
-              <Text style={styles.title}>What is your Status?</Text>
+              <Text style={styles.title}>
+                {'What is your '}
+                <Text style={styles.titleAccent}>Status</Text>
+                {'?'}
+              </Text>
               <Text style={styles.subtitle}>
                 How you save on rent depends on this.
               </Text>
@@ -203,7 +189,7 @@ export function VerificationStatusSheet({
                   <View style={styles.badgeRow}>
                     <PendingIcon />
                     <Text style={[styles.badgeText, { color: colors.brand[500] }]}>
-                      Pending
+                      Pending →
                     </Text>
                   </View>
                 </View>
@@ -218,6 +204,9 @@ export function VerificationStatusSheet({
                 </View>
               </View>
 
+              {/* Divider between sections — Figma: #4D4D4D, 0.25px */}
+              <View style={styles.sectionDivider} />
+
               {/* Verified Card */}
               <View style={styles.statusCard}>
                 <View style={styles.cardHeaderRow}>
@@ -228,7 +217,7 @@ export function VerificationStatusSheet({
                   <View style={styles.badgeRow}>
                     <VerifiedIcon />
                     <Text style={[styles.badgeText, { color: colors.success.material }]}>
-                      Verified
+                      Verified →
                     </Text>
                   </View>
                 </View>
@@ -245,14 +234,6 @@ export function VerificationStatusSheet({
             </View>
           </ScrollView>
 
-          {/* CTA — Fixed at bottom, overlapping scroll content */}
-          <View style={[styles.ctaFixed, { paddingBottom: Math.max(insets.bottom, 24) }]}>
-            <PrimaryButton
-              title="Start saving on rent"
-              onPress={onStartSaving}
-              showDivider
-            />
-          </View>
         </Animated.View>
       </View>
     </Modal>
@@ -293,19 +274,6 @@ const styles = StyleSheet.create({
     backgroundColor: colors.black[400], // Figma: #4D4D4D
     borderRadius: 200, // Figma: r=200
   },
-  // Close button — Figma: 28.5x28.5, r:101.73, bg:#EEEEEE, icon #000000
-  closeButton: {
-    position: 'absolute',
-    top: 40, // Below handle
-    right: 24,
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: colors.neutral[100], // Figma: #EEEEEE
-    alignItems: 'center',
-    justifyContent: 'center',
-    zIndex: 10,
-  },
   // ScrollView replaces the old `content` View — allows scrolling under fixed CTA
   scrollContent: {
     flex: 1,
@@ -313,7 +281,7 @@ const styles = StyleSheet.create({
   },
   scrollContentInner: {
     gap: 40, // Figma: Frame 1686557301 gap=40
-    paddingBottom: 100, // Extra space so content scrolls past the fixed CTA
+    paddingBottom: 32, // Bottom spacing
   },
   // Title Section — Figma: Frame 1686557311, pad=48, gap=4
   header: {
@@ -327,6 +295,10 @@ const styles = StyleSheet.create({
     letterSpacing: -1, // Figma: ls=-1
     color: colors.white, // Figma: #FFFFFF
   },
+  // Figma: "Status" word uses character override to #FF9A6D
+  titleAccent: {
+    color: colors.brand[500], // Figma: #FF9A6D
+  },
   subtitle: {
     fontFamily: 'PlusJakartaSans-Regular', // Figma: 400
     fontSize: 12, // Figma: 12px
@@ -339,8 +311,8 @@ const styles = StyleSheet.create({
     gap: 16, // Figma: gap=16
   },
   sectionDivider: {
-    height: StyleSheet.hairlineWidth, // Figma: Vector stroke
-    backgroundColor: colors.black[400], // Figma: stroke #4D4D4D
+    height: 0.25, // Figma: strokeWeight 0.25
+    backgroundColor: colors.black[400], // Figma: #4D4D4D
   },
   // Status Card — Figma: Frame 2095586772/773, gap=16
   statusCard: {
@@ -402,15 +374,5 @@ const styles = StyleSheet.create({
     fontSize: 12, // Figma: 12px
     lineHeight: 20, // Figma: lh=20
     color: colors.neutral[600], // Figma: #878787
-  },
-  // CTA — Fixed at bottom, overlapping sheet content (Figma: button section is absolute)
-  ctaFixed: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    paddingHorizontal: 48, // Figma: pad l=48, r=48
-    paddingTop: 16,
-    backgroundColor: colors.black[600], // Solid bg covers content scrolling underneath
   },
 });

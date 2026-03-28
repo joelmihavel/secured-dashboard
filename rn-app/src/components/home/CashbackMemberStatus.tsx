@@ -22,13 +22,23 @@ export interface CashbackMemberStatusProps {
   verified?: boolean;
 }
 
-function CheckIcon() {
+/** Figma 4130:2648 — circle outline + checkmark, both stroke #4CAF50 */
+function VerifiedIcon() {
   return (
     <Svg width={16} height={16} viewBox="0 0 16 16" fill="none">
+      {/* Circle outline — 12x12 at 2px inset */}
       <Path
-        d="M13.3 4L6 11.3L2.7 8"
+        d="M14 8C14 11.314 11.314 14 8 14C4.686 14 2 11.314 2 8C2 4.686 4.686 2 8 2C11.314 2 14 4.686 14 8Z"
         stroke="#4CAF50"
-        strokeWidth={1.5}
+        strokeWidth={1}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      {/* Checkmark inside circle */}
+      <Path
+        d="M5.5 8L7 9.5L10.5 6.5"
+        stroke="#4CAF50"
+        strokeWidth={1}
         strokeLinecap="round"
         strokeLinejoin="round"
       />
@@ -36,15 +46,34 @@ function CheckIcon() {
   );
 }
 
-function ClockIcon() {
+/** Figma 4130:2628 — rounded square + clock hand + dot, stroke #FF9A6D */
+function PendingIcon() {
   return (
     <Svg width={16} height={16} viewBox="0 0 16 16" fill="none">
+      {/* Rounded square body — 12x12 at 2px inset */}
       <Path
-        d="M14 8C14 11.314 11.314 14 8 14C4.686 14 2 11.314 2 8C2 4.686 4.686 2 8 2C11.314 2 14 4.686 14 8Z"
+        d="M8 2H8C10.4 2 11.7 2.31 12.45 3.55C13.19 4.29 13.5 5.6 13.5 8C13.5 10.4 13.19 11.71 12.45 12.45C11.7 13.19 10.4 13.5 8 13.5C5.6 13.5 4.29 13.19 3.55 12.45C2.81 11.71 2.5 10.4 2.5 8C2.5 5.6 2.81 4.29 3.55 3.55C4.29 2.81 5.6 2.5 8 2.5"
         stroke="#FF9A6D"
         strokeWidth={1}
+        strokeLinecap="round"
+        strokeLinejoin="round"
       />
-      <Path d="M8 5V8L10 10" stroke="#FF9A6D" strokeWidth={1} strokeLinecap="round" strokeLinejoin="round" />
+      {/* Vertical clock hand */}
+      <Path
+        d="M8 5.33V8"
+        stroke="#FF9A6D"
+        strokeWidth={1}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      {/* Center dot */}
+      <Path
+        d="M8 10.67H8.007"
+        stroke="#FF9A6D"
+        strokeWidth={1}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
     </Svg>
   );
 }
@@ -67,13 +96,13 @@ function CashbackMemberStatusComponent({ onPress, verified = true }: CashbackMem
       <View style={styles.right}>
         {verified ? (
           <>
-            <CheckIcon />
-            <Text style={styles.verifiedText}>Verified</Text>
+            <VerifiedIcon />
+            <Text style={styles.verifiedText}>Verified →</Text>
           </>
         ) : (
           <>
-            <ClockIcon />
-            <Text style={styles.pendingText}>Pending</Text>
+            <PendingIcon />
+            <Text style={styles.pendingText}>Pending →</Text>
           </>
         )}
       </View>
@@ -131,12 +160,14 @@ const styles = StyleSheet.create({
     fontSize: 12, // Figma: 12px
     lineHeight: 20, // Figma: 20px
     color: colors.success.material, // Figma: #4CAF50
+    textDecorationLine: 'underline' as const, // Figma: UNDERLINE
   },
   pendingText: {
     fontFamily: 'PlusJakartaSans-Medium', // Figma: fontWeight 500
     fontSize: 12, // Figma: 12px
     lineHeight: 20, // Figma: 20px
-    color: colors.brand[500], // Figma: #FF9A6D pending
+    color: colors.brand[500], // Figma: #FF9A6D
+    textDecorationLine: 'underline' as const, // Figma: UNDERLINE
   },
 });
 

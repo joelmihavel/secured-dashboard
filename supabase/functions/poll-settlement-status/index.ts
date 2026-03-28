@@ -162,7 +162,7 @@ async function reconcileStuckPayments(
 
     const { data: stuckPayments } = await supabase
       .from("payments")
-      .select("id, user_id, tenancy_id, cf_order_id, gateway_order_id, status, rent_amount_paise, cashback_applied_paise, payment_month, created_at")
+      .select("id, user_id, tenancy_id, cf_order_id, gateway_order_id, status, payment_gateway, rent_amount_paise, cashback_applied_paise, payment_month, created_at")
       .in("status", ["initiated", "processing"])
       .eq("payment_gateway", "cashfree")
       .lt("created_at", stuckThreshold)
@@ -198,7 +198,7 @@ async function reconcileStuckPayments(
 
         if (newStatus === "success") {
           updateData.paid_at = new Date().toISOString();
-          updateData.landlord_payout_status = "pending";
+          updateData.landlord_payout_status = payment.payment_gateway === "cashfree" ? "ready" : "pending";
           updateData.landlord_payout_paise = payment.rent_amount_paise;
         }
 
@@ -261,7 +261,7 @@ async function monitorPendingPayouts(
       .from("payments")
       .select("id, rent_amount_paise, landlord_payout_paise, paid_at, landlord_payout_status")
       .eq("status", "success")
-      .in("landlord_payout_status", ["pending", "processing"])
+      .in("landlord_payout_status", ["pending", "ready", "processing"])
       .lt("paid_at", alertThreshold)
       .limit(BATCH_SIZE);
 

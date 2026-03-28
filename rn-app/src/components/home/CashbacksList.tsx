@@ -18,13 +18,14 @@
  */
 
 import React, { memo, useMemo } from 'react';
-import { View, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, StyleSheet } from 'react-native';
 
 import { Text } from '@/src/components/ui';
 import { CashbackStatsSection } from './CashbackStatsSection';
 import { CashbackProgressChart } from './CashbackProgressChart';
 import { CashbackSetupSteps } from './CashbackSetupSteps';
 import { CashbackInviteStatus } from './CashbackInviteStatus';
+import type { LandlordInviteState } from './CashbackInviteStatus';
 import { CashbackMemberStatus } from './CashbackMemberStatus';
 import { CashbackEarningsCard } from './CashbackEarningsCard';
 import type { BarStatus, SetupStep, InviteState, CashbackEarningsEntry, CashbackModuleState } from '@/src/services/api/dashboard';
@@ -57,18 +58,18 @@ export interface CashbacksListProps {
   // Setup steps
   setupSteps: SetupStep[];
 
-  // Invite state (only for setup_pending / landlord_rejected)
+  // Invite state (legacy)
   inviteState?: InviteState;
+
+  // Landlord invite state (unified 3-state row)
+  landlordInviteState: LandlordInviteState;
 
   // Cashback earnings
   entries: CashbackEarningsEntry[];
 
   // Callbacks
   onEntryPress?: (entry: CashbackEarningsEntry) => void;
-  onCopyInviteLink?: () => void;
-  onNeedHelp?: () => void;
   onStepPress?: (step: SetupStep) => void;
-  onLearnMore?: () => void;
   onMemberStatusPress?: () => void;
 }
 
@@ -85,18 +86,13 @@ function CashbacksListComponent({
   announcementText,
   infoText,
   setupSteps,
-  inviteState,
+  landlordInviteState,
   entries,
   onEntryPress,
-  onCopyInviteLink,
-  onNeedHelp,
   onStepPress,
-  onLearnMore,
   onMemberStatusPress,
 }: CashbacksListProps) {
   const isActive = moduleState === 'active';
-  const setupLayout = isActive ? 'vertical' : 'horizontal';
-  const resolvedInviteState = moduleState === 'landlord_rejected' ? 'rejected' : 'sent';
 
   return (
     <View style={styles.container}>
@@ -128,40 +124,26 @@ function CashbacksListComponent({
         onPress={onMemberStatusPress}
       />
 
-      {/* 5. Divider */}
-      <View style={styles.divider} />
+      {/* 5–8. Setup Section — hidden when fully verified (landlord approved) */}
+      {!isActive && (
+        <>
+          <View style={styles.divider} />
 
-      {/* 6. Setup Steps Section — Figma: all inside Frame 2095586752 gap=16 */}
-      <View style={styles.setupSection}>
-        <Text style={styles.sectionHeader}>
-          {'COMPLETE SETUP TO ACCESS YOUR CASHBACK'}
-        </Text>
-        <CashbackSetupSteps
-          steps={setupSteps}
-          layout={setupLayout}
-          onStepPress={onStepPress}
-        />
+          <View style={styles.setupSection}>
+            <Text style={styles.sectionHeader}>
+              {'COMPLETE SETUP TO ACCESS YOUR CASHBACK'}
+            </Text>
+            <CashbackSetupSteps
+              steps={setupSteps}
+              layout="horizontal"
+              onStepPress={onStepPress}
+            />
 
-        {/* 7. Invite Status (only for setup_pending / landlord_rejected) */}
-        {!isActive && inviteState != null && (
-          <CashbackInviteStatus
-            state={resolvedInviteState}
-            onCopyInviteLink={onCopyInviteLink}
-            onNeedHelp={onNeedHelp}
-          />
-        )}
-
-        {/* 8. Help Banner — Figma: inside setup section, gap=16 */}
-        <View style={styles.helpBanner}>
-          <Text style={styles.helpText}>How to invite your landlord?</Text>
-          <TouchableOpacity
-            onPress={onLearnMore}
-            hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}
-          >
-            <Text style={styles.helpLink}>Learn More</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
+            {/* Landlord invite row — single unified component with 3 states */}
+            <CashbackInviteStatus state={landlordInviteState} />
+          </View>
+        </>
+      )}
 
       {/* 9. Cashback Earnings Section */}
       {entries.length > 0 && (
@@ -240,30 +222,6 @@ const styles = StyleSheet.create({
     fontSize: 12, // Figma: 12px
     lineHeight: 20, // Figma: 20px
     color: '#A9A9A9', // Figma: label gray
-  },
-
-  // Help Banner
-  helpBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#1A1A1A', // Figma: dark bg
-    borderRadius: 8, // Figma: 8px (not pill!)
-    paddingHorizontal: 12, // Figma: 12px
-    paddingVertical: 8, // Figma: 8px
-    gap: 10, // Figma: 10px
-  },
-  helpText: {
-    fontFamily: 'PlusJakartaSans-Regular', // Figma: fontWeight 400
-    fontSize: 12, // Figma: 12px
-    lineHeight: 20, // Figma: 20px
-    color: '#FF9A6D', // Figma: brand accent
-    flex: 1, // Figma: FILL
-  },
-  helpLink: {
-    fontFamily: 'PlusJakartaSans-Regular', // Figma: fontWeight 400
-    fontSize: 12, // Figma: 12px
-    lineHeight: 20, // Figma: 20px
-    color: '#FF9A6D', // Figma: brand accent
   },
 
   // Earnings Section
