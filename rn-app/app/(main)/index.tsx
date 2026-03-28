@@ -526,9 +526,8 @@ export default function HomeScreen() {
 
         const handleVerificationSkip = useCallback(() => {
           setShowVerificationSheet(false);
-          setVerificationSkippedStore(true);
-          setTimeout(() => router.push('/(payment)/enter-rent' as never), 300);
-        }, [setVerificationSkippedStore, router]);
+          router.push('/(payment)/enter-rent' as never);
+        }, [router]);
 
         const handleFinishSetup = useCallback(() => {
           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
