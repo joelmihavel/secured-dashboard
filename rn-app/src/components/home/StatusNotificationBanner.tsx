@@ -37,7 +37,7 @@ const notificationConfig: Record<NotificationType, { text: string; textColor: st
     textColor: '#FF9A6D',
   },
   landlord_rejected: {
-    text: 'Your landlord has rejected your tenancy request.',
+    text: 'Your landlord has rejected your tenancy request',
     textColor: '#E5484D',
   },
   rent_due: {

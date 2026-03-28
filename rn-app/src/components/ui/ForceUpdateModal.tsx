@@ -41,12 +41,12 @@ export function ForceUpdateModal({ message }: ForceUpdateModalProps) {
           <WarningIcon />
           <Text style={styles.title}>Update Required</Text>
           <Text style={styles.message}>
-            {message || 'A new version of Flent Secured is available. Please update to continue using the app.'}
+            {message || 'A new version of Flent Secured is available. Please update to continue using the app'}
           </Text>
         </View>
         <View style={styles.buttonContainer}>
           <PrimaryButton
-            title="Update Now"
+            title="Update now"
             onPress={() => Linking.openURL(APP_STORE_URL)}
             testID="force-update-button"
           />

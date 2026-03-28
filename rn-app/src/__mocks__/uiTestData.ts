@@ -253,9 +253,9 @@ export const MOCK_AGREEMENT_STATES: {
   idle: {},
   uploading: { progress: 45, fileName: 'Agreement_Dec2025.pdf' },
   success: { fileName: 'Joel_Ramesh-Agreement_Dec 2025.pdf', fileSize: '2.4 MB' },
-  expired: { error: 'The agreement is invalid or expired. Please upload a valid one.' },
-  too_large: { error: 'File size exceeds 10MB limit.' },
-  manual_review: { message: 'Your agreement is being reviewed manually. This may take 24-48 hours.' },
+  expired: { error: 'The agreement is invalid or expired. Please upload a valid one' },
+  too_large: { error: 'File size exceeds 10MB limit' },
+  manual_review: { message: 'Your agreement is being reviewed manually. This may take 24-48 hours' },
 };
 
 // ============================================================================
@@ -285,8 +285,8 @@ export const MOCK_OTP_STATES: {
 } = {
   empty: { digits: ['', '', '', '', '', ''] },
   filled: { digits: ['1', '2', '3', '4', '5', '6'] },
-  error1: { digits: ['1', '2', '3', '4', '5', '6'], error: 'Invalid OTP. Please try again.' },
-  error2: { digits: ['1', '2', '3', '4', '5', '6'], error: 'OTP expired. Request a new one.' },
+  error1: { digits: ['1', '2', '3', '4', '5', '6'], error: 'Invalid OTP. Please try again' },
+  error2: { digits: ['1', '2', '3', '4', '5', '6'], error: 'OTP expired. Request a new one' },
 };
 
 // ============================================================================
@@ -300,7 +300,7 @@ export const MOCK_SIGNUP_STATES: {
 } = {
   empty: { phone: '' },
   filled: { phone: '9876543210' },
-  error: { phone: '9876543210', error: 'This number is already registered.' },
+  error: { phone: '9876543210', error: 'This number is already registered' },
 };
 
 // ============================================================================
@@ -366,49 +366,49 @@ export const MOCK_API_ERRORS: Record<string, MockApiError> = {
   unauthorized: {
     status: 401,
     code: 'UNAUTHORIZED',
-    message: 'Session expired. Please sign in again.',
+    message: 'Session expired. Please sign in again',
     retryable: false,
   },
   forbidden: {
     status: 403,
     code: 'FORBIDDEN',
-    message: 'You do not have permission to perform this action.',
+    message: 'You do not have permission to perform this action',
     retryable: false,
   },
   not_found: {
     status: 404,
     code: 'NOT_FOUND',
-    message: 'The requested resource was not found.',
+    message: 'The requested resource was not found',
     retryable: false,
   },
   request_timeout: {
     status: 408,
     code: 'REQUEST_TIMEOUT',
-    message: 'The request timed out. Please try again.',
+    message: 'The request timed out. Please try again',
     retryable: true,
   },
   rate_limited: {
     status: 429,
     code: 'RATE_LIMITED',
-    message: 'Too many requests. Please wait a moment and try again.',
+    message: 'Too many requests. Please wait a moment and try again',
     retryable: true,
   },
   server_error: {
     status: 500,
     code: 'INTERNAL_SERVER_ERROR',
-    message: 'Something went wrong on our end. Please try again later.',
+    message: 'Something went wrong on our end. Please try again later',
     retryable: true,
   },
   bad_gateway: {
     status: 502,
     code: 'BAD_GATEWAY',
-    message: 'Service temporarily unavailable. Please try again.',
+    message: 'Service temporarily unavailable. Please try again',
     retryable: true,
   },
   service_unavailable: {
     status: 503,
     code: 'SERVICE_UNAVAILABLE',
-    message: 'Service is under maintenance. Please try again later.',
+    message: 'Service is under maintenance. Please try again later',
     retryable: true,
   },
 };
@@ -420,19 +420,19 @@ export const MOCK_API_ERRORS: Record<string, MockApiError> = {
 export const MOCK_NETWORK_ERRORS: Record<string, MockNetworkError> = {
   timeout: {
     type: 'timeout',
-    message: 'Request timed out. Please check your connection and try again.',
+    message: 'Request timed out. Please check your connection and try again',
   },
   offline: {
     type: 'network_offline',
-    message: 'No internet connection. Please check your network settings.',
+    message: 'No internet connection. Please check your network settings',
   },
   dns_failure: {
     type: 'dns_failure',
-    message: 'Unable to reach the server. Please try again later.',
+    message: 'Unable to reach the server. Please try again later',
   },
   connection_reset: {
     type: 'connection_reset',
-    message: 'Connection was reset. Please try again.',
+    message: 'Connection was reset. Please try again',
   },
 };
 
@@ -478,7 +478,7 @@ export const MOCK_NOTIFICATIONS: MockNotification[] = [
   {
     id: 'notif_1',
     title: 'Rent payment successful',
-    body: 'Your rent of Rs 32,500 for Dec 2025 has been paid.',
+    body: 'Your rent of Rs 32,500 for Dec 2025 has been paid',
     route: '/(payment)/status',
     read: false,
     createdAt: '2025-12-05T10:30:00Z',
@@ -486,7 +486,7 @@ export const MOCK_NOTIFICATIONS: MockNotification[] = [
   {
     id: 'notif_2',
     title: 'Cashback earned!',
-    body: 'You earned Rs 260 cashback on your rent payment.',
+    body: 'You earned Rs 260 cashback on your rent payment',
     route: '/(main)',
     read: true,
     createdAt: '2025-12-05T10:31:00Z',
@@ -494,7 +494,7 @@ export const MOCK_NOTIFICATIONS: MockNotification[] = [
   {
     id: 'notif_3',
     title: 'Rent due reminder',
-    body: 'Your rent of Rs 32,500 is due in 3 days.',
+    body: 'Your rent of Rs 32,500 is due in 3 days',
     route: '/(payment)/confirm',
     read: false,
     createdAt: '2025-12-07T09:00:00Z',
@@ -763,18 +763,18 @@ export const MOCK_OTP_STATES_EXTENDED: {
 } = {
   expired: {
     digits: ['1', '2', '3', '4', '5', '6'],
-    error: 'OTP has expired. Please request a new one.',
+    error: 'OTP has expired. Please request a new one',
   },
   max_attempts: {
     digits: ['1', '2', '3', '4', '5', '6'],
-    error: 'Maximum verification attempts reached. Please request a new OTP.',
+    error: 'Maximum verification attempts reached. Please request a new OTP',
   },
   partial: {
     digits: ['1', '2', '3', '', '', ''],
   },
   rate_limited: {
     digits: ['', '', '', '', '', ''],
-    error: 'Too many OTP requests. Please wait 60 seconds before trying again.',
+    error: 'Too many OTP requests. Please wait 60 seconds before trying again',
   },
 };
 
@@ -791,23 +791,23 @@ export const MOCK_SIGNUP_STATES_EXTENDED: {
 } = {
   invalid_format: {
     phone: 'abcdefghij',
-    error: 'Please enter a valid 10-digit mobile number.',
+    error: 'Please enter a valid 10-digit mobile number',
   },
   too_short: {
     phone: '98765',
-    error: 'Phone number must be 10 digits.',
+    error: 'Phone number must be 10 digits',
   },
   rate_limited: {
     phone: '9876543210',
-    error: 'Too many sign-up attempts. Please try again later.',
+    error: 'Too many sign-up attempts. Please try again later',
   },
   network_error: {
     phone: '9876543210',
-    error: 'Unable to reach the server. Please check your connection.',
+    error: 'Unable to reach the server. Please check your connection',
   },
   special_chars: {
     phone: '+91-9876 543210',
-    error: 'Please enter only digits without spaces or special characters.',
+    error: 'Please enter only digits without spaces or special characters',
   },
 };
 
@@ -831,11 +831,11 @@ export const MOCK_WAITLIST_STATES_EXTENDED: {
     hoursWaiting: 720,
   },
   rejected_fraud: {
-    reason: 'Account flagged for suspicious activity. Please contact support.',
+    reason: 'Account flagged for suspicious activity. Please contact support',
     rejectedAt: new Date().toISOString(),
   },
   rejected_document: {
-    reason: 'Uploaded document could not be verified. Please upload a valid rental agreement.',
+    reason: 'Uploaded document could not be verified. Please upload a valid rental agreement',
     rejectedAt: new Date().toISOString(),
   },
 };
@@ -862,19 +862,19 @@ export const MOCK_AGREEMENT_STATES_EXTENDED: {
     fileName: 'Agreement_Dec2025.pdf',
   },
   network_error: {
-    error: 'Upload failed. Please check your internet connection and try again.',
+    error: 'Upload failed. Please check your internet connection and try again',
   },
   invalid_file_type: {
-    error: 'Only PDF files are supported. Please upload a valid PDF document.',
+    error: 'Only PDF files are supported. Please upload a valid PDF document',
   },
   ocr_failed: {
-    error: 'Failed to read the document. The file may be corrupted or password-protected.',
+    error: 'Failed to read the document. The file may be corrupted or password-protected',
   },
   processing_timeout: {
-    error: 'Document processing timed out. Please try uploading again.',
+    error: 'Document processing timed out. Please try uploading again',
   },
   server_error: {
-    error: 'An unexpected error occurred while processing your document. Please try again later.',
+    error: 'An unexpected error occurred while processing your document. Please try again later',
   },
 };
 
@@ -977,57 +977,57 @@ export interface MockPaymentFlowError {
 export const MOCK_PAYMENT_FLOW_ERRORS: Record<string, MockPaymentFlowError> = {
   already_paid: {
     code: 'ALREADY_PAID',
-    message: 'Payment already completed for this month.',
+    message: 'Payment already completed for this month',
     status: 'failed',
   },
   payment_in_progress: {
     code: 'PAYMENT_IN_PROGRESS',
-    message: 'A payment is already being processed. Please wait.',
+    message: 'A payment is already being processed. Please wait',
     status: 'processing',
   },
   bank_not_verified: {
     code: 'BANK_NOT_VERIFIED',
-    message: 'Landlord bank account has not been verified yet.',
+    message: 'Landlord bank account has not been verified yet',
     status: 'failed',
   },
   invalid_tenancy: {
     code: 'INVALID_TENANCY',
-    message: 'Tenancy not found or is no longer active.',
+    message: 'Tenancy not found or is no longer active',
     status: 'failed',
   },
   auth_error: {
     code: 'AUTH_ERROR',
-    message: 'Your session has expired. Please sign in again.',
+    message: 'Your session has expired. Please sign in again',
     status: 'failed',
   },
   network_error: {
     code: 'NETWORK_ERROR',
-    message: 'Please check your internet connection and try again.',
+    message: 'Please check your internet connection and try again',
     status: 'failed',
   },
   gateway_timeout: {
     code: 'GATEWAY_TIMEOUT',
-    message: 'Payment gateway timed out. Your payment may still be processing.',
+    message: 'Payment gateway timed out. Your payment may still be processing',
     status: 'processing',
   },
   refund_initiated: {
     code: 'REFUND_INITIATED',
-    message: 'Your payment has been refunded. It may take 5-7 business days.',
+    message: 'Your payment has been refunded. It may take 5-7 business days',
     status: 'refunded',
   },
   insufficient_balance: {
     code: 'INSUFFICIENT_BALANCE',
-    message: 'Insufficient balance in your selected payment method.',
+    message: 'Insufficient balance in your selected payment method',
     status: 'failed',
   },
   upi_declined: {
     code: 'UPI_DECLINED',
-    message: 'UPI payment was declined by your bank. Please try another method.',
+    message: 'UPI payment was declined by your bank. Please try another method',
     status: 'failed',
   },
   card_declined: {
     code: 'CARD_DECLINED',
-    message: 'Card payment was declined. Please check your card details or try another card.',
+    message: 'Card payment was declined. Please check your card details or try another card',
     status: 'failed',
   },
 };
@@ -1045,37 +1045,37 @@ export interface MockSetupError {
 export const MOCK_SETUP_ERRORS: Record<string, MockSetupError> = {
   bank_verification_failed: {
     code: 'VERIFICATION_FAILED',
-    message: 'Bank account verification failed. Please check your details.',
+    message: 'Bank account verification failed. Please check your details',
     step: 'bank',
   },
   bank_name_mismatch: {
     code: 'NAME_MISMATCH',
-    message: 'Account holder name does not match the name on your agreement.',
+    message: 'Account holder name does not match the name on your agreement',
     step: 'bank',
   },
   ifsc_invalid: {
     code: 'VALIDATION_ERROR',
-    message: 'Invalid IFSC code. Please check and try again.',
+    message: 'Invalid IFSC code. Please check and try again',
     step: 'bank',
   },
   utility_not_found: {
     code: 'NOT_FOUND',
-    message: 'Consumer number not found for the selected operator.',
+    message: 'Consumer number not found for the selected operator',
     step: 'utility',
   },
   utility_address_mismatch: {
     code: 'ADDRESS_MISMATCH',
-    message: 'Utility address does not match the property address on your agreement.',
+    message: 'Utility address does not match the property address on your agreement',
     step: 'utility',
   },
   landlord_email_failed: {
     code: 'EMAIL_FAILED',
-    message: 'Failed to send invitation email. Please verify the email address.',
+    message: 'Failed to send invitation email. Please verify the email address',
     step: 'landlord',
   },
   landlord_already_invited: {
     code: 'VALIDATION_ERROR',
-    message: 'An invitation has already been sent. Please wait for the landlord to respond.',
+    message: 'An invitation has already been sent. Please wait for the landlord to respond',
     step: 'landlord',
   },
 };
@@ -1092,19 +1092,19 @@ export interface MockProfileError {
 export const MOCK_PROFILE_ERRORS: Record<string, MockProfileError> = {
   save_failed: {
     code: 'SAVE_FAILED',
-    message: 'Failed to save profile changes. Please try again.',
+    message: 'Failed to save profile changes. Please try again',
   },
   email_invalid: {
     code: 'VALIDATION_ERROR',
-    message: 'Please enter a valid email address.',
+    message: 'Please enter a valid email address',
   },
   name_too_short: {
     code: 'VALIDATION_ERROR',
-    message: 'Name must be at least 2 characters.',
+    message: 'Name must be at least 2 characters',
   },
   concurrent_edit: {
     code: 'CONFLICT',
-    message: 'Your profile was updated elsewhere. Please refresh and try again.',
+    message: 'Your profile was updated elsewhere. Please refresh and try again',
   },
 };
 
@@ -1120,27 +1120,27 @@ export interface MockAuthError {
 export const MOCK_AUTH_ERRORS: Record<string, MockAuthError> = {
   invalid_otp: {
     code: 'INVALID_OTP',
-    message: 'The OTP you entered is incorrect. Please try again.',
+    message: 'The OTP you entered is incorrect. Please try again',
   },
   otp_expired: {
     code: 'OTP_EXPIRED',
-    message: 'This OTP has expired. Please request a new one.',
+    message: 'This OTP has expired. Please request a new one',
   },
   max_otp_attempts: {
     code: 'MAX_ATTEMPTS',
-    message: 'Too many incorrect attempts. Please request a new OTP.',
+    message: 'Too many incorrect attempts. Please request a new OTP',
   },
   phone_blocked: {
     code: 'PHONE_BLOCKED',
-    message: 'This phone number has been temporarily blocked. Try again in 24 hours.',
+    message: 'This phone number has been temporarily blocked. Try again in 24 hours',
   },
   session_expired: {
     code: 'SESSION_EXPIRED',
-    message: 'Your session has expired. Please sign in again.',
+    message: 'Your session has expired. Please sign in again',
   },
   account_disabled: {
     code: 'ACCOUNT_DISABLED',
-    message: 'Your account has been disabled. Please contact support.',
+    message: 'Your account has been disabled. Please contact support',
   },
 };
 

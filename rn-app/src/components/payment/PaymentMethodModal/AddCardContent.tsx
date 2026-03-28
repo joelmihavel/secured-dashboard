@@ -73,7 +73,7 @@ export function AddCardContent({ paymentId, onBack, cardType = 'credit', onIniti
       // handleConfirmPay in the orchestrator handles initiation after user confirms.
       if (onReadyForConfirm) {
         if (!cardInputRef.current) {
-          Alert.alert('Error', 'Card form was reset. Please try again.');
+          Alert.alert('Error', 'Card form was reset. Please try again');
           return;
         }
         const cardData = cardInputRef.current.getCardData();
@@ -113,12 +113,12 @@ export function AddCardContent({ paymentId, onBack, cardType = 'credit', onIniti
       // Re-read sessionParams after potential initiatePayment/verifyCard call
       const currentSessionParams = usePaymentStore.getState().payuSessionParams;
       if (!currentSessionParams) {
-        Alert.alert('Session Error', 'Please go back and try again.');
+        Alert.alert('Session Error', 'Please go back and try again');
         return;
       }
 
       if (!cardInputRef.current) {
-        Alert.alert('Error', 'Card form was reset. Please try again.');
+        Alert.alert('Error', 'Card form was reset. Please try again');
         return;
       }
       const cardData = cardInputRef.current.getCardData();
@@ -144,7 +144,7 @@ export function AddCardContent({ paymentId, onBack, cardType = 'credit', onIniti
       if (outcome.status === 'cancelled' || outcome.status === 'blocked') {
         // Reset so user can retry
       } else if (outcome.status === 'failure') {
-        Alert.alert('Payment Error', outcome.error || 'Unable to process payment. Please try again.');
+        Alert.alert('Payment Error', outcome.error || 'Unable to process payment. Please try again');
       }
     } finally {
       isSubmittingRef.current = false;
@@ -195,7 +195,7 @@ export function AddCardContent({ paymentId, onBack, cardType = 'credit', onIniti
           />
 
           <Text style={styles.footerText}>
-            You may receive a verification message to confirm your bank account and unlock benefits.
+            You may receive a verification message to confirm your bank account and unlock benefits
           </Text>
         </View>
       </ScrollView>

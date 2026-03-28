@@ -485,7 +485,7 @@ const reviewResponses: Record<string, unknown> = {
 
   // ─── Profile: Delete Account ───
   'delete-account': {
-    message: 'Your account has been deleted successfully.',
+    message: 'Your account has been deleted successfully',
     archived_at: new Date().toISOString(),
   },
 

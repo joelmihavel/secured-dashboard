@@ -70,7 +70,7 @@ const styles = StyleSheet.create({
     color: colors.neutral[500], // Figma: #A9A9A9
   },
   cardList: {
-    gap: 4, // Figma: 4px between transaction cards
+    gap: 12, // Increased from Figma 4px for better readability
   },
 });
 

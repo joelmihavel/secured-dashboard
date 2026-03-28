@@ -38,7 +38,7 @@ function LandlordStatusCardComponent({
         return {
           title: 'Landlord invitation sent',
           description:
-            "We've notified your landlord. You'll be able to unlock rewards once they review the request.",
+            "We've notified your landlord. You'll be able to unlock rewards once they review the request",
           actionLabel: null,
           actionHandler: null,
         };
@@ -46,32 +46,32 @@ function LandlordStatusCardComponent({
         return {
           title: "Waiting for your landlord's response",
           description:
-            'Most landlords respond after a quick reminder. You can nudge them again.',
-          actionLabel: 'Send Reminder',
+            'Most landlords respond after a quick reminder. You can nudge them again',
+          actionLabel: 'Send reminder',
           actionHandler: onSendReminder,
         };
       case 'waiting_response_old':
         return {
           title: 'Still pending with your landlord',
           description:
-            "If they haven't seen the invite yet, a personal message often helps.",
-          actionLabel: 'Send Reminder',
+            "If they haven't seen the invite yet, a personal message often helps",
+          actionLabel: 'Send reminder',
           actionHandler: onSendReminder,
         };
       case 'invite_pending':
         return {
           title: 'Invite pending',
           description:
-            'You can still pay rent. Rewards unlock when your landlord joins.',
-          actionLabel: 'Contact Support',
+            'You can still pay rent. Rewards unlock when your landlord joins',
+          actionLabel: 'Contact support',
           actionHandler: onContactSupport,
         };
       case 'declined':
         return {
           title: 'Your landlord declined the invite',
           description:
-            'Some landlords prefer to understand before joining. You can continue paying rent.',
-          actionLabel: 'Contact Support',
+            'Some landlords prefer to understand before joining. You can continue paying rent',
+          actionLabel: 'Contact support',
           actionHandler: onContactSupport,
         };
       default:

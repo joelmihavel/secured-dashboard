@@ -2,30 +2,7 @@
  * Profile Agreement Screen - View Agreement Details
  * Figma Reference: 41-9811 (My Profile / Agreement)
  *
- * Blueprint: figma-1on1parity/data/41-9811-blueprint.json
- *
- * Layout hierarchy (agreement dark section):
- * - Content area (41:9880): column, gap=64
- *   - Status bar (41:9881): handled by SafeArea
- *   - Form wrapper (41:9882): column, gap=40, paddingH=48
- *     - Inner frame (41:9883): 297px wide, column, gap=48
- *       - Back arrow (41:9884): 32x32
- *       - Title (41:9885): "View your agreement" 297x128, 48px/64 Regular
- *       - Detail rows (41:9886): 297px wide, column, gap=16
- *         - Row types:
- *           A. Inline row (297x20, dir:row, gap:4, justify:space-between):
- *              [icon+label left] [value right]
- *              Used for: Agreement ID, Monthly Rent, One-Time Deposit,
- *                        Rent Duration, Exit Date
- *           B. Stacked row (297x44/64, dir:column, gap:4):
- *              [icon+label top] [value below, full width]
- *              Used for: Property Name, Tenant(s), Landlord(s)
- *         - Dividers between rows: Vector 297x0, stroke #4D4D4D, weight 0.25
- *
- * Label frames contain: 16x16 icon (fill #A6A6A6) + label text
- * Label text: 12px Regular #878787 (implied from fill color)
- * Value text: 14px Regular #CBCBCB (implied from fill color)
- * Icon frames: 16x16 with vector child, fill #A6A6A6
+ * Read-only view of agreement details. Contact support to make changes.
  */
 
 import React, { useCallback, useMemo } from 'react';
@@ -33,30 +10,29 @@ import {
   View,
   StyleSheet,
   ScrollView,
-  TouchableOpacity,
+  Linking,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 
-import { Screen, Text, BackButton } from '@/src/components';
+import { Screen, Text, BackButton, PrimaryButton } from '@/src/components';
 import { DottedGridPattern } from '@/src/components/patterns';
 import { useDashboard } from '@/src/hooks';
 import { colors } from '@/src/theme';
 
-// Figma blueprint colors (41-9811)
 const FIGMA_COLORS = {
-  background: colors.black[700],    // colors.black[700]
-  titleGray: colors.neutral[500],     // colors.neutral[500]
-  accent: colors.brand[500],        // colors.brand[500]
-  label: colors.neutral[600],          // colors.neutral[600]
-  value: colors.neutral[300],          // colors.neutral[300]
-  icon: colors.black[200],           // Icon fill color from blueprint
-  divider: colors.black[400],        // Divider stroke
-  white: colors.white,          // colors.white
+  background: colors.black[700],
+  titleGray: colors.neutral[500],
+  accent: colors.brand[500],
+  label: colors.neutral[600],
+  value: colors.neutral[300],
+  icon: colors.black[200],
+  divider: colors.black[400],
+  white: colors.white,
+  footer: colors.neutral[500],
 } as const;
 
-// Icon mapping for agreement detail labels
 const LABEL_ICONS: Record<string, string> = {
   'Agreement ID': 'document-text-outline',
   'Property Name': 'location-outline',
@@ -68,11 +44,6 @@ const LABEL_ICONS: Record<string, string> = {
   'Exit Date': 'time-outline',
 };
 
-/**
- * Inline detail row: label+icon on left, value on right (single line)
- * Blueprint: 297x20, dir:row, gap:4, justify:space-between, align:center
- * Used for: Agreement ID, Monthly Rent, One-Time Deposit, Rent Duration, Exit Date
- */
 function InlineDetailRow({ label, value }: { label: string; value: string }) {
   const iconName = LABEL_ICONS[label] ?? 'document-text-outline';
   return (
@@ -88,11 +59,6 @@ function InlineDetailRow({ label, value }: { label: string; value: string }) {
   );
 }
 
-/**
- * Stacked detail row: label+icon on top, value below (multi-line value)
- * Blueprint: 297x44/64, dir:column, gap:4, align:flex-start, justify:center
- * Used for: Property Name, Tenant(s), Landlord(s)
- */
 function StackedDetailRow({ label, value }: { label: string; value: string }) {
   const iconName = LABEL_ICONS[label] ?? 'document-text-outline';
   return (
@@ -108,12 +74,10 @@ function StackedDetailRow({ label, value }: { label: string; value: string }) {
   );
 }
 
-/** Thin divider between detail rows - Blueprint: Vector 297x0, stroke #4D4D4D, weight 0.25 */
 function DetailDivider() {
   return <View style={styles.divider} />;
 }
 
-// Define which labels use stacked (column) layout vs inline (row) layout
 const STACKED_LABELS = new Set(['Property Name', 'Tenant(s)', 'Landlord(s)']);
 
 export default function ProfileAgreementScreen() {
@@ -125,7 +89,11 @@ export default function ProfileAgreementScreen() {
     router.back();
   }, [router]);
 
-  // Derive agreement detail rows from tenancy data with Figma demo fallbacks
+  const handleContactSupport = useCallback(() => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    Linking.openURL('mailto:secured@flent.in?subject=Edit%20Agreement%20Request');
+  }, []);
+
   const details = useMemo(() => {
     const formatCurrency = (amount: number) =>
       `\u20B9 ${amount.toLocaleString('en-IN')}`;
@@ -151,48 +119,14 @@ export default function ProfileAgreementScreen() {
     const t = tenancy as Record<string, unknown> | null;
 
     return [
-      {
-        label: 'Agreement ID',
-        value: (t?.agreement_id as string) ?? 'N/A',
-      },
-      {
-        label: 'Property Name',
-        value:
-          (t?.property_address as string) ??
-          'Not available',
-      },
-      {
-        label: 'Tenant(s)',
-        value: Array.isArray(t?.tenant_names) && (t.tenant_names as string[]).length > 0
-          ? (t.tenant_names as string[]).join(', ')
-          : 'Not available',
-      },
-      {
-        label: 'Landlord(s)',
-        value:
-          (t?.landlord_name as string) ??
-          'Not available',
-      },
-      {
-        label: 'Monthly Rent',
-        value: t?.monthly_rent
-          ? formatCurrency(t.monthly_rent as number)
-          : '\u20B9 40,000',
-      },
-      {
-        label: 'One-Time Deposit',
-        value: (t?.security_deposit as number)
-          ? formatCurrency(t.security_deposit as number)
-          : 'N/A',
-      },
-      {
-        label: 'Rent Duration',
-        value: formatDuration(t?.lease_duration_months as number | null),
-      },
-      {
-        label: 'Exit Date',
-        value: formatDate(t?.lease_end_date as string | null),
-      },
+      { label: 'Agreement ID', value: (t?.agreement_id as string) ?? 'N/A' },
+      { label: 'Property Name', value: (t?.property_address as string) ?? 'Not available' },
+      { label: 'Tenant(s)', value: Array.isArray(t?.tenant_names) && (t.tenant_names as string[]).length > 0 ? (t.tenant_names as string[]).join(', ') : 'Not available' },
+      { label: 'Landlord(s)', value: (t?.landlord_name as string) ?? 'Not available' },
+      { label: 'Monthly Rent', value: t?.monthly_rent ? formatCurrency(t.monthly_rent as number) : '\u20B9 40,000' },
+      { label: 'One-Time Deposit', value: (t?.security_deposit as number) ? formatCurrency(t.security_deposit as number) : 'N/A' },
+      { label: 'Rent Duration', value: formatDuration(t?.lease_duration_months as number | null) },
+      { label: 'Exit Date', value: formatDate(t?.lease_end_date as string | null) },
     ];
   }, [tenancy]);
 
@@ -204,23 +138,18 @@ export default function ProfileAgreementScreen() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* Content wrapper (41:9882): paddingH=48 */}
-        {/* Inner frame (41:9883): 297px wide, gap=48 */}
         <View style={styles.contentWrapper}>
-          {/* Back arrow (41:9884): 32x32 */}
           <BackButton
             onPress={handleBack}
             style={styles.backButton}
             color={FIGMA_COLORS.white}
           />
 
-          {/* Title (41:9885): "View your agreement" 297x128 */}
           <Text style={styles.titleBase}>
             <Text inherit style={styles.titleGray}>{'View your '}</Text>
             <Text inherit style={styles.titleAccent}>{'agreement'}</Text>
           </Text>
 
-          {/* Detail rows (41:9886): 297px wide, column, gap=16 */}
           <View style={styles.detailsContainer}>
             {details.map((row, index) => {
               const isStacked = STACKED_LABELS.has(row.label);
@@ -236,6 +165,16 @@ export default function ProfileAgreementScreen() {
               );
             })}
           </View>
+
+          <View style={styles.buttonSection}>
+            <PrimaryButton
+              title="Contact support"
+              onPress={handleContactSupport}
+            />
+            <Text style={styles.footerText}>
+              To update your agreement details, please contact support.
+            </Text>
+          </View>
         </View>
       </ScrollView>
     </Screen>
@@ -243,103 +182,22 @@ export default function ProfileAgreementScreen() {
 }
 
 const styles = StyleSheet.create({
-  scrollView: {
-    flex: 1,
-  },
-  scrollContent: {
-    paddingBottom: 48,
-  },
-  // Content wrapper (41:9882): paddingH=48
-  // Inner frame (41:9883): 297px wide, gap=48
-  contentWrapper: {
-    paddingHorizontal: 48,
-    gap: 48,
-  },
-
-  // Back button (41:9884): 32x32 icon container
-  backButton: {
-    width: 32,
-    height: 32,
-    justifyContent: 'center',
-    alignItems: 'flex-start',
-  },
-
-  // Title (41:9885): 48px/64 Regular, letterSpacing -2, width 297
-  titleBase: {
-    fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: 48,
-    lineHeight: 64,
-    letterSpacing: -2,
-    maxWidth: 297,
-  },
-  titleGray: {
-    color: FIGMA_COLORS.titleGray,
-  },
-  titleAccent: {
-    color: FIGMA_COLORS.accent,
-  },
-
-  // Detail rows container (41:9886): gap=16
-  detailsContainer: {
-    gap: 16,
-  },
-
-  // Inline row (A pattern): 297x20, row, gap:4, justify:space-between, align:center
-  inlineRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: 4,
-  },
-
-  // Stacked row (B pattern): 297x44/64, column, gap:4
-  stackedRow: {
-    flexDirection: 'column',
-    gap: 4,
-  },
-
-  // Label frame: row, gap:4, contains icon + label text
-  labelFrame: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-
-  // Icon frame: 16x16 container for the icon
-  iconFrame: {
-    width: 16,
-    height: 16,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-
-  // Label text: implied 12px/20 Regular #878787 from blueprint
-  labelText: {
-    fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: 12,
-    lineHeight: 20,
-    color: FIGMA_COLORS.label,
-  },
-
-  // Value text for inline rows: 14px/20 Regular #CBCBCB
-  inlineValueText: {
-    fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: 14,
-    lineHeight: 20,
-    color: FIGMA_COLORS.value,
-  },
-
-  // Value text for stacked rows: 14px/20 Regular #CBCBCB, full width
-  stackedValueText: {
-    fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: 14,
-    lineHeight: 20,
-    color: FIGMA_COLORS.value,
-  },
-
-  // Divider: Vector 297x0, stroke #4D4D4D, 0.25 weight
-  divider: {
-    height: 0.25,
-    backgroundColor: FIGMA_COLORS.divider,
-  },
+  scrollView: { flex: 1 },
+  scrollContent: { paddingBottom: 48 },
+  contentWrapper: { paddingHorizontal: 48, gap: 48 },
+  backButton: { width: 32, height: 32, justifyContent: 'center', alignItems: 'flex-start' },
+  titleBase: { fontFamily: 'PlusJakartaSans-Regular', fontSize: 48, lineHeight: 64, letterSpacing: -2, maxWidth: 297 },
+  titleGray: { color: FIGMA_COLORS.titleGray },
+  titleAccent: { color: FIGMA_COLORS.accent },
+  detailsContainer: { gap: 16 },
+  inlineRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 4 },
+  stackedRow: { flexDirection: 'column', gap: 4 },
+  labelFrame: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  iconFrame: { width: 16, height: 16, justifyContent: 'center', alignItems: 'center' },
+  labelText: { fontFamily: 'PlusJakartaSans-Regular', fontSize: 12, lineHeight: 20, color: FIGMA_COLORS.label },
+  inlineValueText: { fontFamily: 'PlusJakartaSans-Regular', fontSize: 14, lineHeight: 20, color: FIGMA_COLORS.value },
+  stackedValueText: { fontFamily: 'PlusJakartaSans-Regular', fontSize: 14, lineHeight: 20, color: FIGMA_COLORS.value },
+  divider: { height: StyleSheet.hairlineWidth, backgroundColor: FIGMA_COLORS.divider },
+  buttonSection: { gap: 16, alignItems: 'center' },
+  footerText: { fontFamily: 'PlusJakartaSans-Regular', fontSize: 12, lineHeight: 20, color: FIGMA_COLORS.footer, textAlign: 'center' },
 });

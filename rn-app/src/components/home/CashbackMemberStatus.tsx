@@ -14,6 +14,7 @@ import Svg, { Path } from 'react-native-svg';
 import { colors } from '@/src/theme';
 
 import { Text } from '@/src/components/ui';
+import { Avatar } from '@/src/components/ui/Avatar';
 
 export interface CashbackMemberStatusProps {
   /** Called when user taps status badge — opens VerificationStatusSheet */
@@ -87,7 +88,7 @@ function CashbackMemberStatusComponent({ onPress, verified = true }: CashbackMem
     >
       {/* Left: Avatar + Label */}
       <View style={styles.left}>
-        <View style={styles.avatar} />
+        <Avatar name="member" size="xs" />
         <Text style={styles.label}>MEMBER STATUS</Text>
       </View>
 
@@ -136,12 +137,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8, // Figma: 8px gap
-  },
-  avatar: {
-    width: 24, // Figma: 24x24
-    height: 24,
-    borderRadius: 12, // Figma: circle
-    backgroundColor: colors.brand[300], // Figma: #FFCC8A
   },
   label: {
     fontFamily: 'PlusJakartaSans-Medium', // Figma: fontWeight 500

@@ -34,10 +34,10 @@ interface CashbackEarningsCardProps {
 // ==============================================
 
 const STATUS_CONFIG: Record<CashbackCardStatus, { label: string }> = {
-  received: { label: 'Recieved' }, // Figma spelling preserved
-  accrued: { label: 'Accrued \uD83D\uDD12' }, // lock emoji
-  missed: { label: 'Missed' },
-  reversed: { label: 'Reversed' },
+  received: { label: 'received' },
+  accrued: { label: 'accrued \uD83D\uDD12' }, // lock emoji
+  missed: { label: 'missed' },
+  reversed: { label: 'reversed' },
 };
 
 // ==============================================

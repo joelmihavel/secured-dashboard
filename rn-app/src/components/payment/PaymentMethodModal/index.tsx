@@ -142,7 +142,7 @@ export function PaymentMethodModal({
   const handleInitiateForChild = useCallback(
     async (methodType: PaymentMethodType): Promise<{ paymentId: string } | null> => {
       if (!isConnected) {
-        Alert.alert('No Connection', "You're offline. Please check your connection and try again.");
+        Alert.alert('No Connection', "You're offline. Please check your connection and try again");
         return null;
       }
 
@@ -297,14 +297,14 @@ export function PaymentMethodModal({
         } else if (outcome.status === 'failure') {
           pendingInstrumentRef.current = null;
           setPaymentId('');
-          Alert.alert('Payment Error', outcome.error || 'Unable to process payment.');
+          Alert.alert('Payment Error', outcome.error || 'Unable to process payment');
           setModalView('selector');
         }
         // success/navigating: executeCashfreePayment navigates to status screen
       } else {
         // Existing PayU path
         if (!storeState.payuSessionParams) {
-          Alert.alert('Session Error', 'Payment session expired. Please go back and try again.');
+          Alert.alert('Session Error', 'Payment session expired. Please go back and try again');
           return;
         }
 
@@ -325,7 +325,7 @@ export function PaymentMethodModal({
         } else if (outcome.status === 'failure') {
           pendingInstrumentRef.current = null;
           setPaymentId('');
-          Alert.alert('Payment Error', outcome.error || 'Unable to process payment.');
+          Alert.alert('Payment Error', outcome.error || 'Unable to process payment');
           setModalView('selector');
         }
         // success/navigating: executePayment navigates to status screen
@@ -347,7 +347,7 @@ export function PaymentMethodModal({
       try {
         // Network connectivity check
         if (!isConnected) {
-          Alert.alert('No Connection', "You're offline. Please check your connection and try again.");
+          Alert.alert('No Connection', "You're offline. Please check your connection and try again");
           return;
         }
 

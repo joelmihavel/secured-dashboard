@@ -30,22 +30,22 @@ const STAMP_CONFIG: Record<PaymentStampStatus, {
 }> = {
   paid: {
     icon: 'checkmark',
-    label: 'PAID',
+    label: 'paid',
     color: '#06C270',    // success.approved per 41-9388
   },
   failed: {
     icon: 'close',
-    label: 'FAILED',
+    label: 'failed',
     color: '#FF8080',    // error per 41-9511
   },
   refunded: {
     icon: 'return-up-back',
-    label: 'REFUND',
+    label: 'refund',
     color: '#A9A9A9',    // neutral.500 for refunded state
   },
   pending: {
     icon: 'hourglass',
-    label: 'PENDING',
+    label: 'pending',
     color: '#A9A9A9',    // neutral.500 per 41-9460
   },
 };

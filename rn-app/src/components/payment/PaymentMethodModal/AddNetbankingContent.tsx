@@ -205,7 +205,7 @@ export function AddNetbankingContent({ paymentId, onBack, onInitiatePayment, onR
       // Re-read sessionParams after potential initiatePayment call
       const currentSessionParams = usePaymentStore.getState().payuSessionParams;
       if (!currentSessionParams) {
-        Alert.alert('Session Error', 'Please go back and try again.');
+        Alert.alert('Session Error', 'Please go back and try again');
         return;
       }
 
@@ -219,7 +219,7 @@ export function AddNetbankingContent({ paymentId, onBack, onInitiatePayment, onR
       if (outcome.status === 'cancelled' || outcome.status === 'blocked') {
         // Reset so user can retry
       } else if (outcome.status === 'failure') {
-        Alert.alert('Payment Error', outcome.error || 'Unable to process payment. Please try again.');
+        Alert.alert('Payment Error', outcome.error || 'Unable to process payment. Please try again');
       }
     } finally {
       isSubmittingRef.current = false;
@@ -291,7 +291,7 @@ export function AddNetbankingContent({ paymentId, onBack, onInitiatePayment, onR
           testID="modal-proceed-netbanking-button"
         />
         <Text style={[styles.footerText, { marginTop: 16 }]}>
-          You may receive a verification message to confirm your bank account and unlock benefits.
+          You may receive a verification message to confirm your bank account and unlock benefits
         </Text>
       </View>
 

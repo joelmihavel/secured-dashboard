@@ -30,18 +30,18 @@ function getConfig(cardStatus: TransactionCardStatus): {
     case 'settled':
       return {
         steps: [
-          { dotColor: ACTIVE, label: 'Initiated' },
-          { dotColor: ACTIVE, label: 'Processing' },
-          { dotColor: ACTIVE, label: 'Settled' },
+          { dotColor: ACTIVE, label: 'initiated' },
+          { dotColor: ACTIVE, label: 'processing' },
+          { dotColor: ACTIVE, label: 'settled' },
         ],
         lines: [{ color: ACTIVE }, { color: ACTIVE }],
       };
     case 'in_progress':
       return {
         steps: [
-          { dotColor: ACTIVE, label: 'Initiated' },
-          { dotColor: ACTIVE, label: 'Processing' },
-          { dotColor: INACTIVE, label: 'Settled' },
+          { dotColor: ACTIVE, label: 'initiated' },
+          { dotColor: ACTIVE, label: 'processing' },
+          { dotColor: INACTIVE, label: 'settled' },
         ],
         lines: [{ color: ACTIVE }, { color: INACTIVE }],
       };
@@ -49,18 +49,18 @@ function getConfig(cardStatus: TransactionCardStatus): {
     case 'retrying':
       return {
         steps: [
-          { dotColor: ACTIVE, label: 'Initiated' },
-          { dotColor: INACTIVE, label: 'Processing' },
-          { dotColor: INACTIVE, label: 'Settled' },
+          { dotColor: ACTIVE, label: 'initiated' },
+          { dotColor: INACTIVE, label: 'processing' },
+          { dotColor: INACTIVE, label: 'settled' },
         ],
         lines: [{ color: INACTIVE }, { color: INACTIVE }],
       };
     case 'refunded':
       return {
         steps: [
-          { dotColor: INACTIVE, label: 'Initiated' },
-          { dotColor: INACTIVE, label: 'Processing' },
-          { dotColor: INACTIVE, label: 'Settled' },
+          { dotColor: INACTIVE, label: 'initiated' },
+          { dotColor: INACTIVE, label: 'processing' },
+          { dotColor: INACTIVE, label: 'settled' },
         ],
         lines: [{ color: INACTIVE }, { color: INACTIVE }],
       };
@@ -68,9 +68,9 @@ function getConfig(cardStatus: TransactionCardStatus): {
       // Payment itself failed — nothing succeeded, first dot red
       return {
         steps: [
-          { dotColor: FAILED_RED, label: 'Failed' },
-          { dotColor: INACTIVE, label: 'Processing' },
-          { dotColor: INACTIVE, label: 'Settled' },
+          { dotColor: FAILED_RED, label: 'failed' },
+          { dotColor: INACTIVE, label: 'processing' },
+          { dotColor: INACTIVE, label: 'settled' },
         ],
         lines: [{ color: INACTIVE }, { color: INACTIVE }],
       };
@@ -78,18 +78,18 @@ function getConfig(cardStatus: TransactionCardStatus): {
       // Payment succeeded (green) but settlement to landlord failed (red)
       return {
         steps: [
-          { dotColor: SUCCESS_GREEN, label: 'Initiated' },
-          { dotColor: FAILED_RED, label: 'Settlement Failed' },
-          { dotColor: INACTIVE, label: 'Settled' },
+          { dotColor: SUCCESS_GREEN, label: 'initiated' },
+          { dotColor: FAILED_RED, label: 'settlement failed' },
+          { dotColor: INACTIVE, label: 'settled' },
         ],
         lines: [{ color: SUCCESS_GREEN }, { color: INACTIVE }],
       };
     default:
       return {
         steps: [
-          { dotColor: INACTIVE, label: 'Initiated' },
-          { dotColor: INACTIVE, label: 'Processing' },
-          { dotColor: INACTIVE, label: 'Settled' },
+          { dotColor: INACTIVE, label: 'initiated' },
+          { dotColor: INACTIVE, label: 'processing' },
+          { dotColor: INACTIVE, label: 'settled' },
         ],
         lines: [{ color: INACTIVE }, { color: INACTIVE }],
       };

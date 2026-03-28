@@ -33,6 +33,7 @@ import {
   ReferralCodeInput,
   ProgressArc,
   BenefitsCard,
+  BenefitsCarousel,
   DottedGridPattern,
   SkeletonLoader,
 } from '@/src/components';
@@ -453,7 +454,7 @@ export default function WaitlistScreen() {
             style={styles.retryButtonContainer}
           >
             <PrimaryButton
-              title="Try Again"
+              title="Try again"
               onPress={refresh}
             />
           </Animated.View>
@@ -760,14 +761,14 @@ export default function WaitlistScreen() {
                   {referralError ? (
                     // Error State - button instance (node 3099:27758)
                     <PrimaryButton
-                      title="Clear Code"
+                      title="Clear code"
                       onPress={clearReferralCode}
                       showDivider={true}
                     />
                   ) : (
                     // Default State
                     <PrimaryButton
-                      title="Enter Invite Code"
+                      title="Enter invite code"
                       onPress={claimInviteCode}
                       disabled={false}
                       loading={isClaimingInviteCode}
@@ -779,12 +780,50 @@ export default function WaitlistScreen() {
             )}
           </Animated.View>
 
-          {/* Benefits Card - Frame 2095586390 (node 41:11255) */}
-          {/* computedStyles: width 313, height 342, borderRadius 12, backgroundColor #202020 */}
+          {/* "Once you're in, keep these things handy" — Figma 4109:24272 */}
           <Animated.View
             entering={FadeInDown.delay(FIGMA.animation.stagger * 4).duration(FIGMA.animation.duration)}
           >
-            <BenefitsCard variant="benefits" />
+            <RNText style={styles.stepsTitle}>
+              <RNText style={styles.stepsTitleGray}>Once you're in{'\n'}</RNText>
+              <RNText style={styles.stepsTitleAccent}>keep these things handy</RNText>
+            </RNText>
+          </Animated.View>
+
+          {/* 3-Step Indicator — Figma 4109:24273 */}
+          <Animated.View
+            entering={FadeInDown.delay(FIGMA.animation.stagger * 5).duration(FIGMA.animation.duration)}
+          >
+            <View style={styles.stepsWrapper}>
+              <View style={styles.stepsTrackRow}>
+                <View style={styles.stepsDot} />
+                <View style={styles.stepsConnector} />
+                <View style={styles.stepsDot} />
+                <View style={styles.stepsConnector} />
+                <View style={styles.stepsDot} />
+              </View>
+              <View style={styles.stepsLabelRow}>
+                <RNText style={[styles.stepLabel, { textAlign: 'left' }]}>
+                  Landlord's{'\n'}bank details and PAN
+                </RNText>
+                <RNText style={[styles.stepLabel, { textAlign: 'center' }]}>
+                  Home{'\n'}electricity bill
+                </RNText>
+                <RNText style={[styles.stepLabel, { textAlign: 'right' }]}>
+                  Landlord's{'\n'}contact details
+                </RNText>
+              </View>
+            </View>
+          </Animated.View>
+
+          {/* Benefits Carousel — Figma 4109:24285 */}
+          <Animated.View
+            entering={FadeInDown.delay(FIGMA.animation.stagger * 6).duration(FIGMA.animation.duration)}
+            style={{ marginHorizontal: -FIGMA.layout.containerPadding }}
+          >
+            <View style={{ paddingLeft: FIGMA.layout.containerPadding }}>
+              <BenefitsCarousel />
+            </View>
           </Animated.View>
 
         </View>
@@ -940,7 +979,7 @@ const styles = StyleSheet.create({
   // Contains label (HUG width) + description (FILL width)
   inviteTextBlock: {
     width: '100%',
-    alignItems: 'flex-start',
+    alignItems: 'center',
     justifyContent: 'center',
     gap: spacing.xxs, // 4px between label and description
   },
@@ -963,7 +1002,7 @@ const styles = StyleSheet.create({
     fontSize: FIGMA.typography.value.fontSize,
     lineHeight: FIGMA.typography.value.lineHeight,
     color: FIGMA.colors.textValue,
-    textAlign: 'left',
+    textAlign: 'center',
     width: '100%',
   },
 
@@ -1074,15 +1113,62 @@ const styles = StyleSheet.create({
   },
 
   // Countdown text - node 41:11470
-  // Figma: "Next applications open in 28:24:24"
-  // Color: #797979, fontSize 14, lineHeight 20
-  // fontWeight 400 -> PlusJakartaSans-Regular (no RN fontWeight)
   countdownText: {
     fontFamily: FIGMA.typography.value.fontFamily,
     fontSize: FIGMA.typography.value.fontSize,
     lineHeight: FIGMA.typography.value.lineHeight,
-    color: FIGMA.colors.textHint, // #797979
+    color: FIGMA.colors.textHint,
     textAlign: 'center',
   },
 
+  // "Once you're in / keep these things handy" — Figma 4109:24272
+  stepsTitle: {
+    fontFamily: 'PlusJakartaSans-Regular',
+    fontSize: s(28),
+    lineHeight: s(40),
+    letterSpacing: -1,
+  },
+  stepsTitleGray: {
+    color: '#A9A9A9',
+  },
+  stepsTitleAccent: {
+    color: '#FF9A6D',
+  },
+
+  // 3-step indicator — matches TransactionProgressBar dot-line-dot pattern
+  stepsWrapper: {
+    alignSelf: 'stretch',
+    gap: 8,
+    paddingTop: 16,
+    paddingHorizontal: 8,
+  },
+  stepsTrackRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  stepsDot: {
+    width: 11,
+    height: 11,
+    borderRadius: 4,
+    backgroundColor: '#202020', // Figma: fill #202020
+    borderWidth: 1,
+    borderColor: '#FF9A6D', // Figma: stroke #FF9A6D, INSIDE
+  },
+  stepsConnector: {
+    flex: 1,
+    height: 1,
+    backgroundColor: '#4D4D4D', // Figma: #4D4D4D connector
+  },
+  stepsLabelRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  stepLabel: {
+    fontFamily: 'PlusJakartaSans-Regular',
+    fontSize: 12,
+    lineHeight: 16.92,
+    letterSpacing: -0.24,
+    color: '#878787', // colours/neutral/600
+    flex: 1,
+  },
 });

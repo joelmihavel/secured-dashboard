@@ -42,6 +42,7 @@ import { BlurView } from 'expo-blur';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Text } from '@/src/components/ui/Typography/Text';
+import { Avatar } from '@/src/components/ui/Avatar';
 import { colors } from '@/src/theme';
 
 // ── Types ───────────────────────────────────────────────────────────────────
@@ -173,7 +174,7 @@ export function VerificationStatusSheet({
                 <RNText style={styles.titleAccent}>status?</RNText>
               </RNText>
               <RNText style={styles.subtitle}>
-                How you save on rent depends on this.
+                Understand how to unlock your cashback
               </RNText>
             </View>
 
@@ -186,7 +187,7 @@ export function VerificationStatusSheet({
               <View style={styles.statusCard}>
                 <View style={styles.cardHeaderRow}>
                   <View style={styles.cardHeaderLeft}>
-                    <View style={styles.avatar} />
+                    <Avatar name="member" size="xs" />
                     <Text style={styles.cardLabel}>IF YOUR STATUS IS</Text>
                   </View>
                   <View style={styles.badgeRow}>
@@ -198,7 +199,7 @@ export function VerificationStatusSheet({
                 </View>
                 <View style={styles.cardDivider} />
                 <View style={styles.cardBody}>
-                  <Text style={styles.cardTitle}>You're almost there.</Text>
+                  <Text style={styles.cardTitle}>You're almost there</Text>
                   <Text style={styles.cardDescription}>
                     Your cashback keeps building in the background, but it isn't
                     applied to your rent yet. Every 1% you earn stays accumulated
@@ -214,7 +215,7 @@ export function VerificationStatusSheet({
               <View style={styles.statusCard}>
                 <View style={styles.cardHeaderRow}>
                   <View style={styles.cardHeaderLeft}>
-                    <View style={styles.avatar} />
+                    <Avatar name="member" size="xs" />
                     <Text style={styles.cardLabel}>IF YOUR STATUS IS</Text>
                   </View>
                   <View style={styles.badgeRow}>
@@ -270,7 +271,7 @@ const styles = StyleSheet.create({
   },
   handleContainer: {
     alignItems: 'center',
-    marginBottom: 15,
+    marginBottom: 8,
   },
   handle: {
     width: 48, // Figma: 48px
@@ -279,7 +280,7 @@ const styles = StyleSheet.create({
     borderRadius: 200, // Figma: r=200
   },
   scrollContentInner: {
-    gap: 30, // Figma: ~30px gap between sections
+    gap: 16, // Tightened to match Figma spacing
     paddingBottom: 16,
   },
   // Divider between header and cards — Figma Vector 51: 297px, #4D4D4D, 0.25px
@@ -338,12 +339,6 @@ const styles = StyleSheet.create({
     gap: 8, // Figma: Frame 2095586769, gap=8
   },
   // Avatar — Figma: Ellipse 8, fill=#ffcc8a, 24x24
-  avatar: {
-    width: 24, // Figma: 24px (NOT 32)
-    height: 24, // Figma: 24px
-    borderRadius: 12, // Fully circular
-    backgroundColor: colors.brand[300], // Figma: #FFCC8A
-  },
   // Label — Figma: "IF YOUR STATUS IS", Medium/12px/500, #A9A9A9
   cardLabel: {
     fontFamily: 'PlusJakartaSans-Medium', // Figma: fontWeight 500

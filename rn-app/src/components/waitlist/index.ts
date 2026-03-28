@@ -10,6 +10,8 @@ export type { ApplicationTimelineProps, TimelineItemData, TimelineStatus } from 
 export { BenefitsCard } from './BenefitsCard';
 export type { BenefitsCardProps, BenefitsCardVariant } from './BenefitsCard';
 
+export { BenefitsCarousel } from './BenefitsCarousel';
+
 export { ReferralCodeInput } from './ReferralCodeInput';
 export type { ReferralCodeInputProps } from './ReferralCodeInput';
 

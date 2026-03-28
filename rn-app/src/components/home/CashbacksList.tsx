@@ -98,11 +98,6 @@ function CashbacksListComponent({
     <View style={styles.container}>
       {/* 1. Stats Section (announcement + earned/potential + subtitle + chart) */}
       <View style={styles.statsBlock}>
-        {/* Announcement Pill — always shown per Figma */}
-        <View style={styles.announcementBanner}>
-          <Text style={styles.announcementText}>{announcementText}</Text>
-        </View>
-
         <CashbackStatsSection
           earned={earned}
           potential={potential}
@@ -205,6 +200,7 @@ const styles = StyleSheet.create({
     fontSize: 12, // Figma: 12px
     lineHeight: 20, // Figma: 20px
     color: '#A9A9A9', // Figma: label gray
+    textAlign: 'center',
   },
 
   // Divider

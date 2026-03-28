@@ -124,7 +124,7 @@ function mapIdentityError(errorMessage: string, errorBody?: Record<string, unkno
       case 'VALIDATION_ERROR':
         return { code: 'VALIDATION_ERROR', message: (errorBody?.message as string) ?? errorMessage };
       case 'RATE_LIMITED':
-        return { code: 'UNKNOWN_ERROR', message: 'Too many requests. Please wait a moment.' };
+        return { code: 'UNKNOWN_ERROR', message: 'Too many requests. Please wait a moment' };
       // Fall through for unknown structured codes — use string matching below
     }
   }

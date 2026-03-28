@@ -333,7 +333,7 @@ export const PaymentFlipCard = memo(function PaymentFlipCard({ data }: PaymentFl
         </Animated.View>
       </View>
 
-      <View style={[styles.contentPadding, styles.backContent]} />
+
     </Animated.View>
   );
 
@@ -542,19 +542,7 @@ const styles = StyleSheet.create({
   backContent: {
     justifyContent: 'flex-start',
   },
-  backHeader: {
-    marginBottom: sv(40),
-  },
-  backTitle: {
-    color: '#BABABA',
-    fontSize: sf(16),
-    fontFamily: 'PlusJakartaSans-Regular',
-  },
-  backSubtitle: {
-    color: '#FF9A6D',
-    fontSize: sf(16),
-    fontFamily: 'PlusJakartaSans-Regular',
-  },
+
 
   // FURNITURE & PATTERN
   patternBackground: {

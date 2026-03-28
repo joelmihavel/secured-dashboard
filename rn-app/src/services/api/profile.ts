@@ -336,7 +336,7 @@ function mapProfileError(errorMessage: string, errorBody?: Record<string, unknow
       case 'ARCHIVE_ERROR':
         return { code: 'ARCHIVE_ERROR', message: (errorBody?.message as string) ?? 'Failed to archive account data' };
       case 'RATE_LIMITED':
-        return { code: 'UNKNOWN_ERROR', message: 'Too many requests. Please wait a moment.' };
+        return { code: 'UNKNOWN_ERROR', message: 'Too many requests. Please wait a moment' };
       // Fall through for unknown structured codes — use string matching below
     }
   }

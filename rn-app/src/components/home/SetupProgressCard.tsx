@@ -138,7 +138,7 @@ function SetupProgressCardComponent({
           testID="setup-progress-cta"
         >
           <Text style={styles.infoBarText}>
-            {ctaLabel ?? 'How to invite your landlord?'}
+            {ctaLabel ?? 'What does my landlord get?'}
           </Text>
           <Text style={styles.infoBarLink}>Learn more</Text>
         </TouchableOpacity>

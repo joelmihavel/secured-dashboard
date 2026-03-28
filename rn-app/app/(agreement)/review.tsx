@@ -412,7 +412,7 @@ export default function ReviewScreen() {
         <View style={styles.loadingContainer}>
           <Text style={styles.loadingText}>Failed to load agreement details.</Text>
           <PrimaryButton 
-            title="Go Back" 
+            title="Go back"
             onPress={() => router.back()} 
             style={{ marginTop: 24 }} 
           />

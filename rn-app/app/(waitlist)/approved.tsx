@@ -326,7 +326,7 @@ export default function WaitlistApprovedScreen() {
           >
             <View style={styles.buttonDivider} />
             <PrimaryButton
-              title="Step Inside"
+              title="Step inside"
               onPress={handleStepInside}
               loading={isNavigating}
               testID="step-inside-button"

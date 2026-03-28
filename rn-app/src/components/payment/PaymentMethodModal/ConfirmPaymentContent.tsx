@@ -138,6 +138,10 @@ export function ConfirmPaymentContent({
   const cashbackAmount = Math.round(totalRent * cashbackPct);
   const annualSavings = cashbackAmount * 12;
 
+  // Bank fees pill adds ~72px (pill 48 + gap 24) — shift notches & grid line down
+  const isCard = methodType === 'card';
+  const pillOffset = isCard ? 72 : 0;
+
   // Accumulated balance from previous unverified payments (stored in paise)
   const accumulatedBalanceRupees = Math.floor((user?.cashback_balance_paise ?? 0) / 100);
 
@@ -211,7 +215,7 @@ export function ConfirmPaymentContent({
 
         {/* ── Receipt Area with decorative grid lines ──────────────────── */}
         <View style={s.receiptContainer}>
-          <BgLine style={s.gridLines} />
+          <BgLine style={[s.gridLines, { top: 66 + pillOffset }]} />
 
           <View style={s.receiptCard}>
             {/* Section 1: Base rent + Maintenance — Figma 799:3401 */}
@@ -232,7 +236,7 @@ export function ConfirmPaymentContent({
             <View style={s.section2}>
               <View style={s.dividerLine} />
               <BreakdownRow
-                label="Convenience Fees"
+                label="Convenience fees"
                 value={convenienceFee === 0 ? 'Free' : `\u20B9 ${fmt(convenienceFee)}`}
               />
               {isVerified ? (
@@ -250,7 +254,7 @@ export function ConfirmPaymentContent({
               ) : null}
               <View style={s.dividerLine} />
               <BreakdownRow
-                label="Payable Amount"
+                label="Payable amount"
                 value={`\u20B9 ${fmt(payableAmount)}`}
                 isTotal
               />
@@ -264,9 +268,9 @@ export function ConfirmPaymentContent({
             </View>
 
 
-            {/* Side notches — Figma 799:3444, 799:3445 */}
-            <View style={[s.sideNotch, s.sideNotchLeft]} />
-            <View style={[s.sideNotch, s.sideNotchRight]} />
+            {/* Side notches — shift down when bank fees pill is visible */}
+            <View style={[s.sideNotch, s.sideNotchLeft, { top: 256 + pillOffset }]} />
+            <View style={[s.sideNotch, s.sideNotchRight, { top: 256 + pillOffset }]} />
           </View>
         </View>
 
@@ -280,7 +284,7 @@ export function ConfirmPaymentContent({
             showDivider
           />
           <RNText style={s.footerText}>
-            Settlement will be processed in less than 24 hours.
+            Settlement will be processed in less than 24 hours
           </RNText>
         </View>
       </ScrollView>
@@ -362,8 +366,10 @@ const s = StyleSheet.create({
   },
   gridLines: {
     position: 'absolute' as const,
-    top: 64,
-    left: 12,
+    alignSelf: 'center' as const,
+    width: 369,
+    height: 235,
+    zIndex: -1,
   },
   receiptCard: {
     width: 270,

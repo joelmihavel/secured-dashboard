@@ -90,9 +90,10 @@ const STATE_CONFIG: Record<LandlordInviteState, { label: string; action: string;
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: colors.black[500], // Figma: #202020
-    borderRadius: 12, // Figma: 12px
-    padding: 16, // Figma: 16px all sides
+    backgroundColor: colors.black[600], // #1A1A1A — consistent with pill UI
+    borderRadius: 200, // Pill shape
+    paddingVertical: 8,
+    paddingHorizontal: 16,
     alignSelf: 'stretch',
   },
   row: {
