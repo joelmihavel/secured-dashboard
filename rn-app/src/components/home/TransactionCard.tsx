@@ -16,7 +16,7 @@
  */
 
 import React, { memo } from 'react';
-import { View, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, type TextStyle } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 
 import { Text } from '@/src/components/ui';
@@ -55,20 +55,6 @@ function CheckmarkIcon() {
   );
 }
 
-function WarningIcon() {
-  return (
-    <Svg width={12} height={12} viewBox="0 0 12 12" fill="none">
-      <Path
-        d="M6 4V6.5M6 8.5H6.005M10.5 6C10.5 8.485 8.485 10.5 6 10.5C3.515 10.5 1.5 8.485 1.5 6C1.5 3.515 3.515 1.5 6 1.5C8.485 1.5 10.5 3.515 10.5 6Z"
-        stroke="#FFB020"
-        strokeWidth={1}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </Svg>
-  );
-}
-
 function XCircleIcon() {
   return (
     <Svg width={12} height={12} viewBox="0 0 12 12" fill="none">
@@ -97,20 +83,15 @@ function InfoCircleIcon() {
   );
 }
 
-function HelpIcon() {
+function HourglassIcon() {
   return (
     <Svg width={16} height={16} viewBox="0 0 16 16" fill="none">
       <Path
-        d="M6 6C6 4.895 6.895 4 8 4C9.105 4 10 4.895 10 6C10 6.736 9.596 7.376 9 7.723V8.5"
-        stroke="#FF9A6D"
+        d="M4 2H12M4 14H12M5 2V5.2C5 5.48 5.14 5.74 5.37 5.9L8 8L5.37 10.1C5.14 10.26 5 10.52 5 10.8V14M11 2V5.2C11 5.48 10.86 5.74 10.63 5.9L8 8L10.63 10.1C10.86 10.26 11 10.52 11 10.8V14"
+        stroke="#FFB020"
         strokeWidth={1}
         strokeLinecap="round"
-      />
-      <Path
-        d="M8 11H8.005M14 8C14 11.314 11.314 14 8 14C4.686 14 2 11.314 2 8C2 4.686 4.686 2 8 2C11.314 2 14 4.686 14 8Z"
-        stroke="#FF9A6D"
-        strokeWidth={1}
-        strokeLinecap="round"
+        strokeLinejoin="round"
       />
     </Svg>
   );
@@ -122,11 +103,29 @@ function HelpIcon() {
 
 const STATUS_ICON_MAP: Record<TransactionCardStatus, React.FC> = {
   settled: CheckmarkIcon,
-  in_progress: WarningIcon,
-  initiated: WarningIcon,
-  retrying: WarningIcon,
+  in_progress: HourglassIcon,
+  initiated: HourglassIcon,
+  retrying: HourglassIcon,
   refunded: InfoCircleIcon,
   failed: XCircleIcon,
+};
+
+const SHOW_PROGRESS_BAR: Record<TransactionCardStatus, boolean> = {
+  settled: true,
+  in_progress: true,
+  initiated: true,
+  retrying: true,
+  refunded: false,
+  failed: true,
+};
+
+const SHOW_ACTION_BAR: Record<TransactionCardStatus, boolean> = {
+  settled: true,
+  in_progress: true,
+  initiated: true,
+  retrying: false,
+  refunded: false,
+  failed: true,
 };
 
 function getStatusText(cardStatus: TransactionCardStatus, date: string): string {
@@ -176,10 +175,13 @@ function TransactionCardComponent({
 }: TransactionCardProps) {
   const { cardStatus, title, date, amount } = transaction;
 
-  const formattedAmount = `\u20B9 ${amount.toLocaleString('en-IN')}`;
+  const amountStr = amount.toLocaleString('en-IN');
+  const formattedAmount = `\u20B9 ${amountStr}`;
   const StatusIcon = STATUS_ICON_MAP[cardStatus];
   const statusText = getStatusText(cardStatus, date);
   const bannerText = getBannerText(cardStatus, formattedAmount);
+  const showProgressBar = SHOW_PROGRESS_BAR[cardStatus];
+  const showActionBar = SHOW_ACTION_BAR[cardStatus];
 
   return (
     <View
@@ -201,12 +203,15 @@ function TransactionCardComponent({
           </View>
         </View>
 
-        {/* Right side: Amount */}
-        <Text style={styles.amount}>{formattedAmount}</Text>
+        {/* Right side: Amount — Figma: ₹ in 12px, number in 16px */}
+        <Text style={styles.amountWrap}>
+          <Text style={styles.amountSymbol}>{'\u20B9  '}</Text>
+          <Text style={styles.amountValue}>{amountStr}</Text>
+        </Text>
       </View>
 
-      {/* 2. Progress Bar */}
-      <TransactionProgressBar cardStatus={cardStatus} />
+      {/* 2. Progress Bar — hidden for refunded */}
+      {showProgressBar && <TransactionProgressBar cardStatus={cardStatus} />}
 
       {/* 3. Info Banner (not shown for settled) */}
       {bannerText != null && (
@@ -215,35 +220,50 @@ function TransactionCardComponent({
         </View>
       )}
 
-      {/* 4. Action Bar */}
-      <View style={styles.actionBar}>
-        <View style={styles.separator} />
-        <View style={styles.actionRow}>
-          {cardStatus === 'settled' && (
-            <TouchableOpacity
-              style={styles.actionButton}
-              hitSlop={{ top: 12, bottom: 12, left: 8, right: 8 }}
-              onPress={() => onViewReceipt?.(transaction)}
-              activeOpacity={0.7}
-              accessibilityRole="button"
-              accessibilityLabel="View Receipt"
-            >
-              <Text style={styles.actionText}>View Receipt</Text>
-            </TouchableOpacity>
-          )}
-
-          {cardStatus === 'failed' && (
-            <>
+      {/* 4. Action Bar — hidden for retrying and refunded */}
+      {showActionBar && (
+        <View style={styles.actionBar}>
+          <View style={styles.separator} />
+          <View style={styles.actionRow}>
+            {cardStatus === 'settled' && (
               <TouchableOpacity
                 style={styles.actionButton}
                 hitSlop={{ top: 12, bottom: 12, left: 8, right: 8 }}
-                onPress={() => onTryAgain?.(transaction)}
+                onPress={() => onViewReceipt?.(transaction)}
                 activeOpacity={0.7}
                 accessibilityRole="button"
-                accessibilityLabel="Try Again"
+                accessibilityLabel="View Receipt"
               >
-                <Text style={styles.actionText}>Try Again</Text>
+                <Text style={styles.actionText}>View Receipt</Text>
               </TouchableOpacity>
+            )}
+
+            {cardStatus === 'failed' && (
+              <>
+                <TouchableOpacity
+                  style={styles.actionButton}
+                  hitSlop={{ top: 12, bottom: 12, left: 8, right: 8 }}
+                  onPress={() => onTryAgain?.(transaction)}
+                  activeOpacity={0.7}
+                  accessibilityRole="button"
+                  accessibilityLabel="Try Again"
+                >
+                  <Text style={styles.actionText}>Try Again</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.actionButton}
+                  hitSlop={{ top: 12, bottom: 12, left: 8, right: 8 }}
+                  onPress={onNeedHelp}
+                  activeOpacity={0.7}
+                  accessibilityRole="button"
+                  accessibilityLabel="Need help"
+                >
+                  <Text style={styles.actionText}>Need help?</Text>
+                </TouchableOpacity>
+              </>
+            )}
+
+            {cardStatus === 'in_progress' || cardStatus === 'initiated' ? (
               <TouchableOpacity
                 style={styles.actionButton}
                 hitSlop={{ top: 12, bottom: 12, left: 8, right: 8 }}
@@ -252,31 +272,12 @@ function TransactionCardComponent({
                 accessibilityRole="button"
                 accessibilityLabel="Need help"
               >
-                <View style={styles.helpRow}>
-                  <HelpIcon />
-                  <Text style={styles.actionText}>Need help?</Text>
-                </View>
-              </TouchableOpacity>
-            </>
-          )}
-
-          {cardStatus !== 'settled' && cardStatus !== 'failed' && (
-            <TouchableOpacity
-              style={styles.actionButton}
-              hitSlop={{ top: 12, bottom: 12, left: 8, right: 8 }}
-              onPress={onNeedHelp}
-              activeOpacity={0.7}
-              accessibilityRole="button"
-              accessibilityLabel="Need help"
-            >
-              <View style={styles.helpRow}>
-                <HelpIcon />
                 <Text style={styles.actionText}>Need help?</Text>
-              </View>
-            </TouchableOpacity>
-          )}
+              </TouchableOpacity>
+            ) : null}
+          </View>
         </View>
-      </View>
+      )}
     </View>
   );
 }
@@ -330,12 +331,22 @@ const styles = StyleSheet.create({
     letterSpacing: -0.24,
     color: colors.neutral[600], // Figma: #878787
   },
-  amount: {
+  amountWrap: {
+    flexShrink: 0,
+  },
+  amountSymbol: {
+    fontFamily: 'PlusJakartaSans-SemiBold',
+    fontSize: 12,
+    lineHeight: 16.92,
+    letterSpacing: -0.64,
+    color: colors.white,
+  },
+  amountValue: {
     fontFamily: 'PlusJakartaSans-SemiBold',
     fontSize: 16,
     lineHeight: 22.56,
     letterSpacing: -0.64,
-    color: colors.white, // Figma: #FFFFFF
+    color: colors.white,
   },
 
   // Info banner
@@ -383,12 +394,8 @@ const styles = StyleSheet.create({
     letterSpacing: -0.24,
     color: colors.brand[500], // Figma: #FF9A6D
     textAlign: 'center',
-  },
-  helpRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
+    textDecorationLine: 'underline',
+  } as TextStyle,
 });
 
 export const TransactionCard = memo(TransactionCardComponent);

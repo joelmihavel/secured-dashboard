@@ -34,7 +34,6 @@ import type { BarStatus, SetupStep, InviteState, CashbackEarningsEntry, Cashback
 // ==============================================
 
 // Re-exported from dashboard service (canonical source)
-import type { CashbackModuleState } from '@/src/services/api/dashboard';
 export type { CashbackModuleState };
 
 export interface CashbacksListProps {

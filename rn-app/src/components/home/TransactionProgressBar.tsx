@@ -32,6 +32,7 @@ const STEP_TEXT_ALIGN = ['left', 'center', 'right'] as const;
 const ACTIVE = colors.brand[500]; // #FF9A6D
 const INACTIVE = colors.black[400]; // #4D4D4D
 const FAILED_RED = colors.error.radix; // #E5484D
+const SUCCESS_GREEN = colors.success.material; // #4CAF50
 
 /** Derive dot colors, labels, and line colors for each step based on card status */
 function getStepConfig(cardStatus: TransactionCardStatus): Array<{
@@ -68,8 +69,8 @@ function getStepConfig(cardStatus: TransactionCardStatus): Array<{
       ];
     case 'failed':
       return [
-        { color: ACTIVE, label: 'Initiated', line1: ACTIVE, line2: INACTIVE },
-        { color: FAILED_RED, label: 'Failed' },
+        { color: SUCCESS_GREEN, label: 'Initiated', line1: SUCCESS_GREEN, line2: INACTIVE },
+        { color: FAILED_RED, label: 'Processing' },
         { color: INACTIVE, label: 'Settled' },
       ];
     default:
