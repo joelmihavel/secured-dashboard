@@ -421,7 +421,6 @@ const styles = StyleSheet.create({
   },
   settlementInfoBox: {
     marginTop: sv(7), // Figma: 23px group gap = parent gap(16) + this(7)
-    marginBottom: sv(-5), // Figma: 19px to card bottom, card padding is 24px → 24-5=19
     backgroundColor: '#1A1A1A',
     borderRadius: 8,
     paddingVertical: sv(8),

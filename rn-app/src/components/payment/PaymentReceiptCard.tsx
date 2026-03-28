@@ -230,6 +230,7 @@ const styles = StyleSheet.create({
   },
   cardShadowWrapper: {
     width: s(270),
+    minHeight: sv(481),
     shadowColor: '#000000',
     shadowOffset: { width: 0, height: sv(24) },
     shadowOpacity: 0.15,
