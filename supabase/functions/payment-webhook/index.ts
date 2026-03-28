@@ -281,7 +281,7 @@ serve(async (req: Request) => {
 
       if (newCfStatus === 'success') {
         cfUpdateData.paid_at = new Date().toISOString();
-        cfUpdateData.landlord_payout_status = 'pending';
+        cfUpdateData.landlord_payout_status = 'ready'; // Cashfree: auto-pickup by settle-to-landlord cron
         cfUpdateData.landlord_payout_paise = cfPayment.rent_amount_paise;
         cfUpdateData.cf_split_posted = false; // Signal for settle-to-landlord cron
       }

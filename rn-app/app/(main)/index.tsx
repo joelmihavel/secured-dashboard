@@ -1071,6 +1071,7 @@ function renderDashboardContent(state: DashboardState, props: ContentProps) {
                   onNeedHelp={onNeedHelp}
                   onStepPress={onSetupStepPress}
                   onLearnMore={onLearnMore}
+                  onMemberStatusPress={handleStatusPress}
                 />
               ) : (
                 <CashbackEmptyState

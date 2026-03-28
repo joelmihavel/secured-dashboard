@@ -48,11 +48,11 @@ export interface CashbacksListProps {
   // Chart bars (12 months)
   chartBars?: BarStatus[];
 
-  // Announcement banner text
-  announcementText?: string;
+  // Announcement pill text (always shown)
+  announcementText: string;
 
-  // Info text below chart
-  infoText?: string;
+  // Info text below chart (always shown)
+  infoText: string;
 
   // Setup steps
   setupSteps: SetupStep[];
@@ -69,6 +69,7 @@ export interface CashbacksListProps {
   onNeedHelp?: () => void;
   onStepPress?: (step: SetupStep) => void;
   onLearnMore?: () => void;
+  onMemberStatusPress?: () => void;
 }
 
 // ==============================================
@@ -91,6 +92,7 @@ function CashbacksListComponent({
   onNeedHelp,
   onStepPress,
   onLearnMore,
+  onMemberStatusPress,
 }: CashbacksListProps) {
   const isActive = moduleState === 'active';
   const setupLayout = isActive ? 'vertical' : 'horizontal';
@@ -100,12 +102,10 @@ function CashbacksListComponent({
     <View style={styles.container}>
       {/* 1. Stats Section (announcement + earned/potential + subtitle + chart) */}
       <View style={styles.statsBlock}>
-        {/* Announcement Banner — inside statsBlock per Figma gap=20 */}
-        {announcementText != null && (
-          <View style={styles.announcementBanner}>
-            <Text style={styles.announcementText}>{announcementText}</Text>
-          </View>
-        )}
+        {/* Announcement Pill — always shown per Figma */}
+        <View style={styles.announcementBanner}>
+          <Text style={styles.announcementText}>{announcementText}</Text>
+        </View>
 
         <CashbackStatsSection
           earned={earned}
@@ -116,27 +116,17 @@ function CashbacksListComponent({
         </CashbackStatsSection>
       </View>
 
-      {/* 3. Info Row below chart */}
-      {infoText != null && (
-        <View style={styles.infoRow}>
-          <Text style={styles.infoText}>{infoText}</Text>
-          <View style={styles.divider} />
-        </View>
-      )}
+      {/* 3. Info Row below chart — always shown per Figma */}
+      <View style={styles.infoRow}>
+        <Text style={styles.infoText}>{infoText}</Text>
+        <View style={styles.divider} />
+      </View>
 
-      {/* 4. Remaining Cashback (State 1/2) or Member Status (State 3) */}
-      {isActive ? (
-        <CashbackMemberStatus />
-      ) : (
-        remainingCashback != null && (
-          <View style={styles.remainingRow}>
-            <Text style={styles.remainingLabel}>REMAINING CASHBACK</Text>
-            <Text style={styles.remainingValue}>
-              ₹ {remainingCashback.toLocaleString('en-IN')}
-            </Text>
-          </View>
-        )
-      )}
+      {/* 4. Member Status Chip — shown in all states per Figma */}
+      <CashbackMemberStatus
+        verified={isActive}
+        onPress={onMemberStatusPress}
+      />
 
       {/* 5. Divider */}
       <View style={styles.divider} />
@@ -233,26 +223,6 @@ const styles = StyleSheet.create({
     fontSize: 12, // Figma: 12px
     lineHeight: 20, // Figma: 20px
     color: '#A9A9A9', // Figma: label gray
-  },
-
-  // Remaining Cashback Row (State 1/2)
-  remainingRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  remainingLabel: {
-    fontFamily: 'PlusJakartaSans-Medium', // Figma: fontWeight 500
-    fontSize: 12, // Figma: 12px
-    lineHeight: 20, // Figma: 20px
-    color: '#A9A9A9', // Figma: label gray
-    flex: 1,
-  },
-  remainingValue: {
-    fontFamily: 'PlusJakartaSans-Medium', // Figma: fontWeight 500
-    fontSize: 12, // Figma: 12px
-    lineHeight: 20, // Figma: 20px
-    color: '#FF9A6D', // Figma: brand accent
   },
 
   // Divider

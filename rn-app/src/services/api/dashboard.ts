@@ -94,7 +94,7 @@ export interface RawRecentPayment {
   cashback_earned: number;
   cashback_applied: number;
   payment_method: string | null;
-  settlement_status?: 'pending' | 'processing' | 'settled' | 'failed' | null;
+  settlement_status?: 'pending' | 'ready' | 'held' | 'processing' | 'settled' | 'failed' | null;
 }
 
 export interface Notification {
@@ -163,7 +163,7 @@ export interface MappedRecentPayment {
 }
 
 /** Transaction card status for the new rich transaction cards (Figma 4109-67659) */
-export type TransactionCardStatus = 'settled' | 'in_progress' | 'initiated' | 'retrying' | 'refunded' | 'failed';
+export type TransactionCardStatus = 'settled' | 'in_progress' | 'initiated' | 'retrying' | 'refunded' | 'failed' | 'settlement_failed';
 
 /** UI-ready transaction for TransactionCard component */
 export interface MappedTransaction {
@@ -218,8 +218,8 @@ export interface MappedCashbackModule {
   potential: number;
   remainingCashback: number | undefined;
   chartBars: BarStatus[];
-  announcementText: string | undefined;
-  infoText: string | undefined;
+  announcementText: string;
+  infoText: string;
   setupSteps: SetupStep[];
   inviteState: InviteState | undefined;
   entries: CashbackEarningsEntry[];
@@ -360,8 +360,10 @@ function deriveCardStatus(
       switch (settlementStatus) {
         case 'settled': return 'settled';
         case 'processing': return 'in_progress';
-        case 'failed': return 'failed';
+        case 'failed': return 'settlement_failed';
         case 'pending':
+        case 'ready':
+        case 'held':
         default: return 'initiated';
       }
     case 'processing': return 'retrying';
@@ -620,16 +622,31 @@ export function mapCashbackModule(
     cutoffDay,
   );
 
-  // ── Announcement banner ───────────────────────────────────────
-  let announcementText: string | undefined;
-  if (!isVerified && remainingCashback && remainingCashback > 0) {
-    announcementText = `🔒 ₹${remainingCashback.toLocaleString('en-IN')} waiting to be unlocked`;
+  // ── Announcement pill (above chart) — always shown per Figma ──
+  const monthlyDiscount = Math.round(monthlyRent * discountRate);
+  let announcementText: string;
+  if (isVerified) {
+    // Figma State 3: "💰 Earn ₹400 by paying your rent on time"
+    announcementText = `💰 Earn ₹${monthlyDiscount.toLocaleString('en-IN')} by paying your rent on time`;
+  } else if (earned > 0) {
+    // Figma State 2: "🔒 Complete verifications to use  ₹1,200"
+    announcementText = `🔒 Complete verifications to use  ₹${earned.toLocaleString('en-IN')}`;
+  } else {
+    // Figma State 1: "🔒 Start earning ₹400 this month"
+    announcementText = `🔒 Start earning ₹${monthlyDiscount.toLocaleString('en-IN')} this month`;
   }
 
-  // ── Info text (below chart) ───────────────────────────────────
-  let infoText: string | undefined;
-  if (!isVerified && earned > 0) {
+  // ── Info text (below chart) — always shown per Figma ─────────
+  let infoText: string;
+  if (isVerified) {
+    // Figma State 3: "ℹ️  Missed payments reduce your payout"
+    infoText = 'ℹ️  Missed payments reduce your payout';
+  } else if (earned > 0) {
+    // Figma State 2: "🔒 ₹ 1,200 can be redeemed after setup is complete"
     infoText = `🔒 ₹ ${earned.toLocaleString('en-IN')} can be redeemed after setup is complete`;
+  } else {
+    // Figma State 1: "🔒 Cashback is accumulated until setup is complete"
+    infoText = '🔒 Cashback is accumulated until setup is complete';
   }
 
   // ── Setup steps (4-state: not_started → active → in_progress → completed) ──

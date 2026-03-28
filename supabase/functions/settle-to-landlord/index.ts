@@ -94,7 +94,6 @@ serve(async (req: Request) => {
       .eq("status", "success")
       .eq("landlord_payout_status", "ready")
       .eq("transfer_hold", false)
-      .or("payu_settlement_status.eq.settled,gateway_settlement_status.eq.settled")
       .order("paid_at", { ascending: true })
       .limit(BATCH_SIZE);
 
@@ -312,9 +311,7 @@ serve(async (req: Request) => {
           });
 
           await supabase.from("payments").update({
-            landlord_payout_status: "settled",
-            landlord_payout_utr: settlementId,
-            landlord_payout_at: new Date().toISOString(),
+            landlord_payout_status: "processing",
             gateway_payout_id: settlementId,
             gateway_payout_status: "processing",
           }).eq("id", payment.id);

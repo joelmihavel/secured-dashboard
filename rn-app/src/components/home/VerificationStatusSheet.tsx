@@ -58,11 +58,19 @@ function PendingIcon() {
   return (
     <Svg width={16} height={16} viewBox="0 0 16 16" fill="none">
       <Path
-        d="M8 4V8.5M8 11H8.005M14 8C14 11.314 11.314 14 8 14C4.686 14 2 11.314 2 8C2 4.686 4.686 2 8 2C11.314 2 14 4.686 14 8Z"
+        d="M14 8C14 11.314 11.314 14 8 14C4.686 14 2 11.314 2 8C2 4.686 4.686 2 8 2C11.314 2 14 4.686 14 8Z"
         stroke="#FF9A6D"
         strokeWidth={1}
-        strokeLinecap="round"
       />
+      <Path d="M8 5V8L10 10" stroke="#FF9A6D" strokeWidth={1} strokeLinecap="round" strokeLinejoin="round" />
+    </Svg>
+  );
+}
+
+function CloseIcon() {
+  return (
+    <Svg width={12} height={12} viewBox="0 0 12 12" fill="none">
+      <Path d="M9 3L3 9M3 3L9 9" stroke="#000000" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" />
     </Svg>
   );
 }
@@ -157,6 +165,17 @@ export function VerificationStatusSheet({
             <View style={styles.handle} />
           </View>
 
+          {/* Close Button — Figma: 28.5x28.5, r:101, bg:#EEEEEE */}
+          <TouchableOpacity
+            style={styles.closeButton}
+            onPress={onClose}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            accessibilityRole="button"
+            accessibilityLabel="Close"
+          >
+            <CloseIcon />
+          </TouchableOpacity>
+
           {/* Scrollable Content — Figma: gap=40, scrolls under fixed CTA */}
           <ScrollView
             style={styles.scrollContent}
@@ -184,7 +203,7 @@ export function VerificationStatusSheet({
                   <View style={styles.badgeRow}>
                     <PendingIcon />
                     <Text style={[styles.badgeText, { color: colors.brand[500] }]}>
-                      Pending →
+                      Pending
                     </Text>
                   </View>
                 </View>
@@ -209,7 +228,7 @@ export function VerificationStatusSheet({
                   <View style={styles.badgeRow}>
                     <VerifiedIcon />
                     <Text style={[styles.badgeText, { color: colors.success.material }]}>
-                      Verified →
+                      Verified
                     </Text>
                   </View>
                 </View>
@@ -229,7 +248,7 @@ export function VerificationStatusSheet({
           {/* CTA — Fixed at bottom, overlapping scroll content */}
           <View style={[styles.ctaFixed, { paddingBottom: Math.max(insets.bottom, 24) }]}>
             <PrimaryButton
-              title="Start saving on rent →"
+              title="Start saving on rent"
               onPress={onStartSaving}
               showDivider
             />
@@ -273,6 +292,19 @@ const styles = StyleSheet.create({
     height: 4, // Figma: 4px
     backgroundColor: colors.black[400], // Figma: #4D4D4D
     borderRadius: 200, // Figma: r=200
+  },
+  // Close button — Figma: 28.5x28.5, r:101.73, bg:#EEEEEE, icon #000000
+  closeButton: {
+    position: 'absolute',
+    top: 40, // Below handle
+    right: 24,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: colors.neutral[100], // Figma: #EEEEEE
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 10,
   },
   // ScrollView replaces the old `content` View — allows scrolling under fixed CTA
   scrollContent: {

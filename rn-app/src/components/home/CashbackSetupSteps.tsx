@@ -27,11 +27,10 @@ export interface CashbackSetupStepsProps {
   onStepPress?: (step: SetupStep) => void;
 }
 
-// Figma 4-state icon for horizontal cards:
-// completed = filled circle #FF9A6D with white check
-// active = stroked circle #FF9A6D (highlighted, user should act)
-// in_progress = half-filled/pulsing #FFB020
-// not_started = stroked circle #4D4D4D (gray, inactive)
+// Figma visual states for horizontal cards (4111:71008):
+// completed = filled checkmark #FF9A6D, text strikethrough, opacity 0.48
+// active/in_progress/not_started = circle outline (pending), text #878787
+// Icon color: completed & active/in_progress = #FF9A6D, not_started = #4D4D4D
 function StepIcon({ status }: { status: SetupStepStatus }) {
   switch (status) {
     case 'completed':
@@ -45,24 +44,15 @@ function StepIcon({ status }: { status: SetupStepStatus }) {
         </Svg>
       );
     case 'active':
+    case 'in_progress':
+      // Figma: empty circle outline, stroke #FF9A6D, weight 1
       return (
         <Svg width={16} height={16} viewBox="0 0 16 16" fill="none">
           <Path
             d="M14 8C14 11.314 11.314 14 8 14C4.686 14 2 11.314 2 8C2 4.686 4.686 2 8 2C11.314 2 14 4.686 14 8Z"
             stroke={colors.brand[500]}
-            strokeWidth={1.5}
-          />
-        </Svg>
-      );
-    case 'in_progress':
-      return (
-        <Svg width={16} height={16} viewBox="0 0 16 16" fill="none">
-          <Path
-            d="M14 8C14 11.314 11.314 14 8 14C4.686 14 2 11.314 2 8C2 4.686 4.686 2 8 2C11.314 2 14 4.686 14 8Z"
-            stroke={colors.warning.amber}
             strokeWidth={1}
           />
-          <Path d="M8 5V8.5" stroke={colors.warning.amber} strokeWidth={1} strokeLinecap="round" />
         </Svg>
       );
     case 'not_started':
@@ -79,12 +69,12 @@ function StepIcon({ status }: { status: SetupStepStatus }) {
   }
 }
 
-// Text color per status
+// Text color per status — Figma: completed=#FF9A6D, all pending states=#878787
 const TEXT_COLOR: Record<SetupStepStatus, string> = {
-  completed: colors.brand[500],
-  active: colors.brand[500],
-  in_progress: colors.warning.amber,
-  not_started: colors.neutral[600],
+  completed: colors.brand[500],   // Figma: #FF9A6D
+  active: colors.neutral[600],    // Figma: #878787 (pending)
+  in_progress: colors.neutral[600], // Figma: #878787 (pending)
+  not_started: colors.neutral[600], // Figma: #878787 (inactive)
 };
 
 function CashbackSetupStepsComponent({ steps, layout, onStepPress }: CashbackSetupStepsProps) {
@@ -123,7 +113,6 @@ function CashbackSetupStepsComponent({ steps, layout, onStepPress }: CashbackSet
     <View style={styles.verticalContainer}>
       {steps.map((step) => {
         const isCompleted = step.status === 'completed';
-        const isInProgress = step.status === 'in_progress';
         return (
           <TouchableOpacity
             key={step.id}
@@ -132,13 +121,11 @@ function CashbackSetupStepsComponent({ steps, layout, onStepPress }: CashbackSet
             activeOpacity={isCompleted ? 1 : 0.7}
             disabled={isCompleted}
           >
-            {/* Checkbox — 4 visual states */}
+            {/* Checkbox — Figma: filled #FF9A6D (completed), outline #FF9A6D (pending) */}
             <View
               style={[
                 styles.checkbox,
-                isCompleted ? styles.checkboxFilled
-                  : isInProgress ? styles.checkboxInProgress
-                  : styles.checkboxEmpty,
+                isCompleted ? styles.checkboxFilled : styles.checkboxEmpty,
               ]}
             >
               {isCompleted && (
@@ -150,12 +137,6 @@ function CashbackSetupStepsComponent({ steps, layout, onStepPress }: CashbackSet
                     strokeLinecap="round"
                     strokeLinejoin="round"
                   />
-                </Svg>
-              )}
-              {isInProgress && (
-                <Svg width={10} height={10} viewBox="0 0 10 10" fill="none">
-                  <Path d="M5 2.5V5.5" stroke={colors.warning.amber} strokeWidth={1.2} strokeLinecap="round" />
-                  <Path d="M5 7.5H5.005" stroke={colors.warning.amber} strokeWidth={1.2} strokeLinecap="round" />
                 </Svg>
               )}
             </View>
@@ -238,15 +219,10 @@ const styles = StyleSheet.create({
   checkboxFilled: {
     backgroundColor: colors.brand[500], // Figma: #FF9A6D completed
   },
-  checkboxInProgress: {
-    backgroundColor: colors.black[500], // Figma: matches card bg
-    borderWidth: 1,
-    borderColor: colors.warning.amber, // Figma: #FFB020 in progress
-  },
   checkboxEmpty: {
-    backgroundColor: colors.black[500], // Figma: matches card bg
+    backgroundColor: colors.black[500], // Figma: #202020
     borderWidth: 1,
-    borderColor: colors.black[400], // Figma: #4D4D4D
+    borderColor: colors.brand[500], // Figma: #FF9A6D (pending outline)
   },
 
   // States

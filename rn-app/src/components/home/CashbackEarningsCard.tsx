@@ -148,7 +148,7 @@ const styles = StyleSheet.create({
   dateText: {
     fontFamily: 'PlusJakartaSans-Medium', // Figma: fontWeight 500
     fontSize: 14, // Figma: 14px
-    lineHeight: 20, // Figma: 20 (extracted from node)
+    lineHeight: 19.74, // Figma: 19.74 (~141%)
     letterSpacing: -0.56, // Figma: -0.56
     color: colors.white, // Figma: #FFFFFF
   },
@@ -158,9 +158,9 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   statusDot: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
+    width: 10, // Figma: 10x10 inner vector inside 12x12 container
+    height: 10,
+    borderRadius: 5,
   },
   statusText: {
     fontFamily: 'PlusJakartaSans-Regular',

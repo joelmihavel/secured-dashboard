@@ -297,7 +297,7 @@ serve(async (req: Request) => {
       // 5. Recent payments (last 5)
       supabase
         .from("payments")
-        .select("id, rent_amount_paise, status, payment_month, paid_at, cashback_earned_paise, cashback_applied_paise, payment_method, settlement_status")
+        .select("id, rent_amount_paise, status, payment_month, paid_at, cashback_earned_paise, cashback_applied_paise, payment_method, landlord_payout_status")
         .eq("user_id", userId)
         .neq("status", "initiated")
         .order("created_at", { ascending: false })
@@ -435,7 +435,7 @@ serve(async (req: Request) => {
       cashback_earned: (p.cashback_earned_paise ?? 0) / 100,
       cashback_applied: (p.cashback_applied_paise ?? 0) / 100,
       payment_method: p.payment_method ?? null,
-      settlement_status: p.settlement_status ?? null,
+      settlement_status: p.landlord_payout_status ?? null,
     }));
 
     // Format notifications

@@ -5,18 +5,18 @@
  *
  * - Card: 329x56, #202020 bg, r=12, padding h=24 v=16
  * - Left: avatar circle 24x24 #FFCC8A + "MEMBER STATUS" label
- * - Right: checkmark icon + "Verified →" green text
+ * - Right: checkmark icon + "Verified" green text / clock icon + "Pending" orange text
  */
 
 import React, { memo } from 'react';
-import { View, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, Platform } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 import { colors } from '@/src/theme';
 
 import { Text } from '@/src/components/ui';
 
 export interface CashbackMemberStatusProps {
-  /** Called when user taps "Verified →" or "Pending →" — opens VerificationStatusSheet */
+  /** Called when user taps status badge — opens VerificationStatusSheet */
   onPress?: () => void;
   /** Whether user is verified */
   verified?: boolean;
@@ -36,15 +36,15 @@ function CheckIcon() {
   );
 }
 
-function WarningIcon() {
+function ClockIcon() {
   return (
     <Svg width={16} height={16} viewBox="0 0 16 16" fill="none">
       <Path
-        d="M8 5.5V8.5M8 11H8.005M14 8C14 11.314 11.314 14 8 14C4.686 14 2 11.314 2 8C2 4.686 4.686 2 8 2C11.314 2 14 4.686 14 8Z"
+        d="M14 8C14 11.314 11.314 14 8 14C4.686 14 2 11.314 2 8C2 4.686 4.686 2 8 2C11.314 2 14 4.686 14 8Z"
         stroke="#FF9A6D"
         strokeWidth={1}
-        strokeLinecap="round"
       />
+      <Path d="M8 5V8L10 10" stroke="#FF9A6D" strokeWidth={1} strokeLinecap="round" strokeLinejoin="round" />
     </Svg>
   );
 }
@@ -68,12 +68,12 @@ function CashbackMemberStatusComponent({ onPress, verified = true }: CashbackMem
         {verified ? (
           <>
             <CheckIcon />
-            <Text style={styles.verifiedText}>Verified →</Text>
+            <Text style={styles.verifiedText}>Verified</Text>
           </>
         ) : (
           <>
-            <WarningIcon />
-            <Text style={styles.pendingText}>Pending →</Text>
+            <ClockIcon />
+            <Text style={styles.pendingText}>Pending</Text>
           </>
         )}
       </View>
@@ -91,6 +91,18 @@ const styles = StyleSheet.create({
     paddingVertical: 16, // Figma: top=16, bottom=16
     paddingHorizontal: 24, // Figma: left=24, right=24
     alignSelf: 'stretch',
+    // Figma: 3 drop shadows (use strongest for RN single-shadow limitation)
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000000',
+        shadowOffset: { width: 0, height: 9 },
+        shadowOpacity: 0.1,
+        shadowRadius: 19,
+      },
+      android: {
+        elevation: 8,
+      },
+    }),
   },
   left: {
     flexDirection: 'row',

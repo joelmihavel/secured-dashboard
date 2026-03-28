@@ -135,7 +135,7 @@ serve(async (req: Request) => {
         .from("payments")
         .select("id, user_id, rent_amount_paise, landlord_payout_status, tenancy_id, payment_month")
         .or(`cf_order_id.eq.${orderId},gateway_order_id.eq.${orderId}`)
-        .in("landlord_payout_status", ["pending", "processing"])
+        .in("landlord_payout_status", ["pending", "ready", "processing"])
         .maybeSingle();
       payment = data;
     }
@@ -145,7 +145,7 @@ serve(async (req: Request) => {
         .from("payments")
         .select("id, user_id, rent_amount_paise, landlord_payout_status, tenancy_id, payment_month")
         .eq("gateway_payout_id", settlementId)
-        .in("landlord_payout_status", ["pending", "processing"])
+        .in("landlord_payout_status", ["pending", "ready", "processing"])
         .maybeSingle();
       payment = data;
     }
@@ -167,7 +167,7 @@ serve(async (req: Request) => {
         .from("payments")
         .update({ landlord_payout_status: "processing" })
         .eq("id", payment.id)
-        .eq("landlord_payout_status", "pending");
+        .in("landlord_payout_status", ["pending", "ready"]);
 
       await audit.logSuccess(
         "VENDOR_SETTLEMENT_INITIATED",
