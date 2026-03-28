@@ -144,7 +144,7 @@ export default function PaymentSuccessScreen() {
   const isReceiptView = params.source === 'receipt_view';
 
   const [receiptData, setReceiptData] = useState<ReceiptData | null>(null);
-  const { landlordApproved } = useVerificationStatus();
+  const { allVerified } = useVerificationStatus();
 
   // Haptic on mount
   useEffect(() => {
@@ -317,10 +317,10 @@ export default function PaymentSuccessScreen() {
             <DashedDivider color={FIGMA_COLORS.dividerColor} style={styles.divider} />
             <ReceiptRow
               label="Cashback"
-              value={landlordApproved
+              value={allVerified
                 ? `- \u20B9  ${displayData.cashbackApplied}`
                 : `\u20B9  ${displayData.cashbackApplied}`}
-              valueColor={landlordApproved ? PAYMENT_COLORS.successStamp : PAYMENT_COLORS.accent}
+              valueColor={allVerified ? PAYMENT_COLORS.successStamp : PAYMENT_COLORS.accent}
             />
             <DashedDivider color={FIGMA_COLORS.dividerColor} style={styles.divider} />
             <ReceiptRow label="Date" value={displayData.date} />
