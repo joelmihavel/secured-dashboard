@@ -37,6 +37,7 @@ import { DashedDivider } from '@/src/components/payment';
 import { generateReceipt } from '@/src/services/api/payments';
 import type { ReceiptData } from '@/src/services/api/payments';
 import { buildReceiptHtml, buildFallbackReceiptData } from '@/src/utils/receiptHtml';
+import { useVerificationStatus } from '@/src/hooks/useDashboard';
 import { PAYMENT_COLORS } from '@/src/theme';
 import { s, sf, sv } from '@/src/theme/scale';
 
@@ -102,10 +103,11 @@ ReceiptIcon.displayName = 'ReceiptIcon';
 interface ReceiptRowProps {
   label: string;
   value: string;
-  isCashback?: boolean;
+  valueColor?: string;
+  valueBold?: boolean;
 }
 
-const ReceiptRow = memo(({ label, value, isCashback }: ReceiptRowProps) => (
+const ReceiptRow = memo(({ label, value, valueColor, valueBold }: ReceiptRowProps) => (
   <View style={styles.receiptRow}>
     <View style={styles.labelContainer}>
       <ReceiptIcon />
@@ -113,7 +115,9 @@ const ReceiptRow = memo(({ label, value, isCashback }: ReceiptRowProps) => (
     </View>
     <Text
       style={[
-        isCashback ? styles.cashbackValueText : styles.valueText,
+        styles.valueText,
+        valueColor != null && { color: valueColor },
+        valueBold && { fontFamily: 'PlusJakartaSans-SemiBold', fontSize: sf(14) },
         styles.valueMaxWidth,
       ]}
     >
@@ -140,6 +144,7 @@ export default function PaymentSuccessScreen() {
   const isReceiptView = params.source === 'receipt_view';
 
   const [receiptData, setReceiptData] = useState<ReceiptData | null>(null);
+  const { landlordApproved } = useVerificationStatus();
 
   // Haptic on mount
   useEffect(() => {
@@ -310,7 +315,13 @@ export default function PaymentSuccessScreen() {
           <View style={styles.receiptDetails}>
             <ReceiptRow label="Rent paid" value={`\u20B9  ${displayData.amount}`} />
             <DashedDivider color={FIGMA_COLORS.dividerColor} style={styles.divider} />
-            <ReceiptRow label="Cashback" value={`- \u20B9  ${displayData.cashbackApplied}`} isCashback />
+            <ReceiptRow
+              label="Cashback"
+              value={landlordApproved
+                ? `- \u20B9  ${displayData.cashbackApplied}`
+                : `\u20B9  ${displayData.cashbackApplied}`}
+              valueColor={landlordApproved ? PAYMENT_COLORS.successStamp : PAYMENT_COLORS.accent}
+            />
             <DashedDivider color={FIGMA_COLORS.dividerColor} style={styles.divider} />
             <ReceiptRow label="Date" value={displayData.date} />
             <DashedDivider color={FIGMA_COLORS.dividerColor} style={styles.divider} />
@@ -404,13 +415,7 @@ const styles = StyleSheet.create({
     color: FIGMA_COLORS.valueText,
     textAlign: 'right',
   },
-  cashbackValueText: {
-    fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: sf(14),
-    lineHeight: sf(20),
-    color: PAYMENT_COLORS.cashbackDeduct,
-    textAlign: 'right' as const,
-  },
+
   valueMaxWidth: {
     maxWidth: '55%',
     flexShrink: 1,
