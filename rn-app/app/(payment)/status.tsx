@@ -1,28 +1,23 @@
 /**
- * Consolidated Payment Status Screen
+ * Payment Status Screen — Pending / Failed / Refunded
  *
- * Replaces success.tsx, processing.tsx, and failed.tsx with a single
- * status-driven screen that renders PENDING, SUCCESS, FAILED, or REFUNDED
- * states using the shared PaymentReceiptCard component.
+ * Handles non-success payment states with ticket card UI (card icons + info text).
+ * On successful payment resolution, navigates to success.tsx for receipt display.
  *
  * Figma References:
- * - 41-9388 / 41-9563 (Success with/without cashback)
- * - 41-9460 (Processing)
- * - 41-9511 (Failed)
- * - 41-9635 (Refunded)
+ * - 4109-67843 (Processing)
+ * - 4109-67894 (Failed)
+ * - 4109-67946 (Refunded)
  *
  * State machine: useReducer drives StatusState transitions.
- * Polling: 3s interval, 120s timeout (360s for UPI), network-aware.
+ * Polling: 5s interval, 300s/360s timeout, network-aware.
  * Back guard: Intercepts hardware back when pending; navigates home otherwise.
- * Deep link: Validates initialStatus; server status overrides when paymentId present.
- * Receipt: expo-print + expo-sharing for PDF generation on success.
  * Cache: Invalidates paymentHistory and dashboard queries on resolution.
  */
 
 import React, { useEffect, useCallback, useRef, useReducer, useState, memo } from 'react';
 import {
   View,
-  ScrollView,
   StyleSheet,
   TouchableOpacity,
   Linking,
@@ -35,20 +30,15 @@ import {
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
-import * as Print from 'expo-print';
-import * as Sharing from 'expo-sharing';
 import Svg, { Path } from 'react-native-svg';
 import { useQueryClient } from '@tanstack/react-query';
 
 import { Screen, Text, PrimaryButton, BackButton } from '@/src/components';
 import { PaymentReceiptCard } from '@/src/components/payment/PaymentReceiptCard';
-import { DashedDivider } from '@/src/components/payment';
 import { OfflineBanner } from '@/src/components/ui/Layout/OfflineBanner';
 import { useNetworkStatus } from '@/src/hooks/useNetworkStatus';
 import { useRealtimeQuery } from '@/src/hooks/useRealtimeQuery';
-import { checkPaymentStatus, generateReceipt } from '@/src/services/api/payments';
-import type { ReceiptData } from '@/src/services/api/payments';
-import { buildReceiptHtml, buildFallbackReceiptData } from '@/src/utils/receiptHtml';
+import { checkPaymentStatus } from '@/src/services/api/payments';
 import { usePaymentStore } from '@/src/stores';
 import { PAYMENT_COLORS } from '@/src/theme';
 import { s, sf, sv } from '@/src/theme/scale';
@@ -70,13 +60,13 @@ interface StatusParams {
   agreementId?: string;
 }
 
-type StatusState = 'pending' | 'success' | 'failed' | 'refunded' | 'timed_out';
+type StatusState = 'pending' | 'failed' | 'refunded' | 'timed_out';
 type PendingSubState = 'verifying' | 'processing' | 'timed_out';
 
 type StatusAction =
   | { type: 'SET_STATUS'; status: StatusState }
   | { type: 'SET_PENDING_SUB'; sub: PendingSubState }
-  | { type: 'RESOLVE'; status: 'success' | 'failed' | 'refunded' };
+  | { type: 'RESOLVE'; status: 'failed' | 'refunded' };
 
 interface ReducerState {
   status: StatusState;
@@ -103,8 +93,7 @@ function statusReducer(state: ReducerState, action: StatusAction): ReducerState 
 const VERIFICATION_INTERVAL_MS = 5000; // Relaxed from 3s — realtime handles the fast path
 const VERIFICATION_TIMEOUT_MS_DEFAULT = 300000; // 5 min for card/netbanking
 const VERIFICATION_TIMEOUT_MS_UPI = 360000;     // 6 min for UPI S2S collect (NPCI mandates 5 min approval window)
-const VALID_INITIAL_STATUSES = new Set(['pending', 'success', 'failed', 'refunded']);
-const FIGMA_CARD_INNER_WIDTH = s(222);
+const VALID_INITIAL_STATUSES = new Set(['pending', 'failed', 'refunded']);
 
 // ============================================
 // FIGMA TOKENS — aliased from shared PAYMENT_COLORS
@@ -112,31 +101,14 @@ const FIGMA_CARD_INNER_WIDTH = s(222);
 
 const FIGMA_COLORS = {
   background: PAYMENT_COLORS.background,
-  cardBackground: PAYMENT_COLORS.cardBackground,
-  titleWhite: PAYMENT_COLORS.white,
   titleAccent: PAYMENT_COLORS.accent,
-  successStamp: PAYMENT_COLORS.successStamp,
   failedStamp: PAYMENT_COLORS.failedStamp,
   refundedStamp: PAYMENT_COLORS.refundedStamp,
   pendingStamp: PAYMENT_COLORS.pendingStamp,
   infoText: PAYMENT_COLORS.mutedText,
-  labelText: PAYMENT_COLORS.labelText,
-  valueText: PAYMENT_COLORS.valueText,
-  payableValue: PAYMENT_COLORS.highlightText,
   iconColor: PAYMENT_COLORS.labelText,
-  dividerColor: PAYMENT_COLORS.divider,
   tryAgainText: PAYMENT_COLORS.mutedText,
 } as const;
-
-// ============================================
-// HELPERS
-// ============================================
-
-function formatDisplayDate(isoString: string): string {
-  const date = new Date(isoString);
-  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-  return `${date.getDate()} ${months[date.getMonth()]} ${date.getFullYear()}`;
-}
 
 // ============================================
 // INFO ROW DATA — Figma 768:303835 / 768:303928 / 768:304020
@@ -156,21 +128,21 @@ function getPendingInfoRows(isUpi: boolean, sub: PendingSubState): InfoRowData[]
     switch (sub) {
       case 'verifying':
         return [
-          { text: 'Open your UPI app to approve the payment.', alignCenter: true },
-          { text: 'You have 6 minutes to complete the approval.', alignCenter: true },
-          { text: "Please don't close the app.", alignCenter: true },
+          { text: 'Open your UPI app to approve the payment', alignCenter: true },
+          { text: 'You have 6 minutes to complete the approval', alignCenter: true },
+          { text: "Please don't close the app", alignCenter: true },
         ];
       case 'processing':
         return [
-          { text: 'Waiting for approval on your UPI app.', alignCenter: true },
-          { text: 'This can take a few minutes. Please check your UPI app.', alignCenter: false },
-          { text: "You'll see confirmation here once approved.", alignCenter: true },
+          { text: 'Waiting for approval on your UPI app', alignCenter: true },
+          { text: 'This can take a few minutes. Please check your UPI app', alignCenter: false },
+          { text: "You'll see confirmation here once approved", alignCenter: true },
         ];
       case 'timed_out':
         return [
-          { text: 'UPI payment request has expired.', alignCenter: true },
-          { text: 'The approval window has closed. Please try again.', alignCenter: true },
-          { text: 'You can retry with the same or a different payment method.', alignCenter: false },
+          { text: 'UPI payment request has expired', alignCenter: true },
+          { text: 'The approval window has closed. Please try again', alignCenter: true },
+          { text: 'You can retry with the same or a different payment method', alignCenter: false },
         ];
     }
   }
@@ -180,54 +152,40 @@ function getPendingInfoRows(isUpi: boolean, sub: PendingSubState): InfoRowData[]
     case 'verifying':
       return [
         { text: 'Confirming your payment with the bank...', alignCenter: true },
-        { text: 'This usually takes a few seconds.', alignCenter: true },
-        { text: "Please don't close the app.", alignCenter: true },
+        { text: 'This usually takes a few seconds', alignCenter: true },
+        { text: "Please don't close the app", alignCenter: true },
       ];
     case 'processing':
       return [
-        { text: "We've received your payment request.", alignCenter: true },
-        { text: 'This can take a few minutes depending on your bank.', alignCenter: true },
-        { text: "You'll see confirmation here once it's complete.", alignCenter: true },
+        { text: "We've received your payment request", alignCenter: true },
+        { text: 'This can take a few minutes depending on your bank', alignCenter: true },
+        { text: "You'll see confirmation here once it's complete", alignCenter: true },
       ];
     case 'timed_out':
       return [
-        { text: 'Your payment is still being processed by your bank.', alignCenter: false },
-        { text: 'This is taking longer than expected. Please check back later.', alignCenter: false },
-        { text: "You'll receive a notification once the payment is confirmed.", alignCenter: false },
+        { text: 'Your payment is still being processed by your bank', alignCenter: false },
+        { text: 'This is taking longer than expected. Please check back later', alignCenter: false },
+        { text: "You'll receive a notification once the payment is confirmed", alignCenter: false },
       ];
   }
 }
 
 // Figma 768:303928 — Failed state (3 rows)
 const FAILED_INFO_ROWS: InfoRowData[] = [
-  { text: "Something didn't go through this time.", alignCenter: true },
-  { text: "Your money is safe and hasn't been deducted.", alignCenter: true },
+  { text: "Something didn't go through this time", alignCenter: true },
+  { text: "Your money is safe and hasn't been deducted", alignCenter: true },
   { text: "If money was debited, it will automatically be refunded within 3-5 business days", alignCenter: false },
 ];
 
 // Figma 768:304020 — Refunded state (2 rows)
 const REFUNDED_INFO_ROWS: InfoRowData[] = [
-  { text: 'Your payment was not completed and the amount has been returned to your account.', alignCenter: false },
-  { text: 'Refunds usually reflect within 3\u20135 business days.', alignCenter: false },
+  { text: 'Your payment was not completed and the amount has been returned to your account', alignCenter: false },
+  { text: 'Refunds usually reflect within 3\u20135 business days', alignCenter: false },
 ];
 
 // ============================================
 // SUB-COMPONENTS
 // ============================================
-
-/** Hash icon for receipt rows in success state */
-const ReceiptIcon = memo(() => (
-  <View style={styles.hashIcon}>
-    <Svg width={11} height={12} viewBox="0 0 11 12" fill="none">
-      <Path
-        d="M2.52285 7.33333L2.80313 4.66667L0 4.66667L0 3.33333L2.94327 3.33333L3.29362 0L4.63427 0L4.28393 3.33333L6.94327 3.33333L7.2936 0L8.63427 0L8.28393 3.33333L10.6667 3.33333L10.6667 4.66667L8.1438 4.66667L7.86353 7.33333L10.6667 7.33333L10.6667 8.66667L7.7234 8.66667L7.37307 12L6.0324 12L6.38273 8.66667L3.72339 8.66667L3.37305 12L2.03237 12L2.38271 8.66667L0 8.66667L0 7.33333L2.52285 7.33333ZM3.86353 7.33333L6.52287 7.33333L6.80313 4.66667L4.1438 4.66667L3.86353 7.33333Z"
-        fill={FIGMA_COLORS.iconColor}
-        fillRule="nonzero"
-      />
-    </Svg>
-  </View>
-));
-ReceiptIcon.displayName = 'ReceiptIcon';
 
 /**
  * Card Icon — Figma "Frame 2095586326"
@@ -284,36 +242,6 @@ const InfoRow = memo(({ text, alignCenter }: InfoRowProps) => (
 ));
 InfoRow.displayName = 'InfoRow';
 
-/** Receipt row with hash icon (success state) */
-interface ReceiptRowProps {
-  label: string;
-  value: string;
-  isPayableRent?: boolean;
-  isCashback?: boolean;
-  isPositive?: boolean;
-}
-
-const ReceiptRow = memo(({ label, value, isPayableRent, isCashback, isPositive }: ReceiptRowProps) => (
-  <View style={styles.receiptRow}>
-    <View style={styles.labelContainer}>
-      <ReceiptIcon />
-      <Text style={styles.labelText}>{label}</Text>
-    </View>
-    <Text
-      style={[
-        isPayableRent ? styles.payableRentValueText :
-        isCashback ? styles.cashbackValueText :
-        isPositive ? styles.positiveValueText :
-        styles.valueText,
-        styles.valueMaxWidth,
-      ]}
-    >
-      {value}
-    </Text>
-  </View>
-));
-ReceiptRow.displayName = 'ReceiptRow';
-
 // ============================================
 // STATUS-SPECIFIC CONTENT RENDERERS
 // ============================================
@@ -334,47 +262,6 @@ const PendingContent = memo(({ isUpi, pendingSub }: PendingContentProps) => {
   );
 });
 PendingContent.displayName = 'PendingContent';
-
-interface SuccessContentProps {
-  amount: string;
-  cashbackApplied: string;
-  date: string;
-  method: string;
-  landlordName: string;
-  panCard: string;
-  agreementId: string;
-  transactionId: string;
-  payableRent: string;
-}
-
-const SuccessContent = memo(({
-  amount,
-  cashbackApplied,
-  date,
-  method,
-  landlordName,
-  panCard,
-  agreementId,
-  transactionId,
-  payableRent,
-}: SuccessContentProps) => {
-  return (
-    <View style={styles.receiptDetails}>
-      <ReceiptRow label="Rent paid" value={`\u20B9  ${amount}`} />
-      <DashedDivider color={FIGMA_COLORS.dividerColor} style={styles.divider} />
-      <ReceiptRow label="Cashback Applied" value={`- \u20B9  ${cashbackApplied}`} isCashback />
-      <DashedDivider color={FIGMA_COLORS.dividerColor} style={styles.divider} />
-      <ReceiptRow label="Date" value={date} />
-      <DashedDivider color={FIGMA_COLORS.dividerColor} style={styles.divider} />
-      <ReceiptRow label="Method" value={method} />
-      <DashedDivider color={FIGMA_COLORS.dividerColor} style={styles.divider} />
-      <ReceiptRow label="Landlord" value={landlordName} />
-      <DashedDivider color={FIGMA_COLORS.dividerColor} style={styles.divider} />
-      <ReceiptRow label="Transaction ID" value={transactionId} />
-    </View>
-  );
-});
-SuccessContent.displayName = 'SuccessContent';
 
 const FailedContent = memo(() => (
   <View style={styles.infoSection}>
@@ -405,7 +292,7 @@ function ErrorFallback({ onRetry }: { onRetry: () => void }) {
       <Text style={styles.errorFallbackMessage}>
         We could not display your payment status. Please try again.
       </Text>
-      <PrimaryButton title="Go Home" onPress={onRetry} testID="error-go-home-button" />
+      <PrimaryButton title="Go home" onPress={onRetry} testID="error-go-home-button" />
     </View>
   );
 }
@@ -429,12 +316,13 @@ export default function PaymentStatusScreen() {
   const method = (params.method ?? '') as string;
   const cashback = params.cashback ?? '0';
   const transactionId = params.transactionId ?? `SEC${Date.now().toString().slice(-8)}`;
-  const errorMessage = params.error ?? '';
   const isUpi = method === 'upi';
 
   // -- Deep link sanitization: validate initialStatus
-  const sanitizedInitialStatus = VALID_INITIAL_STATUSES.has(params.initialStatus ?? '')
-    ? (params.initialStatus as StatusState)
+  // If initialStatus is 'success', redirect to success screen
+  const rawInitialStatus = params.initialStatus ?? '';
+  const sanitizedInitialStatus = VALID_INITIAL_STATUSES.has(rawInitialStatus)
+    ? (rawInitialStatus as StatusState)
     : 'pending';
 
   // -- State machine
@@ -445,10 +333,6 @@ export default function PaymentStatusScreen() {
 
   // -- Error boundary state
   const [renderError, setRenderError] = useState(false);
-
-  // -- Receipt data (fetched on success for full receipt display)
-  const [receiptData, setReceiptData] = useState<ReceiptData | null>(null);
-  const isReceiptView = params.source === 'receipt_view';
 
   // -- Network awareness
   const { isConnected } = useNetworkStatus();
@@ -501,16 +385,28 @@ export default function PaymentStatusScreen() {
   const resolveStatus = useCallback(
     (newStatus: 'success' | 'failed' | 'refunded') => {
       clearLastPayment();
-      dispatch({ type: 'RESOLVE', status: newStatus });
       invalidateCaches();
 
       if (newStatus === 'success') {
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        // Navigate to dedicated success screen with receipt UI
+        router.replace({
+          pathname: '/(payment)/success',
+          params: {
+            paymentId,
+            amount,
+            method,
+            cashback,
+            transactionId,
+            landlordName: params.landlordName,
+            agreementId: params.agreementId,
+          },
+        } as never);
       } else {
+        dispatch({ type: 'RESOLVE', status: newStatus });
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       }
     },
-    [clearLastPayment, invalidateCaches],
+    [clearLastPayment, invalidateCaches, router, paymentId, amount, method, cashback, transactionId, params.landlordName, params.agreementId],
   );
 
   // ============================================
@@ -700,39 +596,30 @@ export default function PaymentStatusScreen() {
   }, [isConnected]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ============================================
-  // HAPTICS: Fire on initial terminal status
+  // REDIRECT: initialStatus=success goes to success screen
   // ============================================
 
   useEffect(() => {
-    if (sanitizedInitialStatus === 'success') {
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    } else if (sanitizedInitialStatus === 'failed' || sanitizedInitialStatus === 'refunded') {
+    if (rawInitialStatus === 'success') {
+      router.replace({
+        pathname: '/(payment)/success',
+        params: {
+          paymentId,
+          amount,
+          method,
+          cashback,
+          transactionId,
+          landlordName: params.landlordName,
+          agreementId: params.agreementId,
+          source: params.source,
+        },
+      } as never);
+      return;
+    }
+    if (sanitizedInitialStatus === 'failed' || sanitizedInitialStatus === 'refunded') {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
-
-  // ============================================
-  // FETCH RECEIPT DATA (success state)
-  // ============================================
-
-  useEffect(() => {
-    if (state.status !== 'success' || !paymentId || receiptData) return;
-
-    let cancelled = false;
-
-    (async () => {
-      try {
-        const { data } = await generateReceipt(paymentId);
-        if (!cancelled && data) {
-          setReceiptData(data);
-        }
-      } catch {
-        // Fall back to route params
-      }
-    })();
-
-    return () => { cancelled = true; };
-  }, [state.status, paymentId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ============================================
   // BACK NAVIGATION GUARD
@@ -787,10 +674,6 @@ export default function PaymentStatusScreen() {
   }, [router]);
 
   const handleBack = useCallback(() => {
-    if (isReceiptView) {
-      router.back();
-      return;
-    }
     if (state.status === 'pending') {
       Alert.alert(
         'Payment in progress',
@@ -809,83 +692,7 @@ export default function PaymentStatusScreen() {
       return;
     }
     handleGoHome();
-  }, [isReceiptView, state.status, router, handleGoHome]);
-
-  const handleDownloadReceipt = useCallback(async () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-
-    // Use cached receipt data or fetch fresh
-    let receipt = receiptData;
-    if (!receipt && paymentId) {
-      try {
-        const { data } = await generateReceipt(paymentId);
-        receipt = data;
-      } catch (err) {
-        if (__DEV__) {
-          console.warn('Receipt fetch failed:', err);
-        }
-      }
-    }
-
-    // Build HTML data from server receipt or fallback to route params
-    let htmlData;
-    if (receipt) {
-      htmlData = {
-        receiptNumber: receipt.receiptNumber,
-        payment: {
-          amount: receipt.payment.amount,
-          pgFee: receipt.payment.pgFee,
-          paymentMethod: receipt.payment.paymentMethod,
-          paidAt: receipt.payment.paidAt,
-          rentMonthDisplay: receipt.payment.rentMonthDisplay,
-          utr: receipt.payment.utr ?? null,
-          timeliness: receipt.payment.timeliness ?? null,
-          transactionId: receipt.payment.transactionId,
-        },
-        tenant: {
-          name: receipt.tenant.name,
-          phone: receipt.tenant.phone,
-          email: receipt.tenant.email,
-          panMasked: receipt.tenant.panMasked ?? null,
-        },
-        property: receipt.property,
-        landlord: {
-          name: receipt.landlord.name,
-          panMasked: receipt.landlord.panMasked ?? null,
-        },
-        agreement: {
-          certId: receipt.agreement?.certId ?? null,
-        },
-      };
-    } else {
-      htmlData = buildFallbackReceiptData({
-        amount,
-        method,
-        transactionId: transactionId,
-        landlordName: params.landlordName,
-        agreementId: params.agreementId,
-        paymentId,
-      });
-    }
-
-    try {
-      const html = buildReceiptHtml(htmlData);
-      const { uri } = await Print.printToFileAsync({ html, base64: false });
-      await Sharing.shareAsync(uri, {
-        mimeType: 'application/pdf',
-        dialogTitle: 'Rent Receipt',
-        UTI: 'com.adobe.pdf',
-      });
-    } catch (err) {
-      if (__DEV__) {
-        console.warn('PDF generation failed:', err);
-      }
-      Alert.alert(
-        'Receipt Unavailable',
-        'Unable to generate the receipt PDF. Please try again later.',
-      );
-    }
-  }, [receiptData, paymentId, amount, method, transactionId, params.landlordName, params.agreementId]);
+  }, [state.status, router, handleGoHome]);
 
   // ============================================
   // DERIVED UI VALUES
@@ -898,12 +705,6 @@ export default function PaymentStatusScreen() {
           text: 'pending',
           color: FIGMA_COLORS.pendingStamp,
           image: require('@/assets/images/status/stamps/stamp_pending.png'),
-        };
-      case 'success':
-        return {
-          text: 'paid',
-          color: FIGMA_COLORS.successStamp,
-          image: require('@/assets/images/status/stamps/stamp_paid.png'),
         };
       case 'failed':
         return {
@@ -932,8 +733,6 @@ export default function PaymentStatusScreen() {
         return state.pendingSub === 'verifying'
           ? { line1: 'Verifying', line2: 'Payment...' }
           : { line1: 'Payment', line2: 'Processing' };
-      case 'success':
-        return { line1: 'Payment', line2: 'Successful' };
       case 'failed':
         return { line1: 'Payment', line2: 'Failed' };
       case 'refunded':
@@ -947,40 +746,6 @@ export default function PaymentStatusScreen() {
   const titleConfig = getTitleConfig();
 
   // ============================================
-  // DISPLAY DATA (computed from receipt data or route params)
-  // ============================================
-
-  const displayData = React.useMemo(() => {
-    if (receiptData) {
-      const { payment: rp, landlord } = receiptData;
-      const cbAmount = Number(cashback) || 0;
-      return {
-        amount: rp.amount.toLocaleString('en-IN'),
-        cashbackApplied: cbAmount.toLocaleString('en-IN'),
-        date: formatDisplayDate(rp.paidAt),
-        method: rp.paymentMethod ?? method.toUpperCase(),
-        landlordName: landlord.name,
-        utr: rp.utr || 'Pending',
-        payableRent: rp.amount.toLocaleString('en-IN'),
-      };
-    }
-
-    const formatted = Number(amount) ? Number(amount).toLocaleString('en-IN') : amount;
-    const cbAmount = Number(cashback) || 0;
-    return {
-      amount: formatted,
-      cashbackApplied: cbAmount.toLocaleString('en-IN'),
-      date: formatDisplayDate(new Date().toISOString()),
-      method: method ? method.toUpperCase() : '\u2014',
-      landlordName: params.landlordName || 'N/A',
-      panCard: 'Pending',
-      agreementId: 'Pending',
-      transactionId: 'Pending',
-      payableRent: formatted,
-    };
-  }, [receiptData, amount, cashback, method, params.landlordName]);
-
-  // ============================================
   // RENDER CARD CONTENT
   // ============================================
 
@@ -988,20 +753,6 @@ export default function PaymentStatusScreen() {
     switch (state.status) {
       case 'pending':
         return <PendingContent isUpi={isUpi} pendingSub={state.pendingSub} />;
-      case 'success':
-        return (
-          <SuccessContent
-            amount={displayData.amount}
-            cashbackApplied={displayData.cashbackApplied}
-            date={displayData.date}
-            method={displayData.method}
-            landlordName={displayData.landlordName}
-            panCard={displayData.panCard}
-            agreementId={displayData.agreementId}
-            transactionId={displayData.transactionId}
-            payableRent={displayData.payableRent}
-          />
-        );
       case 'failed':
         return <FailedContent />;
       case 'refunded':
@@ -1020,7 +771,7 @@ export default function PaymentStatusScreen() {
       case 'pending':
         return (
           <PrimaryButton
-            title="Contact Support"
+            title="Contact support"
             onPress={handleContactSupport}
             showDivider={true}
             testID="contact-support-button"
@@ -1031,35 +782,17 @@ export default function PaymentStatusScreen() {
         return (
           <>
             <PrimaryButton
-              title="Check Back Later"
+              title="Check back later"
               onPress={handleGoHome}
               showDivider={true}
               testID="check-back-later-button"
             />
             <PrimaryButton
-              title="Contact Support"
+              title="Contact support"
               onPress={handleContactSupport}
               showDivider={true}
               testID="contact-support-button"
             />
-          </>
-        );
-
-      case 'success':
-        return (
-          <>
-            <PrimaryButton
-              title="Download Receipt"
-              onPress={handleDownloadReceipt}
-              showDivider={true}
-              testID="download-receipt-button"
-            />
-            <TouchableOpacity
-              onPress={handleContactSupport}
-              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-            >
-              <Text style={styles.contactSupportText}>Contact Support</Text>
-            </TouchableOpacity>
           </>
         );
 
@@ -1068,16 +801,16 @@ export default function PaymentStatusScreen() {
         return (
           <>
             <PrimaryButton
-              title="Contact Support"
-              onPress={handleContactSupport}
+              title="Try again"
+              onPress={handleTryAgain}
               showDivider={true}
-              testID="contact-support-button"
+              testID="try-again-button"
             />
             <TouchableOpacity
-              onPress={handleTryAgain}
+              onPress={handleContactSupport}
               hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             >
-              <Text style={styles.contactSupportText}>Try Again</Text>
+              <Text style={styles.contactSupportText}>Contact Support</Text>
             </TouchableOpacity>
           </>
         );
@@ -1100,8 +833,6 @@ export default function PaymentStatusScreen() {
   // MAIN RENDER (wrapped in try-catch)
   // ============================================
 
-  const isSuccessState = state.status === 'success';
-
   const backButton = (
     <BackButton
       style={StyleSheet.flatten([styles.backButton, { top: Math.max(sv(8), 111 - insets.top) }])}
@@ -1117,16 +848,17 @@ export default function PaymentStatusScreen() {
       stampImage={stampConfig.image}
       titleLine1={titleConfig.line1}
       titleLine2={titleConfig.line2}
-      titleLine2Color={isSuccessState ? undefined : FIGMA_COLORS.titleWhite}
-      contentPaddingTop={!isSuccessState ? sv(130) : undefined}
-      titleMarginLeft={!isSuccessState ? s(10) : undefined}
+      titleLine2Color={FIGMA_COLORS.titleAccent}
+      contentPaddingTop={sv(130)}
+      titleMarginLeft={s(10)}
+      titleMarginBottom={sv(25)}
     >
       {renderCardContent()}
     </PaymentReceiptCard>
   );
 
   const buttons = (
-    <View style={[styles.buttonContainer, (state.status === 'failed' || state.status === 'refunded') && { gap: sv(24) }]}>
+    <View style={styles.buttonContainer}>
       {renderButtons()}
     </View>
   );
@@ -1134,25 +866,16 @@ export default function PaymentStatusScreen() {
   let content: React.ReactNode;
   try {
     content = (
-      <ScrollView
-        style={styles.scrollContainer}
-        contentContainerStyle={[
-          !isSuccessState && styles.nonSuccessScrollContent,
-          isSuccessState && styles.successScrollContent,
-        ]}
-        scrollEnabled={!isSuccessState}
-        bounces={false}
-        showsVerticalScrollIndicator={false}
-      >
+      <View style={styles.container}>
         {backButton}
         {card}
-      </ScrollView>
+        {buttons}
+      </View>
     );
   } catch (err) {
     if (__DEV__) {
       console.error('PaymentStatusScreen render error:', err);
     }
-    // Trigger error fallback on next render
     if (!renderError) {
       setRenderError(true);
     }
@@ -1167,8 +890,6 @@ export default function PaymentStatusScreen() {
         <OfflineBanner message="No internet connection. Polling paused." />
       )}
       {content}
-      {/* Figma: Button fixed at bottom of viewport (y=921), NOT inside ScrollView */}
-      {buttons}
     </Screen>
   );
 }
@@ -1181,31 +902,23 @@ const styles = StyleSheet.create({
   screen: {
     backgroundColor: FIGMA_COLORS.background,
   },
-  scrollContainer: {
+  container: {
     flex: 1,
     paddingHorizontal: s(24),
   },
-  nonSuccessScrollContent: {
-    flexGrow: 1,
-  },
-  successScrollContent: {
-    flexGrow: 1,
-    paddingBottom: sv(80),
-  },
 
   // -- Info section (pending/failed/refunded)
-  // Figma: info container at x=1 within 270px card, but PaymentReceiptCard content has padding s(24).
-  // Offset: -(24 - 1) = -23px each side so the info section spans the full card width.
+  // Figma: container at x=1, y=219, w=269 inside 270px card.
+  // Card content has padding s(24). Offset: left -(24-1)=-23, right -24 to span full width.
   infoSection: {
     gap: sv(24),
-    marginHorizontal: -s(23),
-    alignItems: 'center' as const,
+    marginLeft: -s(23),
+    marginRight: -s(24),
   },
   infoRow: {
     flexDirection: 'row',
-    alignSelf: 'stretch' as const,
-    gap: s(16),
     paddingHorizontal: s(32),
+    gap: s(16),
   },
   cardIconGroup: {
     flexDirection: 'row' as const,
@@ -1227,102 +940,13 @@ const styles = StyleSheet.create({
     textAlign: 'left',
   },
 
-  // -- Receipt section (success) — compact to fit single screen
-  receiptDetails: {
-    gap: sv(10),
-    alignItems: 'center',
-  },
-  receiptRow: {
-    width: FIGMA_CARD_INNER_WIDTH,
-    minHeight: sv(20),
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    gap: s(4),
-  },
-  labelContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: s(4),
-  },
-  hashIcon: {
-    width: s(16),
-    height: s(16),
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  labelText: {
-    fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: sf(12),
-    lineHeight: sf(20),
-    color: FIGMA_COLORS.labelText,
-    textAlign: 'left',
-  },
-  valueText: {
-    fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: sf(12),
-    lineHeight: sf(20),
-    color: FIGMA_COLORS.valueText,
-    textAlign: 'right',
-  },
-  payableRentValueText: {
-    fontFamily: 'PlusJakartaSans-SemiBold',
-    fontSize: sf(14),
-    lineHeight: sf(20),
-    color: FIGMA_COLORS.payableValue,
-    textAlign: 'right',
-  },
-  divider: {
-    width: FIGMA_CARD_INNER_WIDTH,
-    marginVertical: 0,
-  },
-  cashbackValueText: {
-    fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: sf(14),
-    lineHeight: sf(20),
-    color: PAYMENT_COLORS.cashbackDeduct, // #EF9194
-    textAlign: 'right' as const,
-  },
-  positiveValueText: {
-    fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: sf(14),
-    lineHeight: sf(20),
-    color: '#4CAF50', // green — cashback earned/accumulated
-    textAlign: 'right' as const,
-  },
-  valueMaxWidth: {
-    maxWidth: '55%',
-    flexShrink: 1,
-  },
-  secondSection: {
-    marginTop: sv(8),
-    gap: sv(16),
-  },
-  // Figma 2095586455: Settlement info box — bg:#1a1a1a r:8 p:8/12
-  settlementInfoBox: {
-    marginTop: sv(16),
-    backgroundColor: '#1A1A1A',
-    borderRadius: 8,
-    paddingVertical: sv(8),
-    paddingHorizontal: s(12),
-  },
-  settlementInfoText: {
-    fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: sf(12),
-    lineHeight: sf(20),
-    color: '#FF9A6D', // brand.500
-    textAlign: 'center', // Figma: textAlign CENTER
-  },
-
-  // -- Button container — Figma: fixed at bottom of viewport (y=921 out of 1083)
+  // -- Button container: flows after card with 40px gap (Figma: 704 - 664 = 40)
   buttonContainer: {
     width: '100%',
-    paddingHorizontal: s(24),
+    paddingHorizontal: s(16),
     gap: sv(16),
     alignItems: 'center',
-    paddingBottom: sv(24),
-    paddingTop: sv(16),
-    backgroundColor: FIGMA_COLORS.background, // Solid bg so it covers receipt overflow
+    marginTop: sv(40),
   },
   contactSupportText: {
     fontFamily: 'PlusJakartaSans-Regular',
@@ -1333,21 +957,13 @@ const styles = StyleSheet.create({
   },
   backButton: {
     position: 'absolute' as const,
-    left: s(40),
+    left: s(72),
     zIndex: 10,
     width: s(32),
     height: sv(32),
     justifyContent: 'center' as const,
     alignItems: 'center' as const,
   },
-  tryAgainText: {
-    fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: sf(12),
-    lineHeight: sf(20),
-    color: FIGMA_COLORS.tryAgainText,
-    textAlign: 'center',
-  },
-
   // -- Error fallback
   errorFallback: {
     flex: 1,
