@@ -835,7 +835,7 @@ export default function PaymentStatusScreen() {
 
   const backButton = (
     <BackButton
-      style={StyleSheet.flatten([styles.backButton, { top: sv(16) }])}
+      style={StyleSheet.flatten([styles.backButton, { top: sv(52) }])}
       onPress={handleBack}
       testID="back-button"
     />
@@ -869,7 +869,6 @@ export default function PaymentStatusScreen() {
       <View style={styles.container}>
         {backButton}
         {card}
-        <View style={styles.spacer} />
         {buttons}
       </View>
     );
@@ -906,7 +905,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     paddingHorizontal: s(24),
-    paddingBottom: sv(24),
   },
 
   // -- Info section (pending/failed/refunded)
@@ -942,15 +940,12 @@ const styles = StyleSheet.create({
     textAlign: 'left',
   },
 
-  spacer: {
-    flex: 1,
-    minHeight: sv(40),
-  },
   buttonContainer: {
     width: '100%',
     paddingHorizontal: s(16),
     gap: sv(16),
     alignItems: 'center',
+    marginTop: sv(40),
   },
   contactSupportText: {
     fontFamily: 'PlusJakartaSans-Regular',
