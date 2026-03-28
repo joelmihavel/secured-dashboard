@@ -487,6 +487,7 @@ serve(async (req: Request) => {
             tenant_names: extractedRentalInfo?.tenant_names ?? [],
             security_deposit: (extractedRentalInfo?.security_deposit_paise ?? 0) / 100,
             agreement_cert_id: tenancy.agreement_cert_id ?? null,
+            created_at: tenancy.created_at,
             verification_status: {
               bank_verified: tenancy.bank_verified,
               utility_verified: tenancy.utility_verified,

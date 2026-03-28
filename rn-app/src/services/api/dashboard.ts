@@ -51,6 +51,7 @@ export interface DashboardTenancy {
   landlord_phone: string | null;
   tenant_names: string[];
   security_deposit: number; // In rupees, from extracted_rental_info
+  created_at?: string; // Tenancy creation date (when user joined platform)
   verification_status: TenancyVerificationStatus;
 }
 
@@ -476,49 +477,42 @@ function didEarnCashback(payment: RawRecentPayment, cutoffDay: number): boolean 
 }
 
 /**
- * Generate 12-month bar chart data from lease start and payment history.
+ * Generate 12-month bar chart data from join date and payment history.
  *
  * Each bar represents one month. Heights are fixed (ascending visual).
  * Colors: earned (orange) | missed (red) | future (gray).
+ *
+ * Key rules:
+ * - Chart starts from join month (tenancy created_at), NOT lease start
+ * - A month is "missed" only if due date passed AND user was on platform before due date
+ * - If user joined after due date for that month → gray (not their fault)
+ * - Failed payments → red (missed)
+ * - No payments at all + due date passed + user was here → red (missed)
  */
 function computeChartBars(
-  leaseStart: string | null,
+  joinDate: string | null,
   payments: RawRecentPayment[],
   cutoffDay: number,
 ): BarStatus[] {
   const bars: BarStatus[] = Array(12).fill('future');
-  if (!leaseStart) return bars;
+  if (!joinDate) return bars;
 
-  const start = new Date(leaseStart);
-  if (isNaN(start.getTime())) return bars;
-
-  // Zero-state: no payments at all → all bars are 'future' (empty chart)
-  // A new user who just joined hasn't "missed" anything yet
-  if (payments.length === 0) return bars;
+  const joined = new Date(joinDate);
+  if (isNaN(joined.getTime())) return bars;
 
   const now = new Date();
 
-  // Build a lookup of rent_month → payment
+  // Build a lookup of rent_month → best payment (success > failed > other)
   const paymentMap = new Map<string, RawRecentPayment>();
   for (const p of payments) {
-    // Normalize rent_month to "YYYY-MM" for lookup
     const key = p.rent_month.substring(0, 7);
-    // Keep the most recent / highest-priority payment per month
     if (!paymentMap.has(key) || p.status === 'success') {
       paymentMap.set(key, p);
     }
   }
 
-  // Find the first month the user actually made a payment — only mark 'missed'
-  // from that month onwards, not from lease start
-  let firstPaymentMonth: Date | null = null;
-  for (const p of payments) {
-    const d = new Date(p.rent_month.substring(0, 7) + '-01');
-    if (!firstPaymentMonth || d < firstPaymentMonth) firstPaymentMonth = d;
-  }
-
   for (let i = 0; i < 12; i++) {
-    const monthDate = new Date(start.getFullYear(), start.getMonth() + i, 1);
+    const monthDate = new Date(joined.getFullYear(), joined.getMonth() + i, 1);
     const monthKey = `${monthDate.getFullYear()}-${String(monthDate.getMonth() + 1).padStart(2, '0')}`;
 
     // Future month — hasn't happened yet
@@ -527,24 +521,41 @@ function computeChartBars(
       continue;
     }
 
-    // Month before user's first payment — don't mark as missed
-    if (firstPaymentMonth && monthDate < firstPaymentMonth) {
-      bars[i] = 'future';
+    // Due date for this month
+    const daysInMonth = new Date(monthDate.getFullYear(), monthDate.getMonth() + 1, 0).getDate();
+    const clampedDueDay = Math.min(cutoffDay, daysInMonth);
+    const dueDate = new Date(monthDate.getFullYear(), monthDate.getMonth(), clampedDueDay);
+
+    // User joined AFTER due date for this month → not their fault, gray
+    if (joined > dueDate) {
+      const payment = paymentMap.get(monthKey);
+      if (payment?.status === 'success') {
+        bars[i] = 'earned';
+      }
       continue;
     }
 
+    // Due date hasn't passed yet for this month → gray (still time to pay)
+    if (now <= dueDate) {
+      const payment = paymentMap.get(monthKey);
+      if (payment?.status === 'success') {
+        bars[i] = 'earned'; // Paid early
+      }
+      // else: still time, gray
+      continue;
+    }
+
+    // Due date passed AND user was here before due date → check payment
     const payment = paymentMap.get(monthKey);
     if (!payment) {
-      // Past month with no payment — check if we're past cutoff for this month
-      const cutoffDate = new Date(monthDate.getFullYear(), monthDate.getMonth(), cutoffDay);
-      bars[i] = now > cutoffDate ? 'missed' : 'future';
+      bars[i] = 'missed'; // No payment at all, due date passed → red
       continue;
     }
 
-    if (payment.status === 'failed') {
-      bars[i] = 'missed'; // Payment failed — no cashback → red
-    } else if (payment.status === 'success') {
-      bars[i] = didEarnCashback(payment, cutoffDay) ? 'earned' : 'missed'; // Paid on time → orange, paid late → red (no cashback)
+    if (payment.status === 'success') {
+      bars[i] = didEarnCashback(payment, cutoffDay) ? 'earned' : 'missed';
+    } else if (payment.status === 'failed') {
+      bars[i] = 'missed'; // Payment failed → red
     } else {
       // processing/pending/initiated — still in flight
       bars[i] = 'future';
@@ -664,8 +675,10 @@ export function mapCashbackModule(
 
   // ── Chart bars ────────────────────────────────────────────────
   const cutoffDay = tenancy?.cashback_cutoff_day ?? 7;
+  // Chart starts from join date (tenancy.created_at), NOT lease_start_date
+  // This matches get-payment-stamps which also uses created_at as tracking start
   const chartBars = computeChartBars(
-    tenancy?.lease_start_date ?? null,
+    tenancy?.created_at ?? tenancy?.lease_start_date ?? null,
     rawPayments,
     cutoffDay,
   );
