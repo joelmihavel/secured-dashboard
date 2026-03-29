@@ -153,7 +153,7 @@ serve(async (req: Request) => {
     const { data: tenancy, error: tenancyError } = await supabase
       .from("tenancies")
       .select(
-        "id, user_id, rent_due_day, status, created_at"
+        "id, user_id, rent_due_day, cashback_cutoff_day, status, created_at"
       )
       .eq("id", tenancyId)
       .single();
@@ -231,9 +231,13 @@ serve(async (req: Request) => {
 
     // Payment tracking starts from tenancy creation (when user joined platform),
     // NOT from agreement lease dates. Agreement dates are extraction metadata only.
-    // rent_due_day from the agreement is still the cutoff for on_time vs late vs missed.
+    // cashback_cutoff_day (grace period) is used for on_time/late/missed classification;
+    // rent_due_day is only for display ("Your rent is due on the 1st").
     const trackingStart = new Date(tenancy.created_at);
     const dueDay = tenancy.rent_due_day;
+    // cashback_cutoff_day is the grace-period day used for on_time/late/missed classification.
+    // rent_due_day is only used for the due_date display field.
+    const cutoffDay = tenancy.cashback_cutoff_day ?? tenancy.rent_due_day;
 
     const ist = nowInIst();
     const currentYear = ist.year;
@@ -271,20 +275,20 @@ serve(async (req: Request) => {
 
     while (y < endYear || (y === endYear && m <= endMonth)) {
       const monthKey = formatMonthIso(y, m);
-      const dueDateStr = formatDueDate(y, m, dueDay);
-      const dueCutoffUtc = buildDueCutoffUtc(y, m, dueDay);
+      const dueDateStr = formatDueDate(y, m, dueDay); // display: actual rent due date
+      const dueCutoffUtc = buildDueCutoffUtc(y, m, cutoffDay); // classification: cashback grace period
       const payment = paymentsByMonth.get(monthKey) ?? null;
 
       let status: PaymentStampEntry["status"];
       let daysLate: number | null = null;
 
-      // Is this a future month or current month where due date hasn't passed?
+      // Is this a future month or current month where cutoff date hasn't passed?
       const isFutureMonth =
         y > currentYear || (y === currentYear && m > currentMonth);
       const isCurrentMonth = y === currentYear && m === currentMonth;
       const daysInMonth = new Date(y, m + 1, 0).getDate();
-      const clampedDueDay = Math.min(dueDay, daysInMonth);
-      const dueDateNotPassed = isCurrentMonth && currentDay <= clampedDueDay;
+      const clampedCutoffDay = Math.min(cutoffDay, daysInMonth);
+      const dueDateNotPassed = isCurrentMonth && currentDay <= clampedCutoffDay;
 
       // Grey (pending) is the zero state. Stamps only change when:
       // - Payment completed (success) → on_time or late

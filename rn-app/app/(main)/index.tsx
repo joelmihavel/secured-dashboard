@@ -158,10 +158,12 @@ export default function HomeScreen() {
   );
 
   // Cashback module — single computed object with all CashbacksList props
+  // BUG 1 FIX: Pass stamps data so chart bars are derived from backend stamps
+  // (all months) instead of recent_payments (limited to 5).
   const cashbackModule = useMemo(
-    () => mapCashbackModule(tenancy ?? null, cashback ?? null, resolvedData?.recent_payments ?? []),
+    () => mapCashbackModule(tenancy ?? null, cashback ?? null, resolvedData?.recent_payments ?? [], stampsData?.stamps),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [tenancy, cashback, resolvedData?.recent_payments]
+    [tenancy, cashback, resolvedData?.recent_payments, stampsData?.stamps]
   );
 
   // Tab state for Recent Payments / Cashbacks
@@ -322,9 +324,12 @@ export default function HomeScreen() {
           return paidDate > cutoffDate ? 'late' : 'paid';
         })();
 
-        // Paid on time → show actual cashback earned; Late → show cashback lost (= potential)
+        // Paid on time → show actual cashback earned (0 if none recorded, never projected)
+        // Late → show cashback lost (= potential amount that was forfeited)
+        // WARN 23 FIX: When actualCashback is 0 and payment is on_time, show 0 (not projected).
+        // Projected amounts should only appear on unpaid/upcoming cards.
         const cashbackAmount = paidStatus === 'paid'
-          ? (actualCashback > 0 ? actualCashback : potentialCashback)
+          ? actualCashback
           : potentialCashback;
 
         items.push({
@@ -407,12 +412,12 @@ export default function HomeScreen() {
         const hasPayment = stamp.payment_id && (stamp.status === 'on_time' || stamp.status === 'late');
         const potentialCb = Math.round(rentAmount * (cashbackRate / 100));
 
-        // Paid on time → actual cashback earned; Late/missed → potential cashback (= lost amount)
+        // Paid on time → actual cashback earned (0 if none recorded, never projected)
+        // Late/missed → potential cashback (= lost amount forfeited)
+        // WARN 23 FIX: Paid cards show actual cashback only, never projected amounts.
         let historicalCashback: number;
         if (cardStatus === 'paid') {
-          historicalCashback = (stamp.cashback_applied_paise ?? 0) > 0
-            ? stamp.cashback_applied_paise! / 100
-            : potentialCb;
+          historicalCashback = (stamp.cashback_applied_paise ?? 0) / 100;
         } else if (cardStatus === 'late' || cardStatus === 'missed') {
           historicalCashback = potentialCb;
         } else {

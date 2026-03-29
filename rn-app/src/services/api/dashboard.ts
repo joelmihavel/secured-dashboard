@@ -445,10 +445,10 @@ export function deriveCashbackEntries(
 // CASHBACK MODULE MAPPING
 // ==============================================
 
-// Figma uses "Sept" not "Sep" for earnings card dates
+// WARN 29: Standard 3-letter abbreviation — "Sep" not "Sept"
 const EARNINGS_MONTH_NAMES = [
   'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-  'Jul', 'Aug', 'Sept', 'Oct', 'Nov', 'Dec',
+  'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
 ];
 
 /**
@@ -461,10 +461,24 @@ function formatEarningsDate(dateStr: string | null): string {
   return `${d.getDate()} ${EARNINGS_MONTH_NAMES[d.getMonth()]} ${d.getFullYear()}`;
 }
 
+/** IST offset in milliseconds (UTC+05:30) — used for date normalization */
+const IST_OFFSET_MS = 5.5 * 60 * 60 * 1000;
+
+/** Convert any Date to IST by adding UTC offset + IST offset */
+function toIST(date: Date): Date {
+  return new Date(date.getTime() + date.getTimezoneOffset() * 60000 + IST_OFFSET_MS);
+}
+
 /**
  * Determine if a payment earned cashback based on cutoff day.
  * Rent paid on or before cutoff_day of the month = earned.
  * Rent paid after cutoff_day = missed (paid late).
+ *
+ * WARN 5: paid_at is normalized to IST before extracting the day-of-month,
+ * so this works correctly regardless of device timezone.
+ *
+ * NOTE: Currently unused — computeChartBars no longer calls this (derives from stamps).
+ * Kept as a utility for potential future use by mapEarningsEntries or other callers.
  */
 function didEarnCashback(payment: RawRecentPayment, cutoffDay: number): boolean {
   // Explicit cashback recorded by backend takes priority
@@ -472,97 +486,62 @@ function didEarnCashback(payment: RawRecentPayment, cutoffDay: number): boolean 
   // If payment succeeded but no cashback → check if paid after cutoff
   if (payment.status !== 'success') return false;
   if (!payment.paid_at) return false;
-  const paidDate = new Date(payment.paid_at);
-  return paidDate.getDate() <= cutoffDay;
+  // Normalize to IST before extracting day-of-month (WARN 5 fix)
+  const paidDateIST = toIST(new Date(payment.paid_at));
+  return paidDateIST.getDate() <= cutoffDay;
 }
 
 /**
- * Generate 12-month bar chart data from join date and payment history.
+ * Derive chart bar statuses from the payment stamps array.
  *
- * Each bar represents one month. Heights are fixed (ascending visual).
- * Colors: earned (orange) | missed (red) | future (gray).
+ * BUG 1 FIX: Previously this function used raw `recent_payments` (limited to 5)
+ * to iterate 12 months, causing months beyond the 5 most recent to show as
+ * 'missed' (red) even if the user paid on time. Now it derives bars directly
+ * from the backend stamps data, which has per-month status for ALL months.
  *
- * Key rules:
- * - Chart starts from join month (tenancy created_at), NOT lease start
- * - A month is "missed" only if due date passed AND user was on platform before due date
- * - If user joined after due date for that month → gray (not their fault)
- * - Failed payments → red (missed)
- * - No payments at all + due date passed + user was here → red (missed)
+ * BUG 3 FIX (timezone): All date comparisons happen on the backend in IST.
+ * The frontend only maps stamp statuses to bar colors — no date math needed.
+ *
+ * BUG 4 FIX (refunded): Refunded payments are already classified correctly
+ * by the backend stamps logic (pending until due date, then missed).
+ *
+ * Mapping from stamp status to bar color:
+ * - 'on_time'  → 'earned'  (orange — cashback earned)
+ * - 'late'     → 'missed'  (red — cashback lost, includes late payments)
+ *   // WARN 18: Chart 'missed' = cashback lost (includes late payments and no-payment months)
+ * - 'missed'   → 'missed'  (red — no payment by cutoff)
+ * - 'pending'  → 'future'  (gray — payment in-flight or month not yet due)
+ *   // WARN 13: 'future' = backend equivalent of 'pending' (payment in-flight or month not yet due)
+ *
+ * Each bar represents one month from the stamps array.
+ * // WARN 15: Chart bars match stamp months 1:1 — no join-month skip possible
+ * since stamps already handle first-trackable-month logic on the backend.
+ *
+ * @param stamps - Per-month stamp entries from get-payment-stamps endpoint
+ * @returns Array of BarStatus, one per stamp month (NOT fixed at 12)
  */
 function computeChartBars(
-  joinDate: string | null,
-  payments: RawRecentPayment[],
-  cutoffDay: number,
+  stamps: Array<{ status: string }> | null | undefined,
 ): BarStatus[] {
-  const bars: BarStatus[] = Array(12).fill('future');
-  if (!joinDate) return bars;
-
-  const joined = new Date(joinDate);
-  if (isNaN(joined.getTime())) return bars;
-
-  const now = new Date();
-
-  // Build a lookup of rent_month → best payment (success > failed > other)
-  const paymentMap = new Map<string, RawRecentPayment>();
-  for (const p of payments) {
-    const key = p.rent_month.substring(0, 7);
-    if (!paymentMap.has(key) || p.status === 'success') {
-      paymentMap.set(key, p);
-    }
+  if (!stamps || stamps.length === 0) {
+    return Array(12).fill('future');
   }
 
-  for (let i = 0; i < 12; i++) {
-    const monthDate = new Date(joined.getFullYear(), joined.getMonth() + i, 1);
-    const monthKey = `${monthDate.getFullYear()}-${String(monthDate.getMonth() + 1).padStart(2, '0')}`;
-
-    // Future month — hasn't happened yet
-    if (monthDate > now) {
-      bars[i] = 'future';
-      continue;
+  return stamps.map((stamp): BarStatus => {
+    switch (stamp.status) {
+      case 'on_time':
+        return 'earned';
+      case 'late':
+        // WARN 18: 'missed' on chart means cashback lost — includes late payments
+        return 'missed';
+      case 'missed':
+        return 'missed';
+      case 'pending':
+      default:
+        // WARN 13: 'future' = backend 'pending' (payment in-flight or month not yet due)
+        return 'future';
     }
-
-    // Due date for this month
-    const daysInMonth = new Date(monthDate.getFullYear(), monthDate.getMonth() + 1, 0).getDate();
-    const clampedDueDay = Math.min(cutoffDay, daysInMonth);
-    const dueDate = new Date(monthDate.getFullYear(), monthDate.getMonth(), clampedDueDay);
-
-    // User joined AFTER due date for this month → not their fault, gray
-    if (joined > dueDate) {
-      const payment = paymentMap.get(monthKey);
-      if (payment?.status === 'success') {
-        bars[i] = 'earned';
-      }
-      continue;
-    }
-
-    // Due date hasn't passed yet for this month → gray (still time to pay)
-    if (now <= dueDate) {
-      const payment = paymentMap.get(monthKey);
-      if (payment?.status === 'success') {
-        bars[i] = 'earned'; // Paid early
-      }
-      // else: still time, gray
-      continue;
-    }
-
-    // Due date passed AND user was here before due date → check payment
-    const payment = paymentMap.get(monthKey);
-    if (!payment) {
-      bars[i] = 'missed'; // No payment at all, due date passed → red
-      continue;
-    }
-
-    if (payment.status === 'success') {
-      bars[i] = didEarnCashback(payment, cutoffDay) ? 'earned' : 'missed';
-    } else if (payment.status === 'failed') {
-      bars[i] = 'missed'; // Payment failed → red
-    } else {
-      // processing/pending/initiated — still in flight
-      bars[i] = 'future';
-    }
-  }
-
-  return bars;
+  });
 }
 
 /**
@@ -577,6 +556,10 @@ function computeChartBars(
  * - failed payments — payment didn't go through, no cashback event
  * - refunded payments — money returned, no cashback event
  * - settlement_failed — will be refunded, cashback shouldn't count
+ *
+ * WARN 34: Entry order depends on the rawPayments array order, which comes from
+ * the dashboard-data edge function query (ORDER BY created_at DESC). The caller
+ * should not re-sort entries — they are already in reverse chronological order.
  */
 function mapEarningsEntries(
   payments: RawRecentPayment[],
@@ -640,13 +623,17 @@ function mapEarningsEntries(
 /**
  * Compute the complete cashback module state from dashboard data.
  *
- * Takes raw tenancy, cashback, and payment data and produces
+ * Takes raw tenancy, cashback, payment data, and stamp statuses and produces
  * all props needed by the CashbacksList component.
+ *
+ * @param stamps - Per-month stamp entries from get-payment-stamps endpoint.
+ *   Used to derive chart bars (Bug 1 fix). Falls back to empty if unavailable.
  */
 export function mapCashbackModule(
   tenancy: DashboardTenancy | null,
   cashback: CashbackBalance | null,
   rawPayments: RawRecentPayment[],
+  stamps?: Array<{ status: string }> | null,
 ): MappedCashbackModule {
   // ── Module state ──────────────────────────────────────────────
   const vs = tenancy?.verification_status;
@@ -674,14 +661,11 @@ export function mapCashbackModule(
     : undefined;
 
   // ── Chart bars ────────────────────────────────────────────────
+  // BUG 1 FIX: Derive chart from stamps (already computed in IST on backend)
+  // instead of from rawPayments (limited to 5 by dashboard-data query).
+  // This also fixes Bug 3 (timezone), Bug 4 (refunded), and WARN 15/17/19.
   const cutoffDay = tenancy?.cashback_cutoff_day ?? 7;
-  // Chart starts from join date (tenancy.created_at), NOT lease_start_date
-  // This matches get-payment-stamps which also uses created_at as tracking start
-  const chartBars = computeChartBars(
-    tenancy?.created_at ?? tenancy?.lease_start_date ?? null,
-    rawPayments,
-    cutoffDay,
-  );
+  const chartBars = computeChartBars(stamps);
 
   // ── Announcement pill (above chart) — always shown per Figma ──
   const monthlyDiscount = Math.round(monthlyRent * discountRate);
