@@ -551,7 +551,7 @@ export default function HomeScreen() {
 
         const handleVerificationSkip = useCallback(() => {
           setShowVerificationSheet(false);
-          router.replace('/(main)' as never);
+          router.push('/(payment)/enter-rent' as never);
         }, [router]);
 
         const handleFinishSetup = useCallback(() => {
