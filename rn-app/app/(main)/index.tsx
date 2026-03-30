@@ -88,6 +88,7 @@ import { usePaymentStamps } from '@/src/hooks/usePayments';
 import { usePaymentStore } from '@/src/stores/payment';
 import type { PaymentStampEntry } from '@/src/services/api/payments';
 
+import * as SecureStore from 'expo-secure-store';
 // Import colors from theme
 import { colors, spacing, radius } from '@/src/theme';
 
@@ -115,14 +116,18 @@ export default function HomeScreen() {
   const dashboardState: DashboardState = getDashboardState(resolvedData);
 
   // If user has no tenancy, they shouldn't be on the main dashboard.
-  // Redirect to agreement upload — the most likely next step for a user
-  // without tenancy data. Using a specific route (not '/') avoids a
-  // potential redirect loop if the journey router's API call fails.
+  // Redirect back to the journey router so it can determine the correct
+  // screen based on actual user_status (could be setup, waitlist, etc.).
+  // Previously this hardcoded /(agreement)/upload, which was wrong for
+  // users who had already completed upload (e.g. approved/active without
+  // tenancy yet — they'd get stuck on upload with a buffering button).
   // Skip in __DEV__ so the dev screen picker can access the dashboard freely.
   useEffect(() => {
     if (__DEV__) return;
     if (!isLoading && dashboardState === 'no_tenancy') {
-      router.replace('/(agreement)/upload' as never);
+      // Clear cached route so journey router re-evaluates from scratch
+      SecureStore.deleteItemAsync('flent_last_journey_target').catch(() => {});
+      router.replace('/' as never);
     }
   }, [isLoading, dashboardState, router]);
   const user = resolvedData?.user ?? null;
@@ -265,9 +270,19 @@ export default function HomeScreen() {
     return stampsData.stamps.map(s => mapStampStatus(s.status));
   }, [stampsData, mapStampStatus]);
 
-  // Setup completion check — use backend-computed flag as single source of truth
+  // Setup completion check for payment gating.
+  // Payment is allowed when bank + utility are verified AND landlord invite
+  // has been sent (user doesn't need to wait for landlord to respond).
+  // verification_complete (all 3 done) is used for the "verified member" badge,
+  // but payment gating is more lenient.
   const verificationStatus = tenancy?.verification_status;
-  const isSetupComplete = cashback?.verification_complete ?? false;
+  const landlordInvitedOrApproved = verificationStatus?.landlord_approved ||
+    (verificationStatus?.landlord_status && verificationStatus.landlord_status !== 'none');
+  const isSetupComplete = !!(
+    verificationStatus?.bank_verified &&
+    verificationStatus?.utility_verified &&
+    landlordInvitedOrApproved
+  );
 
   const handleAddPayment = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -505,16 +520,13 @@ export default function HomeScreen() {
       return 'empty_base';
     }
 
-    // Map backend status to specific UI states based on invite timestamp and status
-    if (tenancy?.verification_status) {
-      const landlordStatus = tenancy.verification_status.landlord_approved;
-      // In a real app we'd check landlord_invite_status and sent_at timestamp
-      // For now we map to invitation_sent as default if not approved
-      if (!landlordStatus) {
-        return 'invitation_sent'; 
-        // Can be extended to: 'invitation_resent_recent', 'invitation_resent_old', 
-        // 'invitation_failed', 'invitation_declined'
+    // Map backend landlord_status to specific UI states
+    if (tenancy?.verification_status && !tenancy.verification_status.landlord_approved) {
+      const ls = tenancy.verification_status.landlord_status;
+      if (ls === 'declined') {
+        return 'invitation_declined';
       }
+      return 'invitation_sent';
     }
 
     // Landlord approved, check remaining verification steps

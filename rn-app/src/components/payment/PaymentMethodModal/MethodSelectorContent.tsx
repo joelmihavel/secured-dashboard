@@ -210,21 +210,15 @@ export function MethodSelectorContent({
   const storedAmount = usePaymentStore((state) => state.amount);
   const { data: dynamicRates } = useFeeRates();
 
-  // Credit card disabled logic
-  const landlordApproved = tenancy?.verification_status?.landlord_approved ?? false;
-  const utilityVerified = tenancy?.verification_status?.utility_verified ?? false;
-  const creditCardDisabled = !landlordApproved || !utilityVerified;
-  const creditCardDisabledReason = creditCardDisabled
-    ? 'Complete setup to pay with credit cards'
-    : undefined;
+  // Credit card disabled logic — unlocked for all users
+  const creditCardDisabled = false;
+  const creditCardDisabledReason = undefined;
 
   const [selectedMethod, setSelectedMethod] = useState<string>('upi-1');
   const rentAmount = storedAmount || tenancy?.monthly_rent || 32500;
 
   // Fee should be computed on post-cashback amount (matches backend + confirm screen)
-  const isVerified = cashback?.verification_complete ?? false;
-  const cashbackPct = cashback?.discount_rate ?? 0.01;
-  const cashbackAmount = isVerified ? Math.round(rentAmount * cashbackPct) : 0;
+  const cashbackAmount = Math.round(rentAmount * (cashback?.discount_rate ?? 0.01));
   const feeBaseAmount = rentAmount - cashbackAmount;
 
   const paymentMethods: PaymentMethod[] = useMemo(() => {

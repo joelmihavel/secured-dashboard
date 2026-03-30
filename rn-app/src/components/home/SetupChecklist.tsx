@@ -74,7 +74,7 @@ function SetupChecklistComponent({
     },
     {
       title: 'Invite your landlord',
-      subtitle: 'needed for cashback eligibility',
+      subtitle: 'needed for member verification',
       isComplete: landlordInvited,
     },
   ];

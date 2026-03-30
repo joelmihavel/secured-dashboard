@@ -37,7 +37,7 @@ import { DashedDivider } from '@/src/components/payment';
 import { generateReceipt } from '@/src/services/api/payments';
 import type { ReceiptData } from '@/src/services/api/payments';
 import { buildReceiptHtml, buildFallbackReceiptData } from '@/src/utils/receiptHtml';
-import { useVerificationStatus } from '@/src/hooks/useDashboard';
+// useVerificationStatus removed — cashback always shown as discount
 import { PAYMENT_COLORS } from '@/src/theme';
 import { s, sf, sv } from '@/src/theme/scale';
 
@@ -144,7 +144,7 @@ export default function PaymentSuccessScreen() {
   const isReceiptView = params.source === 'receipt_view';
 
   const [receiptData, setReceiptData] = useState<ReceiptData | null>(null);
-  const { allVerified } = useVerificationStatus();
+  // cashback always displayed as discount — no verification branching needed
 
   // Haptic on mount
   useEffect(() => {
@@ -317,10 +317,8 @@ export default function PaymentSuccessScreen() {
             <DashedDivider color={FIGMA_COLORS.dividerColor} style={styles.divider} />
             <ReceiptRow
               label="Cashback"
-              value={allVerified
-                ? `- \u20B9  ${displayData.cashbackApplied}`
-                : `\u20B9  ${displayData.cashbackApplied}`}
-              valueColor={allVerified ? PAYMENT_COLORS.successStamp : PAYMENT_COLORS.accent}
+              value={`- \u20B9  ${displayData.cashbackApplied}`}
+              valueColor={PAYMENT_COLORS.successStamp}
             />
             <DashedDivider color={FIGMA_COLORS.dividerColor} style={styles.divider} />
             <ReceiptRow label="Date" value={displayData.date} />

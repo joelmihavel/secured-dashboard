@@ -124,8 +124,6 @@ export function ConfirmPaymentContent({
 
   // ── Payment Data ───────────────────────────────────────────────────────────
 
-  const isVerified = cashback?.verification_complete ?? false;
-
   const baseRent = enteredAmount || tenancy?.monthly_rent || 30000;
   const maintenance = tenancy?.maintenance ?? 0;
   const totalRent = baseRent + maintenance;
@@ -137,12 +135,9 @@ export function ConfirmPaymentContent({
   // Accumulated balance from previous unverified payments (stored in paise)
   const accumulatedBalanceRupees = Math.floor((user?.cashback_balance_paise ?? 0) / 100);
 
-  // Verified: instant 1% + any accumulated balance (capped at rent)
-  // Unverified: no discount, but earns 1% into balance
-  const appliedCashback = isVerified
-    ? Math.min(cashbackAmount + accumulatedBalanceRupees, totalRent)
-    : 0;
-  const earnedCashback = !isVerified ? cashbackAmount : 0;
+  // Always apply cashback as instant discount (1% + any accumulated balance, capped at rent)
+  const appliedCashback = Math.min(cashbackAmount + accumulatedBalanceRupees, totalRent);
+  const earnedCashback = 0;
 
   // Fee computed on net rent (AFTER cashback) — matches backend formula
   const netRent = totalRent - appliedCashback;
@@ -197,11 +192,7 @@ export function ConfirmPaymentContent({
               You'll earn {Math.round(cashbackPct * 100)}% cashback on this rent payment
             </RNText>
             <Pill
-              text={
-                isVerified
-                  ? `You're saving \u20B9${fmt(annualSavings)} annually`
-                  : `You'll accumulate \u20B9${fmt(cashbackAmount)}`
-              }
+              text={`You're saving \u20B9${fmt(annualSavings)} annually`}
               variant="default"
               backgroundColor="#1A1A1A"
               style={s.cashbackPill}
@@ -242,19 +233,13 @@ export function ConfirmPaymentContent({
                 label="Convenience fees"
                 value={convenienceFee === 0 ? 'Free' : `\u20B9 ${fmt(convenienceFee)}`}
               />
-              {isVerified ? (
+              {cashbackAmount > 0 && (
                 <BreakdownRow
                   label="Cashback"
                   value={`-\u20B9 ${fmt(cashbackAmount)}`}
                   isCashback
                 />
-              ) : cashbackAmount > 0 ? (
-                <BreakdownRow
-                  label="Cashback"
-                  value={`\u20B9 ${fmt(cashbackAmount)}`}
-                  isAccrued
-                />
-              ) : null}
+              )}
               <View style={s.dividerLine} />
               <BreakdownRow
                 label="Payable amount"

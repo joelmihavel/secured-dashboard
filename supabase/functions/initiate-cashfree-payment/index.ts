@@ -225,18 +225,6 @@ serve(async (req: Request) => {
       throw new PaymentError("Minimum payment amount is \u20B910", "AMOUNT_TOO_LOW");
     }
 
-    // Credit card gate
-    const isCreditCard = ['card', 'CC'].includes(payment_method)
-      && (card_type === 'credit' || card_type === undefined);
-    if (isCreditCard) {
-      if (!tenancy.landlord_approved) {
-        throw new PaymentError("Credit card payments require landlord verification.", "LANDLORD_NOT_APPROVED");
-      }
-      if (!tenancy.utility_verified) {
-        throw new PaymentError("Credit card payments require utility bill verification.", "UTILITY_NOT_VERIFIED");
-      }
-    }
-
     // Check for in-progress payments
     const rentMonthDate = `${rent_month}-01`;
 
@@ -367,17 +355,12 @@ serve(async (req: Request) => {
     let accumulatedRedeemed = 0;
 
     if (!isPastCutoff && !cashbackAlreadyApplied) {
-      if (verificationComplete) {
-        const accumulatedBalance = userProfile?.cashback_balance_paise ?? 0;
-        cashbackDiscountPaise = cashbackOnePct + accumulatedBalance;
-        cashbackDiscountPaise = Math.min(cashbackDiscountPaise, originalRentPaise);
-        accumulatedRedeemed = Math.min(accumulatedBalance, cashbackDiscountPaise - cashbackOnePct);
-        accumulatedRedeemed = Math.max(0, accumulatedRedeemed);
-        cashbackEarnedPaise = 0;
-      } else {
-        cashbackDiscountPaise = 0;
-        cashbackEarnedPaise = cashbackOnePct;
-      }
+      const accumulatedBalance = userProfile?.cashback_balance_paise ?? 0;
+      cashbackDiscountPaise = cashbackOnePct + accumulatedBalance;
+      cashbackDiscountPaise = Math.min(cashbackDiscountPaise, originalRentPaise);
+      accumulatedRedeemed = Math.min(accumulatedBalance, cashbackDiscountPaise - cashbackOnePct);
+      accumulatedRedeemed = Math.max(0, accumulatedRedeemed);
+      cashbackEarnedPaise = 0; // Never accumulate — always instant discount
     }
 
     const netRentPaise = originalRentPaise - cashbackDiscountPaise;
@@ -574,27 +557,16 @@ function calculateDueDate(rentMonth: string): string {
 }
 
 function getCashbackBlockerReason(
-  tenancy: { bank_verified: boolean; utility_verified: boolean; landlord_approved: boolean },
-  verificationComplete: boolean,
+  _tenancy: { bank_verified: boolean; utility_verified: boolean; landlord_approved: boolean },
+  _verificationComplete: boolean,
   isPastCutoff: boolean,
   cutoffDay: number,
   cashbackAlreadyApplied?: boolean,
 ): string | null {
-  if (verificationComplete && !isPastCutoff && !cashbackAlreadyApplied) return null;
+  if (!isPastCutoff && !cashbackAlreadyApplied) return null;
   if (cashbackAlreadyApplied) return "Cashback has already been applied to a payment this month.";
   if (isPastCutoff) return `Cashback is available only for payments made by the ${ordinal(cutoffDay)} of the month.`;
-  return getVerificationBlockerReason(tenancy);
-}
-
-function getVerificationBlockerReason(tenancy: {
-  bank_verified: boolean;
-  utility_verified: boolean;
-  landlord_approved: boolean;
-}): string {
-  if (!tenancy.bank_verified) return "Complete bank verification to unlock 1% rent discount";
-  if (!tenancy.utility_verified) return "Complete utility bill verification to unlock 1% rent discount";
-  if (!tenancy.landlord_approved) return "Landlord approval required to unlock 1% rent discount";
-  return "Complete all verifications to unlock 1% rent discount";
+  return null;
 }
 
 function ordinal(n: number): string {

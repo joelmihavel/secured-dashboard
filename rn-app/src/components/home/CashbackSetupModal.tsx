@@ -13,7 +13,7 @@
  * - Sheet: bg #1A1A1A, borderTopRadius ~23
  * - Handle: 48x4, #4D4D4D, radius 200
  * - Title: 28/40, Medium (500), letterSpacing -1, #A9A9A9, px-48
- *   "Complete setup and use cashback"
+ *   "Complete setup to become a verified member"
  * - Setup cards: 3 horizontal, gap=4, same as CashbackSetupSteps
  * - CTA button: 297px, r=8, bg implied, "Upload address proof →" 14/20 Medium #FFFFFF
  * - Skip: "I'll do it later" 12/20 Regular #FFFFFF, px-48
@@ -157,8 +157,8 @@ export function VerificationCheckSheet({
             {/* Title — Figma: 28px/500, mixed colors, px-48 */}
             <View style={styles.titleContainer}>
               <RNText style={styles.title}>
-                {'Complete setup and '}
-                <RNText style={styles.titleAccent}>use cashback</RNText>
+                {'Complete setup to become a '}
+                <RNText style={styles.titleAccent}>verified member</RNText>
               </RNText>
             </View>
 

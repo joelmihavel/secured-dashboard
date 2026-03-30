@@ -33,7 +33,7 @@ export interface StatusNotificationBannerProps {
 
 const notificationConfig: Record<NotificationType, { text: string; textColor: string }> = {
   verification_pending: {
-    text: 'Complete setup to use cashback',
+    text: 'Complete verification to become a verified member',
     textColor: '#FF9A6D',
   },
   landlord_rejected: {

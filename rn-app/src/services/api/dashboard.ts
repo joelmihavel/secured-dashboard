@@ -28,11 +28,14 @@ export interface DashboardUser {
   created_at?: string;
 }
 
+export type LandlordStatusValue = 'none' | 'invite_pending' | 'invited' | 'verified' | 'declined' | 'approved';
+
 export interface TenancyVerificationStatus {
   bank_verified: boolean;
   utility_verified: boolean;
   landlord_approved: boolean;
   landlord_response?: 'approved' | 'disputed' | 'pending' | null;
+  landlord_status?: LandlordStatusValue;
 }
 
 export interface DashboardTenancy {
@@ -584,16 +587,13 @@ function mapEarningsEntries(
       status = 'reversed';
       amount = p.cashback_applied || p.cashback_earned;
     } else if (p.cashback_applied > 0) {
+      // cashback_applied > 0 → always received (discount was applied)
       status = 'received';
       amount = p.cashback_applied;
-    } else if (p.cashback_earned > 0) {
-      if (isVerified) {
-        status = 'received';
-        amount = p.cashback_earned;
-      } else {
-        status = 'accrued';
-        amount = p.cashback_earned;
-      }
+    } else if (p.cashback_earned > 0 && p.cashback_applied === 0) {
+      // Earned but not applied → historical accrued entry
+      status = 'accrued';
+      amount = p.cashback_earned;
     } else {
       // Success but no cashback → paid late / after cutoff
       status = 'missed';
@@ -656,10 +656,8 @@ export function mapCashbackModule(
   const earned = cashback?.total_savings ?? 0;
   const potential = Math.round(monthlyRent * discountRate * 12);
 
-  // ── Remaining cashback (locked, unverified only) ──────────────
-  const remainingCashback = !isVerified
-    ? (cashback?.available_balance ?? cashback?.legacy_wallet_balance ?? 0) || undefined
-    : undefined;
+  // ── Remaining cashback ──────────────────────────────────────────
+  const remainingCashback = undefined; // Balance auto-redeems on next payment
 
   // ── Chart bars ────────────────────────────────────────────────
   // BUG 1 FIX: Derive chart from stamps (already computed in IST on backend)
@@ -678,27 +676,14 @@ export function mapCashbackModule(
 
   // ── Announcement pill (above chart) — always shown per Figma ──
   const monthlyDiscount = Math.round(monthlyRent * discountRate);
-  let announcementText: string;
-  if (isVerified) {
-    // Figma State 3: "💰 Earn ₹400 by paying your rent on time"
-    announcementText = `💰  Earn ₹${monthlyDiscount.toLocaleString('en-IN')} by paying your rent on time`;
-  } else if (earned > 0) {
-    announcementText = `🔒  Complete setup to use ₹${earned.toLocaleString('en-IN')}`;
-  } else {
-    // Empty state pill
-    announcementText = `💸  Reduce your monthly rent by ₹${monthlyDiscount.toLocaleString('en-IN')}`;
-  }
+  const announcementText = `💰  Save ₹${monthlyDiscount.toLocaleString('en-IN')} by paying your rent on time`;
 
   // ── Info text (below chart) — always shown per Figma ─────────
   let infoText: string;
   if (isVerified) {
-    // Figma State 3: "ℹ️  Missed payments reduce your payout"
     infoText = 'ℹ️  Missed payments reduce your payout';
-  } else if (earned > 0) {
-    // Figma State 2: "🔒 ₹ 1,200 can be redeemed after setup is complete"
-    infoText = `🔒  ₹${earned.toLocaleString('en-IN')} can be redeemed after setup is complete`;
   } else {
-    infoText = '🔒  Cashback is accumulated until setup is complete';
+    infoText = 'ℹ️  1% cashback applied on every on-time payment';
   }
 
   // ── Setup steps (4-state: not_started → active → in_progress → completed) ──
@@ -910,12 +895,11 @@ export function getDashboardState(data: DashboardData | null): DashboardState {
   // No tenancy yet
   if (!data.tenancy) return 'no_tenancy';
 
-  // Check verification status — use backend-computed flag as single source of truth
-  if (!data.cashback.verification_complete) {
-    return 'pending_verification';
-  }
+  // Unverified users now see payment-based states (payment_due, overdue, etc.)
+  // instead of being stuck on pending_verification. The setup reminder cards
+  // in CashbacksList handle verification reminders independently.
 
-  // All verified - check payment status
+  // Check payment status
   if (!data.upcoming_payment) {
     // Check if there's a payment currently being processed
     const hasProcessing = data.recent_payments.some(

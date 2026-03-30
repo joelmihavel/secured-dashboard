@@ -174,7 +174,7 @@ export function VerificationStatusSheet({
                 <RNText style={styles.titleAccent}>status?</RNText>
               </RNText>
               <RNText style={styles.subtitle}>
-                Understand how to unlock your cashback
+                Your member status determines your account standing
               </RNText>
             </View>
 
@@ -201,9 +201,9 @@ export function VerificationStatusSheet({
                 <View style={styles.cardBody}>
                   <Text style={styles.cardTitle}>You're almost there</Text>
                   <Text style={styles.cardDescription}>
-                    Your cashback keeps building in the background, but it isn't
-                    applied to your rent yet. Every 1% you earn stays accumulated
-                    until you finish setup.
+                    Complete electricity bill verification and landlord invitation
+                    to become a verified member. Cashback benefits will stop after
+                    90 days if verification is not completed.
                   </Text>
                 </View>
               </View>
@@ -229,9 +229,9 @@ export function VerificationStatusSheet({
                 <View style={styles.cardBody}>
                   <Text style={styles.cardTitle}>You're fully set up</Text>
                   <Text style={styles.cardDescription}>
-                    Now your cashback starts working for you. 1% of your rent is
-                    automatically adjusted every month — less out of your pocket,
-                    every time you pay.
+                    You're a verified member. 1% of your rent is automatically
+                    adjusted every month — less out of your pocket, every time
+                    you pay.
                   </Text>
                 </View>
               </View>
