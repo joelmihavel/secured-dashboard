@@ -1,27 +1,37 @@
--- Fix phone numbers missing '+' prefix in auth.users
--- Migration 20260304100001 fixed public.users but not auth.users.
--- Some auth.users rows have phone WITHOUT '+' prefix (e.g. '919999900003')
--- while others have it (e.g. '+919999900001').
--- This normalizes all auth.users phone values to E.164 with '+' prefix.
+-- Fix phone format consistency across auth.users and public.users
+--
+-- GoTrue stores auth.users.phone WITHOUT '+' prefix (e.g. '919099926845')
+-- Our app uses public.users.phone WITH '+' prefix (e.g. '+919099926845')
+-- These are two separate formats by design:
+--   auth.users.phone  → GoTrue internal (no '+')
+--   public.users.phone → App-facing E.164 (with '+')
 
 -- ============================================================
--- A. FIX auth.users PHONE PREFIX
+-- A. Normalize auth.users.phone — strip '+' if present (GoTrue format)
 -- ============================================================
--- auth.users is in the auth schema owned by supabase_auth_admin.
--- We use SET ROLE to elevate privileges for this one-time fix.
-
--- Phone UPDATE already applied directly (SET ROLE supabase_auth_admin not available on hosted Supabase).
--- This no-op UPDATE ensures the migration is idempotent if re-run.
+-- GoTrue's /otp endpoint strips '+' before lookup. If auth.users.phone
+-- has '+', GoTrue can't find the user → tries INSERT → duplicate key error.
 UPDATE auth.users
-SET phone = '+' || phone, updated_at = NOW()
+SET phone = LTRIM(phone, '+'), updated_at = NOW()
+WHERE phone LIKE '+%';
+
+-- ============================================================
+-- B. Normalize public.users.phone — add '+' if missing (E.164 format)
+-- ============================================================
+UPDATE public.users
+SET phone = '+' || phone
 WHERE phone IS NOT NULL AND phone <> '' AND LEFT(phone, 1) <> '+';
 
 -- ============================================================
--- B. FIX sync_phone_columns TRIGGER (phone_number -> phone)
+-- C. sync_phone_columns TRIGGER
 -- ============================================================
--- The existing trigger copies V1 phone_number (bare 10 digits) directly
--- into phone without normalization, breaking E.164 format.
--- This replacement ensures '+' prefix when syncing phone_number -> phone.
+-- This trigger runs on public.users (BEFORE UPDATE).
+-- phone_number → phone sync must NOT add '+' (GoTrue writes to auth.users
+-- via handle_new_user, which copies public.users.phone to auth.users.phone).
+-- Wait — actually this trigger is on public.users, not auth.users.
+-- public.users.phone should have '+'. The handle_new_user trigger that
+-- creates public.users from auth.users copies auth.users.phone (no '+').
+-- So we need this trigger to ADD '+' when syncing from phone_number.
 
 CREATE OR REPLACE FUNCTION sync_phone_columns()
 RETURNS TRIGGER AS $$
@@ -31,12 +41,11 @@ BEGIN
     NEW.phone_number := RIGHT(regexp_replace(NEW.phone, '[^0-9]', '', 'g'), 10);
   END IF;
 
-  -- Sync phone_number -> phone (ensure + prefix for E.164)
+  -- Sync phone_number -> phone (digits only, no '+' — matches GoTrue format)
   IF NEW.phone_number IS DISTINCT FROM OLD.phone_number AND NEW.phone_number IS NOT NULL THEN
-    IF LEFT(NEW.phone_number, 1) <> '+' THEN
-      NEW.phone := '+' || NEW.phone_number;
-    ELSE
-      NEW.phone := NEW.phone_number;
+    NEW.phone := regexp_replace(NEW.phone_number, '[^0-9]', '', 'g');
+    IF length(NEW.phone) = 10 THEN
+      NEW.phone := '91' || NEW.phone;
     END IF;
   END IF;
 
