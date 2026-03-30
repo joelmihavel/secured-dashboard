@@ -36,7 +36,7 @@ const ALL_KEYCHAIN_KEYS = [
   // OTA reload marker (imported constant, not hardcoded)
   OTA_RELOAD_MARKER_KEY,
   // App version tracker
-  'flent_app_version',
+  APP_VERSION_KEY,
   // Supabase session (generation-based chunked storage)
   SUPABASE_SESSION_STORAGE_KEY,
   `${SUPABASE_SESSION_STORAGE_KEY}_chunks`,

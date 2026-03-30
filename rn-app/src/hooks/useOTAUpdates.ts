@@ -22,6 +22,9 @@ import { usePaymentStore, selectIsProcessing } from '../stores';
 const MAX_RELOAD_RETRIES = 3;
 const RELOAD_RETRY_DELAYS = [1500, 3000, 5000]; // escalating delays
 
+// Auto-apply downloaded update when app returns from background after 5 minutes
+const AUTO_APPLY_BACKGROUND_MS = 5 * 60 * 1000;
+
 // Dynamic import to prevent crash in dev builds
 let useUpdatesHook: (() => any) | null = null;
 let fetchUpdateAsync: (() => Promise<any>) | null = null;

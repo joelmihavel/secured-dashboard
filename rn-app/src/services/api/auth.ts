@@ -384,14 +384,26 @@ async function verifyOtpViaCashfree(
       return { data: null, error: await mapEdgeFunctionError(data) };
     }
 
-    // OPT-2: If server exchanged token, use setSession (saves 200-400ms round-trip)
+    // OPT-2: If server exchanged token, use setSession (saves 200-400ms round-trip).
+    // If setSession fails (e.g. SecureStore write error), fall back to token_hash
+    // exchange so the user doesn't have to re-enter their OTP.
     if (data.data.session?.access_token) {
       const { error: sessionError } = await supabase.auth.setSession({
         access_token: data.data.session.access_token,
         refresh_token: data.data.session.refresh_token,
       });
 
-      if (sessionError) {
+      if (sessionError && data.data.token_hash) {
+        // setSession failed — fall back to client-side token exchange
+        console.warn('[auth] setSession failed, falling back to verifyOtp:', sessionError.message);
+        const { error: fallbackError } = await supabase.auth.verifyOtp({
+          token_hash: data.data.token_hash,
+          type: 'magiclink',
+        });
+        if (fallbackError) {
+          return { data: null, error: mapAuthError(fallbackError.message) };
+        }
+      } else if (sessionError) {
         return { data: null, error: mapAuthError(sessionError.message) };
       }
     } else if (data.data.token_hash) {

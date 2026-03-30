@@ -16,6 +16,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.47.10";
 import { handleCors, getCorsHeaders, jsonResponse } from "../_shared/cors.ts";
 import { AuthError, AppError, handleError } from "../_shared/errors.ts";
 import { AuditLogger, AuditActions } from "../_shared/audit.ts";
+import { revokeUserSessions } from "../_shared/supabase.ts";
 
 // ==============================================
 // TYPES
@@ -287,6 +288,12 @@ serve(async (req) => {
       console.error(`[${userId}] Error deleting from users:`, usersError);
       // Continue anyway - archive is saved
     }
+
+    // ==============================================
+    // STEP 3.5: REVOKE ALL SESSIONS
+    // ==============================================
+
+    await revokeUserSessions(userId, "Account deleted");
 
     // ==============================================
     // STEP 4: DELETE AUTH USER

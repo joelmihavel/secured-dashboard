@@ -26,7 +26,7 @@
  */
 
 import { serve } from "https://deno.land/std@0.208.0/http/server.ts";
-import { createServiceClient } from "../_shared/supabase.ts";
+import { createServiceClient, recordSession, revokeUserSessions, decodeJwtPayload } from "../_shared/supabase.ts";
 import { handleCors, jsonResponse, errorResponse } from "../_shared/cors.ts";
 import {
   AppError,
@@ -697,6 +697,23 @@ async function verifyCashfreePath(
   if (typeof EdgeRuntime !== "undefined" && EdgeRuntime.waitUntil) {
     // @ts-ignore
     EdgeRuntime.waitUntil(backgroundWork);
+  }
+
+  // Session tracking: revoke old sessions, then record new one.
+  // MUST be sequential — if parallel, revoke could see the new session
+  // (just inserted by recordSession) and revoke it too.
+  if ("access_token" in session) {
+    try {
+      const tokenPayload = decodeJwtPayload(session.access_token);
+      const sessionId = (tokenPayload?.session_id as string) ?? null;
+
+      // 1. Revoke old sessions first (blacklists their JTIs)
+      await revokeUserSessions(userId, isNewUser ? "First login" : "Re-authenticated");
+      // 2. Then record the new session (won't be revoked since revoke already ran)
+      await recordSession(userId, sessionId);
+    } catch (sessionTrackingErr) {
+      console.error("[auth-otp] Session tracking failed (non-fatal):", sessionTrackingErr);
+    }
   }
 
   // OPT-2: Return session tokens if server-side exchange succeeded, else token_hash fallback

@@ -16,7 +16,9 @@
 // PAYMENT METHOD SELECTOR
 // ==============================================
 
-export type PaymentMethodType = 'bank' | 'upi';
+/** Setup-flow method selector (bank account vs UPI). Not to be confused with
+ *  PaymentMethodType in stores/payment.ts which covers payment instruments. */
+export type SetupPaymentMethodType = 'bank' | 'upi';
 
 // ==============================================
 // BANK VERIFICATION

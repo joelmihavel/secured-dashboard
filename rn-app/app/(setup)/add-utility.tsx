@@ -28,7 +28,7 @@
  * Progress: height 12, track #4D4D4D, fill ~88% #CC7B57
  */
 
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useRef, useState } from 'react';
 import {
   View,
   StyleSheet,
@@ -81,6 +81,9 @@ export default function AddUtilityScreen() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [apiError, setApiError] = useState<string | null>(null);
   const [showOperatorPicker, setShowOperatorPicker] = useState(false);
+  const [verified, setVerified] = useState(false);
+  // Use ref for landlordApproved to avoid stale closure in handleSubmit
+  const landlordApprovedRef = useRef(false);
 
   // Animated progress bar
   const progress = useSharedValue(33.33);
@@ -111,6 +114,7 @@ export default function AddUtilityScreen() {
   }, [operators, selectedOperator]);
 
   const landlordApproved = tenancy?.verification_status?.landlord_approved ?? false;
+  landlordApprovedRef.current = landlordApproved;
 
   const handleBack = useCallback(() => {
     router.back();
@@ -171,9 +175,10 @@ export default function AddUtilityScreen() {
       {
         onSuccess: (data) => {
           if (data.verified) {
+            setVerified(true);
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
             setTimeout(() => {
-              if (landlordApproved) {
+              if (landlordApprovedRef.current) {
                 router.replace('/(main)' as never);
               } else {
                 router.push('/(setup)/invite-landlord' as never);
@@ -295,9 +300,9 @@ export default function AddUtilityScreen() {
           {/* Button Section - Figma: gap 16 */}
           <View style={styles.buttonSection}>
             <PrimaryButton
-              title="Proceed"
+              title={verified ? 'Verified ✓' : 'Proceed'}
               onPress={handleSubmit}
-              disabled={!isFormValid}
+              disabled={!isFormValid || verified}
               loading={verifyUtility.isPending}
             />
 

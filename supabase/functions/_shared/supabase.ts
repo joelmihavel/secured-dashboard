@@ -79,7 +79,37 @@ export function createUserClient(authHeader: string | null): SupabaseClient {
 }
 
 /**
+ * Decode a JWT's payload WITHOUT verifying signature.
+ * Signature verification is handled by Supabase's getUser() call —
+ * this is only for pre-flight expiry checks to avoid wasting a round-trip.
+ */
+export function decodeJwtPayload(token: string): Record<string, unknown> | null {
+  try {
+    const parts = token.split(".");
+    if (parts.length !== 3) return null;
+    // Base64url → Base64 → decode
+    const base64 = parts[1].replace(/-/g, "+").replace(/_/g, "/");
+    const json = atob(base64);
+    return JSON.parse(json);
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Checks whether a JWT's exp claim is in the past.
+ * Returns true if the token is expired.
+ */
+function isJwtExpired(authHeader: string): boolean {
+  const token = authHeader.replace("Bearer ", "");
+  const payload = decodeJwtPayload(token);
+  if (!payload || typeof payload.exp !== "number") return false; // Can't check — let getUser() handle it
+  return Date.now() > payload.exp * 1000;
+}
+
+/**
  * Extracts and validates the user ID from a request's JWT.
+ * Checks token expiry BEFORE hitting GoTrue to fail fast on expired tokens.
  *
  * @param authHeader - The Authorization header from the request
  * @returns The user ID if valid, null otherwise
@@ -88,6 +118,12 @@ export async function getUserIdFromAuth(
   authHeader: string | null
 ): Promise<string | null> {
   if (!authHeader) return null;
+
+  // Pre-flight expiry check — avoids a wasted GoTrue round-trip
+  if (isJwtExpired(authHeader)) {
+    console.error("Auth error: token expired");
+    return null;
+  }
 
   const client = createUserClient(authHeader);
   const {
@@ -117,6 +153,12 @@ export async function createAuthenticatedClient(
     throw new AuthError("No authorization header provided");
   }
 
+  // Pre-flight expiry check — fail fast with clear error instead of
+  // letting GoTrue return a generic "Invalid token" message
+  if (isJwtExpired(authHeader)) {
+    throw new AuthError("Token expired");
+  }
+
   const client = createUserClient(authHeader);
   const {
     data: { user },
@@ -125,6 +167,29 @@ export async function createAuthenticatedClient(
 
   if (error || !user) {
     throw new AuthError(`Authentication failed: ${error?.message ?? "Invalid token"}`);
+  }
+
+  // Check if the token's JTI is in the revoked list.
+  // Non-fatal: if the query fails (table doesn't exist, network), allow through.
+  const token = authHeader.replace("Bearer ", "");
+  const payload = decodeJwtPayload(token);
+  const jti = payload?.session_id as string | undefined;
+  if (jti) {
+    try {
+      const serviceClient = createServiceClient();
+      const { data: revoked } = await serviceClient
+        .from("revoked_tokens")
+        .select("jti")
+        .eq("jti", jti)
+        .maybeSingle();
+      if (revoked) {
+        throw new AuthError("Session revoked");
+      }
+    } catch (err) {
+      // Only re-throw if it's our AuthError (revoked token).
+      // Swallow query failures — don't break auth on table issues.
+      if (err instanceof AuthError) throw err;
+    }
   }
 
   return {
@@ -136,6 +201,67 @@ export async function createAuthenticatedClient(
       email: user.email,
     },
   };
+}
+
+// ==============================================
+// SESSION TRACKING
+// ==============================================
+
+/**
+ * Records a new session in active_sessions after successful authentication.
+ * Called by auth-otp after OTP verification.
+ *
+ * @param userId - The authenticated user's ID
+ * @param sessionId - JWT session_id (jti) claim — used for revocation
+ * @param request - The original HTTP request (for IP/user-agent metadata)
+ */
+export async function recordSession(
+  userId: string,
+  sessionId: string | null,
+  request?: Request
+): Promise<void> {
+  try {
+    // Validate IP format before inserting into INET column — malformed
+    // x-forwarded-for headers would crash the entire insert.
+    const rawIp = request?.headers.get("x-forwarded-for")?.split(",")[0]?.trim();
+    const validIp = rawIp && /^[\d.:a-fA-F]+$/.test(rawIp) ? rawIp : null;
+
+    const serviceClient = createServiceClient();
+    await serviceClient.from("active_sessions").insert({
+      user_id: userId,
+      token_jti: sessionId,
+      device_info: request?.headers.get("x-client-info") ?? null,
+      ip_address: validIp,
+      user_agent: request?.headers.get("user-agent")?.slice(0, 256) ?? null,
+    });
+  } catch (err) {
+    // Non-fatal — don't break login if session tracking fails
+    console.error("[session-tracking] Failed to record session:", err);
+  }
+}
+
+/**
+ * Revokes all active sessions for a user.
+ * Called on re-authentication (new login) and account deletion.
+ * Uses the DB function revoke_all_user_sessions() which also blacklists JTIs.
+ *
+ * @param userId - The user whose sessions to revoke
+ * @param reason - Why sessions are being revoked
+ */
+export async function revokeUserSessions(
+  userId: string,
+  reason: string = "Re-authenticated"
+): Promise<void> {
+  try {
+    const serviceClient = createServiceClient();
+    await serviceClient.rpc("revoke_all_user_sessions", {
+      p_user_id: userId,
+      p_reason: reason,
+    });
+  } catch (err) {
+    // Non-fatal — don't break login if revocation fails
+    console.error("[session-tracking] Failed to revoke sessions:", err);
+  }
 }
 
 // ==============================================

@@ -18,7 +18,7 @@ import { isReviewMode, deactivateReviewMode } from '@/src/review/reviewMode';
 import { isJourneyMode, deactivateJourneyMode } from '@/src/review/journeyMode';
 import { useSessionMonitor } from '@/src/hooks/useSessionMonitor';
 import { beginTokenRefreshTracking, endTokenRefreshTracking, OTA_RELOAD_MARKER_KEY } from '@/src/config/updates';
-import { detectAndHandleFreshInstall } from '@/src/utils/installDetection';
+import { detectAndHandleFreshInstall, detectAndHandleVersionChange } from '@/src/utils/installDetection';
 import type { Session } from '@supabase/supabase-js';
 
 /**
@@ -138,6 +138,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
           setIsLoading(false);
           return;
         }
+
+        // App version gate: wipe persisted Zustand stores when version changes.
+        // Prevents old-schema data from crashing new code after forced updates.
+        // Supabase session is preserved — user stays logged in.
+        await detectAndHandleVersionChange();
 
         // DB migration guard: clear stale keychain sessions from old Supabase project.
         // iOS Keychain persists across app uninstalls, so users who had the Dev DB build

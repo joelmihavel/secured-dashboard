@@ -288,6 +288,7 @@ export const useUploadStore = create<UploadStore>()(
     })),
     {
       name: STORAGE_KEY,
+      version: 1,
       storage: createJSONStorage(() => secureStoreAdapter),
       // Only persist what we need — exclude _hasHydrated (runtime-only)
       partialize: (state) => ({
@@ -301,6 +302,23 @@ export const useUploadStore = create<UploadStore>()(
         bankStepCompleted: state.bankStepCompleted,
         ownerId: state.ownerId,
       }),
+      migrate: (persisted, version) => {
+        // Version 0 (or unknown): nuke to defaults — forced update gives clean slate
+        if (version === 0 || version === undefined) {
+          return {
+            extractionId: null,
+            uploadPhase: 'idle' as UploadPhase,
+            fileName: null,
+            lastUpdatedAt: 0,
+            errorCode: null,
+            errorMessage: null,
+            dismissedExtractionId: null,
+            bankStepCompleted: false,
+            ownerId: null,
+          };
+        }
+        return persisted as Partial<UploadState>;
+      },
       onRehydrateStorage: () => (state) => {
         // Auto-reset stale non-completed uploads on hydration
         if (state && state.isStale()) {

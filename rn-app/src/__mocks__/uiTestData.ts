@@ -7,7 +7,7 @@
 // Type Definitions
 // ============================================================================
 
-export type PaymentMethodType = 'upi' | 'card' | 'netbanking';
+export type PaymentMethodType = 'upi' | 'card' | 'debit_card' | 'netbanking';
 export type TenancyStatus = 'active' | 'pending' | 'expired';
 export type PaymentStatusType = 'success' | 'pending' | 'failed';
 export type WaitlistStateType = 'pending' | 'pending_long' | 'accepted' | 'rejected';

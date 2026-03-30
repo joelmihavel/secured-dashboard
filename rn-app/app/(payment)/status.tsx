@@ -327,6 +327,11 @@ export default function PaymentStatusScreen() {
     ? (rawInitialStatus as StatusState)
     : 'pending';
 
+  // -- Derived flags
+  const isReceiptView = params.source === 'receipt_view';
+  // Cache fetched receipt data so re-downloads don't re-fetch
+  const receiptDataRef = useRef<ReceiptData | null>(null);
+
   // -- State machine
   const [state, dispatch] = useReducer(statusReducer, {
     status: sanitizedInitialStatus,
@@ -351,7 +356,7 @@ export default function PaymentStatusScreen() {
     table: 'payments',
     event: 'UPDATE',
     filter: paymentId ? `id=eq.${paymentId}` : undefined,
-    queryKeys: [['dashboard'], ['paymentHistory']],
+    queryKeys: [['dashboard'], ['payments']],
     enabled: !!paymentId && state.status === 'pending',
     onEvent: () => {
       // Bypass the 5s polling interval — immediately check status
@@ -376,7 +381,7 @@ export default function PaymentStatusScreen() {
   // ============================================
 
   const invalidateCaches = useCallback(() => {
-    queryClient.invalidateQueries({ queryKey: ['paymentHistory'] });
+    queryClient.invalidateQueries({ queryKey: ['payments'] });
     queryClient.invalidateQueries({ queryKey: ['dashboard'] });
   }, [queryClient]);
 
@@ -699,11 +704,12 @@ export default function PaymentStatusScreen() {
   const handleDownloadReceipt = useCallback(async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
-    let receipt = receiptData;
+    let receipt = receiptDataRef.current;
     if (!receipt && paymentId) {
       try {
         const { data } = await generateReceipt(paymentId);
         receipt = data;
+        receiptDataRef.current = data;
       } catch (err) {
         if (__DEV__) {
           console.warn('Receipt fetch failed:', err);
@@ -768,7 +774,7 @@ export default function PaymentStatusScreen() {
         'Unable to generate the receipt PDF. Please try again later.',
       );
     }
-  }, [receiptData, paymentId, amount, method, transactionId, params.landlordName, params.agreementId]);
+  }, [paymentId, amount, method, transactionId, params.landlordName, params.agreementId]);
 
   // ============================================
   // DERIVED UI VALUES
