@@ -34,7 +34,7 @@ import {
   ExternalServiceError,
   handleError,
 } from "../_shared/errors.ts";
-import { validateSchema, sanitizePhone, formatPhoneWithCountryCode, isValidE164Phone } from "../_shared/validation.ts";
+import { validateSchema, sanitizePhone, formatPhoneWithCountryCode, normalizePhoneE164, isValidE164Phone } from "../_shared/validation.ts";
 import { AuditLogger, AuditActions } from "../_shared/audit.ts";
 import { extractFirstName } from "../_shared/name-utils.ts";
 import { callCashfreeSendOtp, callCashfreeVerifyOtp } from "../_shared/cashfree-m360-otp.ts";
@@ -296,7 +296,7 @@ async function handleRouteOtp(
           "Content-Type": "application/json",
           "apikey": supabaseAnonKey,
         },
-        body: JSON.stringify({ phone: phoneWithCountryCode }),
+        body: JSON.stringify({ phone: normalizePhoneE164(phoneWithCountryCode) }),
       });
       otpTriggered = otpResponse.ok;
       if (!otpTriggered) {
@@ -334,7 +334,7 @@ async function handleRouteOtp(
 
     // Create auth user first so Supabase signInWithOtp works
     const { error: createError } = await supabase.auth.admin.createUser({
-      phone: phoneWithCountryCode,
+      phone: normalizePhoneE164(phoneWithCountryCode),
       phone_confirm: false,
       user_metadata: { full_name: name },
     });
@@ -824,7 +824,7 @@ async function createOrFindUser(
   supabase: ReturnType<typeof createServiceClient>
 ): Promise<{ userId: string; isNewUser: boolean }> {
   const { data: authData, error: authError } = await supabase.auth.admin.createUser({
-    phone: phoneWithCountryCode,
+    phone: normalizePhoneE164(phoneWithCountryCode),
     phone_confirm: true,
     user_metadata: {
       full_name: name,

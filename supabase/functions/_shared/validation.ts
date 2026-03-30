@@ -262,6 +262,30 @@ export function isValidRentDueDay(day: unknown): boolean {
 }
 
 // ==============================================
+// PHONE NORMALIZATION
+// ==============================================
+
+/**
+ * Ensure phone has + prefix (E.164 format).
+ * Unlike formatPhoneWithCountryCode, this does NOT apply heuristics
+ * (e.g., assuming bare 10-digit numbers are Indian). It simply
+ * guarantees the '+' prefix on an already-formatted phone string.
+ *
+ * Use this when the phone is known to already contain its country code
+ * (e.g., values from auth.users.phone or otp_requests.phone).
+ *
+ * Examples:
+ *   "+919876543210" -> "+919876543210" (no change)
+ *   "919876543210"  -> "+919876543210" (prefix added)
+ *   "+1 (415) 555-1234" -> "+14155551234" (cleaned + prefix preserved)
+ */
+export function normalizePhoneE164(phone: string): string {
+  const digits = phone.replace(/\D/g, "");
+  if (phone.startsWith("+")) return `+${digits}`;
+  return `+${digits}`;
+}
+
+// ==============================================
 // SANITIZATION FUNCTIONS
 // ==============================================
 
