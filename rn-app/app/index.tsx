@@ -50,6 +50,30 @@ const VALID_CACHED_ROUTES = new Set<string>([
   '/(waitlist)',
 ]);
 
+/** Read cached route, validating it belongs to the given user (M-3 fix).
+ *  Stored as "route|userId" — if userId doesn't match, returns null. */
+async function readCachedRoute(userId: string): Promise<string | null> {
+  const raw = await SecureStore.getItemAsync(LAST_ROUTE_KEY).catch(() => null);
+  if (!raw) return null;
+  const [route, storedUserId] = raw.split('|');
+  // Accept route if user matches OR if no userId stored (legacy format)
+  if (storedUserId && storedUserId !== userId) return null;
+  if (!route || !VALID_CACHED_ROUTES.has(route)) return null;
+  return route;
+}
+
+/** Write cached route scoped to user ID */
+function writeCachedRoute(route: string, userId: string): void {
+  if (VALID_CACHED_ROUTES.has(route)) {
+    SecureStore.setItemAsync(LAST_ROUTE_KEY, `${route}|${userId}`).catch(() => {});
+  }
+}
+
+/** Clear cached route (sign-out) */
+function clearCachedRoute(): void {
+  SecureStore.deleteItemAsync(LAST_ROUTE_KEY).catch(() => {});
+}
+
 // Global screenshot params for dev pipeline — set state for screens that need mock data
 // e.g. SCREENSHOT_PARAMS = { state: 'filled' } injects state into useScreenshotParams()
 export const SCREENSHOT_PARAMS: Record<string, string> | null = null;
@@ -252,11 +276,11 @@ export default function Index() {
             if (!paymentRow) {
               clearLastPayment();
             } else {
-            // Recent payment in progress — resume polling on status screen
-            clearLastPayment(); // Clear immediately so next cold start won't redirect again
-            setTarget(`/(payment)/status?paymentId=${lastPaymentId}&initialStatus=pending`);
-            setJourneyResolved(true);
-            return;
+              // Recent payment in progress — resume polling on status screen
+              clearLastPayment(); // Clear immediately so next cold start won't redirect again
+              setTarget(`/(payment)/status?paymentId=${lastPaymentId}&initialStatus=pending`);
+              setJourneyResolved(true);
+              return;
             }
           }
           clearLastPayment();
@@ -267,8 +291,8 @@ export default function Index() {
       // Avoids 1-3s of network calls (getUser + PostgREST) on every app open.
       // The cached route is validated in background; if stale, user gets
       // redirected on next render cycle.
-      const cachedRoute = await SecureStore.getItemAsync(LAST_ROUTE_KEY).catch(() => null);
-      if (cachedRoute && (VALID_CACHED_ROUTES.has(cachedRoute))) {
+      const cachedRoute = await readCachedRoute(userId);
+      if (cachedRoute) {
         console.log('[journey-router] Fast path: using cached route', cachedRoute);
         setTarget(cachedRoute);
         setJourneyResolved(true);
@@ -302,10 +326,7 @@ export default function Index() {
 
           if (correctTarget && correctTarget !== cachedRoute) {
             console.log('[journey-router] Background validation: route changed', cachedRoute, '->', correctTarget);
-            // Only cache stable routes — transient screens (add-bank-details) are not cached
-            if (VALID_CACHED_ROUTES.has(correctTarget)) {
-              SecureStore.setItemAsync(LAST_ROUTE_KEY, correctTarget).catch(() => {});
-            }
+            writeCachedRoute(correctTarget, userId);
             router.replace(correctTarget as never);
           }
         }).catch(() => {}); // Non-fatal background check
@@ -358,8 +379,8 @@ export default function Index() {
         // Both paths failed even after token refresh — genuine network issue.
         // Trust the cached route if available (user was here before).
         // Only default to upload if there's no prior history at all.
-        const fallbackRoute = await SecureStore.getItemAsync(LAST_ROUTE_KEY).catch(() => null);
-        if (fallbackRoute && (VALID_CACHED_ROUTES.has(fallbackRoute))) {
+        const fallbackRoute = await readCachedRoute(userId);
+        if (fallbackRoute) {
           console.warn('[journey-router] Routing failed — using cached route:', fallbackRoute);
           setTarget(fallbackRoute);
         } else {
@@ -458,8 +479,8 @@ export default function Index() {
       });
       console.error('[journey-router] resolveAuthenticatedJourney error:', err);
       // Trust cached route on exceptions — don't send active users to upload
-      const fallbackRoute = await SecureStore.getItemAsync(LAST_ROUTE_KEY).catch(() => null);
-      if (fallbackRoute && (VALID_CACHED_ROUTES.has(fallbackRoute))) {
+      const fallbackRoute = await readCachedRoute(userId);
+      if (fallbackRoute) {
         setTarget(fallbackRoute);
       } else {
         setTarget('/(agreement)/upload');
@@ -567,12 +588,12 @@ export default function Index() {
     if (updatePolicy.isRequired) return;
     hasNavigatedRef.current = true;
     router.replace(target as never);
-    // Cache the route for instant navigation on next app launch
-    if (target === '/(main)' || target === '/(setup)/add-bank' || target === '/(waitlist)') {
-      SecureStore.setItemAsync(LAST_ROUTE_KEY, target).catch(() => {});
+    // Cache the route scoped to the current user for instant navigation on next launch
+    const currentUserId = authSession?.user?.id;
+    if (currentUserId && VALID_CACHED_ROUTES.has(target)) {
+      writeCachedRoute(target, currentUserId);
     } else if (target === '/(auth)/splash') {
-      // User signed out — clear cached route
-      SecureStore.deleteItemAsync(LAST_ROUTE_KEY).catch(() => {});
+      clearCachedRoute();
     }
     // Skip OTA reload for payment recovery — don't interrupt active payment flow.
     // clearLastPayment() was already called, and a reload would lose the real-time
