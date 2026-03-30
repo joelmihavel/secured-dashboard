@@ -163,7 +163,7 @@ function calculateRentDuration(
 }
 
 // Total member slots (configurable via env or default)
-const TOTAL_MEMBER_SLOTS = parseInt(Deno.env.get("WAITLIST_TOTAL_SLOTS") || "150", 10);
+const TOTAL_MEMBER_SLOTS = parseInt(Deno.env.get("WAITLIST_TOTAL_SLOTS") || "500", 10);
 
 // ==============================================
 // MAIN HANDLER

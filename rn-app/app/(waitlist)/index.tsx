@@ -381,7 +381,7 @@ export default function WaitlistScreen() {
   const submissionDate = status?.submissionDate ?? '';
   const reviewTime = status?.estimatedReviewTime ?? '';
   const membersOnboarded = status?.currentOnboarded ?? 0;
-  const totalSlots = status?.totalMemberSlots ?? 150;
+  const totalSlots = status?.totalMemberSlots ?? 500;
 
   // Scroll state to show/hide the "scroll down" indicator
   const [isScrolledToBottom, setIsScrolledToBottom] = useState(false);
