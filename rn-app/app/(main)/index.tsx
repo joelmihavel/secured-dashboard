@@ -161,9 +161,9 @@ export default function HomeScreen() {
   // BUG 1 FIX: Pass stamps data so chart bars are derived from backend stamps
   // (all months) instead of recent_payments (limited to 5).
   const cashbackModule = useMemo(
-    () => mapCashbackModule(tenancy ?? null, cashback ?? null, resolvedData?.recent_payments ?? [], stampsData?.stamps),
+    () => mapCashbackModule(tenancy ?? null, cashback ?? null, resolvedData?.recent_payments ?? [], stampsData?.stamps, paymentStamps),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [tenancy, cashback, resolvedData?.recent_payments, stampsData?.stamps]
+    [tenancy, cashback, resolvedData?.recent_payments, stampsData?.stamps, paymentStamps]
   );
 
   // Tab state for Recent Payments / Cashbacks
@@ -546,9 +546,9 @@ export default function HomeScreen() {
           setShowVerificationSheet(false);
           // Route to first incomplete step (bank is always done at this point)
           if (!verificationStatus?.utility_verified) {
-            router.push({ pathname: '/(setup)/add-utility', params: { reentry: '1' } } as never);
+            router.push('/(setup)/add-utility' as never);
           } else if (!verificationStatus?.landlord_approved) {
-            router.push({ pathname: '/(setup)/invite-landlord', params: { reentry: '1' } } as never);
+            router.push('/(setup)/invite-landlord' as never);
           } else {
             router.replace('/(main)' as never);
           }
@@ -563,11 +563,11 @@ export default function HomeScreen() {
           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
           // Route to first incomplete setup step
           if (!verificationStatus?.bank_verified) {
-            router.push({ pathname: '/(setup)/add-bank', params: { reentry: '1' } } as never);
+            router.push('/(setup)/add-bank' as never);
           } else if (!verificationStatus?.utility_verified) {
-            router.push({ pathname: '/(setup)/add-utility', params: { reentry: '1' } } as never);
+            router.push('/(setup)/add-utility' as never);
           } else if (!verificationStatus?.landlord_approved) {
-            router.push({ pathname: '/(setup)/invite-landlord', params: { reentry: '1' } } as never);
+            router.push('/(setup)/invite-landlord' as never);
           } else {
             router.replace('/(main)' as never);
           }

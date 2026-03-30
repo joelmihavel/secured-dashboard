@@ -153,7 +153,7 @@ serve(async (req: Request) => {
     const { data: tenancy, error: tenancyError } = await supabase
       .from("tenancies")
       .select(
-        "id, user_id, rent_due_day, cashback_cutoff_day, status, created_at"
+        "id, user_id, rent_due_day, cashback_cutoff_day, status, created_at, monthly_rent_paise"
       )
       .eq("id", tenancyId)
       .single();
@@ -200,6 +200,11 @@ serve(async (req: Request) => {
       { id: string; paid_at: string | null; rent_amount_paise: number; status: string; cashback_applied_paise: number; payment_method: string | null }
     >();
 
+    // Filter out test payments (e.g. ₹10) — only real rent payments count
+    // for stamp classification. Uses 50% of monthly rent as threshold to
+    // accommodate partial payments while excluding obvious test amounts.
+    const minRentPaise = Math.floor((tenancy.monthly_rent_paise ?? 0) * 0.5);
+
     for (const p of paymentList) {
       // payment_month is stored as "YYYY-MM-01"; extract "YYYY-MM"
       const monthKey = p.payment_month
@@ -207,6 +212,9 @@ serve(async (req: Request) => {
         : null;
 
       if (!monthKey) continue;
+
+      // Skip test payments — ₹10 test transactions shouldn't count as rent paid
+      if (p.rent_amount_paise < minRentPaise) continue;
 
       // Prefer the most terminal status: success > processing > initiated
       const existing = paymentsByMonth.get(monthKey);

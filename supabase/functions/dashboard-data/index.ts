@@ -357,11 +357,15 @@ serve(async (req: Request) => {
 
     let allTenancyPayments: any[] = [];
     if (tenancy?.id) {
+      // Filter out test payments (e.g. ₹10) — only real rent payments count.
+      // Uses 50% of monthly rent as threshold.
+      const minRentPaise = Math.floor((tenancy.monthly_rent_paise ?? 0) * 0.5);
       const { data: stampPayments } = await supabase
         .from("payments")
-        .select("payment_month, paid_at, status")
+        .select("payment_month, paid_at, status, rent_amount_paise")
         .eq("tenancy_id", tenancy.id)
         .in("status", ["success", "processing", "initiated"])
+        .gte("rent_amount_paise", minRentPaise)
         .order("payment_month", { ascending: true });
       allTenancyPayments = stampPayments ?? [];
     }

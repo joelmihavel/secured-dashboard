@@ -634,6 +634,7 @@ export function mapCashbackModule(
   cashback: CashbackBalance | null,
   rawPayments: RawRecentPayment[],
   stamps?: Array<{ status: string }> | null,
+  dashboardStamps?: { current_month_status: string; summary: { total_months: number } } | null,
 ): MappedCashbackModule {
   // ── Module state ──────────────────────────────────────────────
   const vs = tenancy?.verification_status;
@@ -664,8 +665,16 @@ export function mapCashbackModule(
   // BUG 1 FIX: Derive chart from stamps (already computed in IST on backend)
   // instead of from rawPayments (limited to 5 by dashboard-data query).
   // This also fixes Bug 3 (timezone), Bug 4 (refunded), and WARN 15/17/19.
+  //
+  // Fallback: when stamps haven't loaded yet, use dashboard-data's
+  // current_month_status to show at least the current month correctly
+  // (prevents all-gray chart while stamps query is in flight).
   const cutoffDay = tenancy?.cashback_cutoff_day ?? 7;
-  const chartBars = computeChartBars(stamps);
+  let effectiveStamps = stamps;
+  if ((!stamps || stamps.length === 0) && dashboardStamps?.current_month_status) {
+    effectiveStamps = [{ status: dashboardStamps.current_month_status }];
+  }
+  const chartBars = computeChartBars(effectiveStamps);
 
   // ── Announcement pill (above chart) — always shown per Figma ──
   const monthlyDiscount = Math.round(monthlyRent * discountRate);
