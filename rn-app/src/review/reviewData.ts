@@ -113,8 +113,17 @@ const reviewResponses: Record<string, unknown> = {
     },
   },
 
-  // ─── Payment: Initiate ───
+  // ─── Payment: Initiate (both gateways — app calls whichever is configured) ───
   'initiate-payment': {
+    payment_id: 'review-pay-new',
+    txn_id: 'review-txn-001',
+    total_amount_paise: 2500000,
+    cashback_applied_paise: 20000,
+    convenience_fee_paise: 0,
+    fee_billing_model: 'included',
+    demo_mode: true,
+  },
+  'initiate-cashfree-payment': {
     payment_id: 'review-pay-new',
     txn_id: 'review-txn-001',
     total_amount_paise: 2500000,
