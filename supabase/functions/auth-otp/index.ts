@@ -296,7 +296,7 @@ async function handleRouteOtp(
           "Content-Type": "application/json",
           "apikey": supabaseAnonKey,
         },
-        body: JSON.stringify({ phone: normalizePhoneE164(phoneWithCountryCode) }),
+        body: JSON.stringify({ phone: normalizePhoneE164(phoneWithCountryCode), createUser: false }),
       });
       otpTriggered = otpResponse.ok;
       if (!otpTriggered) {
