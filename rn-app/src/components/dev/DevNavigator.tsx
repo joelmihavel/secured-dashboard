@@ -167,7 +167,7 @@ const SECTIONS: Section[] = [
   {
     label: 'Setup',
     screens: [
-      { name: 'Add Bank', path: '/(setup)/add-bank' },
+      { name: 'Add Bank (Post-Approval)', path: '/(setup)/add-bank' },
       { name: 'Add Utility Bill', path: '/(setup)/add-utility' },
       { name: 'Invite Landlord', path: '/(setup)/invite-landlord' },
     ],
@@ -192,11 +192,13 @@ const SECTIONS: Section[] = [
     label: 'Agreement',
     screens: [
       { name: 'Upload Agreement', path: '/(agreement)/upload' },
+      { name: 'Add Bank (Pre-Waitlist)', path: '/(agreement)/add-bank-details' },
     ],
   },
   {
     label: 'System',
     screens: [
+      { name: 'Screen Picker (Full)', path: '/(dev)/screen-picker' },
       { name: 'Critical Update Preview', path: '/(dev)/critical-update-preview' },
     ],
   },

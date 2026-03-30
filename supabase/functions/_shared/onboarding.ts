@@ -302,7 +302,7 @@ async function runDeferredBankNameMatching(
   //    no tenancy existed yet, so name matching was deferred.
   const { data: pendingBanks, error: bankQueryError } = await supabase
     .from("bank_accounts")
-    .select("id, verified_account_holder_name, penny_drop_status, agreement_name_match_details")
+    .select("id, verified_account_holder_name, pan_registered_name, pan_verified, pan_verification_details, penny_drop_status, agreement_name_match_details")
     .eq("user_id", userId)
     .eq("party_type", "landlord")
     .eq("is_primary", true)
@@ -367,6 +367,38 @@ async function runDeferredBankNameMatching(
     `[onboarding] Deferred name match for bank ${bank.id}: matched=${nameMatched}, score=${matchResult.score}`,
   );
 
+  // 4b. Run PAN name matching if PAN was verified pre-waitlist
+  let panNameMatched: boolean | null = null;
+  let panMatchScore: number | null = null;
+  if (bank.pan_registered_name && bank.pan_verified) {
+    try {
+      const panMatchResult = await matchAgainstAgreementNames({
+        verifiedName: bank.pan_registered_name,
+        candidateNames: resolved.names,
+        context: "pan_verification",
+      });
+      panNameMatched = panMatchResult.matched;
+      panMatchScore = panMatchResult.score;
+
+      await supabase.from("bank_accounts").update({
+        pan_name_matched: panMatchResult.matched,
+        pan_name_match_score: panMatchResult.score,
+        pan_verification_details: {
+          ...(typeof bank.pan_verification_details === 'object' ? bank.pan_verification_details : {}),
+          ...panMatchResult.details,
+          deferred: true,
+          matched_at: new Date().toISOString(),
+        },
+      }).eq("id", bank.id);
+
+      console.log(
+        `[onboarding] Deferred PAN name match for bank ${bank.id}: matched=${panNameMatched}, score=${panMatchScore}`,
+      );
+    } catch (panErr) {
+      console.warn("[onboarding] Deferred PAN name matching failed (non-fatal):", panErr);
+    }
+  }
+
   // 5. Always set bank_verified on tenancy — penny drop verified the account.
   //    If name doesn't match, flag risk on waitlist entry for admin review.
   //    Admin approval = manual verification override.
@@ -379,16 +411,28 @@ async function runDeferredBankNameMatching(
     })
     .eq("id", tenancyId);
 
-  // Flag risk on waitlist entry if name mismatch — admin sees this during review
+  // Flag risk on waitlist entry if bank or PAN name mismatch — admin sees this during review
+  const riskFlags: any[] = [];
   if (!nameMatched) {
-    const riskFlag = {
+    riskFlags.push({
       type: "bank_name_mismatch",
       bank_holder: bank.verified_account_holder_name,
       agreement_landlords: resolved.names,
       match_score: matchResult.score,
       flagged_at: new Date().toISOString(),
-    };
-    // Append to existing risk_factors array
+    });
+  }
+  if (panNameMatched === false) {
+    riskFlags.push({
+      type: "pan_name_mismatch",
+      pan_registered_name: bank.pan_registered_name,
+      agreement_landlords: resolved.names,
+      match_score: panMatchScore,
+      flagged_at: new Date().toISOString(),
+    });
+  }
+
+  if (riskFlags.length > 0) {
     const { data: waitlistEntry } = await supabase
       .from("waitlist_entries")
       .select("risk_factors")
@@ -399,15 +443,13 @@ async function runDeferredBankNameMatching(
     await supabase
       .from("waitlist_entries")
       .update({
-        risk_factors: [...existingFactors, riskFlag],
-        risk_level: "high", // Escalate to high if name mismatch
+        risk_factors: [...existingFactors, ...riskFlags],
+        risk_level: "high",
       })
       .eq("user_id", userId);
 
-    console.warn(
-      `[onboarding] Bank name mismatch flagged as risk for user ${userId}: ` +
-      `bank="${bank.verified_account_holder_name}" vs landlords=${resolved.names.join(", ")}`,
-    );
+    const types = riskFlags.map(f => f.type).join(", ");
+    console.warn(`[onboarding] Name mismatch flagged for user ${userId}: ${types}`);
   }
 
   // Attempt user_status advancement (approved -> active) — no-ops if not yet approved

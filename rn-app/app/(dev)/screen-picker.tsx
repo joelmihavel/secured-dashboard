@@ -24,7 +24,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors, typography } from '@/src/theme';
 
 // Set to true to bypass screen picker and use the normal journey flow.
-// The floating DevNavigator FAB (with Jump buttons) is always available.
+// The actual dev navigator is src/components/dev/DevNavigator.tsx (the FAB bottom sheet).
+// This screen-picker route is a LEGACY alternative — keep disabled.
 export const DISABLE_SCREEN_PICKER = true;
 
 // Set to a route path to jump directly to that screen on launch (e.g. '/(auth)/splash')

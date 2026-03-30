@@ -37,7 +37,7 @@ import { TabSwitcher } from '@/src/components/home';
 import { DottedGridPattern } from '@/src/components/patterns/DottedGridPattern';
 import { useVerifyBank, useVerifyUpiVpa, useVerifyPan, useDashboard, validateAccountNumber, validateIfscCode, validateUpiVpa } from '@/src/hooks';
 import { useUploadStore } from '@/src/stores/upload';
-import type { BankVerificationResponse, UpiVerificationResponse, PanVerificationResponse, SetupError, PaymentMethodType } from '@/src/types/setup';
+import type { BankVerificationResponse, UpiVerificationResponse, PanVerificationResponse, SetupError, SetupPaymentMethodType } from '@/src/types/setup';
 import { colors } from '@/src/theme';
 
 const PAYMENT_METHOD_TABS = [
@@ -201,7 +201,7 @@ export default function AddBankScreen({ preWaitlist = false }: AddBankProps) {
 
   // Payment method selector — default based on rent amount
   const rent = tenancy?.monthly_rent ?? 0;
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethodType>(
+  const [paymentMethod, setPaymentMethod] = useState<SetupPaymentMethodType>(
     rent >= 100000 ? 'bank' : 'upi'
   );
 
@@ -271,7 +271,7 @@ export default function AddBankScreen({ preWaitlist = false }: AddBankProps) {
 
   // Method switch — resets all form/verification state
   const handleMethodSwitch = useCallback((tabId: string) => {
-    setPaymentMethod(tabId as PaymentMethodType);
+    setPaymentMethod(tabId as SetupPaymentMethodType);
     setScreenState('form');
     setApiError(null);
     setErrors({});
@@ -655,15 +655,15 @@ export default function AddBankScreen({ preWaitlist = false }: AddBankProps) {
               />
             )}
 
-            <Text style={styles.footerText}>
-              PAN is required for rent compliance and verification.
-            </Text>
-
             {preWaitlist && (
               <TouchableOpacity onPress={handleSkip} style={styles.skipButton}>
                 <Text style={styles.skipText}>I'll do this later</Text>
               </TouchableOpacity>
             )}
+
+            <Text style={styles.footerText}>
+              PAN is required for rent compliance and verification.
+            </Text>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -803,7 +803,7 @@ const styles = StyleSheet.create({
   },
 
   // Skip (pre-waitlist)
-  skipButton: { padding: 12 },
+  skipButton: { paddingVertical: 4, paddingHorizontal: 12 },
   skipText: {
     fontFamily: 'PlusJakartaSans-Medium',
     fontSize: 14, lineHeight: 20,
@@ -818,5 +818,6 @@ const styles = StyleSheet.create({
     color: FIGMA.footer,
     textAlign: 'left',
     alignSelf: 'flex-start',
+    marginBottom: 24,
   },
 });
