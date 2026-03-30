@@ -679,12 +679,7 @@ export function mapCashbackModule(
   const announcementText = `💰  Save ₹${monthlyDiscount.toLocaleString('en-IN')} by paying your rent on time`;
 
   // ── Info text (below chart) — always shown per Figma ─────────
-  let infoText: string;
-  if (isVerified) {
-    infoText = 'ℹ️  Missed payments reduce your payout';
-  } else {
-    infoText = 'ℹ️  1% cashback applied on every on-time payment';
-  }
+  const infoText = 'ℹ️  1% cashback applied on every on-time payment';
 
   // ── Setup steps (4-state: not_started → active → in_progress → completed) ──
   const bankDone = vs?.bank_verified ?? false;
