@@ -38,11 +38,30 @@ export function usePaymentRecovery() {
         return;
       }
 
-      // Recent payment in progress — resume polling on status screen
-      router.replace({
-        pathname: '/(payment)/status',
-        params: { paymentId: lastPaymentId, initialStatus: 'pending' },
-      } as never);
+      // Check if payment already reached terminal state before resuming
+      // (handles case where app was killed after success but before persist completed)
+      const checkAndRecover = async () => {
+        try {
+          const { callEdgeFunction } = await import('@/src/services/supabase/client');
+          const { data } = await callEdgeFunction<{ data: { status: string } }>(
+            `check-payment-status?payment_id=${lastPaymentId}`, {}, true, 'GET'
+          );
+          const serverStatus = data?.data?.status;
+          if (serverStatus === 'success' || serverStatus === 'failed' || serverStatus === 'refunded') {
+            // Already terminal — don't show status screen again
+            clearLastPayment();
+            return;
+          }
+        } catch {
+          // Network error — fall through to recovery screen
+        }
+        // Still in progress — resume polling on status screen
+        router.replace({
+          pathname: '/(payment)/status',
+          params: { paymentId: lastPaymentId, initialStatus: 'pending' },
+        } as never);
+      };
+      checkAndRecover();
     };
 
     // Wait for Zustand persist middleware to hydrate from SecureStore
