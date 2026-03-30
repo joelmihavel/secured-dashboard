@@ -14,7 +14,7 @@
 import { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.47.10";
 import { maskAadhaar, maskPan } from "./validation.ts";
 import { extractFirstName } from "./name-utils.ts";
-import { computeRisk } from "./risk-utils.ts";
+import { recomputeAndStoreRisk } from "./risk-utils.ts";
 import type { Mobile360IdentityData } from "./cashfree-m360-otp.ts";
 
 // ==============================================
@@ -184,20 +184,7 @@ export async function processM360IdentityResult(
 
     // Recompute risk now that M360 data is available
     try {
-      const { data: waitlistEntry } = await supabase
-        .from("waitlist_entries")
-        .select("id")
-        .eq("user_id", userId)
-        .maybeSingle();
-
-      if (waitlistEntry) {
-        const riskResult = await computeRisk(userId, supabase);
-        await supabase.from("waitlist_entries").update({
-          risk_level: riskResult.risk_level,
-          risk_factors: riskResult.risk_factors,
-          risk_computed_at: now,
-        }).eq("user_id", userId);
-      }
+      await recomputeAndStoreRisk(userId, supabase);
     } catch (riskError) {
       console.error("[m360-identity-processor] Risk recomputation failed (non-fatal):", riskError);
     }

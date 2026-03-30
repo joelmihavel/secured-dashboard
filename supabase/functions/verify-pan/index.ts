@@ -34,6 +34,7 @@ import {
 } from "../_shared/name-match-service.ts";
 import { generateCfSignature } from "../_shared/cashfree-m360-otp.ts";
 import { createVendor, getVendor, CashfreeError } from "../_shared/cashfree-easysplit.ts";
+import { recomputeAndStoreRisk } from "../_shared/risk-utils.ts";
 
 // ==============================================
 // CONFIGURATION
@@ -395,6 +396,13 @@ serve(async (req: Request) => {
           matched_landlord_name: matchResult.matchedName,
         }
       );
+    }
+
+    // Recompute risk after PAN verification
+    try {
+      await recomputeAndStoreRisk(userId, supabase);
+    } catch (riskErr) {
+      console.error("[verify-pan] Risk recompute failed (non-fatal):", riskErr);
     }
 
     // Build message

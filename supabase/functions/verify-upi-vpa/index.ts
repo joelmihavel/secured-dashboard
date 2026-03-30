@@ -34,6 +34,7 @@ import {
 } from "../_shared/name-match-service.ts";
 import { generateCfSignature } from "../_shared/cashfree-m360-otp.ts";
 import { isTestUser } from "../_shared/demo-helpers.ts";
+import { recomputeAndStoreRisk } from "../_shared/risk-utils.ts";
 
 // ==============================================
 // CONFIGURATION
@@ -551,6 +552,13 @@ serve(async (req: Request) => {
           agreement_match_score: agreementMatchScore,
         }
       );
+    }
+
+    // Recompute risk after UPI verification
+    try {
+      await recomputeAndStoreRisk(userId, supabase);
+    } catch (riskErr) {
+      console.error("[verify-upi-vpa] Risk recompute failed (non-fatal):", riskErr);
     }
 
     const responseBody = {

@@ -1,4 +1,4 @@
-import { computeRisk } from "./risk-utils.ts";
+import { recomputeAndStoreRisk } from "./risk-utils.ts";
 import { isTestUser } from "./demo-helpers.ts";
 import { matchNameAgainstCandidates } from "./gemini.ts";
 import { resolveAgreementNames, matchAgainstAgreementNames } from "./name-match-service.ts";
@@ -105,15 +105,7 @@ export async function ensureWaitlistState(
 
   if (result.is_new) {
     try {
-      const riskResult = await computeRisk(userId, supabase);
-      await supabase
-        .from("waitlist_entries")
-        .update({
-          risk_level: riskResult.risk_level,
-          risk_factors: riskResult.risk_factors,
-          risk_computed_at: new Date().toISOString(),
-        })
-        .eq("id", result.entry_id);
+      await recomputeAndStoreRisk(userId, supabase);
     } catch (riskError) {
       console.error("[onboarding] Risk computation failed (non-fatal):", riskError);
     }
@@ -411,45 +403,13 @@ async function runDeferredBankNameMatching(
     })
     .eq("id", tenancyId);
 
-  // Flag risk on waitlist entry if bank or PAN name mismatch — admin sees this during review
-  const riskFlags: any[] = [];
-  if (!nameMatched) {
-    riskFlags.push({
-      type: "bank_name_mismatch",
-      bank_holder: bank.verified_account_holder_name,
-      agreement_landlords: resolved.names,
-      match_score: matchResult.score,
-      flagged_at: new Date().toISOString(),
-    });
-  }
-  if (panNameMatched === false) {
-    riskFlags.push({
-      type: "pan_name_mismatch",
-      pan_registered_name: bank.pan_registered_name,
-      agreement_landlords: resolved.names,
-      match_score: panMatchScore,
-      flagged_at: new Date().toISOString(),
-    });
-  }
-
-  if (riskFlags.length > 0) {
-    const { data: waitlistEntry } = await supabase
-      .from("waitlist_entries")
-      .select("risk_factors")
-      .eq("user_id", userId)
-      .maybeSingle();
-
-    const existingFactors = (waitlistEntry?.risk_factors as any[]) ?? [];
-    await supabase
-      .from("waitlist_entries")
-      .update({
-        risk_factors: [...existingFactors, ...riskFlags],
-        risk_level: "high",
-      })
-      .eq("user_id", userId);
-
-    const types = riskFlags.map(f => f.type).join(", ");
-    console.warn(`[onboarding] Name mismatch flagged for user ${userId}: ${types}`);
+  // Recompute risk — the expanded risk engine reads bank_accounts columns directly
+  // (pan_name_matched, agreement_name_matched, etc.) so we don't need to manually
+  // append risk_factors. This ensures one source of truth for risk computation.
+  try {
+    await recomputeAndStoreRisk(userId, supabase);
+  } catch (riskErr) {
+    console.error("[onboarding] Risk recompute after deferred matching failed (non-fatal):", riskErr);
   }
 
   // Attempt user_status advancement (approved -> active) — no-ops if not yet approved
