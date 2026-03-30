@@ -91,7 +91,7 @@ const SECTIONS: Section[] = [
     label: 'Setup',
     icon: 'S',
     screens: [
-      { name: 'Add Landlord Bank Details', path: '/(setup)/add-bank', description: 'Bank/UPI + PAN verification → dashboard' },
+      { name: 'Add Bank (Post-Approval)', path: '/(setup)/add-bank', description: 'Mandatory — Bank/UPI + PAN + name check → dashboard' },
       { name: 'Verify Your Address', path: '/(setup)/add-utility', description: 'Upload utility bill for address proof' },
       { name: 'Invite Landlord', path: '/(setup)/invite-landlord', description: 'Send WhatsApp invite to landlord' },
     ],
@@ -110,7 +110,7 @@ const SECTIONS: Section[] = [
     icon: 'D',
     screens: [
       { name: 'Upload Agreement', path: '/(agreement)/upload' },
-      { name: 'Add Bank Details (Pre-Waitlist)', path: '/(agreement)/add-bank-details', description: 'Bank/UPI + PAN, skip option → waitlist (no tenancy_id)' },
+      { name: 'Add Bank (Pre-Waitlist)', path: '/(agreement)/add-bank-details', description: 'Bank/UPI + PAN, skip option → waitlist (no tenancy_id)' },
     ],
   },
 ];
@@ -121,12 +121,14 @@ export default function ScreenPickerScreen() {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
   const [showFigmaNodes, setShowFigmaNodes] = useState(false);
-  const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>(() => {
-    // All sections expanded by default
-    const initial: Record<string, boolean> = {};
-    SECTIONS.forEach(s => { initial[s.label] = true; });
-    return initial;
-  });
+  const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({});
+
+  // Ensure all sections are expanded by default (including newly added ones)
+  const effectiveExpanded = useMemo(() => {
+    const result: Record<string, boolean> = {};
+    SECTIONS.forEach(s => { result[s.label] = expandedSections[s.label] ?? true; });
+    return result;
+  }, [expandedSections]);
 
   const toggleSection = (label: string) => {
     setExpandedSections(prev => ({ ...prev, [label]: !prev[label] }));
@@ -252,12 +254,12 @@ export default function ScreenPickerScreen() {
                   <Text style={styles.countText}>{section.screens.length}</Text>
                 </View>
                 <Text style={styles.chevron}>
-                  {expandedSections[section.label] ? '\u25B2' : '\u25BC'}
+                  {effectiveExpanded[section.label] ? '\u25B2' : '\u25BC'}
                 </Text>
               </View>
             </TouchableOpacity>
 
-            {expandedSections[section.label] && (
+            {effectiveExpanded[section.label] && (
               <View style={styles.screenList}>
                 {section.screens.map((screen, index) => (
                   <TouchableOpacity

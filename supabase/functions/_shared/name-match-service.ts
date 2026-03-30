@@ -321,3 +321,111 @@ export async function matchUtilityConsumerAgainstProperty(
     };
   }
 }
+
+// ==============================================
+// OPPORTUNISTIC NAME MATCH (PRE-WAITLIST RACE FIX)
+// ==============================================
+
+export interface OpportunisticMatchInput {
+  supabase: SupabaseClient;
+  userId: string;
+  bankAccountId: string;
+  verifiedName: string;
+  context: GeminiContext;
+  source: "verify-bank" | "verify-upi-vpa" | "verify-pan";
+}
+
+/**
+ * Opportunistic name matching for the pre-waitlist timing race.
+ *
+ * When hasTenancy=false, bank accounts are created with agreement_name_match
+ * skipped. The deferred matching in onboarding.ts runs when the tenancy is
+ * CREATED. But if the tenancy was already created (extraction completed while
+ * user was filling the bank form), deferred matching already ran and found
+ * nothing. This function catches that gap.
+ *
+ * Call this AFTER creating/updating a bank_accounts row when !hasTenancy
+ * and the verification succeeded. It checks if a tenancy now exists for
+ * the user and, if so, runs name matching immediately.
+ *
+ * This is intentionally non-fatal. If it fails, the deferred matching
+ * in onboarding.ts is the safety net for future tenancy creation.
+ */
+export async function runOpportunisticNameMatch(
+  input: OpportunisticMatchInput
+): Promise<void> {
+  const { supabase, userId, bankAccountId, verifiedName, context, source } = input;
+
+  try {
+    // Check if a tenancy was created while the user was on the bank screen
+    const { data: lateTenancy } = await supabase
+      .from("tenancies")
+      .select("id, user_id, landlord_name, extracted_rental_info_id")
+      .eq("user_id", userId)
+      .maybeSingle();
+
+    if (!lateTenancy || lateTenancy.user_id !== userId) return;
+
+    // Resolve landlord names from the tenancy/extraction
+    const resolved = await resolveAgreementNames(supabase, lateTenancy.id, "landlord");
+    if (resolved.names.length === 0) return;
+
+    // Run Gemini name matching (with Levenshtein fallback)
+    const matchResult = await matchAgainstAgreementNames({
+      verifiedName,
+      candidateNames: resolved.names,
+      context,
+    });
+
+    // Update bank account with real match result (replaces { skipped: true })
+    await supabase.from("bank_accounts").update({
+      agreement_name_matched: matchResult.matched,
+      agreement_name_match_score: matchResult.score,
+      agreement_name_match_details: {
+        ...matchResult.details,
+        opportunistic: true,
+        matched_at: new Date().toISOString(),
+      },
+    }).eq("id", bankAccountId);
+
+    // Always set bank_verified on tenancy -- penny drop confirmed the account.
+    // If name doesn't match, admin decides during approval review.
+    const matchedLandlordName = matchResult.matched ? matchResult.matchedName : null;
+    await supabase.from("tenancies").update({
+      bank_verified: true,
+      ...(matchedLandlordName && { landlord_name: matchedLandlordName }),
+    }).eq("id", lateTenancy.id);
+
+    // Flag risk on waitlist entry if name mismatch -- admin sees this during review
+    if (!matchResult.matched) {
+      const { data: we } = await supabase
+        .from("waitlist_entries")
+        .select("risk_factors")
+        .eq("user_id", userId)
+        .maybeSingle();
+
+      await supabase.from("waitlist_entries").update({
+        risk_factors: [...((we?.risk_factors as any[]) ?? []), {
+          type: "bank_name_mismatch",
+          bank_holder: verifiedName,
+          agreement_landlords: resolved.names,
+          match_score: matchResult.score,
+          flagged_at: new Date().toISOString(),
+        }],
+        risk_level: "high",
+      }).eq("user_id", userId);
+    }
+
+    // Attempt user_status advancement (approved -> active)
+    await supabase
+      .rpc("check_and_advance_to_active", { p_user_id: userId })
+      .catch(() => {});
+
+    console.log(
+      `[${source}] Opportunistic name match: matched=${matchResult.matched}, score=${matchResult.score}`
+    );
+  } catch (err) {
+    // Non-fatal -- deferred matching in onboarding.ts is the safety net
+    console.warn(`[${source}] Opportunistic matching failed (non-fatal):`, err);
+  }
+}

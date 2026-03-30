@@ -36,6 +36,7 @@ import {
   resolveAgreementNames,
   matchAgainstAgreementNames,
   calculateNameMatchScore,
+  runOpportunisticNameMatch,
 } from "../_shared/name-match-service.ts";
 import { generateCfSignature } from "../_shared/cashfree-m360-otp.ts";
 import { isTestUser } from "../_shared/demo-helpers.ts";
@@ -419,6 +420,20 @@ serve(async (req: Request) => {
         // Non-fatal — PAN can be re-verified separately
         console.warn("[verify-bank] Failed to copy PAN data (non-fatal):", panCopyError);
       }
+    }
+
+    // Opportunistic matching: if tenancy was created while user was on bank screen,
+    // run name matching now instead of waiting for deferred matching (which already ran).
+    if (!hasTenancy && bankAccount.verified) {
+      const nameForMatch = bankAccount.verified_account_holder_name || resolvedAccountHolderName;
+      await runOpportunisticNameMatch({
+        supabase,
+        userId,
+        bankAccountId: bankAccount.id,
+        verifiedName: nameForMatch,
+        context: "agreement_bank_verification",
+        source: "verify-bank",
+      });
     }
 
     // Update tenancy verification status if landlord account verified

@@ -30,6 +30,7 @@ import {
 import {
   resolveAgreementNames,
   matchAgainstAgreementNames,
+  runOpportunisticNameMatch,
 } from "../_shared/name-match-service.ts";
 import { generateCfSignature } from "../_shared/cashfree-m360-otp.ts";
 import { createVendor, getVendor, CashfreeError } from "../_shared/cashfree-easysplit.ts";
@@ -263,6 +264,19 @@ serve(async (req: Request) => {
     if (updateError) {
       console.error("[verify-pan] Failed to update bank account:", updateError);
       throw new AppError("Failed to save PAN verification result", "DB_ERROR", 500);
+    }
+
+    // Opportunistic matching: if tenancy was created while user was on PAN screen,
+    // run name matching now instead of waiting for deferred matching (which already ran).
+    if (!hasTenancy && panValid) {
+      await runOpportunisticNameMatch({
+        supabase,
+        userId,
+        bankAccountId: bank_account_id,
+        verifiedName: nameForMatching,
+        context: "pan_verification",
+        source: "verify-pan",
+      });
     }
 
     // Update tenancy pan_verified if matched (skip when no tenancy — pre-waitlist flow)

@@ -30,6 +30,7 @@ import {
 import {
   resolveAgreementNames,
   matchAgainstAgreementNames,
+  runOpportunisticNameMatch,
 } from "../_shared/name-match-service.ts";
 import { generateCfSignature } from "../_shared/cashfree-m360-otp.ts";
 import { isTestUser } from "../_shared/demo-helpers.ts";
@@ -486,6 +487,19 @@ serve(async (req: Request) => {
     if (insertError) {
       console.error("Failed to insert bank account:", insertError);
       throw new AppError("Failed to save bank account", "DB_ERROR", 500);
+    }
+
+    // Opportunistic matching: if tenancy was created while user was on bank screen,
+    // run name matching now instead of waiting for deferred matching (which already ran).
+    if (!hasTenancy && bankAccount.verified) {
+      await runOpportunisticNameMatch({
+        supabase,
+        userId,
+        bankAccountId: bankAccount.id,
+        verifiedName: nameAtBank,
+        context: "agreement_bank_verification",
+        source: "verify-upi-vpa",
+      });
     }
 
     // Update tenancy verification status if landlord account verified
