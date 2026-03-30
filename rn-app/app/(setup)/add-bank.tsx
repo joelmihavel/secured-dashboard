@@ -30,6 +30,7 @@ import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import Svg, { Path } from 'react-native-svg';
+import { Ionicons } from '@expo/vector-icons';
 
 import { AlertBanner, Text, TextInput, PrimaryButton, ScreenTitle, Logo } from '@/src/components';
 import { TabSwitcher } from '@/src/components/home';
@@ -214,6 +215,18 @@ export default function AddBankScreen() {
 
   // Screen state
   const [screenState, setScreenState] = useState<ScreenState>('form');
+
+  // If bank already verified (pre-waitlist + deferred name match succeeded),
+  // redirect to dashboard. Render-time guard prevents 1-frame flash.
+  const bankAlreadyVerified = tenancy?.verification_status?.bank_verified;
+  useEffect(() => {
+    if (bankAlreadyVerified && screenState === 'form') {
+      router.replace('/(main)' as never);
+    }
+  }, [bankAlreadyVerified, screenState, router]);
+  if (bankAlreadyVerified) {
+    return <View style={styles.container} />;
+  }
 
   const bankVerified = verificationResult?.verified === true;
   const panVerified = panResult?.panVerified === true;
@@ -590,22 +603,25 @@ export default function AddBankScreen() {
 
           {/* Button + Verification Summary Section */}
           <View style={styles.buttonSection}>
-            {/* Verified info rows — receipt below form, above button */}
-            {/* Verified Name receipt — universal for both UPI and Bank */}
-            {accountVerified && (
-              <>
-                <View style={styles.infoDivider} />
-                <View style={styles.infoSection}>
-                  <InfoRow
-                    label="Verified Name"
-                    value={isUpi
-                      ? (upiVerificationResult?.verifiedName ?? null)
-                      : (verificationResult?.verifiedName ?? null)}
-                    showDivider={false}
-                  />
+            {/* Verified Name — prominent green card for user confirmation */}
+            {accountVerified && (() => {
+              const name = isUpi
+                ? (upiVerificationResult?.verifiedName ?? null)
+                : (verificationResult?.verifiedName ?? null);
+              if (!name) return null;
+              return (
+                <View style={styles.verifiedNameCard}>
+                  <View style={styles.verifiedNameHeader}>
+                    <Ionicons name="checkmark-circle" size={18} color={colors.success.material} />
+                    <Text style={styles.verifiedNameLabel}>Account Holder</Text>
+                  </View>
+                  <Text style={styles.verifiedNameValue}>{name}</Text>
+                  <Text style={styles.verifiedNameHint}>
+                    Please confirm this is your landlord
+                  </Text>
                 </View>
-              </>
-            )}
+              );
+            })()}
 
             {allVerified ? (
               <PrimaryButton
@@ -730,7 +746,39 @@ const styles = StyleSheet.create({
   infoSection: { gap: 16 },
 
   // Button section — closer to form so it's visible on initial load
-  buttonSection: { gap: 16, marginTop: 32, alignItems: 'center' },
+  buttonSection: { gap: 16, marginTop: 24, alignItems: 'center' },
+
+  // Green verified name card — mirrors error banner pattern but green
+  verifiedNameCard: {
+    backgroundColor: 'rgba(70, 167, 88, 0.12)',
+    borderWidth: 1,
+    borderColor: 'rgba(70, 167, 88, 0.3)',
+    borderRadius: 8,
+    padding: 16,
+    gap: 4,
+    width: '100%',
+  },
+  verifiedNameHeader: {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    gap: 6,
+  },
+  verifiedNameLabel: {
+    fontFamily: 'PlusJakartaSans-Medium',
+    fontSize: 12, lineHeight: 20,
+    color: colors.success.material,
+  },
+  verifiedNameValue: {
+    fontFamily: 'PlusJakartaSans-SemiBold',
+    fontSize: 18, lineHeight: 28,
+    color: colors.white,
+    marginTop: 2,
+  },
+  verifiedNameHint: {
+    fontFamily: 'PlusJakartaSans-Regular',
+    fontSize: 12, lineHeight: 18,
+    color: colors.neutral[500],
+  },
 
   // Footer — Figma: 12px Regular #A9A9A9
   footerText: {

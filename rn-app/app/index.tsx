@@ -48,6 +48,7 @@ export const SCREENSHOT_PARAMS: Record<string, string> | null = null;
 type JourneyTarget =
   | '/(auth)/splash'
   | '/(agreement)/upload'
+  | '/(agreement)/add-bank-details'
   | '/(waitlist)'
   | '/(setup)/add-bank'
   | '/(main)'
@@ -117,7 +118,7 @@ async function queryUserStatus(userId: string): Promise<string | null> {
 function statusToTarget(userStatus: string): JourneyTarget | null {
   switch (userStatus) {
     case 'approved':
-      return '/(setup)/add-bank'; // Waitlist approved → start setup flow
+      return null; // Needs async bank_verified check — handled by caller
     case 'active':
       return '/(main)';
     case 'agreement_confirmed':
@@ -312,6 +313,15 @@ export default function Index() {
       const resolved = statusToTarget(userStatus);
       if (resolved) {
         setTarget(resolved);
+      } else if (userStatus === 'approved') {
+        // approved — check if bank already verified (deferred name matching succeeded)
+        const { data: tenancyRow } = await supabase
+          .from('tenancies')
+          .select('bank_verified')
+          .eq('user_id', userId)
+          .maybeSingle();
+
+        setTarget(tenancyRow?.bank_verified ? '/(main)' : '/(setup)/add-bank');
       } else {
         // signed_up — need to check extraction state to route correctly
         // First: check if there's a completed extraction awaiting backend review.
@@ -335,7 +345,12 @@ export default function Index() {
             // persisted state may still have both fields set.
             uploadState.dismissedExtractionId !== uploadState.extractionId
           ) {
-            setTarget('/(waitlist)');
+            // Upload done — check if bank step completed/skipped
+            if (uploadState.bankStepCompleted) {
+              setTarget('/(waitlist)');
+            } else {
+              setTarget('/(agreement)/add-bank-details');
+            }
           } else {
             // If extraction was dismissed but store wasn't fully persisted, clean up
             if (uploadState.dismissedExtractionId && uploadState.extractionId === uploadState.dismissedExtractionId) {

@@ -347,11 +347,11 @@ export async function verifyBank(
   request: BankVerificationRequest
 ): Promise<{ data: BankVerificationResponse | null; error: SetupError | null }> {
   // Map camelCase request to snake_case for edge function
-  const body = {
-    tenancy_id: request.tenancyId,
+  const body: Record<string, unknown> = {
     account_number: request.accountNumber,
     ifsc_code: request.ifscCode,
     party_type: request.partyType ?? 'landlord',
+    ...(request.tenancyId && { tenancy_id: request.tenancyId }),
     ...(request.accountHolderName && { account_holder_name: request.accountHolderName }),
     ...(request.existingBankAccountId && { existing_bank_account_id: request.existingBankAccountId }),
   };
@@ -408,10 +408,10 @@ export async function verifyBank(
 export async function verifyUpiVpa(
   request: UpiVerificationRequest
 ): Promise<{ data: UpiVerificationResponse | null; error: SetupError | null }> {
-  const body = {
-    tenancy_id: request.tenancyId,
+  const body: Record<string, unknown> = {
     upi_vpa: request.upiVpa.toLowerCase().trim(),
     party_type: request.partyType ?? 'landlord',
+    ...(request.tenancyId && { tenancy_id: request.tenancyId }),
   };
 
   const { data, error, errorBody } = await callEdgeFunction<RawVerifyUpiVpaResponse>(

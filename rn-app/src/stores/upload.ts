@@ -36,6 +36,9 @@ interface UploadState {
   /** Extraction ID the user explicitly abandoned via "Re-upload".
    *  useMountDiscovery skips this ID so it won't resurrect the old record. */
   dismissedExtractionId: string | null;
+  /** Whether user completed or skipped the pre-waitlist bank details step.
+   *  Prevents showing the bank screen again on cold-start routing. */
+  bankStepCompleted: boolean;
   _hasHydrated: boolean;
 }
 
@@ -55,6 +58,8 @@ interface UploadActions {
    *  Sets dismissedExtractionId WITHOUT clearing other state — safe to call
    *  before navigation. useMountDiscovery checks this to prevent resurrection. */
   dismissCurrentExtraction: () => void;
+  /** Mark the pre-waitlist bank step as completed or skipped. */
+  completeBankStep: () => void;
   isStale: () => boolean;
   setHasHydrated: (v: boolean) => void;
 }
@@ -140,6 +145,7 @@ const initialState: UploadState = {
   errorCode: null,
   errorMessage: null,
   dismissedExtractionId: null,
+  bankStepCompleted: false,
   _hasHydrated: false,
 };
 
@@ -214,6 +220,12 @@ export const useUploadStore = create<UploadStore>()(
           }
         }),
 
+      completeBankStep: () =>
+        set((state) => {
+          state.bankStepCompleted = true;
+          state.lastUpdatedAt = Date.now();
+        }),
+
       reset: () =>
         set((state) => {
           // Remember the abandoned extraction so useMountDiscovery won't resurrect it.
@@ -230,6 +242,7 @@ export const useUploadStore = create<UploadStore>()(
           state.lastUpdatedAt = 0;
           state.errorCode = null;
           state.errorMessage = null;
+          state.bankStepCompleted = false;
           // Note: _hasHydrated is NOT reset — it stays true once set
         }),
 
@@ -262,6 +275,7 @@ export const useUploadStore = create<UploadStore>()(
         errorCode: state.errorCode,
         errorMessage: state.errorMessage,
         dismissedExtractionId: state.dismissedExtractionId,
+        bankStepCompleted: state.bankStepCompleted,
       }),
       onRehydrateStorage: () => (state) => {
         // Auto-reset stale non-completed uploads on hydration

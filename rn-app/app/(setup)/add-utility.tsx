@@ -41,7 +41,7 @@ import {
   FlatList,
 } from 'react-native';
 import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
-import { useRouter, useLocalSearchParams } from 'expo-router';
+import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
@@ -71,7 +71,6 @@ const FIGMA_COLORS = {
 
 export default function AddUtilityScreen() {
   const router = useRouter();
-  const { reentry } = useLocalSearchParams<{ reentry?: string }>();
   const insets = useSafeAreaInsets();
   const verifyUtility = useVerifyUtility();
   const { tenancy } = useDashboard();
@@ -111,22 +110,20 @@ export default function AddUtilityScreen() {
     }
   }, [operators, selectedOperator]);
 
+  const landlordApproved = tenancy?.verification_status?.landlord_approved ?? false;
+
   const handleBack = useCallback(() => {
-    if (reentry) {
-      router.replace('/(main)' as never);
-    } else {
-      router.back();
-    }
-  }, [router, reentry]);
+    router.back();
+  }, [router]);
 
   const handleSkip = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    if (reentry) {
+    if (landlordApproved) {
       router.replace('/(main)' as never);
     } else {
       router.push('/(setup)/invite-landlord' as never);
     }
-  }, [router, reentry]);
+  }, [router, landlordApproved]);
 
   const handleConsumerNumberChange = useCallback((text: string) => {
     setConsumerNumber(text.replace(/\D/g, ''));
@@ -176,7 +173,7 @@ export default function AddUtilityScreen() {
           if (data.verified) {
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
             setTimeout(() => {
-              if (reentry) {
+              if (landlordApproved) {
                 router.replace('/(main)' as never);
               } else {
                 router.push('/(setup)/invite-landlord' as never);

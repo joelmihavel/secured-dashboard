@@ -24,6 +24,7 @@ export default function AgreementLayout() {
       }}
     >
       <Stack.Screen name="upload" />
+      <Stack.Screen name="add-bank-details" />
     </Stack>
   );
 }

@@ -58,7 +58,7 @@ const NAME_MATCH_THRESHOLD = 0.8;
 // ==============================================
 
 interface VerifyBankRequest {
-  tenancy_id: string;
+  tenancy_id?: string; // Optional — not present for pre-waitlist bank verification
   account_holder_name?: string; // Optional — populated from penny drop response if not provided
   account_number: string;
   ifsc_code: string;
@@ -86,7 +86,7 @@ interface CashfreePennyDropResponse {
 // ==============================================
 
 const requestSchema = {
-  tenancy_id: { required: true, type: "string" as const },
+  tenancy_id: { required: false, type: "string" as const },
   account_holder_name: { required: false, type: "string" as const, minLength: 2, maxLength: 100 },
   account_number: { required: true, type: "string" as const, minLength: 9, maxLength: 18 },
   ifsc_code: {
@@ -149,13 +149,15 @@ serve(async (req: Request) => {
       existing_bank_account_id,
     } = validatedBody;
 
+    const hasTenancy = !!tenancy_id;
+
     // Sanitize inputs
     const sanitizedIfsc = sanitizeIfsc(ifsc_code);
 
     // Generate idempotency key to prevent duplicate penny drops (which cost money)
     idempotencyKey = await generateIdempotencyKey(
       "verify-bank",
-      tenancy_id,
+      hasTenancy ? tenancy_id : userId,
       account_number,
       sanitizedIfsc,
       ...(existing_bank_account_id ? [existing_bank_account_id] : [])
@@ -191,26 +193,30 @@ serve(async (req: Request) => {
       "bank_account",
       undefined,
       {
-        tenancy_id,
+        tenancy_id: tenancy_id || "pre-waitlist",
         ifsc_code: sanitizedIfsc,
         account_number_masked: maskAccountNumber(account_number),
         party_type,
       }
     );
 
-    // Verify tenancy belongs to user
-    const { data: tenancy, error: tenancyError } = await supabase
-      .from("tenancies")
-      .select("id, user_id, landlord_name, extracted_rental_info_id")
-      .eq("id", tenancy_id)
-      .single();
+    // Verify tenancy belongs to user (skip when no tenancy_id — pre-waitlist flow)
+    let tenancy = null;
+    if (hasTenancy) {
+      const { data: tenancyData, error: tenancyError } = await supabase
+        .from("tenancies")
+        .select("id, user_id, landlord_name, extracted_rental_info_id")
+        .eq("id", tenancy_id)
+        .single();
 
-    if (tenancyError || !tenancy) {
-      throw new ValidationError("Tenancy not found", { tenancy_id: "Not found" });
-    }
+      if (tenancyError || !tenancyData) {
+        throw new ValidationError("Tenancy not found", { tenancy_id: "Not found" });
+      }
 
-    if (tenancy.user_id !== userId) {
-      throw new AppError("You don't have permission to modify this tenancy", "FORBIDDEN", 403);
+      if (tenancyData.user_id !== userId) {
+        throw new AppError("You don't have permission to modify this tenancy", "FORBIDDEN", 403);
+      }
+      tenancy = tenancyData;
     }
 
     // ── DEMO BYPASS ──────────────────────────────────────────────────
@@ -245,7 +251,7 @@ serve(async (req: Request) => {
         throw new AppError("Failed to save demo bank account", "DB_ERROR", 500);
       }
 
-      if (party_type === "landlord") {
+      if (hasTenancy && party_type === "landlord") {
         await supabase.from("tenancies").update({ bank_verified: true }).eq("id", tenancy_id);
       }
 
@@ -275,15 +281,18 @@ serve(async (req: Request) => {
     }
     // ── END DEMO BYPASS ──────────────────────────────────────────────
 
-    // Resolve landlord names from agreement (shared service)
-    const resolved = await resolveAgreementNames(supabase, tenancy_id, "landlord");
-    const allLandlordNames = resolved.names;
+    // Resolve landlord names from agreement (shared service) — skip when no tenancy
+    let allLandlordNames: string[] = [];
+    if (hasTenancy) {
+      const resolved = await resolveAgreementNames(supabase, tenancy_id!, "landlord");
+      allLandlordNames = resolved.names;
+    }
 
     // Safety reset: when editing an existing bank account, set bank_verified = false
     // BEFORE the penny drop call. This prevents a stale verified state if the penny
     // drop fails, times out, or the app crashes mid-flow. The flag gets set back to
     // true only on verification success (existing logic below).
-    if (existing_bank_account_id && party_type === "landlord") {
+    if (hasTenancy && existing_bank_account_id && party_type === "landlord") {
       await supabase
         .from("tenancies")
         .update({ bank_verified: false })
@@ -413,7 +422,7 @@ serve(async (req: Request) => {
     }
 
     // Update tenancy verification status if landlord account verified
-    if (party_type === "landlord" && bankAccount.verified) {
+    if (hasTenancy && party_type === "landlord" && bankAccount.verified) {
       const tenancyUpdate: Record<string, unknown> = { bank_verified: true };
       // Write back verified landlord name — this is the confirmed landlord whose bank we'll pay into
       if (matchedLandlordName) {

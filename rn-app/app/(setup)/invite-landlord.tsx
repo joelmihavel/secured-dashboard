@@ -39,7 +39,7 @@ import {
   Linking,
 } from 'react-native';
 import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
-import { useRouter, useLocalSearchParams } from 'expo-router';
+import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 
 import { Screen, AlertBanner, Text, PhoneInput, PrimaryButton, ScreenTitle, BackButton } from '@/src/components';
@@ -67,7 +67,6 @@ const FIGMA_COLORS = {
 
 export default function InviteLandlordScreen() {
   const router = useRouter();
-  const { reentry } = useLocalSearchParams<{ reentry?: string }>();
   const sendLandlordInvite = useSendLandlordInvite();
   const { tenancy } = useDashboard();
 
@@ -160,11 +159,7 @@ export default function InviteLandlordScreen() {
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
           setInviteSent(true);
           setTimeout(() => {
-            if (reentry) {
-              router.replace('/(main)' as never);
-            } else {
-              router.replace('/(main)' as never);
-            }
+            router.replace('/(main)' as never);
           }, 1500);
         },
         onError: (error: SetupError) => {
@@ -177,12 +172,8 @@ export default function InviteLandlordScreen() {
 
   const handleSkip = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    if (reentry) {
-      router.replace('/(main)' as never);
-    } else {
-      router.replace('/(main)' as never);
-    }
-  }, [router, reentry]);
+    router.replace('/(main)' as never);
+  }, [router]);
 
   const handleLearnMore = useCallback(() => {
     Linking.openURL('https://flent.in/secured/how-it-works');

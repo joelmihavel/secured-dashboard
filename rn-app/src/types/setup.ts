@@ -24,7 +24,7 @@ export type PaymentMethodType = 'bank' | 'upi';
 
 /** RN client request shape (camelCase) - mapped to snake_case for edge function */
 export interface BankVerificationRequest {
-  tenancyId: string;
+  tenancyId?: string; // Optional for pre-waitlist flow (no tenancy exists yet)
   accountHolderName?: string; // Optional — name comes from penny drop response
   accountNumber: string;
   ifscCode: string;
@@ -57,7 +57,7 @@ export interface BankVerificationResponse {
 
 /** RN client request shape (camelCase) - mapped to snake_case for edge function */
 export interface UpiVerificationRequest {
-  tenancyId: string;
+  tenancyId?: string; // Optional for pre-waitlist flow (no tenancy exists yet)
   upiVpa: string;
   partyType?: 'landlord' | 'tenant';
 }

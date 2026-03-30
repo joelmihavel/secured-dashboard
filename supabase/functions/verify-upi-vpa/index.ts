@@ -54,7 +54,7 @@ const UPI_VPA_PATTERN = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9]+$/;
 // ==============================================
 
 interface VerifyUpiVpaRequest {
-  tenancy_id: string;
+  tenancy_id?: string; // Optional — not present for pre-waitlist UPI verification
   upi_vpa: string;
   party_type?: "landlord" | "tenant";
 }
@@ -78,7 +78,7 @@ interface CashfreeUpiPennyDropResponse {
 // ==============================================
 
 const requestSchema = {
-  tenancy_id: { required: true, type: "string" as const },
+  tenancy_id: { required: false, type: "string" as const },
   upi_vpa: {
     required: true,
     type: "string" as const,
@@ -159,13 +159,15 @@ serve(async (req: Request) => {
       party_type = "landlord",
     } = validatedBody;
 
+    const hasTenancy = !!tenancy_id;
+
     // Normalize VPA to lowercase
     const normalizedVpa = upi_vpa.trim().toLowerCase();
 
     // Generate idempotency key to prevent duplicate penny drops (which cost money)
     idempotencyKey = await generateIdempotencyKey(
       "verify-upi-vpa",
-      tenancy_id,
+      hasTenancy ? tenancy_id : userId,
       normalizedVpa
     );
 
@@ -199,26 +201,30 @@ serve(async (req: Request) => {
       "bank_account",
       undefined,
       {
-        tenancy_id,
+        tenancy_id: tenancy_id || "pre-waitlist",
         upi_vpa: maskUpiVpa(normalizedVpa),
         party_type,
         verification_method: "upi_penny_drop",
       }
     );
 
-    // Verify tenancy belongs to user
-    const { data: tenancy, error: tenancyError } = await supabase
-      .from("tenancies")
-      .select("id, user_id, landlord_name, extracted_rental_info_id")
-      .eq("id", tenancy_id)
-      .single();
+    // Verify tenancy belongs to user (skip when no tenancy_id — pre-waitlist flow)
+    let tenancy = null;
+    if (hasTenancy) {
+      const { data: tenancyData, error: tenancyError } = await supabase
+        .from("tenancies")
+        .select("id, user_id, landlord_name, extracted_rental_info_id")
+        .eq("id", tenancy_id)
+        .single();
 
-    if (tenancyError || !tenancy) {
-      throw new ValidationError("Tenancy not found", { tenancy_id: "Not found" });
-    }
+      if (tenancyError || !tenancyData) {
+        throw new ValidationError("Tenancy not found", { tenancy_id: "Not found" });
+      }
 
-    if (tenancy.user_id !== userId) {
-      throw new AppError("You don't have permission to modify this tenancy", "FORBIDDEN", 403);
+      if (tenancyData.user_id !== userId) {
+        throw new AppError("You don't have permission to modify this tenancy", "FORBIDDEN", 403);
+      }
+      tenancy = tenancyData;
     }
 
     // -- DEMO BYPASS --------------------------------------------------------
@@ -261,7 +267,7 @@ serve(async (req: Request) => {
         throw new AppError("Failed to save demo bank account", "DB_ERROR", 500);
       }
 
-      if (party_type === "landlord") {
+      if (hasTenancy && party_type === "landlord") {
         await supabase.from("tenancies").update({ bank_verified: true }).eq("id", tenancy_id);
       }
 
@@ -290,9 +296,12 @@ serve(async (req: Request) => {
     }
     // -- END DEMO BYPASS ----------------------------------------------------
 
-    // Resolve landlord names from agreement (shared service)
-    const resolved = await resolveAgreementNames(supabase, tenancy_id, "landlord");
-    const allLandlordNames = resolved.names;
+    // Resolve landlord names from agreement (shared service) — skip when no tenancy
+    let allLandlordNames: string[] = [];
+    if (hasTenancy) {
+      const resolved = await resolveAgreementNames(supabase, tenancy_id!, "landlord");
+      allLandlordNames = resolved.names;
+    }
 
     // Call Cashfree UPI Penny Drop API
     const pennyDropResult = await callCashfreeUpiPennyDrop(normalizedVpa);
@@ -480,7 +489,7 @@ serve(async (req: Request) => {
     }
 
     // Update tenancy verification status if landlord account verified
-    if (party_type === "landlord" && bankAccount.verified) {
+    if (hasTenancy && party_type === "landlord" && bankAccount.verified) {
       const tenancyUpdate: Record<string, unknown> = { bank_verified: true };
       // Write back verified landlord name
       if (matchedLandlordName) {
