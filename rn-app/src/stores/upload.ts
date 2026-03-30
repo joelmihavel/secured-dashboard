@@ -242,7 +242,8 @@ export const useUploadStore = create<UploadStore>()(
           state.lastUpdatedAt = 0;
           state.errorCode = null;
           state.errorMessage = null;
-          state.bankStepCompleted = false;
+          // Note: bankStepCompleted is NOT reset — bank verification persists
+          // across re-uploads. The DB row exists regardless of upload state.
           // Note: _hasHydrated is NOT reset — it stays true once set
         }),
 

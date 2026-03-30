@@ -217,16 +217,13 @@ export default function AddBankScreen() {
   const [screenState, setScreenState] = useState<ScreenState>('form');
 
   // If bank already verified (pre-waitlist + deferred name match succeeded),
-  // redirect to dashboard. Render-time guard prevents 1-frame flash.
-  const bankAlreadyVerified = tenancy?.verification_status?.bank_verified;
+  // redirect to dashboard. Skip in dev mode — dev navigator needs direct access.
+  const bankAlreadyVerified = !__DEV__ && tenancy?.verification_status?.bank_verified;
   useEffect(() => {
     if (bankAlreadyVerified && screenState === 'form') {
       router.replace('/(main)' as never);
     }
   }, [bankAlreadyVerified, screenState, router]);
-  if (bankAlreadyVerified) {
-    return <View style={styles.container} />;
-  }
 
   const bankVerified = verificationResult?.verified === true;
   const panVerified = panResult?.panVerified === true;
@@ -444,6 +441,9 @@ export default function AddBankScreen() {
   const upiVerified = upiVerificationResult?.verified === true;
   const accountVerified = isUpi ? upiVerified : bankVerified;
   const allVerified = accountVerified && panVerified;
+  const verifiedName = isUpi
+    ? (upiVerificationResult?.verifiedName ?? null)
+    : (verificationResult?.verifiedName ?? null);
 
   const allFieldsFilled = isUpi
     ? upiVpa.length > 0 && panCard.length > 0
@@ -454,6 +454,11 @@ export default function AddBankScreen() {
   const bankFieldSuccess = bankVerified ? 'verified' : undefined;
   const upiFieldSuccess = upiVerified ? 'verified' : undefined;
   const panFieldSuccess = panVerified ? 'verified' : undefined;
+
+  // ── BANK ALREADY VERIFIED (pre-waitlist flow) — redirect to dashboard ──
+  if (bankAlreadyVerified) {
+    return <View style={styles.container} />;
+  }
 
   // ── LOADING STATE — Figma 4109:3579 ─────────────────────────────────────
   if (screenState === 'loading') {
@@ -604,24 +609,18 @@ export default function AddBankScreen() {
           {/* Button + Verification Summary Section */}
           <View style={styles.buttonSection}>
             {/* Verified Name — prominent green card for user confirmation */}
-            {accountVerified && (() => {
-              const name = isUpi
-                ? (upiVerificationResult?.verifiedName ?? null)
-                : (verificationResult?.verifiedName ?? null);
-              if (!name) return null;
-              return (
-                <View style={styles.verifiedNameCard}>
-                  <View style={styles.verifiedNameHeader}>
-                    <Ionicons name="checkmark-circle" size={18} color={colors.success.material} />
-                    <Text style={styles.verifiedNameLabel}>Account Holder</Text>
-                  </View>
-                  <Text style={styles.verifiedNameValue}>{name}</Text>
-                  <Text style={styles.verifiedNameHint}>
-                    Please confirm this is your landlord
-                  </Text>
+            {accountVerified && verifiedName && (
+              <View style={styles.verifiedNameCard}>
+                <View style={styles.verifiedNameHeader}>
+                  <Ionicons name="checkmark-circle" size={18} color={colors.success.material} />
+                  <Text style={styles.verifiedNameLabel}>Account Holder</Text>
                 </View>
-              );
-            })()}
+                <Text style={styles.verifiedNameValue}>{verifiedName}</Text>
+                <Text style={styles.verifiedNameHint}>
+                  Please confirm this is your landlord
+                </Text>
+              </View>
+            )}
 
             {allVerified ? (
               <PrimaryButton

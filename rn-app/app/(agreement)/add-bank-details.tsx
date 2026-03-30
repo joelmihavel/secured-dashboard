@@ -57,11 +57,13 @@ const FIGMA = {
 function LoadingRing() {
   const spin = useRef(new Animated.Value(0)).current;
   React.useEffect(() => {
-    Animated.loop(
+    const anim = Animated.loop(
       Animated.timing(spin, {
         toValue: 1, duration: 1200, easing: Easing.linear, useNativeDriver: true,
       })
-    ).start();
+    );
+    anim.start();
+    return () => anim.stop();
   }, [spin]);
   const rotate = spin.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '360deg'] });
   return (
@@ -317,7 +319,7 @@ export default function AddBankDetailsScreen() {
           <View style={styles.tabContainer}>
             <TabSwitcher
               tabs={PAYMENT_METHOD_TABS}
-              activeTab={paymentMethod}
+              activeTabId={paymentMethod}
               onTabChange={handleMethodSwitch}
               disabled={fieldsDisabled}
             />

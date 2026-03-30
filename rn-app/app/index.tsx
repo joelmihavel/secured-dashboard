@@ -26,8 +26,8 @@ import { getWaitlistStatus } from '@/src/services/api/waitlist';
 const DISABLE_SCREEN_PICKER = __DEV__ ? require('./(dev)/screen-picker').DISABLE_SCREEN_PICKER : true;
 const DEV_DIRECT_SCREEN = __DEV__ ? require('./(dev)/screen-picker').DEV_DIRECT_SCREEN : null;
 import { View, ActivityIndicator, StyleSheet } from 'react-native';
-import { Logo } from '@/src/components';
-import { colors } from '@/src/theme';
+import { Logo, Text, DottedGridPattern, Screen } from '@/src/components';
+import { colors, spacing, radius } from '@/src/theme';
 import { CriticalUpdateScreen } from '@/src/components/ui/CriticalUpdateScreen';
 import { useAuthContext } from '@/src/providers';
 import { useUpdatePolicy, clearUpdatePolicyCache } from '@/src/hooks/useUpdatePolicy';
@@ -240,7 +240,18 @@ export default function Index() {
         // Validate in background — if user_status changed, redirect
         queryUserStatus(userId).then(async (userStatus) => {
           if (!userStatus) return; // Network failed, keep cached route
-          const correctTarget = statusToTarget(userStatus);
+          let correctTarget = statusToTarget(userStatus);
+
+          // statusToTarget returns null for 'approved' (needs async bank check)
+          if (!correctTarget && userStatus === 'approved') {
+            const { data: tenancyRow } = await supabase
+              .from('tenancies')
+              .select('bank_verified')
+              .eq('user_id', userId)
+              .maybeSingle();
+            correctTarget = tenancyRow?.bank_verified ? '/(main)' : '/(setup)/add-bank';
+          }
+
           if (correctTarget && correctTarget !== cachedRoute) {
             console.log('[journey-router] Background validation: route changed', cachedRoute, '->', correctTarget);
             SecureStore.setItemAsync(LAST_ROUTE_KEY, correctTarget).catch(() => {});
@@ -328,7 +339,13 @@ export default function Index() {
         // If so, the upload is done — route to waitlist, not back to upload.
         const manualReview = await checkPendingExtraction(userId);
         if (manualReview) {
-          setTarget('/(waitlist)');
+          // Extraction complete — but check if bank step was done first
+          const { bankStepCompleted } = useUploadStore.getState();
+          if (bankStepCompleted) {
+            setTarget('/(waitlist)');
+          } else {
+            setTarget('/(agreement)/add-bank-details');
+          }
         } else {
           // Check upload store for async-processing vs upload
           const uploadState = useUploadStore.getState();
@@ -508,37 +525,51 @@ export default function Index() {
     );
   }
 
-  // OTA splash — matches native splash appearance with a subtle loader.
-  // Invisible behind native splash on cold start; visible as fallback if
-  // native splash hides before navigation completes (safety timeout).
+  // OTA splash — reuses beta-splash visual (dotted pattern + logo + badge).
+  // Visible as fallback if native splash hides before navigation completes.
   return (
-    <View style={otaSplashStyles.container}>
-      <View style={otaSplashStyles.logoArea}>
-        <Logo size={48} />
+    <Screen
+      padded={false} safeAreaTop={false} safeAreaBottom={false}
+      style={{ backgroundColor: colors.black[700] }}
+    >
+      <DottedGridPattern fadeMask={false} />
+      <View style={otaSplashStyles.container}>
+        <Logo size={40} />
+        <View style={otaSplashStyles.badge}>
+          <Text variant="bodySmMedium" style={otaSplashStyles.badgeText}>
+            BETA LAUNCH
+          </Text>
+        </View>
+        <ActivityIndicator
+          size="small"
+          color={colors.brand[500]}
+          style={otaSplashStyles.spinner}
+        />
       </View>
-      <ActivityIndicator
-        size="small"
-        color={colors.brand[500]}
-        style={otaSplashStyles.loader}
-      />
-    </View>
+    </Screen>
   );
 }
 
 const otaSplashStyles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.black[700], // #131313 — matches native splash
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  logoArea: {
-    flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  loader: {
+  badge: {
+    marginTop: 12,
+    backgroundColor: colors.brand[500],
+    borderRadius: radius.xs,
+    paddingHorizontal: spacing.xs,
+    paddingVertical: spacing.xxs,
+  },
+  badgeText: {
+    letterSpacing: -0.2,
+    color: colors.black[900],
+    textAlign: 'center',
+  },
+  spinner: {
     position: 'absolute',
-    bottom: 80, // Aesthetically placed towards bottom center
+    bottom: 80,
   },
 });

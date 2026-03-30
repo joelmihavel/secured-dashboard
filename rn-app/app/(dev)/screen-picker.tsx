@@ -110,6 +110,7 @@ const SECTIONS: Section[] = [
     icon: 'D',
     screens: [
       { name: 'Upload Agreement', path: '/(agreement)/upload' },
+      { name: 'Add Bank Details (Pre-Waitlist)', path: '/(agreement)/add-bank-details', description: 'Penny drop only, skip option → waitlist' },
     ],
   },
 ];
