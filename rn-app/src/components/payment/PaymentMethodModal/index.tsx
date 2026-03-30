@@ -193,6 +193,18 @@ export function PaymentMethodModal({
           cfOrderId: data.cfOrderId?.slice(0, 20),
           demoMode: data.demoMode,
         }));
+        if (data.demoMode) {
+          // Demo/test user — payment already marked as success server-side.
+          // Navigate directly to status screen (no PG SDK needed).
+          setLastPayment(data.paymentId);
+          setPaymentId(data.paymentId);
+          onClose?.();
+          router.replace({
+            pathname: '/(payment)/status',
+            params: { paymentId: data.paymentId, amount: String(data.totalAmountPaise || 0) },
+          });
+          return { paymentId: data.paymentId };
+        }
         if (data.cashfreeSessionId && data.cfOrderId) {
           setCashfreeSession(data.cashfreeSessionId, data.cfOrderId);
         } else if (data.payuParams) {
