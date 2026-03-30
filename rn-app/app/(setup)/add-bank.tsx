@@ -608,17 +608,11 @@ export default function AddBankScreen() {
 
           {/* Button + Verification Summary Section */}
           <View style={styles.buttonSection}>
-            {/* Verified Name — prominent green card for user confirmation */}
+            {/* Verified Name — compact green badge */}
             {accountVerified && verifiedName && (
-              <View style={styles.verifiedNameCard}>
-                <View style={styles.verifiedNameHeader}>
-                  <Ionicons name="checkmark-circle" size={18} color={colors.success.material} />
-                  <Text style={styles.verifiedNameLabel}>Account Holder</Text>
-                </View>
-                <Text style={styles.verifiedNameValue}>{verifiedName}</Text>
-                <Text style={styles.verifiedNameHint}>
-                  Please confirm this is your landlord
-                </Text>
+              <View style={styles.verifiedNameBadge}>
+                <Ionicons name="checkmark-circle" size={16} color={colors.success.material} />
+                <Text style={styles.verifiedNameText}>{verifiedName}</Text>
               </View>
             )}
 
@@ -747,36 +741,24 @@ const styles = StyleSheet.create({
   // Button section — closer to form so it's visible on initial load
   buttonSection: { gap: 16, marginTop: 24, alignItems: 'center' },
 
-  // Green verified name card — mirrors error banner pattern but green
-  verifiedNameCard: {
+  // Compact verified name badge — single line, green accent
+  verifiedNameBadge: {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    gap: 8,
     backgroundColor: 'rgba(70, 167, 88, 0.12)',
     borderWidth: 1,
     borderColor: 'rgba(70, 167, 88, 0.3)',
     borderRadius: 8,
-    padding: 16,
-    gap: 4,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
     width: '100%',
   },
-  verifiedNameHeader: {
-    flexDirection: 'row' as const,
-    alignItems: 'center' as const,
-    gap: 6,
-  },
-  verifiedNameLabel: {
+  verifiedNameText: {
     fontFamily: 'PlusJakartaSans-Medium',
-    fontSize: 12, lineHeight: 20,
-    color: colors.success.material,
-  },
-  verifiedNameValue: {
-    fontFamily: 'PlusJakartaSans-SemiBold',
-    fontSize: 18, lineHeight: 28,
+    fontSize: 14, lineHeight: 20,
     color: colors.white,
-    marginTop: 2,
-  },
-  verifiedNameHint: {
-    fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: 12, lineHeight: 18,
-    color: colors.neutral[500],
+    flex: 1,
   },
 
   // Footer — Figma: 12px Regular #A9A9A9

@@ -1,17 +1,17 @@
 /**
  * Pre-Waitlist Bank Details Screen
  *
- * Stripped-down bank verification screen shown AFTER agreement upload,
- * BEFORE joining the waitlist. Collects landlord bank/UPI details via
- * penny drop only (no PAN, no tenancy_id — extraction not done yet).
+ * Identical to /(setup)/add-bank but:
+ * - No tenancy_id (extraction not done yet — omitted from all API calls)
+ * - Navigate to /(waitlist) on confirm (not dashboard)
+ * - Skip option ("I'll do this later")
+ * - No progress bar (not part of numbered setup steps)
  *
- * Name matching runs later via deferred matching in onboarding.ts
- * when extraction completes and tenancy is created.
- *
- * User can skip — bank becomes mandatory post-approval if skipped.
+ * PAN + bank/UPI verification run normally via Cashfree penny drop.
+ * Name matching is deferred — runs when extraction completes on backend.
  */
 
-import React, { useCallback, useState, useRef } from 'react';
+import React, { useCallback, useState, useEffect, useRef } from 'react';
 import {
   View,
   StyleSheet,
@@ -28,12 +28,12 @@ import * as Haptics from 'expo-haptics';
 import Svg, { Path } from 'react-native-svg';
 import { Ionicons } from '@expo/vector-icons';
 
-import { Text, TextInput, PrimaryButton, ScreenTitle, Logo } from '@/src/components';
+import { AlertBanner, Text, TextInput, PrimaryButton, ScreenTitle, Logo } from '@/src/components';
 import { TabSwitcher } from '@/src/components/home';
 import { DottedGridPattern } from '@/src/components/patterns/DottedGridPattern';
-import { useVerifyBank, useVerifyUpiVpa, validateAccountNumber, validateIfscCode, validateUpiVpa } from '@/src/hooks';
+import { useVerifyBank, useVerifyUpiVpa, useVerifyPan, validateAccountNumber, validateIfscCode, validateUpiVpa } from '@/src/hooks';
 import { useUploadStore } from '@/src/stores/upload';
-import type { BankVerificationResponse, UpiVerificationResponse, SetupError, PaymentMethodType } from '@/src/types/setup';
+import type { BankVerificationResponse, UpiVerificationResponse, PanVerificationResponse, SetupError, PaymentMethodType } from '@/src/types/setup';
 import { colors } from '@/src/theme';
 
 const PAYMENT_METHOD_TABS = [
@@ -45,7 +45,12 @@ type ScreenState = 'form' | 'loading' | 'success' | 'failure';
 
 const FIGMA = {
   bg: colors.black[700],
+  footer: colors.neutral[500],
   white: colors.white,
+  infoLabel: '#878787',
+  infoValue: '#CBCBCB',
+  infoIcon: '#A6A6A6',
+  divider: '#4D4D4D',
   accent: '#FF9A6D',
   spinnerBg: '#202020',
   spinnerFg: '#FF9A6D',
@@ -53,38 +58,65 @@ const FIGMA = {
   loadingBody: '#CBCBCB',
 } as const;
 
+function isValidPanFormat(pan: string): boolean {
+  return /^[A-Z]{5}\d{4}[A-Z]$/.test(pan.toUpperCase());
+}
+
 // ── Loading Spinner ──────────────────────────────────────────────────
-function LoadingRing() {
-  const spin = useRef(new Animated.Value(0)).current;
-  React.useEffect(() => {
+function VerificationSpinner() {
+  const spinValue = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
     const anim = Animated.loop(
-      Animated.timing(spin, {
+      Animated.timing(spinValue, {
         toValue: 1, duration: 1200, easing: Easing.linear, useNativeDriver: true,
       })
     );
     anim.start();
     return () => anim.stop();
-  }, [spin]);
-  const rotate = spin.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '360deg'] });
+  }, [spinValue]);
+  const spin = spinValue.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '360deg'] });
   return (
-    <View style={loadingStyles.ringWrap}>
-      <View style={[loadingStyles.bgRing, { width: 148, height: 148, borderRadius: 74, borderWidth: 4, borderColor: FIGMA.spinnerBg }]} />
-      <Animated.View style={[loadingStyles.fgRing, { transform: [{ rotate }] }]}>
-        <Svg width={148} height={148} viewBox="0 0 148 148">
-          <Path
-            d="M74 4 A70 70 0 0 1 144 74"
-            stroke={FIGMA.spinnerFg} strokeWidth={4} strokeLinecap="round" fill="none"
-          />
+    <View style={spinnerStyles.container}>
+      <View style={spinnerStyles.bgRing} />
+      <Animated.View style={[spinnerStyles.fgRing, { transform: [{ rotate: spin }] }]}>
+        <Svg width={148} height={148} viewBox="0 0 148 148" fill="none">
+          <Path d="M74 6C111.555 6 142 36.4446 142 74" stroke={FIGMA.spinnerFg} strokeWidth={12} strokeLinecap="round" />
         </Svg>
       </Animated.View>
     </View>
   );
 }
 
-const loadingStyles = StyleSheet.create({
-  ringWrap: { width: 148, height: 148, justifyContent: 'center', alignItems: 'center' },
-  bgRing: { position: 'absolute' },
+const spinnerStyles = StyleSheet.create({
+  container: { width: 148, height: 148, alignItems: 'center', justifyContent: 'center' },
+  bgRing: { width: 148, height: 148, borderRadius: 74, borderWidth: 12, borderColor: FIGMA.spinnerBg, position: 'absolute' },
   fgRing: { position: 'absolute', width: 148, height: 148 },
+});
+
+// ── Verified Info Row (matches post-approval add-bank) ──────────────
+function InfoRow({ label, value, showDivider = true }: { label: string; value: string | null; showDivider?: boolean }) {
+  if (!value) return null;
+  return (
+    <>
+      <View style={infoStyles.row}>
+        <View style={infoStyles.labelGroup}>
+          <Text style={infoStyles.hash}>#</Text>
+          <Text style={infoStyles.label}>{label}</Text>
+        </View>
+        <Text style={infoStyles.value}>{value}</Text>
+      </View>
+      {showDivider && <View style={infoStyles.divider} />}
+    </>
+  );
+}
+
+const infoStyles = StyleSheet.create({
+  row: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 4 },
+  labelGroup: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  hash: { fontFamily: 'PlusJakartaSans-Regular', fontSize: 12, lineHeight: 20, color: FIGMA.infoLabel },
+  label: { fontFamily: 'PlusJakartaSans-Regular', fontSize: 12, lineHeight: 20, color: FIGMA.infoLabel },
+  value: { fontFamily: 'PlusJakartaSans-Regular', fontSize: 14, lineHeight: 20, color: FIGMA.infoValue },
+  divider: { height: StyleSheet.hairlineWidth, backgroundColor: FIGMA.divider },
 });
 
 // ── Main Screen ──────────────────────────────────────────────────────
@@ -94,35 +126,33 @@ export default function AddBankDetailsScreen() {
   const insets = useSafeAreaInsets();
   const verifyBankMutation = useVerifyBank();
   const verifyUpiMutation = useVerifyUpiVpa();
+  const verifyPanMutation = useVerifyPan();
   const completeBankStep = useUploadStore((s) => s.completeBankStep);
 
-  // Payment method selector — default to UPI
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethodType>('upi');
-
-  // Form state
   const [accountNumber, setAccountNumber] = useState('');
   const [ifscCode, setIfscCode] = useState('');
   const [upiVpa, setUpiVpa] = useState('');
+  const [panCard, setPanCard] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [apiError, setApiError] = useState<string | null>(null);
+  const [foundName, setFoundName] = useState<string | null>(null);
 
-  // Verification results
   const [verificationResult, setVerificationResult] = useState<BankVerificationResponse | null>(null);
   const [upiVerificationResult, setUpiVerificationResult] = useState<UpiVerificationResponse | null>(null);
+  const [panResult, setPanResult] = useState<PanVerificationResponse | null>(null);
 
-  // Screen state
   const [screenState, setScreenState] = useState<ScreenState>('form');
 
   const bankVerified = verificationResult?.verified === true;
-  const upiVerified = upiVerificationResult?.verified === true;
-  const isUpi = paymentMethod === 'upi';
-  const accountVerified = isUpi ? upiVerified : bankVerified;
+  const panVerified = panResult?.panVerified === true;
 
-  // Clear errors + verification on edit
   const clearVerification = useCallback(() => {
     setApiError(null);
+    setFoundName(null);
     setVerificationResult(null);
     setUpiVerificationResult(null);
+    setPanResult(null);
   }, []);
 
   const handleAccountNumberChange = useCallback((text: string) => {
@@ -143,13 +173,22 @@ export default function AddBankDetailsScreen() {
     clearVerification();
   }, [clearVerification]);
 
+  const handlePanCardChange = useCallback((text: string) => {
+    setPanCard(text.toUpperCase());
+    setErrors((prev) => { const { panCard: _, ...rest } = prev; return rest; });
+    setApiError(null);
+    setPanResult(null);
+  }, []);
+
   const handleMethodSwitch = useCallback((tabId: string) => {
     setPaymentMethod(tabId as PaymentMethodType);
     setScreenState('form');
     setApiError(null);
     setErrors({});
+    setFoundName(null);
     setVerificationResult(null);
     setUpiVerificationResult(null);
+    setPanResult(null);
   }, []);
 
   const validateAllFields = useCallback((): boolean => {
@@ -166,11 +205,41 @@ export default function AddBankDetailsScreen() {
         if (!vpaCheck.valid) newErrors.upiVpa = vpaCheck.message || 'Invalid UPI ID format';
       }
     }
+    if (!panCard.trim()) newErrors.panCard = 'Required';
+    else if (!isValidPanFormat(panCard)) newErrors.panCard = 'Invalid PAN format';
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
-  }, [paymentMethod, accountNumber, ifscCode, upiVpa]);
+  }, [paymentMethod, accountNumber, ifscCode, upiVpa, panCard]);
 
-  // Submit — penny drop only, no tenancy_id, no PAN
+  // PAN verification — no tenancy_id (pre-waitlist)
+  const firePanVerification = useCallback((bankAccountId: string) => {
+    verifyPanMutation.mutate(
+      { panNumber: panCard.toUpperCase(), bankAccountId },
+      {
+        onSuccess: (data) => {
+          setPanResult(data);
+          if (data.panVerified) {
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+            setScreenState('form');
+          } else {
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+            setApiError(data.message || "PAN verification failed");
+            setErrors((prev) => ({ ...prev, panCard: 'Incorrect PAN' }));
+            setScreenState('form');
+          }
+        },
+        onError: (error: SetupError) => {
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+          setApiError(error.message || 'PAN verification failed');
+          setErrors((prev) => ({ ...prev, panCard: 'Incorrect PAN' }));
+          setScreenState('form');
+          if (error.foundName) setFoundName(error.foundName);
+        },
+      }
+    );
+  }, [panCard, verifyPanMutation]);
+
+  // Submit — no tenancy_id in any API call
   const handleSubmit = useCallback(() => {
     if (!validateAllFields()) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
@@ -182,14 +251,24 @@ export default function AddBankDetailsScreen() {
     setScreenState('loading');
 
     if (paymentMethod === 'upi') {
+      const upiVerified = upiVerificationResult?.verified === true;
+      if (upiVerified && upiVerificationResult?.bankAccountId) {
+        setPanResult(null);
+        firePanVerification(upiVerificationResult.bankAccountId);
+        return;
+      }
+
+      setUpiVerificationResult(null);
+      setPanResult(null);
+
       verifyUpiMutation.mutate(
-        { upiVpa: upiVpa.toLowerCase().trim() }, // no tenancyId
+        { upiVpa: upiVpa.toLowerCase().trim() },
         {
           onSuccess: (data) => {
             setUpiVerificationResult(data);
             if (data.verified) {
               Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-              setScreenState('form');
+              firePanVerification(data.bankAccountId);
             } else {
               Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
               setApiError(data.message || 'UPI verification failed');
@@ -203,22 +282,31 @@ export default function AddBankDetailsScreen() {
             const fieldHint = error.code === 'UPI_VPA_INVALID' ? 'Invalid VPA' : 'Verification failed';
             setErrors((prev) => ({ ...prev, upiVpa: fieldHint }));
             setScreenState('form');
+            if (error.foundName) setFoundName(error.foundName);
           },
         }
       );
     } else {
+      if (bankVerified && verificationResult?.bankAccountId) {
+        setPanResult(null);
+        firePanVerification(verificationResult.bankAccountId);
+        return;
+      }
+
+      setVerificationResult(null);
+      setPanResult(null);
+
       verifyBankMutation.mutate(
         {
           accountNumber: accountNumber.replace(/\s/g, ''),
           ifscCode: ifscCode.toUpperCase(),
-          // no tenancyId — pre-waitlist flow
         },
         {
           onSuccess: (data) => {
             setVerificationResult(data);
             if (data.verified) {
               Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-              setScreenState('form');
+              firePanVerification(data.bankAccountId);
             } else {
               Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
               setApiError(data.message || 'Bank account verification failed');
@@ -235,60 +323,68 @@ export default function AddBankDetailsScreen() {
         }
       );
     }
-  }, [validateAllFields, paymentMethod, verifyBankMutation, verifyUpiMutation, accountNumber, ifscCode, upiVpa]);
+  }, [validateAllFields, paymentMethod, bankVerified, verificationResult?.bankAccountId, upiVerificationResult, firePanVerification, verifyBankMutation, verifyUpiMutation, accountNumber, ifscCode, upiVpa]);
 
-  // Confirm verified name → proceed to waitlist
+  // Confirm → waitlist
   const handleConfirm = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     completeBankStep();
     router.replace('/(waitlist)' as never);
   }, [router, completeBankStep]);
 
-  // Skip → proceed to waitlist without bank verification
+  // Skip → waitlist
   const handleSkip = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     completeBankStep();
     router.replace('/(waitlist)' as never);
   }, [router, completeBankStep]);
 
-  const fieldsDisabled = screenState === 'loading';
-  const allFieldsFilled = paymentMethod === 'upi'
-    ? upiVpa.trim().length > 0
-    : accountNumber.trim().length > 0 && ifscCode.trim().length > 0;
+  const isUpi = paymentMethod === 'upi';
+  const upiVerified = upiVerificationResult?.verified === true;
+  const accountVerified = isUpi ? upiVerified : bankVerified;
+  const allVerified = accountVerified && panVerified;
+  const verifiedName = isUpi
+    ? (upiVerificationResult?.verifiedName ?? null)
+    : (verificationResult?.verifiedName ?? null);
 
+  const allFieldsFilled = isUpi
+    ? upiVpa.length > 0 && panCard.length > 0
+    : accountNumber.length > 0 && ifscCode.length > 0 && panCard.length > 0;
+
+  const fieldsDisabled = screenState === 'loading';
   const bankFieldSuccess = bankVerified ? 'verified' : undefined;
   const upiFieldSuccess = upiVerified ? 'verified' : undefined;
+  const panFieldSuccess = panVerified ? 'verified' : undefined;
 
-  // ── Loading overlay ──
+  // ── LOADING STATE ──
   if (screenState === 'loading') {
     return (
       <View style={styles.container}>
         <DottedGridPattern fadeMask={false} />
+        <View style={[styles.loadingLogoRow, { paddingTop: insets.top + 48 }]}>
+          <Logo size={40} />
+        </View>
         <View style={styles.loadingContent}>
-          <LoadingRing />
-          <View style={{ gap: 12, alignItems: 'center' }}>
-            <Text style={styles.loadingTitle}>Verifying Details</Text>
-            <Text style={styles.loadingBody}>
-              {isUpi ? 'Checking your UPI ID...' : 'Verifying bank account details...'}
-            </Text>
-          </View>
+          <Text style={styles.loadingTitle}>
+            <Text style={styles.loadingTitleGray}>Verifying </Text>
+            <Text style={styles.loadingTitleAccent}>Details</Text>
+          </Text>
+          <VerificationSpinner />
+          <Text style={styles.loadingBody}>
+            {isUpi
+              ? 'Verifying the UPI ID and PAN with partners. This takes few seconds.'
+              : 'Verifying the bank account and PAN with partners. This takes few seconds.'}
+          </Text>
         </View>
       </View>
     );
   }
 
-  // ── Form / Success ──
-  const verifiedName = isUpi
-    ? (upiVerificationResult?.verifiedName ?? null)
-    : (verificationResult?.verifiedName ?? null);
-
+  // ── FORM STATE ──
   return (
     <View style={styles.container}>
       <DottedGridPattern fadeMask={false} />
-      <KeyboardAvoidingView
-        style={styles.flex}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      >
+      <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
         <ScrollView
           style={styles.flex}
           contentContainerStyle={{
@@ -297,35 +393,37 @@ export default function AddBankDetailsScreen() {
             paddingBottom: insets.bottom + 32,
           }}
           keyboardShouldPersistTaps="handled"
-          showsVerticalScrollIndicator={false}
+          showsVerticalScrollIndicator={true}
         >
           {/* Logo */}
-          <Logo size={32} style={{ marginBottom: 40 }} />
-
-          {/* Title */}
-          <View style={{ marginBottom: 8 }}>
-            <ScreenTitle
-              gray={accountVerified ? 'Details' : "Add your landlord's"}
-              accent={accountVerified ? 'Verified' : 'bank details'}
-            />
+          <View style={styles.logoContainer}>
+            <Logo size={32} />
           </View>
 
-          {/* Subtitle */}
-          <Text style={styles.subtitle}>
-            While we review your agreement
-          </Text>
+          {/* Title */}
+          <View style={styles.titleContainer}>
+            {allVerified ? (
+              <ScreenTitle gray="Details " accent="Verified" />
+            ) : (
+              <ScreenTitle gray="Add your landlord's " accent="bank details" />
+            )}
+          </View>
 
-          {/* Payment method tabs */}
-          <View style={styles.tabContainer}>
+          {/* Subtitle — pre-waitlist context */}
+          <Text style={styles.subtitle}>While we review your agreement</Text>
+
+          {/* Payment Method Selector */}
+          <View style={styles.selectorContainer}>
             <TabSwitcher
               tabs={PAYMENT_METHOD_TABS}
               activeTabId={paymentMethod}
               onTabChange={handleMethodSwitch}
-              disabled={fieldsDisabled}
+              disabled={screenState !== 'form'}
+              compact
             />
           </View>
 
-          {/* Error banner */}
+          {/* Error Banner */}
           {apiError && (
             <View style={styles.errorBannerWrap}>
               <View style={styles.errorBanner} accessibilityRole="alert">
@@ -334,7 +432,7 @@ export default function AddBankDetailsScreen() {
             </View>
           )}
 
-          {/* Form fields */}
+          {/* Form Inputs */}
           <View style={styles.formContainer}>
             {isUpi ? (
               <TextInput
@@ -343,15 +441,16 @@ export default function AddBankDetailsScreen() {
                 onChangeText={handleUpiVpaChange}
                 placeholder="e.g. name@oksbi"
                 error={errors.upiVpa}
+                errorDetail={foundName ? `Account holder: ${foundName}` : undefined}
                 success={upiFieldSuccess}
                 disabled={fieldsDisabled}
-                autoCapitalize="none"
                 keyboardType="email-address"
+                autoCapitalize="none"
               />
             ) : (
               <>
                 <TextInput
-                  label="Account number"
+                  label="Account Number"
                   value={accountNumber}
                   onChangeText={handleAccountNumberChange}
                   placeholder="e.g. 1234567890"
@@ -361,10 +460,10 @@ export default function AddBankDetailsScreen() {
                   keyboardType="number-pad"
                 />
                 <TextInput
-                  label="IFSC code"
+                  label="IFSC Code"
                   value={ifscCode}
                   onChangeText={handleIfscCodeChange}
-                  placeholder="e.g. SBIN0001234"
+                  placeholder="e.g. SBIN0002125"
                   error={errors.ifscCode}
                   success={bankFieldSuccess}
                   disabled={fieldsDisabled}
@@ -372,38 +471,40 @@ export default function AddBankDetailsScreen() {
                 />
               </>
             )}
+
+            <TextInput
+              label="PAN card"
+              value={panCard}
+              onChangeText={handlePanCardChange}
+              placeholder="e.g. CSNPM9874A"
+              error={errors.panCard}
+              success={panFieldSuccess}
+              disabled={fieldsDisabled}
+              autoCapitalize="characters"
+            />
           </View>
 
-          {/* Button + Verification Section */}
+          {/* Button + Verified Name Section */}
           <View style={styles.buttonSection}>
-            {/* Green verified name card */}
+            {/* Verified name — compact green badge */}
             {accountVerified && verifiedName && (
-              <View style={styles.verifiedNameCard}>
-                <View style={styles.verifiedNameHeader}>
-                  <Ionicons name="checkmark-circle" size={18} color={colors.success.material} />
-                  <Text style={styles.verifiedNameLabel}>Account Holder</Text>
-                </View>
-                <Text style={styles.verifiedNameValue}>{verifiedName}</Text>
-                <Text style={styles.verifiedNameHint}>
-                  Please confirm this is your landlord
-                </Text>
+              <View style={styles.verifiedNameBadge}>
+                <Ionicons name="checkmark-circle" size={16} color={colors.success.material} />
+                <Text style={styles.verifiedNameText}>{verifiedName}</Text>
               </View>
             )}
 
-            {accountVerified ? (
-              <PrimaryButton
-                title="Confirm & continue"
-                onPress={handleConfirm}
-              />
+            {allVerified ? (
+              <PrimaryButton title="Confirm & continue" onPress={handleConfirm} />
             ) : (
-              <PrimaryButton
-                title="Verify details"
-                onPress={handleSubmit}
-                disabled={!allFieldsFilled}
-              />
+              <PrimaryButton title="Verify details" onPress={handleSubmit} disabled={!allFieldsFilled} />
             )}
 
-            {/* Skip link */}
+            <Text style={styles.footerText}>
+              PAN is required for rent compliance and verification.
+            </Text>
+
+            {/* Skip link — pre-waitlist only */}
             <TouchableOpacity onPress={handleSkip} style={styles.skipButton}>
               <Text style={styles.skipText}>I'll do this later</Text>
             </TouchableOpacity>
@@ -414,98 +515,88 @@ export default function AddBankDetailsScreen() {
   );
 }
 
-// ── Styles ────────────────────────────────────────────────────────────
-
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: FIGMA.bg },
   flex: { flex: 1 },
 
+  loadingLogoRow: { alignItems: 'center' },
   loadingContent: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 48,
-    paddingHorizontal: 32,
+    flex: 1, alignItems: 'center', justifyContent: 'center',
+    gap: 48, paddingHorizontal: 32,
   },
-  loadingTitle: {
+  loadingTitle: { textAlign: 'center' },
+  loadingTitleGray: {
     fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: 24, lineHeight: 32,
+    fontSize: 32, lineHeight: 48, letterSpacing: -1,
     color: FIGMA.loadingTitle,
-    textAlign: 'center',
+  },
+  loadingTitleAccent: {
+    fontFamily: 'PlusJakartaSans-Regular',
+    fontSize: 32, lineHeight: 48, letterSpacing: -1,
+    color: FIGMA.accent,
   },
   loadingBody: {
     fontFamily: 'PlusJakartaSans-Regular',
     fontSize: 14, lineHeight: 20,
     color: FIGMA.loadingBody,
-    textAlign: 'center',
+    textAlign: 'center', maxWidth: 273,
   },
 
+  logoContainer: { alignSelf: 'flex-start', marginBottom: 40 },
+  titleContainer: { marginBottom: 8 },
   subtitle: {
     fontFamily: 'PlusJakartaSans-Regular',
     fontSize: 12, lineHeight: 20,
     color: colors.neutral[500],
     marginBottom: 32,
   },
-
-  tabContainer: { marginBottom: 24 },
+  selectorContainer: { marginBottom: 32, flexDirection: 'row', justifyContent: 'flex-start' },
 
   errorBannerWrap: { flexDirection: 'row', marginBottom: 24 },
   errorBanner: {
     backgroundColor: 'rgba(229, 72, 77, 0.12)',
-    borderWidth: 1,
-    borderColor: 'rgba(229, 72, 77, 0.3)',
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+    borderWidth: 1, borderColor: 'rgba(229, 72, 77, 0.3)',
+    borderRadius: 8, paddingHorizontal: 12, paddingVertical: 8,
   },
   errorBannerText: {
     fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: 12, lineHeight: 20,
-    color: '#E5484D',
+    fontSize: 12, lineHeight: 20, color: '#E5484D',
   },
 
   formContainer: { gap: 16 },
 
   buttonSection: { gap: 16, marginTop: 24, alignItems: 'center' },
 
-  // Green verified name card
-  verifiedNameCard: {
+  // Compact verified name badge — single line, green accent
+  verifiedNameBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
     backgroundColor: 'rgba(70, 167, 88, 0.12)',
     borderWidth: 1,
     borderColor: 'rgba(70, 167, 88, 0.3)',
     borderRadius: 8,
-    padding: 16,
-    gap: 4,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
     width: '100%',
   },
-  verifiedNameHeader: {
-    flexDirection: 'row' as const,
-    alignItems: 'center' as const,
-    gap: 6,
-  },
-  verifiedNameLabel: {
+  verifiedNameText: {
     fontFamily: 'PlusJakartaSans-Medium',
-    fontSize: 12, lineHeight: 20,
-    color: colors.success.material,
-  },
-  verifiedNameValue: {
-    fontFamily: 'PlusJakartaSans-SemiBold',
-    fontSize: 18, lineHeight: 28,
+    fontSize: 14, lineHeight: 20,
     color: colors.white,
-    marginTop: 2,
-  },
-  verifiedNameHint: {
-    fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: 12, lineHeight: 18,
-    color: colors.neutral[500],
+    flex: 1,
   },
 
-  // Skip
+  footerText: {
+    fontFamily: 'PlusJakartaSans-Regular',
+    fontSize: 12, lineHeight: 20,
+    color: FIGMA.footer, textAlign: 'left', alignSelf: 'flex-start',
+  },
+
   skipButton: { padding: 12 },
   skipText: {
     fontFamily: 'PlusJakartaSans-Medium',
     fontSize: 14, lineHeight: 20,
-    color: FIGMA.white,
-    textDecorationLine: 'underline',
+    color: FIGMA.white, textDecorationLine: 'underline',
   },
 });
