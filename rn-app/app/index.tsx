@@ -41,6 +41,15 @@ import { supabase } from '@/src/services/supabase/client';
 
 const LAST_ROUTE_KEY = 'flent_last_journey_target';
 
+/** Routes that are valid for caching. Must match the write set in the
+ *  navigation effect below. Agreement routes are transient — they re-resolve
+ *  from user_status on each cold start and should NOT be cached. */
+const VALID_CACHED_ROUTES = new Set<string>([
+  '/(main)',
+  '/(setup)/add-bank',
+  '/(waitlist)',
+]);
+
 // Global screenshot params for dev pipeline — set state for screens that need mock data
 // e.g. SCREENSHOT_PARAMS = { state: 'filled' } injects state into useScreenshotParams()
 export const SCREENSHOT_PARAMS: Record<string, string> | null = null;
@@ -122,6 +131,9 @@ function statusToTarget(userStatus: string): JourneyTarget | null {
     case 'active':
       return '/(main)';
     case 'agreement_confirmed':
+    // ^ No production code sets this status, but it exists as a defensive enum value.
+    // Backend recovery crons (extraction-recovery, pre-approval-audit) treat it
+    // the same as signed_up and auto-advance to waitlisted. Handle same as waitlisted.
     case 'waitlisted': {
       // If user is in an active upload flow and hasn't done bank step,
       // show bank screen before waitlist. Only applies to users currently
@@ -130,7 +142,7 @@ function statusToTarget(userStatus: string): JourneyTarget | null {
       if (!bankStepCompleted && uploadPhase !== 'idle' && extractionId) {
         return '/(agreement)/add-bank-details';
       }
-      return '/(waitlist)';
+      return null; // Deferred — caller checks requiresReupload via extraction query
     }
     case 'not_eligible':
       return '/(waitlist)';
@@ -230,11 +242,22 @@ export default function Index() {
         if (lastPaymentId && lastPaymentTimestamp) {
           const elapsed = Date.now() - lastPaymentTimestamp;
           if (elapsed <= 5 * 60 * 1000) {
+            // Verify payment belongs to current user (prevents cross-user recovery)
+            const { data: paymentRow } = await supabase
+              .from('payments')
+              .select('id')
+              .eq('id', lastPaymentId)
+              .eq('user_id', userId)
+              .maybeSingle();
+            if (!paymentRow) {
+              clearLastPayment();
+            } else {
             // Recent payment in progress — resume polling on status screen
             clearLastPayment(); // Clear immediately so next cold start won't redirect again
             setTarget(`/(payment)/status?paymentId=${lastPaymentId}&initialStatus=pending`);
             setJourneyResolved(true);
             return;
+            }
           }
           clearLastPayment();
         }
@@ -245,7 +268,7 @@ export default function Index() {
       // The cached route is validated in background; if stale, user gets
       // redirected on next render cycle.
       const cachedRoute = await SecureStore.getItemAsync(LAST_ROUTE_KEY).catch(() => null);
-      if (cachedRoute && (cachedRoute === '/(main)' || cachedRoute === '/(setup)/add-bank' || cachedRoute === '/(waitlist)')) {
+      if (cachedRoute && (VALID_CACHED_ROUTES.has(cachedRoute))) {
         console.log('[journey-router] Fast path: using cached route', cachedRoute);
         setTarget(cachedRoute);
         setJourneyResolved(true);
@@ -263,19 +286,26 @@ export default function Index() {
           }
           let correctTarget = statusToTarget(userStatus);
 
-          // statusToTarget returns null for 'approved' (needs async bank check)
+          // statusToTarget returns null for deferred statuses (need async checks)
           if (!correctTarget && userStatus === 'approved') {
             const { data: tenancyRow } = await supabase
               .from('tenancies')
               .select('bank_verified')
               .eq('user_id', userId)
               .maybeSingle();
-            correctTarget = tenancyRow?.bank_verified ? '/(main)' : '/(setup)/add-bank';
+            correctTarget = !tenancyRow ? '/(waitlist)' : tenancyRow.bank_verified ? '/(main)' : '/(setup)/add-bank';
+          } else if (!correctTarget && (userStatus === 'waitlisted' || userStatus === 'agreement_confirmed')) {
+            // Background validation for waitlisted — don't need reupload check here,
+            // just default to waitlist (reupload redirect happens on the waitlist screen)
+            correctTarget = '/(waitlist)';
           }
 
           if (correctTarget && correctTarget !== cachedRoute) {
             console.log('[journey-router] Background validation: route changed', cachedRoute, '->', correctTarget);
-            SecureStore.setItemAsync(LAST_ROUTE_KEY, correctTarget).catch(() => {});
+            // Only cache stable routes — transient screens (add-bank-details) are not cached
+            if (VALID_CACHED_ROUTES.has(correctTarget)) {
+              SecureStore.setItemAsync(LAST_ROUTE_KEY, correctTarget).catch(() => {});
+            }
             router.replace(correctTarget as never);
           }
         }).catch(() => {}); // Non-fatal background check
@@ -329,7 +359,7 @@ export default function Index() {
         // Trust the cached route if available (user was here before).
         // Only default to upload if there's no prior history at all.
         const fallbackRoute = await SecureStore.getItemAsync(LAST_ROUTE_KEY).catch(() => null);
-        if (fallbackRoute && (fallbackRoute === '/(main)' || fallbackRoute === '/(setup)/add-bank' || fallbackRoute === '/(waitlist)')) {
+        if (fallbackRoute && (VALID_CACHED_ROUTES.has(fallbackRoute))) {
           console.warn('[journey-router] Routing failed — using cached route:', fallbackRoute);
           setTarget(fallbackRoute);
         } else {
@@ -353,7 +383,30 @@ export default function Index() {
           .eq('user_id', userId)
           .maybeSingle();
 
-        setTarget(tenancyRow?.bank_verified ? '/(main)' : '/(setup)/add-bank');
+        // No tenancy = broken state (approved requires tenancy from extraction flow).
+        // Route to waitlist as safety net — extraction-recovery cron will fix the state.
+        setTarget(!tenancyRow ? '/(waitlist)' : tenancyRow.bank_verified ? '/(main)' : '/(setup)/add-bank');
+      } else if (userStatus === 'waitlisted' || userStatus === 'agreement_confirmed') {
+        // waitlisted — check if extraction requires reupload (invalid document / failed).
+        // Without this check, the waitlist screen loads → detects requiresReupload →
+        // redirects to upload, causing a visible flicker.
+        const { data: extraction } = await supabase
+          .from('extracted_rental_info')
+          .select('extraction_status, contract_status')
+          .eq('user_id', userId)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        if (extraction && (extraction.contract_status === 'invalid_document' || extraction.extraction_status === 'extraction_failed')) {
+          // Prepare upload store for reupload so the upload screen shows the right state
+          useUploadStore.getState().prepareForReupload({
+            errorMessage: 'Please upload a valid rental agreement to continue.',
+          });
+          setTarget('/(agreement)/upload');
+        } else {
+          setTarget('/(waitlist)');
+        }
       } else {
         // signed_up — need to check extraction state to route correctly
         // First: check if there's a completed extraction awaiting backend review.
@@ -406,7 +459,7 @@ export default function Index() {
       console.error('[journey-router] resolveAuthenticatedJourney error:', err);
       // Trust cached route on exceptions — don't send active users to upload
       const fallbackRoute = await SecureStore.getItemAsync(LAST_ROUTE_KEY).catch(() => null);
-      if (fallbackRoute && (fallbackRoute === '/(main)' || fallbackRoute === '/(setup)/add-bank' || fallbackRoute === '/(waitlist)')) {
+      if (fallbackRoute && (VALID_CACHED_ROUTES.has(fallbackRoute))) {
         setTarget(fallbackRoute);
       } else {
         setTarget('/(agreement)/upload');

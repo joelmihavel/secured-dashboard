@@ -6,6 +6,7 @@
  */
 
 import { supabase } from '../supabase/client';
+import { useAuthStore } from '@/src/stores/auth';
 
 // ==============================================
 // TYPES
@@ -73,16 +74,16 @@ function mapNotificationError(errorMessage: string): string {
  * Fetch the current user's notification preferences.
  */
 export async function getNotificationPreferences(): Promise<NotificationPreferences> {
-  // Use getSession() instead of getUser() to avoid triggering SDK refresh chain race
-  const { data: { session } } = await supabase.auth.getSession();
-  if (!session?.user) throw new Error('Not authenticated');
-  const user = session.user;
+  // NEVER use getSession() here — triggers _callRefreshToken race (lesson #33).
+  // Read userId from auth store instead (set during sign-in).
+  const userId = useAuthStore.getState().userId;
+  if (!userId) throw new Error('Not authenticated');
 
   const { data, error } = await withTimeout(
     supabase
       .from('notification_preferences')
       .select('*')
-      .eq('user_id', user.id)
+      .eq('user_id', userId)
       .single()
       .then((r) => r) as Promise<{ data: NotificationPreferences | null; error: { message: string } | null }>
   );
@@ -98,15 +99,14 @@ export async function getNotificationPreferences(): Promise<NotificationPreferen
 export async function updateNotificationPreferences(
   prefs: Partial<NotificationPreferences>
 ): Promise<NotificationPreferences> {
-  // Use getSession() instead of getUser() to avoid triggering SDK refresh chain race
-  const { data: { session } } = await supabase.auth.getSession();
-  if (!session?.user) throw new Error('Not authenticated');
-  const user = session.user;
+  // NEVER use getSession() here — triggers _callRefreshToken race (lesson #33).
+  const userId = useAuthStore.getState().userId;
+  if (!userId) throw new Error('Not authenticated');
 
   const { data, error } = await withTimeout(
     supabase
       .from('notification_preferences')
-      .upsert({ user_id: user.id, ...prefs }, { onConflict: 'user_id' })
+      .upsert({ user_id: userId, ...prefs }, { onConflict: 'user_id' })
       .select()
       .single()
       .then((r) => r) as Promise<{ data: NotificationPreferences | null; error: { message: string } | null }>

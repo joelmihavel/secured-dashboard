@@ -38,6 +38,10 @@ if (!SUPABASE_ANON_KEY) {
  */
 const CHUNK_SIZE = 1800; // leave headroom below the 2048-byte limit
 
+/** Supabase SDK session storage key. Must match SDK's internal STORAGE_KEY.
+ *  Exported for use by resetAll.ts and installDetection.ts to avoid hardcoding. */
+export const SUPABASE_SESSION_STORAGE_KEY = 'supabase.auth.token';
+
 const ExpoSecureStoreAdapter = {
   getItem: async (key: string): Promise<string | null> => {
     try {
@@ -280,10 +284,13 @@ export async function callEdgeFunction<T = unknown>(
     // which races with the SDK's autoRefreshToken and causes SIGNED_OUT events
     // when refresh token rotation is enabled.
     if (response.status === 401 && requireAuth) {
+      const oldToken = headers['Authorization'];
       // Give the SDK's auto-refresh a moment to complete (it fires on token expiry)
       await new Promise(resolve => setTimeout(resolve, 1500));
       const { data: { session: retrySession } } = await getSessionSafe();
-      if (retrySession?.access_token) {
+      // Only retry if we got a DIFFERENT token (refresh actually succeeded).
+      // Retrying with the same expired token wastes a round-trip.
+      if (retrySession?.access_token && `Bearer ${retrySession.access_token}` !== oldToken) {
         headers['Authorization'] = `Bearer ${retrySession.access_token}`;
         const retryController = new AbortController();
         const retryTimeoutId = setTimeout(() => retryController.abort(), timeoutMs);

@@ -17,3 +17,5 @@ export type { ReferralCodeInputProps } from './ReferralCodeInput';
 
 export { ProgressArc } from './ProgressArc';
 export type { ProgressArcProps } from './ProgressArc';
+
+export { WaitlistRelease } from './WaitlistRelease';

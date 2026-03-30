@@ -25,13 +25,11 @@ import {
   TouchableOpacity,
   Linking,
 } from 'react-native';
-import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
+import { KeyboardAvoidingView, useKeyboardState } from 'react-native-keyboard-controller';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import Svg, { Path } from 'react-native-svg';
-import { Ionicons } from '@expo/vector-icons';
-
 import { AlertBanner, Text, TextInput, PrimaryButton, ScreenTitle, Logo } from '@/src/components';
 import { TabSwitcher } from '@/src/components/home';
 import { DottedGridPattern } from '@/src/components/patterns/DottedGridPattern';
@@ -197,7 +195,7 @@ export default function AddBankScreen({ preWaitlist = false }: AddBankProps) {
   const verifyBankMutation = useVerifyBank();
   const verifyUpiMutation = useVerifyUpiVpa();
   const verifyPanMutation = useVerifyPan();
-  const { tenancy } = useDashboard();
+  const { tenancy, landlordBank } = useDashboard();
 
   // Payment method selector — default based on rent amount
   const rent = tenancy?.monthly_rent ?? 0;
@@ -223,8 +221,11 @@ export default function AddBankScreen({ preWaitlist = false }: AddBankProps) {
   const [screenState, setScreenState] = useState<ScreenState>('form');
 
   // If bank already verified (pre-waitlist + deferred name match succeeded),
-  // redirect to dashboard. Skip in dev mode — dev navigator needs direct access.
-  const bankAlreadyVerified = !__DEV__ && tenancy?.verification_status?.bank_verified;
+  // redirect to dashboard. Also check landlord_bank.verified for the case where
+  // deferred matching hasn't updated tenancy.bank_verified yet but the bank_account
+  // record is already verified (pre-waitlist penny drop succeeded).
+  // Skip in dev mode — dev navigator needs direct access.
+  const bankAlreadyVerified = !__DEV__ && (tenancy?.verification_status?.bank_verified || landlordBank?.verified);
   useEffect(() => {
     if (bankAlreadyVerified && screenState === 'form') {
       router.replace('/(main)' as never);
@@ -470,9 +471,11 @@ export default function AddBankScreen({ preWaitlist = false }: AddBankProps) {
 
   // Fields disabled only during loading — editable otherwise (even after verification)
   const fieldsDisabled = screenState === 'loading';
-  const bankFieldSuccess = bankVerified ? 'verified' : undefined;
-  const upiFieldSuccess = upiVerified ? 'verified' : undefined;
-  const panFieldSuccess = panVerified ? 'verified' : undefined;
+  const keyboardVisible = useKeyboardState((state) => state.isVisible);
+  // Only show "verified" on the read-only name fields, not on editable inputs
+  const bankFieldSuccess = undefined;
+  const upiFieldSuccess = undefined;
+  const panFieldSuccess = undefined;
 
   // ── BANK ALREADY VERIFIED (pre-waitlist flow) — redirect to dashboard ──
   if (bankAlreadyVerified) {
@@ -538,11 +541,6 @@ export default function AddBankScreen({ preWaitlist = false }: AddBankProps) {
             )}
           </View>
 
-          {/* Subtitle — pre-waitlist context */}
-          {preWaitlist && (
-            <Text style={styles.subtitle}>While we review your agreement</Text>
-          )}
-
           {/* Progress Bar — hidden in pre-waitlist mode */}
           {!preWaitlist && (
             <View style={[styles.progressContainer, allVerified && { marginTop: 16 }]}>
@@ -579,8 +577,29 @@ export default function AddBankScreen({ preWaitlist = false }: AddBankProps) {
             </View>
           )}
 
-          {/* Form Inputs — conditional on payment method */}
+          {/* Form — verified output fields on top, input fields below */}
           <View style={styles.formContainer}>
+            {/* Verified names — read-only, shown above inputs for confirmation */}
+            {accountVerified && verifiedName && (
+              <TextInput
+                label="Account Holder Name"
+                value={verifiedName}
+                onChangeText={() => {}}
+                disabled
+                success="verified"
+              />
+            )}
+            {panVerified && panResult?.registeredName && (
+              <TextInput
+                label="PAN Registered Name"
+                value={panResult.registeredName}
+                onChangeText={() => {}}
+                disabled
+                success="verified"
+              />
+            )}
+
+            {/* Input fields */}
             {isUpi ? (
               <TextInput
                 label="UPI ID"
@@ -621,7 +640,7 @@ export default function AddBankScreen({ preWaitlist = false }: AddBankProps) {
             )}
 
             <TextInput
-              label="PAN card"
+              label="PAN Card"
               value={panCard}
               onChangeText={handlePanCardChange}
               placeholder="e.g. CSNPM9874A"
@@ -632,40 +651,37 @@ export default function AddBankScreen({ preWaitlist = false }: AddBankProps) {
             />
           </View>
 
-          {/* Button + Verification Summary Section */}
-          <View style={styles.buttonSection}>
-            {/* Verified Name — compact green badge */}
-            {accountVerified && verifiedName && (
-              <View style={styles.verifiedNameBadge}>
-                <Ionicons name="checkmark-circle" size={16} color={colors.success.material} />
-                <Text style={styles.verifiedNameText}>{verifiedName}</Text>
-              </View>
-            )}
-
-            {allVerified ? (
-              <PrimaryButton
-                title="Confirm & continue"
-                onPress={handleConfirm}
-              />
-            ) : (
-              <PrimaryButton
-                title="Verify details"
-                onPress={handleSubmit}
-                disabled={!allFieldsFilled}
-              />
-            )}
-
-            {preWaitlist && (
-              <TouchableOpacity onPress={handleSkip} style={styles.skipButton}>
-                <Text style={styles.skipText}>I'll do this later</Text>
-              </TouchableOpacity>
-            )}
-
-            <Text style={styles.footerText}>
-              PAN is required for rent compliance and verification.
-            </Text>
-          </View>
+          {/* Bottom spacer — taller when verified names are showing */}
+          <View style={{ height: allVerified ? 200 : 150 }} />
         </ScrollView>
+
+        {/* Sticky bottom button — hidden when keyboard is open to avoid covering inputs */}
+        {!keyboardVisible && (
+        <View style={[styles.stickyBottom, { paddingBottom: insets.bottom + 16 }]}>
+          {allVerified ? (
+            <PrimaryButton
+              title="Confirm & continue"
+              onPress={handleConfirm}
+            />
+          ) : (
+            <PrimaryButton
+              title="Verify details"
+              onPress={handleSubmit}
+              disabled={!allFieldsFilled}
+            />
+          )}
+
+          {preWaitlist && (
+            <TouchableOpacity onPress={handleSkip} style={styles.skipButton}>
+              <Text style={styles.skipText}>I'll do this later</Text>
+            </TouchableOpacity>
+          )}
+
+          <Text style={styles.footerText}>
+            PAN is required for rent compliance and verification.
+          </Text>
+        </View>
+        )}
       </KeyboardAvoidingView>
     </View>
   );
@@ -714,7 +730,7 @@ const styles = StyleSheet.create({
 
   // Title
   titleContainer: { marginBottom: 48 },
-  titleContainerCompact: { marginBottom: 8 },
+  titleContainerCompact: { marginBottom: 32 },
 
   // Subtitle (pre-waitlist)
   subtitle: {
@@ -771,6 +787,20 @@ const styles = StyleSheet.create({
   // Form
   formContainer: { gap: 16 },
 
+  // Sticky bottom — button overlays scroll content
+  stickyBottom: {
+    position: 'absolute' as const,
+    bottom: 0,
+    left: 0,
+    right: 0,
+    paddingHorizontal: 48,
+    paddingTop: 16,
+    paddingBottom: 8,
+    gap: 8,
+    alignItems: 'center' as const,
+    backgroundColor: colors.black[700],
+  },
+
   // Divider before verified info
   infoDivider: {
     height: StyleSheet.hairlineWidth,
@@ -780,27 +810,7 @@ const styles = StyleSheet.create({
   infoSection: { gap: 16 },
 
   // Button section — closer to form so it's visible on initial load
-  buttonSection: { gap: 16, marginTop: 24, alignItems: 'center' },
-
-  // Compact verified name badge — single line, green accent
-  verifiedNameBadge: {
-    flexDirection: 'row' as const,
-    alignItems: 'center' as const,
-    gap: 8,
-    backgroundColor: 'rgba(70, 167, 88, 0.12)',
-    borderWidth: 1,
-    borderColor: 'rgba(70, 167, 88, 0.3)',
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    width: '100%',
-  },
-  verifiedNameText: {
-    fontFamily: 'PlusJakartaSans-Medium',
-    fontSize: 14, lineHeight: 20,
-    color: colors.white,
-    flex: 1,
-  },
+  // buttonSection removed — button is now in stickyBottom
 
   // Skip (pre-waitlist)
   skipButton: { paddingVertical: 4, paddingHorizontal: 12 },
@@ -818,6 +828,6 @@ const styles = StyleSheet.create({
     color: FIGMA.footer,
     textAlign: 'left',
     alignSelf: 'flex-start',
-    marginBottom: 24,
+    marginBottom: 0,
   },
 });

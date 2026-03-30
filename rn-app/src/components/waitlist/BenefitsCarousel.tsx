@@ -225,6 +225,7 @@ const styles = StyleSheet.create({
   },
   carouselContent: {
     gap: CARD_GAP,
+    paddingRight: 40,
   },
 });
 

@@ -36,6 +36,7 @@ import {
   DottedGridPattern,
   SkeletonLoader,
 } from '@/src/components';
+import { WaitlistRelease } from '@/src/components/waitlist/WaitlistRelease';
 import { useWaitlist, waitlistKeys } from '@/src/hooks';
 import { useQueryClient } from '@tanstack/react-query';
 import { colors } from '@/src/theme/colors';
@@ -578,17 +579,21 @@ export default function WaitlistScreen() {
             <ApplicationTimeline items={timelineItems} />
           </Animated.View>
 
-          {/* Progress & Invite Card - Frame 2095586389 */}
+          {/* Release Progress */}
           <Animated.View
             entering={FadeInDown.delay(FIGMA.animation.stagger * 3).duration(FIGMA.animation.duration)}
+          >
+            <WaitlistRelease
+              currentOnboarded={membersOnboarded}
+              totalMemberSlots={totalSlots}
+            />
+          </Animated.View>
+
+          {/* Invite Card - Frame 2095586389 */}
+          <Animated.View
+            entering={FadeInDown.delay(FIGMA.animation.stagger * 4).duration(FIGMA.animation.duration)}
             style={styles.inviteCard}
           >
-            {/* Progress Arc */}
-            <ProgressArc
-              current={membersOnboarded}
-              total={totalSlots}
-            />
-
             {referralApplied || inviteCodeClaimed ? (
               // Success State - Frame 2095586525 (node 3099:27830)
               <View style={styles.successBanner}>
@@ -645,7 +650,7 @@ export default function WaitlistScreen() {
 
           {/* "Once you're in, keep these things handy" — Figma 4109:24272 */}
           <Animated.View
-            entering={FadeInDown.delay(FIGMA.animation.stagger * 4).duration(FIGMA.animation.duration)}
+            entering={FadeInDown.delay(FIGMA.animation.stagger * 5).duration(FIGMA.animation.duration)}
           >
             <RNText style={styles.stepsTitle}>
               <RNText style={styles.stepsTitleGray}>Once you're in{'\n'}</RNText>
@@ -655,7 +660,7 @@ export default function WaitlistScreen() {
 
           {/* 3-Step Indicator — Figma 4109:24273 */}
           <Animated.View
-            entering={FadeInDown.delay(FIGMA.animation.stagger * 5).duration(FIGMA.animation.duration)}
+            entering={FadeInDown.delay(FIGMA.animation.stagger * 6).duration(FIGMA.animation.duration)}
           >
             <View style={styles.stepsWrapper}>
               <View style={styles.stepsTrackRow}>
@@ -681,7 +686,7 @@ export default function WaitlistScreen() {
 
           {/* Benefits Carousel — Figma 4109:24285 */}
           <Animated.View
-            entering={FadeInDown.delay(FIGMA.animation.stagger * 6).duration(FIGMA.animation.duration)}
+            entering={FadeInDown.delay(FIGMA.animation.stagger * 7).duration(FIGMA.animation.duration)}
             style={{ marginHorizontal: -FIGMA.layout.containerPadding }}
           >
             <View style={{ paddingLeft: FIGMA.layout.containerPadding }}>

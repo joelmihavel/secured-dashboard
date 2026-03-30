@@ -25,7 +25,7 @@ import { removeAllChannels } from '@/src/services/supabase/realtimeManager';
  * The Supabase session key uses chunked storage (see client.ts), so we also
  * need to clean up any chunk keys.
  */
-const SUPABASE_SESSION_KEY = 'supabase.auth.token';
+import { SUPABASE_SESSION_STORAGE_KEY as SUPABASE_SESSION_KEY } from '@/src/services/supabase/client';
 const PERSISTED_SECURE_STORE_KEYS = [
   'flent-upload-state',       // Upload store (Zustand persist)
   'payment-recovery',          // Payment store (Zustand persist)

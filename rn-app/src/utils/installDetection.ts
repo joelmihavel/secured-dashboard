@@ -14,8 +14,12 @@
 
 import * as FileSystem from 'expo-file-system';
 import * as SecureStore from 'expo-secure-store';
+import Constants from 'expo-constants';
+import { OTA_RELOAD_MARKER_KEY } from '@/src/config/updates';
+import { SUPABASE_SESSION_STORAGE_KEY } from '@/src/services/supabase/client';
 
 const SENTINEL_PATH = `${FileSystem.documentDirectory}flent_installed`;
+const APP_VERSION_KEY = 'flent_app_version';
 
 /**
  * All SecureStore (Keychain) keys that must be cleared on fresh install.
@@ -29,12 +33,14 @@ const ALL_KEYCHAIN_KEYS = [
   'flent_last_journey_target',
   // DB migration marker
   'flent_db_migration',
-  // OTA reload marker
-  'flent_ota_reload_ts',
+  // OTA reload marker (imported constant, not hardcoded)
+  OTA_RELOAD_MARKER_KEY,
+  // App version tracker
+  'flent_app_version',
   // Supabase session (chunked storage)
-  'supabase.auth.token',
-  'supabase.auth.token_chunks',
-  'supabase.auth.token-code-verifier',
+  SUPABASE_SESSION_STORAGE_KEY,
+  `${SUPABASE_SESSION_STORAGE_KEY}_chunks`,
+  `${SUPABASE_SESSION_STORAGE_KEY}-code-verifier`,
 ];
 
 /**
@@ -79,7 +85,7 @@ export async function detectAndHandleFreshInstall(): Promise<boolean> {
 async function checkForKeychainData(): Promise<boolean> {
   try {
     // Check the most common key — Supabase session
-    const session = await SecureStore.getItemAsync('supabase.auth.token');
+    const session = await SecureStore.getItemAsync(SUPABASE_SESSION_STORAGE_KEY);
     if (session) return true;
 
     // Check upload store
@@ -96,6 +102,44 @@ async function checkForKeychainData(): Promise<boolean> {
   }
 }
 
+/**
+ * Detect app version change after a forced update.
+ * If version changed, wipe all persisted Zustand stores and cached routes
+ * so old-schema data doesn't crash the new code. The Supabase session is
+ * preserved — the user stays logged in but gets a fresh local state.
+ *
+ * Returns true if a version change was detected and stores were wiped.
+ */
+export async function detectAndHandleVersionChange(): Promise<boolean> {
+  try {
+    const currentVersion = Constants.expoConfig?.version ?? Constants.manifest2?.extra?.expoClient?.version;
+    if (!currentVersion) return false;
+
+    const storedVersion = await SecureStore.getItemAsync(APP_VERSION_KEY).catch(() => null);
+    if (storedVersion === currentVersion) return false;
+
+    // Version changed (or first tracked launch)
+    if (storedVersion) {
+      // Actual version change — wipe Zustand persisted stores + cached route.
+      // Do NOT wipe Supabase session or DB migration marker — user stays logged in.
+      console.log(`[install-detection] App version changed: ${storedVersion} → ${currentVersion} — clearing persisted stores`);
+      const storeKeys = [
+        'flent-upload-state',
+        'payment-recovery',
+        'flent_last_journey_target',
+      ];
+      await Promise.all(
+        storeKeys.map(key => SecureStore.deleteItemAsync(key).catch(() => {}))
+      );
+    }
+
+    await SecureStore.setItemAsync(APP_VERSION_KEY, currentVersion).catch(() => {});
+    return !!storedVersion; // true only on actual change, not first install
+  } catch {
+    return false;
+  }
+}
+
 async function clearAllKeychainData(): Promise<void> {
   // Clear known keys
   await Promise.all(
@@ -106,11 +150,11 @@ async function clearAllKeychainData(): Promise<void> {
 
   // Clear Supabase session chunks (variable count)
   try {
-    const countRaw = await SecureStore.getItemAsync('supabase.auth.token_chunks');
+    const countRaw = await SecureStore.getItemAsync(`${SUPABASE_SESSION_STORAGE_KEY}_chunks`);
     if (countRaw) {
       const n = parseInt(countRaw, 10);
       for (let i = 1; i < n; i++) {
-        await SecureStore.deleteItemAsync(`supabase.auth.token_${i}`).catch(() => {});
+        await SecureStore.deleteItemAsync(`${SUPABASE_SESSION_STORAGE_KEY}_${i}`).catch(() => {});
       }
     }
   } catch { /* best-effort */ }
