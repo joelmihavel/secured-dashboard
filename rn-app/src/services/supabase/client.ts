@@ -86,6 +86,9 @@ async function deleteGen(key: string, gen: number): Promise<void> {
   await SecureStore.deleteItemAsync(prefix).catch(() => {});
 }
 
+/** Serializes setItem calls to prevent concurrent writes to the same generation */
+let _writeQueue: Promise<void> = Promise.resolve();
+
 const ExpoSecureStoreAdapter = {
   getItem: async (key: string): Promise<string | null> => {
     try {
@@ -105,7 +108,9 @@ const ExpoSecureStoreAdapter = {
   },
 
   setItem: async (key: string, value: string): Promise<void> => {
-    try {
+    // Serialize writes to prevent two concurrent setItem calls from racing
+    // on the same generation number (e.g., autoRefreshToken + setSession).
+    const doWrite = async () => {
       const currentGen = await readGen(key);
       const newGen = currentGen + 1;
       const prefix = `${key}_g${newGen}`;
@@ -138,13 +143,16 @@ const ExpoSecureStoreAdapter = {
       if (currentGen === 0) {
         deleteGen(key, 0).catch(() => {});
       }
-    } catch (err) {
+    };
+    // Chain onto the write queue — each write waits for the previous to finish
+    _writeQueue = _writeQueue.then(doWrite).catch((err) => {
       // MUST NOT throw — the Supabase SDK calls setItem internally during
       // session persistence. If this throws, the SDK's _saveSession breaks,
       // leaving the internal session state corrupt (SIGNED_OUT fires, PostgREST
       // calls fail with 401, dashboard shows black screen).
       console.error('SecureStore setItem failed:', key, err);
-    }
+    });
+    return _writeQueue;
   },
 
   removeItem: async (key: string): Promise<void> => {
