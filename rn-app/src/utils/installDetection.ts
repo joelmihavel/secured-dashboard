@@ -37,9 +37,10 @@ const ALL_KEYCHAIN_KEYS = [
   OTA_RELOAD_MARKER_KEY,
   // App version tracker
   'flent_app_version',
-  // Supabase session (chunked storage)
+  // Supabase session (generation-based chunked storage)
   SUPABASE_SESSION_STORAGE_KEY,
   `${SUPABASE_SESSION_STORAGE_KEY}_chunks`,
+  `${SUPABASE_SESSION_STORAGE_KEY}_gen`,
   `${SUPABASE_SESSION_STORAGE_KEY}-code-verifier`,
 ];
 
@@ -148,14 +149,34 @@ async function clearAllKeychainData(): Promise<void> {
     )
   );
 
-  // Clear Supabase session chunks (variable count)
+  // Clear Supabase session chunks — both legacy (gen 0) and generation-based
   try {
+    // Legacy chunks (gen 0)
     const countRaw = await SecureStore.getItemAsync(`${SUPABASE_SESSION_STORAGE_KEY}_chunks`);
     if (countRaw) {
       const n = parseInt(countRaw, 10);
       for (let i = 1; i < n; i++) {
         await SecureStore.deleteItemAsync(`${SUPABASE_SESSION_STORAGE_KEY}_${i}`).catch(() => {});
       }
+    }
+    // Generation-based chunks (gen 1+)
+    const genRaw = await SecureStore.getItemAsync(`${SUPABASE_SESSION_STORAGE_KEY}_gen`);
+    if (genRaw) {
+      const gen = parseInt(genRaw, 10);
+      // Clean up to 3 generations (current + 2 stale)
+      for (let g = Math.max(1, gen - 2); g <= gen; g++) {
+        const prefix = `${SUPABASE_SESSION_STORAGE_KEY}_g${g}`;
+        const gc = await SecureStore.getItemAsync(`${prefix}_chunks`).catch(() => null);
+        if (gc) {
+          const n = parseInt(gc, 10);
+          for (let i = 1; i < n; i++) {
+            await SecureStore.deleteItemAsync(`${prefix}_${i}`).catch(() => {});
+          }
+          await SecureStore.deleteItemAsync(`${prefix}_chunks`).catch(() => {});
+        }
+        await SecureStore.deleteItemAsync(prefix).catch(() => {});
+      }
+      await SecureStore.deleteItemAsync(`${SUPABASE_SESSION_STORAGE_KEY}_gen`).catch(() => {});
     }
   } catch { /* best-effort */ }
 }
