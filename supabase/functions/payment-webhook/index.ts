@@ -299,8 +299,50 @@ serve(async (req: Request) => {
             payload: event,
           }).catch(() => {});
         } else {
-          console.warn(`[webhook] Refund record not found for refund_id=${refundId}`);
+          // No refund record — refund was initiated from Cashfree dashboard directly.
+          // Find the payment by order_id and update status.
+          if (refundOrderId && (refundStatus === 'SUCCESS' || refundStatus === 'ONHOLD')) {
+            const { data: cfPayment } = await supabase
+              .from('payments')
+              .select('id, status, user_id')
+              .or(`cf_order_id.eq.${refundOrderId},gateway_order_id.eq.${refundOrderId}`)
+              .maybeSingle();
+
+            if (cfPayment && cfPayment.status !== 'refunded') {
+              const newStatus = refundStatus === 'SUCCESS' ? 'refunded' : cfPayment.status;
+              await supabase.from('payments').update({
+                status: newStatus,
+                updated_at: new Date().toISOString(),
+              }).eq('id', cfPayment.id);
+
+              // Create a refund record for tracking
+              await supabase.from('refunds').insert({
+                payment_id: cfPayment.id,
+                user_id: cfPayment.user_id,
+                amount_paise: Math.round((refundData.refund_amount ?? 0) * 100),
+                status: refundStatus === 'SUCCESS' ? 'completed' : 'processing',
+                reason: 'Refund via Cashfree dashboard',
+                payment_gateway: 'cashfree',
+                gateway_refund_id: String(refundId),
+                gateway_refund_status: refundStatus,
+                gateway_metadata: refundData,
+              }).catch((e: unknown) => console.error('[webhook] Failed to create refund record:', e));
+
+              console.log(`[webhook] Dashboard refund: payment ${cfPayment.id} → ${newStatus} (refund_id=${refundId})`);
+            } else {
+              console.warn(`[webhook] Payment not found for dashboard refund order_id=${refundOrderId}`);
+            }
+          } else {
+            console.warn(`[webhook] Refund record not found for refund_id=${refundId}, status=${refundStatus}`);
+          }
         }
+
+        // Record in processed_webhooks (dedup for dashboard-initiated refunds too)
+        await supabase.from('processed_webhooks').upsert({
+          event_id: String(eventId),
+          payment_gateway: 'cashfree',
+          payment_id: refundOrderId ?? String(refundId),
+        }, { onConflict: 'event_id' }).catch(() => {});
 
         return jsonResponse({ success: true, message: 'Refund status processed' });
       }
