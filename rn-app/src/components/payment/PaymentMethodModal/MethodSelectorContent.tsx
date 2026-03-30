@@ -206,7 +206,7 @@ export function MethodSelectorContent({
   onProceed,
   isInitiating,
 }: MethodSelectorContentProps) {
-  const { tenancy, cashback } = useDashboard();
+  const { tenancy, cashback, user } = useDashboard();
   const storedAmount = usePaymentStore((state) => state.amount);
   const { data: dynamicRates } = useFeeRates();
 
@@ -215,11 +215,13 @@ export function MethodSelectorContent({
   const creditCardDisabledReason = undefined;
 
   const [selectedMethod, setSelectedMethod] = useState<string>('upi-1');
-  const rentAmount = storedAmount || tenancy?.monthly_rent || 32500;
+  const rentAmount = storedAmount || tenancy?.monthly_rent || 0;
 
-  // Fee should be computed on post-cashback amount (matches backend + confirm screen)
+  // Fee computed on post-cashback amount (matches backend + confirm screen)
   const cashbackAmount = Math.round(rentAmount * (cashback?.discount_rate ?? 0.01));
-  const feeBaseAmount = rentAmount - cashbackAmount;
+  const accumulatedBalanceRupees = Math.floor((user?.cashback_balance_paise ?? 0) / 100);
+  const appliedCashback = Math.min(cashbackAmount + accumulatedBalanceRupees, rentAmount);
+  const feeBaseAmount = rentAmount - appliedCashback;
 
   const paymentMethods: PaymentMethod[] = useMemo(() => {
     const rates = dynamicRates ?? getGatewayFeeRates();

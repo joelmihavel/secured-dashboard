@@ -124,23 +124,21 @@ export function ConfirmPaymentContent({
 
   // ── Payment Data ───────────────────────────────────────────────────────────
 
-  const baseRent = enteredAmount || tenancy?.monthly_rent || 30000;
-  const maintenance = tenancy?.maintenance ?? 0;
-  const totalRent = baseRent + maintenance;
+  const rentAmount = enteredAmount || tenancy?.monthly_rent || 0;
 
   const cashbackPct = cashback?.discount_rate ?? 0.01;
-  const cashbackAmount = Math.round(totalRent * cashbackPct);
+  const cashbackAmount = Math.round(rentAmount * cashbackPct);
   const annualSavings = cashbackAmount * 12;
 
   // Accumulated balance from previous unverified payments (stored in paise)
   const accumulatedBalanceRupees = Math.floor((user?.cashback_balance_paise ?? 0) / 100);
 
   // Always apply cashback as instant discount (1% + any accumulated balance, capped at rent)
-  const appliedCashback = Math.min(cashbackAmount + accumulatedBalanceRupees, totalRent);
+  const appliedCashback = Math.min(cashbackAmount + accumulatedBalanceRupees, rentAmount);
   const earnedCashback = 0;
 
   // Fee computed on net rent (AFTER cashback) — matches backend formula
-  const netRent = totalRent - appliedCashback;
+  const netRent = rentAmount - appliedCashback;
   const rates = feeRates ?? getGatewayFeeRates();
   const feeConfig = getFeeConfig(rates, methodType);
   const convenienceFee = computeFee(feeConfig, netRent);
@@ -212,18 +210,9 @@ export function ConfirmPaymentContent({
           <BgLine style={[s.gridLines, { top: 66 + pillOffset }]} />
 
           <View style={s.receiptCard}>
-            {/* Section 1: Base rent + Maintenance — Figma 799:3401 */}
+            {/* Section 1: Rent amount */}
             <View style={s.section1}>
-              <BreakdownRow label="Base rent" value={`\u20B9 ${fmt(baseRent)}`} />
-              {maintenance > 0 && (
-                <>
-                  <View style={s.dividerLine} />
-                  <BreakdownRow
-                    label="Maintenance"
-                    value={`\u20B9 ${fmt(maintenance)}`}
-                  />
-                </>
-              )}
+              <BreakdownRow label="Rent" value={`\u20B9 ${fmt(rentAmount)}`} />
             </View>
 
             {/* Section 2: Totals — Figma 799:3415 */}
