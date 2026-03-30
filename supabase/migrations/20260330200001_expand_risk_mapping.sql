@@ -16,8 +16,9 @@ COMMENT ON COLUMN public.waitlist_entries.risk_phase
 -- 2. Update v_risk_detail — add PAN, bank agreement match,
 --    risk_phase, risk_computed_at, confidence_score, landlord_status
 -- ============================================================
-
-CREATE OR REPLACE VIEW public.v_risk_detail AS
+-- DROP required: CREATE OR REPLACE VIEW cannot change column layout
+DROP VIEW IF EXISTS public.v_risk_detail;
+CREATE VIEW public.v_risk_detail AS
 SELECT
   u.id AS user_id,
   u.phone,
@@ -137,8 +138,8 @@ GRANT SELECT ON public.v_risk_detail TO service_role;
 -- ============================================================
 -- 3. Update v_user_funnel — add risk_factors, risk_computed_at, risk_phase
 -- ============================================================
-
-CREATE OR REPLACE VIEW public.v_user_funnel AS
+DROP VIEW IF EXISTS public.v_user_funnel;
+CREATE VIEW public.v_user_funnel AS
 SELECT
   -- User basics
   u.id AS user_id,
@@ -271,8 +272,8 @@ ORDER BY u.created_at DESC;
 -- 4. Update v_verification_analysis — add PAN details, risk_phase,
 --    risk_computed_at, and include PAN in checks_passed count (7 total)
 -- ============================================================
-
-CREATE OR REPLACE VIEW public.v_verification_analysis AS
+DROP VIEW IF EXISTS public.v_verification_analysis;
+CREATE VIEW public.v_verification_analysis AS
 SELECT
   -- User
   u.id                                        AS user_id,

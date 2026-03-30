@@ -10,22 +10,11 @@
 -- auth.users is in the auth schema owned by supabase_auth_admin.
 -- We use SET ROLE to elevate privileges for this one-time fix.
 
-DO $$
-BEGIN
-  -- Temporarily assume supabase_auth_admin role to update auth.users
-  PERFORM set_config('role', 'supabase_auth_admin', true);
-
-  UPDATE auth.users
-  SET phone = '+' || phone,
-      updated_at = NOW()
-  WHERE phone IS NOT NULL
-    AND phone <> ''
-    AND LEFT(phone, 1) <> '+';
-
-  -- Reset role back to default
-  PERFORM set_config('role', 'postgres', true);
-END;
-$$;
+-- Phone UPDATE already applied directly (SET ROLE supabase_auth_admin not available on hosted Supabase).
+-- This no-op UPDATE ensures the migration is idempotent if re-run.
+UPDATE auth.users
+SET phone = '+' || phone, updated_at = NOW()
+WHERE phone IS NOT NULL AND phone <> '' AND LEFT(phone, 1) <> '+';
 
 -- ============================================================
 -- B. FIX sync_phone_columns TRIGGER (phone_number -> phone)
