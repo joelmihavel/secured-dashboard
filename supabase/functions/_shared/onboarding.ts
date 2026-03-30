@@ -341,7 +341,7 @@ async function runDeferredBankNameMatching(
     context: "agreement_bank_verification",
   });
 
-  // 4. Update bank account with match result
+  // 4. Update bank account with match result (informational — does NOT flip verified)
   const nameMatched = matchResult.matched;
   const { error: updateError } = await supabase
     .from("bank_accounts")
@@ -353,7 +353,8 @@ async function runDeferredBankNameMatching(
         deferred: true,
         matched_at: new Date().toISOString(),
       },
-      verified: nameMatched, // CRITICAL: false if name mismatch — user must redo post-approval
+      // Keep verified = true (penny drop confirmed account exists).
+      // Name match result is informational — admin decides during approval.
     })
     .eq("id", bank.id);
 
@@ -366,25 +367,55 @@ async function runDeferredBankNameMatching(
     `[onboarding] Deferred name match for bank ${bank.id}: matched=${nameMatched}, score=${matchResult.score}`,
   );
 
-  // 5. Only set bank_verified on tenancy if name matched
-  if (nameMatched) {
-    const matchedLandlordName = matchResult.matchedName;
-    await supabase
-      .from("tenancies")
-      .update({
-        bank_verified: true,
-        ...(matchedLandlordName && { landlord_name: matchedLandlordName }),
-      })
-      .eq("id", tenancyId);
+  // 5. Always set bank_verified on tenancy — penny drop verified the account.
+  //    If name doesn't match, flag risk on waitlist entry for admin review.
+  //    Admin approval = manual verification override.
+  const matchedLandlordName = nameMatched ? matchResult.matchedName : null;
+  await supabase
+    .from("tenancies")
+    .update({
+      bank_verified: true,
+      ...(matchedLandlordName && { landlord_name: matchedLandlordName }),
+    })
+    .eq("id", tenancyId);
 
-    // Attempt user_status advancement (approved -> active) — no-ops if not yet approved
+  // Flag risk on waitlist entry if name mismatch — admin sees this during review
+  if (!nameMatched) {
+    const riskFlag = {
+      type: "bank_name_mismatch",
+      bank_holder: bank.verified_account_holder_name,
+      agreement_landlords: resolved.names,
+      match_score: matchResult.score,
+      flagged_at: new Date().toISOString(),
+    };
+    // Append to existing risk_factors array
+    const { data: waitlistEntry } = await supabase
+      .from("waitlist_entries")
+      .select("risk_factors")
+      .eq("user_id", userId)
+      .maybeSingle();
+
+    const existingFactors = (waitlistEntry?.risk_factors as any[]) ?? [];
     await supabase
-      .rpc("check_and_advance_to_active", { p_user_id: userId })
-      .catch((err: any) =>
-        console.warn("[onboarding] check_and_advance_to_active failed (non-fatal):", err),
-      );
+      .from("waitlist_entries")
+      .update({
+        risk_factors: [...existingFactors, riskFlag],
+        risk_level: "high", // Escalate to high if name mismatch
+      })
+      .eq("user_id", userId);
+
+    console.warn(
+      `[onboarding] Bank name mismatch flagged as risk for user ${userId}: ` +
+      `bank="${bank.verified_account_holder_name}" vs landlords=${resolved.names.join(", ")}`,
+    );
   }
-  // If NOT matched: bank_verified stays false/unset — user must redo bank verification post-approval
+
+  // Attempt user_status advancement (approved -> active) — no-ops if not yet approved
+  await supabase
+    .rpc("check_and_advance_to_active", { p_user_id: userId })
+    .catch((err: any) =>
+      console.warn("[onboarding] check_and_advance_to_active failed (non-fatal):", err),
+    );
 }
 
 export async function maybeAutoApproveDemoUser(options: {
