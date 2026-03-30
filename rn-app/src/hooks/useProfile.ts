@@ -64,9 +64,15 @@ export function useUpdateProfile() {
 
       return data!;
     },
-    onSuccess: () => {
-      // Invalidate dashboard to refresh user data across the app
-      queryClient.invalidateQueries({ queryKey: dashboardKeys.all });
+    onSuccess: async () => {
+      // Invalidate dashboard to refresh user data across the app.
+      // Use refetchType: 'none' to mark queries as stale WITHOUT triggering
+      // immediate parallel refetches — those cause 401 races when the auth
+      // token is close to expiry (5 parallel 401s → concurrent refresh → SIGNED_OUT).
+      // The queries refetch naturally when their components re-render.
+      queryClient.invalidateQueries({ queryKey: dashboardKeys.all, refetchType: 'none' });
+      // Single controlled refetch of the primary dashboard query
+      await queryClient.refetchQueries({ queryKey: dashboardKeys.data(), exact: true });
     },
     meta: { suppressGlobalError: true },
   });

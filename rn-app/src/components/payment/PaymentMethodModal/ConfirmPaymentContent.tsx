@@ -152,15 +152,21 @@ export function ConfirmPaymentContent({
   const payableAmount = netRent + convenienceFee;
 
   const alreadyPaid = upcomingPayment?.already_paid ?? false;
-  const daysUntilDue = upcomingPayment?.due_date
-    ? Math.max(
-        0,
-        Math.ceil(
-          (new Date(upcomingPayment.due_date).getTime() - Date.now()) /
-            (1000 * 60 * 60 * 24),
-        ),
+  const rawDaysUntilDue = upcomingPayment?.due_date
+    ? Math.ceil(
+        (new Date(upcomingPayment.due_date).getTime() - Date.now()) /
+          (1000 * 60 * 60 * 24),
       )
-    : 28;
+    : null;
+  const dueLabel = alreadyPaid
+    ? 'Rent paid'
+    : rawDaysUntilDue === null
+      ? 'Pay your rent'
+      : rawDaysUntilDue < 0
+        ? `Rent overdue by ${Math.abs(rawDaysUntilDue)} days`
+        : rawDaysUntilDue === 0
+          ? 'Rent due today'
+          : `Rent due in ${rawDaysUntilDue} days`;
 
   // ── Render ─────────────────────────────────────────────────────────────────
 
@@ -184,7 +190,7 @@ export function ConfirmPaymentContent({
         <View style={s.infoCard}>
           <View style={s.infoTextArea}>
             <RNText style={s.rentDueText}>
-              {alreadyPaid ? 'Rent paid' : `Rent due in ${daysUntilDue} days`}
+              {dueLabel}
             </RNText>
             <RNText style={s.cashbackInfoText}>
               You'll earn {Math.round(cashbackPct * 100)}% cashback on this rent payment
