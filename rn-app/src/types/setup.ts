@@ -148,7 +148,7 @@ export interface LandlordInviteResponse {
 
 /** RN client request shape (camelCase) - mapped to snake_case for edge function */
 export interface PanVerificationRequest {
-  tenancyId: string;
+  tenancyId?: string; // Optional for pre-waitlist flow (no tenancy exists yet)
   panNumber: string;
   bankAccountId: string;
 }

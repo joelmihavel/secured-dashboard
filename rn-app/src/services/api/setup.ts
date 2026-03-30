@@ -465,10 +465,10 @@ export async function verifyUpiVpa(
 export async function verifyPan(
   request: PanVerificationRequest
 ): Promise<{ data: PanVerificationResponse | null; error: SetupError | null }> {
-  const body = {
-    tenancy_id: request.tenancyId,
+  const body: Record<string, unknown> = {
     pan_number: request.panNumber,
     bank_account_id: request.bankAccountId,
+    ...(request.tenancyId && { tenancy_id: request.tenancyId }),
   };
 
   const { data, error, errorBody } = await callEdgeFunction<RawVerifyPanResponse>(

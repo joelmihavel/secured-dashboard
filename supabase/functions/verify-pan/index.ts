@@ -48,7 +48,7 @@ const CASHFREE_BASE_URL =
 // ==============================================
 
 interface VerifyPanRequest {
-  tenancy_id: string;
+  tenancy_id?: string; // Optional — not present for pre-waitlist PAN verification
   pan_number: string;
   bank_account_id: string;
 }
@@ -68,7 +68,7 @@ interface CashfreePanResponse {
 // ==============================================
 
 const requestSchema = {
-  tenancy_id: { required: true, type: "string" as const },
+  tenancy_id: { required: false, type: "string" as const },
   pan_number: {
     required: true,
     type: "string" as const,
@@ -112,12 +112,13 @@ serve(async (req: Request) => {
     const validatedBody = validateSchema<VerifyPanRequest>(body, requestSchema, true);
 
     const { tenancy_id, pan_number, bank_account_id } = validatedBody;
+    const hasTenancy = !!tenancy_id;
     const sanitizedPan = pan_number.toUpperCase();
 
     // Generate idempotency key (PAN verification costs money)
     idempotencyKey = await generateIdempotencyKey(
       "verify-pan",
-      tenancy_id,
+      hasTenancy ? tenancy_id : userId,
       sanitizedPan
     );
 
@@ -150,25 +151,29 @@ serve(async (req: Request) => {
       "pan_verification",
       undefined,
       {
-        tenancy_id,
+        tenancy_id: tenancy_id || "pre-waitlist",
         pan_masked: maskPan(sanitizedPan),
         bank_account_id,
       }
     );
 
-    // Verify tenancy belongs to user
-    const { data: tenancy, error: tenancyError } = await supabase
-      .from("tenancies")
-      .select("id, user_id")
-      .eq("id", tenancy_id)
-      .single();
+    // Verify tenancy belongs to user (skip when no tenancy_id — pre-waitlist flow)
+    let tenancy = null;
+    if (hasTenancy) {
+      const { data: tenancyData, error: tenancyError } = await supabase
+        .from("tenancies")
+        .select("id, user_id")
+        .eq("id", tenancy_id)
+        .single();
 
-    if (tenancyError || !tenancy) {
-      throw new ValidationError("Tenancy not found", { tenancy_id: "Not found" });
-    }
+      if (tenancyError || !tenancyData) {
+        throw new ValidationError("Tenancy not found", { tenancy_id: "Not found" });
+      }
 
-    if (tenancy.user_id !== userId) {
-      throw new AppError("You don't have permission to modify this tenancy", "FORBIDDEN", 403);
+      if (tenancyData.user_id !== userId) {
+        throw new AppError("You don't have permission to modify this tenancy", "FORBIDDEN", 403);
+      }
+      tenancy = tenancyData;
     }
 
     // Verify bank account exists and belongs to user
@@ -203,24 +208,28 @@ serve(async (req: Request) => {
       nameForMatching = registeredName.replace(/\s*\(HUF\)\s*$/i, "").trim();
     }
 
-    // Resolve landlord names from agreement
-    const resolved = await resolveAgreementNames(supabase, tenancy_id, "landlord");
+    // Resolve landlord names from agreement (skip when no tenancy — pre-waitlist flow)
+    let resolvedNames: string[] = [];
+    if (hasTenancy) {
+      const resolved = await resolveAgreementNames(supabase, tenancy_id!, "landlord");
+      resolvedNames = resolved.names;
+    }
 
     // Match PAN name against landlord names
     let matchResult;
-    if (panValid && nameForMatching && resolved.names.length > 0) {
+    if (panValid && nameForMatching && resolvedNames.length > 0) {
       matchResult = await matchAgainstAgreementNames({
         verifiedName: nameForMatching,
-        candidateNames: resolved.names,
+        candidateNames: resolvedNames,
         context: geminiContext,
       });
-    } else if (resolved.names.length === 0) {
+    } else if (resolvedNames.length === 0) {
       // No landlord names — skip matching, don't block
       matchResult = {
         matched: true,
         matchedName: null,
         score: 0,
-        details: { gemini_used: false, skipped: true, reason: "no_landlord_names_in_agreement" },
+        details: { gemini_used: false, skipped: true, reason: hasTenancy ? "no_landlord_names_in_agreement" : "pre_waitlist_no_tenancy" },
       };
     } else {
       matchResult = {
@@ -256,8 +265,8 @@ serve(async (req: Request) => {
       throw new AppError("Failed to save PAN verification result", "DB_ERROR", 500);
     }
 
-    // Update tenancy pan_verified if matched
-    if (panValid && matchResult.matched) {
+    // Update tenancy pan_verified if matched (skip when no tenancy — pre-waitlist flow)
+    if (hasTenancy && panValid && matchResult.matched) {
       await supabase
         .from("tenancies")
         .update({ pan_verified: true })
@@ -267,7 +276,8 @@ serve(async (req: Request) => {
     // ── IMMEDIATE VENDOR REGISTRATION ────────────────────────────
     // Register landlord as Cashfree Easy Split vendor right after PAN
     // verification succeeds. Don't wait for the daily sync-vendors cron.
-    if (panValid && matchResult.matched) {
+    // Skip when no tenancy — pre-waitlist flow has no landlord to register.
+    if (hasTenancy && panValid && matchResult.matched) {
       try {
         // Fetch bank account with encrypted fields for vendor creation
         const { data: fullBankAccount } = await supabase
@@ -360,7 +370,7 @@ serve(async (req: Request) => {
         !panValid ? "PAN_INVALID" : "PAN_NAME_MISMATCH",
         !panValid
           ? `PAN ${maskPan(sanitizedPan)} is not valid`
-          : `PAN name "${registeredName}" did not match agreement landlords: ${resolved.names.join(", ")}`,
+          : `PAN name "${registeredName}" did not match agreement landlords: ${resolvedNames.join(", ")}`,
         "pan_verification",
         bank_account_id,
         {
