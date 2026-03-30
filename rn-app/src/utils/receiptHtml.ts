@@ -148,8 +148,10 @@ export function buildReceiptHtml(receipt: ReceiptHtmlData): string {
 <title>Rent Receipt - ${esc(receipt.receiptNumber)}</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
-  @page { size: A4; margin: 0; }
-  body {
+  @page { size: 390px 844px; margin: 0; }
+  html, body {
+    width: 390px;
+    min-height: 844px;
     background: ${C.bg};
     font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
     font-size: 13px;
@@ -160,8 +162,7 @@ export function buildReceiptHtml(receipt: ReceiptHtmlData): string {
     print-color-adjust: exact;
   }
   .container {
-    max-width: 540px;
-    margin: 0 auto;
+    width: 100%;
   }
 
   /* Brand header */
