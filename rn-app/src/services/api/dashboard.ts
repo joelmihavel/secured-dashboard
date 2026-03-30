@@ -355,7 +355,7 @@ export function mapTransactions(
     id: p.id,
     title: `${parseRentMonthLabel(p.rent_month)} rent`,
     cardStatus: deriveCardStatus(p.status, p.settlement_status),
-    date: formatPaidAtDate(p.paid_at),
+    date: formatPaidAtDate(p.paid_at) || parseRentMonthLabel(p.rent_month),
     amount: p.amount,
   }));
 }
