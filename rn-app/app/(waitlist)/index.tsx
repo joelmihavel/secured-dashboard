@@ -648,45 +648,9 @@ export default function WaitlistScreen() {
             )}
           </Animated.View>
 
-          {/* "Once you're in, keep these things handy" — Figma 4109:24272 */}
-          <Animated.View
-            entering={FadeInDown.delay(FIGMA.animation.stagger * 5).duration(FIGMA.animation.duration)}
-          >
-            <RNText style={styles.stepsTitle}>
-              <RNText style={styles.stepsTitleGray}>Once you're in{'\n'}</RNText>
-              <RNText style={styles.stepsTitleAccent}>keep these things handy</RNText>
-            </RNText>
-          </Animated.View>
-
-          {/* 3-Step Indicator — Figma 4109:24273 */}
-          <Animated.View
-            entering={FadeInDown.delay(FIGMA.animation.stagger * 6).duration(FIGMA.animation.duration)}
-          >
-            <View style={styles.stepsWrapper}>
-              <View style={styles.stepsTrackRow}>
-                <View style={styles.stepsDot} />
-                <View style={styles.stepsConnector} />
-                <View style={styles.stepsDot} />
-                <View style={styles.stepsConnector} />
-                <View style={styles.stepsDot} />
-              </View>
-              <View style={styles.stepsLabelRow}>
-                <RNText style={[styles.stepLabel, { textAlign: 'left' }]}>
-                  Landlord's{'\n'}bank details and PAN
-                </RNText>
-                <RNText style={[styles.stepLabel, { textAlign: 'center' }]}>
-                  Home{'\n'}electricity bill
-                </RNText>
-                <RNText style={[styles.stepLabel, { textAlign: 'right' }]}>
-                  Landlord's{'\n'}contact details
-                </RNText>
-              </View>
-            </View>
-          </Animated.View>
-
           {/* Benefits Carousel — Figma 4109:24285 */}
           <Animated.View
-            entering={FadeInDown.delay(FIGMA.animation.stagger * 7).duration(FIGMA.animation.duration)}
+            entering={FadeInDown.delay(FIGMA.animation.stagger * 5).duration(FIGMA.animation.duration)}
             style={{ marginHorizontal: -FIGMA.layout.containerPadding }}
           >
             <View style={{ paddingLeft: FIGMA.layout.containerPadding }}>
