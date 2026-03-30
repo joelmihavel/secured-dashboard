@@ -20,9 +20,12 @@ ALTER TABLE fee_config ADD CONSTRAINT fee_config_method_gateway_key UNIQUE (meth
 
 -- 3. Seed Cashfree-specific rates (from Cashfree merchant agreement)
 -- These are Flent's convenience fees — controllable via DB updates
+-- Seed as inactive to avoid breaking old initiate-payment function
+-- (old function queries .eq("method", X).maybeSingle() — two active rows causes PGRST116)
+-- Activate AFTER new edge functions deploy: UPDATE fee_config SET is_active = true WHERE gateway = 'cashfree';
 INSERT INTO fee_config (method, rate, fee_type, gateway, is_active) VALUES
-  ('upi',         0,    'percentage', 'cashfree', true),
-  ('credit_card', 0.02, 'percentage', 'cashfree', true),
-  ('debit_card',  0.009,'percentage', 'cashfree', true),
-  ('netbanking',  1500, 'flat_paise', 'cashfree', true)
+  ('upi',         0,    'percentage', 'cashfree', false),
+  ('credit_card', 0.02, 'percentage', 'cashfree', false),
+  ('debit_card',  0.009,'percentage', 'cashfree', false),
+  ('netbanking',  1500, 'flat_paise', 'cashfree', false)
 ON CONFLICT (method, gateway) DO NOTHING;

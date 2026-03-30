@@ -63,21 +63,30 @@ ALTER TABLE public.active_sessions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.revoked_tokens ENABLE ROW LEVEL SECURITY;
 
 -- Users can see their own sessions (for "manage sessions" UI)
-CREATE POLICY "Users can view own sessions"
-  ON public.active_sessions FOR SELECT
-  USING (auth.uid() = user_id);
+DO $$ BEGIN
+  CREATE POLICY "Users can view own sessions"
+    ON public.active_sessions FOR SELECT
+    USING (auth.uid() = user_id);
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
 -- Only service role can insert/update/delete sessions
-CREATE POLICY "Service role manages sessions"
-  ON public.active_sessions FOR ALL
-  USING (auth.role() = 'service_role')
-  WITH CHECK (auth.role() = 'service_role');
+DO $$ BEGIN
+  CREATE POLICY "Service role manages sessions"
+    ON public.active_sessions FOR ALL
+    USING (auth.role() = 'service_role')
+    WITH CHECK (auth.role() = 'service_role');
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
 -- Revoked tokens: service role only (edge functions check via service client)
-CREATE POLICY "Service role manages revoked tokens"
-  ON public.revoked_tokens FOR ALL
-  USING (auth.role() = 'service_role')
-  WITH CHECK (auth.role() = 'service_role');
+DO $$ BEGIN
+  CREATE POLICY "Service role manages revoked tokens"
+    ON public.revoked_tokens FOR ALL
+    USING (auth.role() = 'service_role')
+    WITH CHECK (auth.role() = 'service_role');
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
 -- ==============================================
 -- CLEANUP CRON: Remove expired sessions and tokens

@@ -14,7 +14,7 @@ ALTER TABLE refunds ADD COLUMN IF NOT EXISTS gateway_metadata JSONB;
 
 -- Update settle-to-landlord cron to every 5 minutes
 -- Instant Settlements enabled: 1hr window, so 5min cadence ensures timely transfers
-SELECT cron.unschedule('settle-to-landlord');
+DO $$ BEGIN PERFORM cron.unschedule('settle-to-landlord'); EXCEPTION WHEN OTHERS THEN NULL; END $$;
 SELECT cron.schedule(
   'settle-to-landlord',
   '*/5 * * * *',

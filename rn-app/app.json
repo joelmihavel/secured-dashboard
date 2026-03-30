@@ -10,8 +10,6 @@
     "backgroundColor": "#131313",
     "newArchEnabled": true,
     "splash": {
-      "image": "./assets/images/splash-icon.png",
-      "resizeMode": "contain",
       "backgroundColor": "#131313"
     },
     "ios": {
@@ -178,6 +176,7 @@
         }
       ],
       "./plugins/withPayU",
+      "./plugins/withCashfree",
       "./plugins/withExceptionLogger",
       "expo-web-browser"
     ],
