@@ -122,7 +122,16 @@ function statusToTarget(userStatus: string): JourneyTarget | null {
     case 'active':
       return '/(main)';
     case 'agreement_confirmed':
-    case 'waitlisted':
+    case 'waitlisted': {
+      // If user is in an active upload flow and hasn't done bank step,
+      // show bank screen before waitlist. Only applies to users currently
+      // going through onboarding (uploadPhase not idle), not pre-existing users.
+      const { bankStepCompleted, uploadPhase, extractionId } = useUploadStore.getState();
+      if (!bankStepCompleted && uploadPhase !== 'idle' && extractionId) {
+        return '/(agreement)/add-bank-details';
+      }
+      return '/(waitlist)';
+    }
     case 'not_eligible':
       return '/(waitlist)';
     case 'signed_up':
@@ -240,6 +249,15 @@ export default function Index() {
         // Validate in background — if user_status changed, redirect
         queryUserStatus(userId).then(async (userStatus) => {
           if (!userStatus) return; // Network failed, keep cached route
+          // Wait for upload store hydration before reading bankStepCompleted
+          if (!useUploadStore.getState()._hasHydrated) {
+            await new Promise<void>((resolve) => {
+              const unsub = useUploadStore.subscribe((s) => {
+                if (s._hasHydrated) { unsub(); resolve(); }
+              });
+              setTimeout(() => { unsub(); resolve(); }, 500);
+            });
+          }
           let correctTarget = statusToTarget(userStatus);
 
           // statusToTarget returns null for 'approved' (needs async bank check)

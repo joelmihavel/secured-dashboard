@@ -826,7 +826,7 @@ export default function UploadScreen() {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
 
         setTimeout(() => {
-          router.replace('/(waitlist)' as never);
+          router.replace('/(agreement)/add-bank-details' as never);
         }, FIGMA.animation.duration);
         break;
       }
@@ -948,7 +948,7 @@ export default function UploadScreen() {
       // Brief pause at 100% before navigating
       await new Promise((resolve) => setTimeout(resolve, 300));
       advanceJourneyStage(); // agreement_upload → setup
-      router.replace('/(waitlist)' as never);
+      router.replace('/(agreement)/add-bank-details' as never);
       return;
     }
 
@@ -998,7 +998,8 @@ export default function UploadScreen() {
       );
 
       // Upload is done; backend extraction continues asynchronously.
-      router.replace('/(waitlist)' as never);
+      // Route to bank details (user fills dead time while extraction runs).
+      router.replace('/(agreement)/add-bank-details' as never);
     } catch (error) {
       console.error('Upload error:', error);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);

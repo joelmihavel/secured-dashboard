@@ -242,19 +242,23 @@ export const useUploadStore = create<UploadStore>()(
           state.lastUpdatedAt = 0;
           state.errorCode = null;
           state.errorMessage = null;
-          // Note: bankStepCompleted is NOT reset — bank verification persists
-          // across re-uploads. The DB row exists regardless of upload state.
+          state.bankStepCompleted = false;
           // Note: _hasHydrated is NOT reset — it stays true once set
         }),
 
       isStale: () => {
-        const { uploadPhase, lastUpdatedAt } = get();
+        const { uploadPhase, lastUpdatedAt, bankStepCompleted } = get();
         if (uploadPhase === 'idle') return false;
         if (lastUpdatedAt === 0) return false;
         // BUG 5 FIX: Completed phase goes stale after 24 hours —
         // abandoned completed extractions won't persist forever.
         if (uploadPhase === 'completed') {
           return Date.now() - lastUpdatedAt > COMPLETED_STALENESS_MS;
+        }
+        // Don't mark as stale while extraction is server-side processing
+        // and bank step is already done — user would lose their bank step progress.
+        if (bankStepCompleted && (uploadPhase === 'server_processing' || uploadPhase === 'processing')) {
+          return Date.now() - lastUpdatedAt > COMPLETED_STALENESS_MS; // 24h, not 10min
         }
         return Date.now() - lastUpdatedAt > STALENESS_MS;
       },
