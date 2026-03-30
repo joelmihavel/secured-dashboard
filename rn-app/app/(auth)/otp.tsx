@@ -55,6 +55,7 @@ import { supabase } from '@/src/services/supabase/client';
 import { isReviewMode } from '@/src/review/reviewMode';
 import { isJourneyMode } from '@/src/review/journeyMode';
 import { addBreadcrumb } from '@/src/config/sentry';
+import { useUploadStore } from '@/src/stores/upload';
 
 const LAST_ROUTE_KEY = 'flent_last_journey_target';
 
@@ -77,12 +78,26 @@ async function resolvePostOtpTarget(userId: string): Promise<string> {
     }
 
     switch (data.user_status) {
-      case 'approved':
-        return '/(setup)/add-bank';
+      case 'approved': {
+        // Check if bank already verified (deferred name matching succeeded)
+        const { data: tenancyRow } = await supabase
+          .from('tenancies')
+          .select('bank_verified')
+          .eq('user_id', userId)
+          .maybeSingle();
+        return tenancyRow?.bank_verified ? '/(main)' : '/(setup)/add-bank';
+      }
       case 'active':
         return '/(main)';
       case 'agreement_confirmed':
-      case 'waitlisted':
+      case 'waitlisted': {
+        // Check if user is in active upload flow and hasn't done bank step
+        const { bankStepCompleted, uploadPhase, extractionId } = useUploadStore.getState();
+        if (!bankStepCompleted && uploadPhase !== 'idle' && extractionId) {
+          return '/(agreement)/add-bank-details';
+        }
+        return '/(waitlist)';
+      }
       case 'not_eligible':
         return '/(waitlist)';
       case 'signed_up':

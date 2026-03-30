@@ -39,11 +39,14 @@ interface UploadState {
   /** Whether user completed or skipped the pre-waitlist bank details step.
    *  Prevents showing the bank screen again on cold-start routing. */
   bankStepCompleted: boolean;
+  /** User ID that owns this upload state. Used to detect cross-user state
+   *  leakage (e.g., device shared between users or stale Keychain data). */
+  ownerId: string | null;
   _hasHydrated: boolean;
 }
 
 interface UploadActions {
-  startUpload: (fileName: string) => void;
+  startUpload: (fileName: string, userId?: string) => void;
   setExtractionId: (id: string) => void;
   setPhase: (phase: UploadPhase) => void;
   setError: (code: string, message: string) => void;
@@ -61,6 +64,8 @@ interface UploadActions {
   /** Mark the pre-waitlist bank step as completed or skipped. */
   completeBankStep: () => void;
   isStale: () => boolean;
+  /** Reset if stored state belongs to a different user. Returns true if reset. */
+  validateOwner: (currentUserId: string) => boolean;
   setHasHydrated: (v: boolean) => void;
 }
 
@@ -146,6 +151,7 @@ const initialState: UploadState = {
   errorMessage: null,
   dismissedExtractionId: null,
   bankStepCompleted: false,
+  ownerId: null,
   _hasHydrated: false,
 };
 
@@ -158,13 +164,14 @@ export const useUploadStore = create<UploadStore>()(
     immer((set, get) => ({
       ...initialState,
 
-      startUpload: (fileName) =>
+      startUpload: (fileName, userId) =>
         set((state) => {
           state.uploadPhase = 'requesting_url';
           state.fileName = fileName;
           state.lastUpdatedAt = Date.now();
           state.errorCode = null;
           state.errorMessage = null;
+          if (userId) state.ownerId = userId;
           state.dismissedExtractionId = null; // new upload = fresh start
         }),
 
@@ -243,6 +250,7 @@ export const useUploadStore = create<UploadStore>()(
           state.errorCode = null;
           state.errorMessage = null;
           state.bankStepCompleted = false;
+          state.ownerId = null;
           // Note: _hasHydrated is NOT reset — it stays true once set
         }),
 
@@ -263,6 +271,16 @@ export const useUploadStore = create<UploadStore>()(
         return Date.now() - lastUpdatedAt > STALENESS_MS;
       },
 
+      validateOwner: (currentUserId) => {
+        const { ownerId, uploadPhase } = get();
+        if (ownerId && ownerId !== currentUserId && uploadPhase !== 'idle') {
+          console.log(`[UploadStore] Owner mismatch: stored=${ownerId}, current=${currentUserId} — resetting`);
+          get().reset();
+          return true;
+        }
+        return false;
+      },
+
       setHasHydrated: (v) =>
         set((state) => {
           state._hasHydrated = v;
@@ -281,6 +299,7 @@ export const useUploadStore = create<UploadStore>()(
         errorMessage: state.errorMessage,
         dismissedExtractionId: state.dismissedExtractionId,
         bankStepCompleted: state.bankStepCompleted,
+        ownerId: state.ownerId,
       }),
       onRehydrateStorage: () => (state) => {
         // Auto-reset stale non-completed uploads on hydration

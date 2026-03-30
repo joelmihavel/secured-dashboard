@@ -18,6 +18,7 @@ import { isReviewMode, deactivateReviewMode } from '@/src/review/reviewMode';
 import { isJourneyMode, deactivateJourneyMode } from '@/src/review/journeyMode';
 import { useSessionMonitor } from '@/src/hooks/useSessionMonitor';
 import { beginTokenRefreshTracking, endTokenRefreshTracking, OTA_RELOAD_MARKER_KEY } from '@/src/config/updates';
+import { detectAndHandleFreshInstall } from '@/src/utils/installDetection';
 import type { Session } from '@supabase/supabase-js';
 
 /**
@@ -127,6 +128,17 @@ export function AuthProvider({ children }: AuthProviderProps) {
     // 1. Get initial session
     const initSession = async () => {
       try {
+        // Fresh install detection: iOS Keychain persists across app delete/reinstall.
+        // If the app was reinstalled, wipe all stale Keychain data before proceeding.
+        // Uses a filesystem sentinel (wiped on uninstall) to detect reinstalls.
+        const wasFreshInstall = await detectAndHandleFreshInstall();
+        if (wasFreshInstall) {
+          console.log('[AuthProvider] Fresh install detected — all Keychain data cleared');
+          updateSession(null);
+          setIsLoading(false);
+          return;
+        }
+
         // DB migration guard: clear stale keychain sessions from old Supabase project.
         // iOS Keychain persists across app uninstalls, so users who had the Dev DB build
         // and install the Main DB build would load a session signed by the wrong JWT secret.
@@ -195,6 +207,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
           if (userInitiatedSignOutRef.current) {
             userInitiatedSignOutRef.current = false;
             updateSession(null);
+            // Immediately clear cached route — don't wait for clearAllStores async
+            SecureStore.deleteItemAsync('flent_last_journey_target').catch(() => {});
             if (!hasRedirectedRef.current) {
               hasRedirectedRef.current = true;
               routerRef.current.replace('/(auth)/splash' as never);

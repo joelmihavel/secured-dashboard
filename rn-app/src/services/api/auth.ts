@@ -16,6 +16,7 @@ import { supabase } from '../supabase';
 import { tryCatch, logError, getErrorMessage } from '@/src/utils';
 import { isReviewPhone, activateReviewMode, isReviewMode, deactivateReviewMode, REVIEW_OTP } from '@/src/review/reviewMode';
 import { isJourneyPhone, activateJourneyMode, isJourneyMode, deactivateJourneyMode, REVIEW_OTP as JOURNEY_OTP } from '@/src/review/journeyMode';
+import { useAuthStore } from '@/src/stores/auth';
 
 // ==============================================
 // TYPES
@@ -266,13 +267,16 @@ export async function signOut(): Promise<{ success: boolean; error: string | nul
   }
 
   // Deactivate push token before signing out (H6: prevent ghost notifications)
+  // NEVER use getSession() here — it triggers _callRefreshToken() which races
+  // with autoRefreshToken and can cause double refresh token consumption (lesson #33).
+  // Read userId from the auth store instead (set during sign-in, cleared on sign-out).
   try {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (session?.user?.id) {
+    const userId = useAuthStore.getState().userId;
+    if (userId) {
       await supabase
         .from('device_tokens')
         .update({ is_active: false })
-        .eq('user_id', session.user.id);
+        .eq('user_id', userId);
     }
   } catch {
     // Best-effort — don't block sign-out

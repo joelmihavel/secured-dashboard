@@ -215,6 +215,9 @@ export default function Index() {
         });
       }
 
+      // ── OWNER VALIDATION: reset upload store if it belongs to a different user ──
+      useUploadStore.getState().validateOwner(userId);
+
       // ── PAYMENT RECOVERY: check for in-progress payments from app crash ──
       // Moved here from usePaymentRecovery hook in _layout.tsx because
       // navigating from _layout.tsx races with expo-router's assertIsReady.
