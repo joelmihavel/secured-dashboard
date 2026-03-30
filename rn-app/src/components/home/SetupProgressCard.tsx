@@ -40,6 +40,7 @@ export interface SetupProgressCardProps {
   /** @deprecated Use onPress instead */
   onFinishSetup?: () => void;
   ctaLabel?: string;
+  onAddPaymentMethod?: () => void;
 }
 
 function SetupProgressCardComponent({
@@ -59,7 +60,7 @@ function SetupProgressCardComponent({
 
   const steps = [
     {
-      title: "Add landlord's bank details",
+      title: "Add your landlord's bank details",
       subtitle: 'enables secure payouts',
       isComplete: bankDetailsComplete,
     },
@@ -69,9 +70,9 @@ function SetupProgressCardComponent({
       isComplete: addressProofComplete,
     },
     {
-      title: 'Confirm your Tenancy',
+      title: 'Confirm your tenancy',
       subtitle: landlordInvited
-        ? 'Landlord is invited'
+        ? 'landlord is invited'
         : 'complete landlord verification',
       isComplete: landlordInvited,
     },
@@ -137,9 +138,9 @@ function SetupProgressCardComponent({
           testID="setup-progress-cta"
         >
           <Text style={styles.infoBarText}>
-            {ctaLabel ?? 'How to Invite your Landlord?'}
+            {ctaLabel ?? 'What does my landlord get?'}
           </Text>
-          <Text style={styles.infoBarLink}>Learn More</Text>
+          <Text style={styles.infoBarLink}>Learn more</Text>
         </TouchableOpacity>
       )}
     </Wrapper>

@@ -1,27 +1,26 @@
 /**
  * Update Banner Component
  *
- * Ultra-slim OTA update bar at the very bottom of the screen.
+ * Bottom banner showing OTA update progress.
+ * All updates auto-apply — no manual "tap to restart" interaction.
  * States:
- *  - downloading: shimmer animation, "Updating..."
- *  - ready: tappable, "Update ready — tap to restart"
- *  - critical: non-dismissable, "Applying critical update..."
- *  - restarting: non-dismissable, "Restarting..."
+ *  - downloading: shimmer + "Updating your app..."
+ *  - restarting: "Restarting..." (native reload screen takes over)
+ *  - critical: same as restarting (auto-applies)
  */
 
 import React, { useEffect, useRef, useState } from 'react';
-import { Text, StyleSheet, Animated, Easing, Pressable } from 'react-native';
+import { Text, StyleSheet, Animated, Easing } from 'react-native';
 import { colors } from '@/src/theme';
 import { useOTAUpdates } from '@/src/hooks/useOTAUpdates';
 
 export function UpdateBanner() {
-  const { bannerState, applyUpdate, dismiss } = useOTAUpdates();
+  const { bannerState } = useOTAUpdates();
   const [slideAnim] = useState(new Animated.Value(20));
   const shimmer = useRef(new Animated.Value(0)).current;
 
   const shouldShow =
     bannerState === 'downloading' ||
-    bannerState === 'ready' ||
     bannerState === 'critical' ||
     bannerState === 'restarting';
 
@@ -36,7 +35,7 @@ export function UpdateBanner() {
 
   // Indeterminate shimmer animation
   useEffect(() => {
-    if (bannerState === 'downloading') {
+    if (bannerState === 'downloading' || bannerState === 'restarting') {
       const loop = Animated.loop(
         Animated.timing(shimmer, {
           toValue: 1,
@@ -52,52 +51,24 @@ export function UpdateBanner() {
 
   if (!shouldShow) return null;
 
-  const isCritical = bannerState === 'critical' || bannerState === 'restarting';
-  const isReady = bannerState === 'ready';
-  const isTappable = isReady;
-
   const shimmerWidth = shimmer.interpolate({
     inputRange: [0, 0.5, 1],
     outputRange: ['0%', '60%', '100%'],
   });
 
-  const message = (() => {
-    switch (bannerState) {
-      case 'downloading': return 'Updating...';
-      case 'ready': return 'Update ready \u2014 tap to restart';
-      case 'critical': return 'Applying critical update...';
-      case 'restarting': return 'Restarting...';
-      default: return '';
-    }
-  })();
+  const message = bannerState === 'downloading'
+    ? 'Updating your app...'
+    : 'Restarting...';
 
-  const content = (
+  return (
     <Animated.View
-      style={[
-        styles.container,
-        isReady && styles.readyContainer,
-        { transform: [{ translateY: slideAnim }] },
-      ]}
-      pointerEvents={isTappable ? 'auto' : 'none'}
+      style={[styles.container, { transform: [{ translateY: slideAnim }] }]}
+      pointerEvents="none"
     >
-      {bannerState === 'downloading' && (
-        <Animated.View style={[styles.progressFill, { width: shimmerWidth }]} />
-      )}
-      <Text style={[styles.message, isCritical && styles.criticalMessage, isReady && styles.readyMessage]}>
-        {message}
-      </Text>
+      <Animated.View style={[styles.progressFill, { width: shimmerWidth }]} />
+      <Text style={styles.message}>{message}</Text>
     </Animated.View>
   );
-
-  if (isTappable) {
-    return (
-      <Pressable onPress={applyUpdate} onLongPress={dismiss}>
-        {content}
-      </Pressable>
-    );
-  }
-
-  return content;
 }
 
 const styles = StyleSheet.create({
@@ -113,28 +84,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     overflow: 'hidden',
   },
-  readyContainer: {
-    height: 28,
-    backgroundColor: 'rgba(32,32,32,0.98)',
-  },
   progressFill: {
     position: 'absolute',
     left: 0,
     top: 0,
     bottom: 0,
-    backgroundColor: 'rgba(255,154,109,0.3)',
+    backgroundColor: 'rgba(255,154,109,0.2)',
   },
   message: {
     fontSize: 10,
     fontFamily: 'PlusJakartaSans-Regular',
     color: colors.neutral[500],
-  },
-  criticalMessage: {
-    color: '#DC3545',
-  },
-  readyMessage: {
-    fontSize: 11,
-    fontFamily: 'PlusJakartaSans-Medium',
-    color: colors.brand[500],
   },
 });

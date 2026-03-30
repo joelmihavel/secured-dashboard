@@ -26,7 +26,7 @@
  */
 
 import { serve } from "https://deno.land/std@0.208.0/http/server.ts";
-import { createServiceClient } from "../_shared/supabase.ts";
+import { createServiceClient, recordSession, revokeUserSessions, decodeJwtPayload } from "../_shared/supabase.ts";
 import { handleCors, jsonResponse, errorResponse } from "../_shared/cors.ts";
 import {
   AppError,
@@ -34,7 +34,7 @@ import {
   ExternalServiceError,
   handleError,
 } from "../_shared/errors.ts";
-import { validateSchema, sanitizePhone, formatPhoneWithCountryCode, isValidE164Phone } from "../_shared/validation.ts";
+import { validateSchema, sanitizePhone, formatPhoneWithCountryCode, normalizePhoneE164, isValidE164Phone } from "../_shared/validation.ts";
 import { AuditLogger, AuditActions } from "../_shared/audit.ts";
 import { extractFirstName } from "../_shared/name-utils.ts";
 import { callCashfreeSendOtp, callCashfreeVerifyOtp } from "../_shared/cashfree-m360-otp.ts";
@@ -296,7 +296,7 @@ async function handleRouteOtp(
           "Content-Type": "application/json",
           "apikey": supabaseAnonKey,
         },
-        body: JSON.stringify({ phone: phoneWithCountryCode }),
+        body: JSON.stringify({ phone: normalizePhoneE164(phoneWithCountryCode) }),
       });
       otpTriggered = otpResponse.ok;
       if (!otpTriggered) {
@@ -334,7 +334,7 @@ async function handleRouteOtp(
 
     // Create auth user first so Supabase signInWithOtp works
     const { error: createError } = await supabase.auth.admin.createUser({
-      phone: phoneWithCountryCode,
+      phone: normalizePhoneE164(phoneWithCountryCode),
       phone_confirm: false,
       user_metadata: { full_name: name },
     });
@@ -699,6 +699,23 @@ async function verifyCashfreePath(
     EdgeRuntime.waitUntil(backgroundWork);
   }
 
+  // Session tracking: revoke old sessions, then record new one.
+  // MUST be sequential — if parallel, revoke could see the new session
+  // (just inserted by recordSession) and revoke it too.
+  if ("access_token" in session) {
+    try {
+      const tokenPayload = decodeJwtPayload(session.access_token);
+      const sessionId = (tokenPayload?.session_id as string) ?? null;
+
+      // 1. Revoke old sessions first (blacklists their JTIs)
+      await revokeUserSessions(userId, isNewUser ? "First login" : "Re-authenticated");
+      // 2. Then record the new session (won't be revoked since revoke already ran)
+      await recordSession(userId, sessionId);
+    } catch (sessionTrackingErr) {
+      console.error("[auth-otp] Session tracking failed (non-fatal):", sessionTrackingErr);
+    }
+  }
+
   // OPT-2: Return session tokens if server-side exchange succeeded, else token_hash fallback
   return jsonResponse({
     success: true,
@@ -824,7 +841,7 @@ async function createOrFindUser(
   supabase: ReturnType<typeof createServiceClient>
 ): Promise<{ userId: string; isNewUser: boolean }> {
   const { data: authData, error: authError } = await supabase.auth.admin.createUser({
-    phone: phoneWithCountryCode,
+    phone: normalizePhoneE164(phoneWithCountryCode),
     phone_confirm: true,
     user_metadata: {
       full_name: name,

@@ -41,6 +41,9 @@ interface PaymentHistoryItem {
   id: string;
   amount: number;
   pg_fee: number;
+  convenience_fee: number;
+  convenience_fee_paise: number;
+  fee_billing_model: string;
   cashback_applied: number;
   cashback_earned: number;
   net_amount: number;
@@ -109,7 +112,8 @@ serve(async (req: Request) => {
     let query = supabase
       .from("payments")
       .select(`
-        id, rent_amount_paise, pg_fee_paise, cashback_applied_paise, cashback_earned_paise,
+        id, rent_amount_paise, pg_fee_paise, convenience_fee_paise, fee_billing_model,
+        cashback_applied_paise, cashback_earned_paise,
         status, payment_method, payment_month, paid_at, created_at,
         tenancies!inner (
           id, property_address, landlord_name
@@ -152,6 +156,9 @@ serve(async (req: Request) => {
       id: p.id,
       amount: p.rent_amount_paise / 100,
       pg_fee: p.pg_fee_paise / 100,
+      convenience_fee: (p.convenience_fee_paise ?? 0) / 100,
+      convenience_fee_paise: p.convenience_fee_paise ?? 0,
+      fee_billing_model: p.fee_billing_model ?? "pg_billed",
       cashback_applied: p.cashback_applied_paise / 100,
       cashback_earned: (p.cashback_earned_paise ?? 0) / 100,
       net_amount: (p.rent_amount_paise - p.cashback_applied_paise) / 100,

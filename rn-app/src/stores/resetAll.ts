@@ -7,6 +7,7 @@
  */
 
 import * as SecureStore from 'expo-secure-store';
+import { OTA_RELOAD_MARKER_KEY } from '@/src/config/updates';
 import { useAuthStore } from './auth';
 import { useUploadStore } from './upload';
 import { useWaitlistStore } from './waitlist';
@@ -24,11 +25,12 @@ import { removeAllChannels } from '@/src/services/supabase/realtimeManager';
  * The Supabase session key uses chunked storage (see client.ts), so we also
  * need to clean up any chunk keys.
  */
-const SUPABASE_SESSION_KEY = 'supabase.auth.token';
+import { SUPABASE_SESSION_STORAGE_KEY as SUPABASE_SESSION_KEY } from '@/src/services/supabase/client';
 const PERSISTED_SECURE_STORE_KEYS = [
   'flent-upload-state',       // Upload store (Zustand persist)
   'payment-recovery',          // Payment store (Zustand persist)
   'flent_last_journey_target', // Cached journey route
+  OTA_RELOAD_MARKER_KEY,       // OTA reload marker (prevents stale extended debounce)
 ];
 
 /**
@@ -38,7 +40,7 @@ const PERSISTED_SECURE_STORE_KEYS = [
  */
 async function clearSupabaseSessionFromStorage(): Promise<void> {
   try {
-    // Check for chunked session
+    // Clear legacy gen 0 chunks
     const countRaw = await SecureStore.getItemAsync(`${SUPABASE_SESSION_KEY}_chunks`);
     if (countRaw) {
       const n = parseInt(countRaw, 10);
@@ -48,7 +50,27 @@ async function clearSupabaseSessionFromStorage(): Promise<void> {
       await SecureStore.deleteItemAsync(`${SUPABASE_SESSION_KEY}_chunks`);
     }
     await SecureStore.deleteItemAsync(SUPABASE_SESSION_KEY);
-    // Also clear the code verifier (used for PKCE flow)
+
+    // Clear generation-based chunks
+    const genRaw = await SecureStore.getItemAsync(`${SUPABASE_SESSION_KEY}_gen`);
+    if (genRaw) {
+      const gen = parseInt(genRaw, 10);
+      for (let g = Math.max(1, gen - 2); g <= gen; g++) {
+        const prefix = `${SUPABASE_SESSION_KEY}_g${g}`;
+        const gc = await SecureStore.getItemAsync(`${prefix}_chunks`).catch(() => null);
+        if (gc) {
+          const n = parseInt(gc, 10);
+          for (let i = 1; i < n; i++) {
+            await SecureStore.deleteItemAsync(`${prefix}_${i}`).catch(() => {});
+          }
+          await SecureStore.deleteItemAsync(`${prefix}_chunks`).catch(() => {});
+        }
+        await SecureStore.deleteItemAsync(prefix).catch(() => {});
+      }
+      await SecureStore.deleteItemAsync(`${SUPABASE_SESSION_KEY}_gen`).catch(() => {});
+    }
+
+    // Clear PKCE code verifier
     await SecureStore.deleteItemAsync(`${SUPABASE_SESSION_KEY}-code-verifier`);
   } catch {
     // Best-effort cleanup

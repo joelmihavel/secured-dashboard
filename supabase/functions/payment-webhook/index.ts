@@ -13,6 +13,7 @@ import { createServiceClient } from "../_shared/supabase.ts";
 import { handleCors, jsonResponse, errorResponse } from "../_shared/cors.ts";
 import { AppError, PaymentError, handleError } from "../_shared/errors.ts";
 import { AuditLogger, AuditActions } from "../_shared/audit.ts";
+import { notifyUser } from "../_shared/notifications.ts";
 import { verifyPayUWebhookHashWithCharges, sha512, hmacSha256Base64, timingSafeCompare } from "../_shared/crypto.ts";
 import {
   PAYU_MERCHANT_KEY,
@@ -210,6 +211,100 @@ serve(async (req: Request) => {
         return jsonResponse({ success: true, message: 'Already processed' });
       }
 
+      // ── REFUND STATUS WEBHOOK ──────────────────────────────────────
+      if (event.type === 'REFUND_STATUS_WEBHOOK' && event.data?.refund) {
+        const refundData = event.data.refund;
+        const refundId = refundData.refund_id ?? refundData.cf_refund_id;
+        const refundStatus = refundData.refund_status; // SUCCESS, FAILED, CANCELLED, PENDING
+        const refundOrderId = refundData.order_id;
+
+        console.log('[webhook] Cashfree refund status:', { refundId, refundStatus, refundOrderId });
+
+        // Find refund record by gateway_refund_id or matching order
+        const { data: refundRecord } = await supabase
+          .from('refunds')
+          .select('id, payment_id, status, amount_paise, cashback_reversed_paise')
+          .or(`gateway_refund_id.eq.${refundId},gateway_refund_id.eq.${refundData.cf_refund_id}`)
+          .maybeSingle();
+
+        if (refundRecord) {
+          const statusMap: Record<string, string> = {
+            'SUCCESS': 'completed',
+            'FAILED': 'failed',
+            'CANCELLED': 'cancelled',
+            'PENDING': 'processing',
+            'ONHOLD': 'processing',
+          };
+          const newRefundStatus = statusMap[refundStatus] ?? 'processing';
+
+          // Update refund record
+          await supabase.from('refunds').update({
+            status: newRefundStatus,
+            gateway_refund_status: refundStatus,
+            gateway_metadata: refundData,
+            completed_at: refundStatus === 'SUCCESS' ? new Date().toISOString() : null,
+            processed_at: new Date().toISOString(),
+          }).eq('id', refundRecord.id);
+
+          // If refund FAILED — revert payment status and re-credit reversed cashback
+          if (refundStatus === 'FAILED' || refundStatus === 'CANCELLED') {
+            await supabase.from('payments').update({
+              status: 'success',
+              refund_amount_paise: 0,
+              refund_reason: null,
+            }).eq('id', refundRecord.payment_id);
+
+            // Re-credit cashback that was reversed when the refund was initiated
+            const reversedAmount = (refundRecord as any).cashback_reversed_paise ?? 0;
+            if (reversedAmount > 0) {
+              // Find the payment's user_id
+              const { data: paymentData } = await supabase
+                .from('payments')
+                .select('user_id, tenancy_id')
+                .eq('id', refundRecord.payment_id)
+                .single();
+
+              if (paymentData) {
+                try {
+                  await supabase.rpc('increment_cashback_balance', {
+                    p_user_id: paymentData.user_id,
+                    p_amount: reversedAmount,
+                  });
+                  await supabase.from('cashback_ledger').insert({
+                    user_id: paymentData.user_id,
+                    transaction_type: 'reinstatement',
+                    amount_paise: reversedAmount,
+                    balance_after_paise: 0, // approximate
+                    payment_id: refundRecord.payment_id,
+                    tenancy_id: paymentData.tenancy_id,
+                    reference_type: 'refund',
+                    reference_id: refundRecord.id,
+                    description: 'Cashback reinstated — refund failed',
+                  });
+                  console.log(`[webhook] Re-credited ${reversedAmount} paise cashback for failed refund ${refundId}`);
+                } catch (cbErr) {
+                  console.error(`[webhook] Cashback reinstatement failed:`, cbErr);
+                }
+              }
+            }
+
+            console.warn(`[webhook] Refund ${refundId} FAILED — reverted payment ${refundRecord.payment_id} to success`);
+          }
+
+          // Record in processed_webhooks
+          await supabase.from('processed_webhooks').insert({
+            event_id: String(eventId),
+            source: 'cashfree',
+            event_type: 'REFUND_STATUS_WEBHOOK',
+            payload: event,
+          }).catch(() => {});
+        } else {
+          console.warn(`[webhook] Refund record not found for refund_id=${refundId}`);
+        }
+
+        return jsonResponse({ success: true, message: 'Refund status processed' });
+      }
+
       // Find payment by cf_order_id (with retry for rare race condition where
       // webhook arrives before initiate-payment stores cf_order_id)
       let cfPayment = null;
@@ -266,8 +361,7 @@ serve(async (req: Request) => {
         await supabase.from('processed_webhooks').insert({
           event_id: String(eventId),
           payment_id: cfPayment.id,
-          gateway: 'cashfree',
-          raw_payload: event,
+          payment_gateway: 'cashfree',
         });
         return jsonResponse({ success: true, message: 'Transition not allowed' });
       }
@@ -281,7 +375,7 @@ serve(async (req: Request) => {
 
       if (newCfStatus === 'success') {
         cfUpdateData.paid_at = new Date().toISOString();
-        cfUpdateData.landlord_payout_status = 'pending';
+        cfUpdateData.landlord_payout_status = 'ready'; // Cashfree: auto-pickup by settle-to-landlord cron
         cfUpdateData.landlord_payout_paise = cfPayment.rent_amount_paise;
         cfUpdateData.cf_split_posted = false; // Signal for settle-to-landlord cron
       }
@@ -322,8 +416,7 @@ serve(async (req: Request) => {
       await supabase.from('processed_webhooks').insert({
         event_id: String(eventId),
         payment_id: cfPayment.id,
-        gateway: 'cashfree',
-        raw_payload: event,
+        payment_gateway: 'cashfree',
       });
 
       // On success: handle cashback and notifications
@@ -1004,6 +1097,14 @@ serve(async (req: Request) => {
 // NOTIFICATIONS
 // ==============================================
 
+function getSupabaseUrl(): string {
+  return Deno.env.get("SUPABASE_URL") || Deno.env.get("SB_URL") || "";
+}
+
+function getServiceKey(): string {
+  return Deno.env.get("SB_SECRET_KEY") || Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
+}
+
 async function sendPaymentSuccessNotification(
   supabase: ReturnType<typeof createServiceClient>,
   userId: string,
@@ -1011,87 +1112,46 @@ async function sendPaymentSuccessNotification(
   savedPaise: number
 ): Promise<void> {
   try {
-    // Get user details
     const { data: user } = await supabase
       .from("users")
-      .select("full_name, phone")
+      .select("full_name")
       .eq("id", userId)
       .single();
 
-    if (!user) return;
+    const amountRupees = ((payment.rent_amount_paise as number) / 100).toLocaleString("en-IN");
+    const savedRupees = (savedPaise / 100).toLocaleString("en-IN");
+    const firstName = user?.full_name?.split(" ")[0] ?? "there";
 
-    const amountRupees = ((payment.rent_amount_paise as number) / 100).toFixed(0);
-    const savedRupees = (savedPaise / 100).toFixed(0);
-    const firstName = user.full_name?.split(" ")[0] ?? "there";
-
-    // Queue WhatsApp notification
-    await supabase.from("notification_queue").insert({
+    await notifyUser(getSupabaseUrl(), getServiceKey(), {
       user_id: userId,
-      notification_type: "whatsapp",
-      payload: {
-        to: user.phone,
-        body: `Hi ${firstName}, your rent payment of ₹${amountRupees} was successful! You saved ₹${savedRupees} with Flent!`,
-      },
-      status: "pending",
-    });
-
-    // Queue push notification
-    const { data: deviceTokens } = await supabase
-      .from("device_tokens")
-      .select("token")
-      .eq("user_id", userId);
-
-    for (const dt of deviceTokens ?? []) {
-      await supabase.from("notification_queue").insert({
-        user_id: userId,
-        notification_type: "push",
-        payload: {
-          device_token: dt.token,
-          title: "Payment Successful!",
-          body: `Rent payment of ₹${amountRupees} completed. You saved ₹${savedRupees}!`,
-          data: {
-            type: "payment_success",
-            payment_id: payment.id,
-          },
-        },
-        status: "pending",
-      });
-    }
+      notification_type: "payment_success",
+      template_vars: { name: firstName, amount: amountRupees, cashback: savedRupees },
+      data: { payment_id: String(payment.id), initialStatus: "success", source: "receipt_view" },
+      related_entity_type: "payment",
+      related_entity_id: String(payment.id),
+    }).catch((e) => console.error("Payment success notification failed:", e));
   } catch (error) {
     console.error("Failed to send success notification:", error);
   }
 }
 
 async function sendPaymentFailedNotification(
-  supabase: ReturnType<typeof createServiceClient>,
+  _supabase: ReturnType<typeof createServiceClient>,
   userId: string,
   payment: Record<string, unknown>,
-  errorMessage?: string
+  _errorMessage?: string
 ): Promise<void> {
   try {
-    // Get user's device tokens for push notification
-    const { data: deviceTokens } = await supabase
-      .from("device_tokens")
-      .select("token")
-      .eq("user_id", userId);
+    const amountRupees = ((payment.rent_amount_paise as number) / 100).toLocaleString("en-IN");
 
-    for (const dt of deviceTokens ?? []) {
-      await supabase.from("notification_queue").insert({
-        user_id: userId,
-        notification_type: "push",
-        payload: {
-          device_token: dt.token,
-          title: "Payment Failed",
-          body: "Your rent payment couldn't be processed. Please try again.",
-          data: {
-            type: "payment_failed",
-            payment_id: payment.id,
-            error: errorMessage,
-          },
-        },
-        status: "pending",
-      });
-    }
+    await notifyUser(getSupabaseUrl(), getServiceKey(), {
+      user_id: userId,
+      notification_type: "payment_failed",
+      template_vars: { amount: amountRupees },
+      data: { payment_id: String(payment.id), initialStatus: "failed", source: "receipt_view" },
+      related_entity_type: "payment",
+      related_entity_id: String(payment.id),
+    }).catch((e) => console.error("Payment failed notification failed:", e));
   } catch (error) {
     console.error("Failed to send failure notification:", error);
   }

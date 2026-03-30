@@ -24,7 +24,7 @@ import { Pill } from '@/src/components/ui/Pill';
 import { BgLine } from '@/src/components/ui/BgLine';
 import { useDashboard, useFeeRates } from '@/src/hooks';
 import { usePaymentStore } from '@/src/stores';
-import { getGatewayFeeRates, computeFee } from '@/src/services/payment';
+import { getGatewayFeeRates, getPaymentGateway, computeFee } from '@/src/services/payment';
 import type { FeeRateConfig, GatewayFeeRates } from '@/src/services/payment';
 import type { ConfirmPaymentContentProps, PaymentMethodType } from './types';
 import { colors } from '@/src/theme';
@@ -124,32 +124,32 @@ export function ConfirmPaymentContent({
 
   // ── Payment Data ───────────────────────────────────────────────────────────
 
-  const isVerified = cashback?.verification_complete ?? false;
-
-  const baseRent = enteredAmount || tenancy?.monthly_rent || 30000;
-  const maintenance = tenancy?.maintenance ?? 0;
-  const totalRent = baseRent + maintenance;
-
-  const rates = feeRates ?? getGatewayFeeRates();
-  const feeConfig = getFeeConfig(rates, methodType);
-  const convenienceFee = computeFee(feeConfig, totalRent);
+  const rentAmount = enteredAmount || tenancy?.monthly_rent || 0;
 
   const cashbackPct = cashback?.discount_rate ?? 0.01;
-  const cashbackAmount = Math.round(totalRent * cashbackPct);
+  const cashbackAmount = Math.round(rentAmount * cashbackPct);
   const annualSavings = cashbackAmount * 12;
 
   // Accumulated balance from previous unverified payments (stored in paise)
   const accumulatedBalanceRupees = Math.floor((user?.cashback_balance_paise ?? 0) / 100);
 
-  // Verified: instant 1% + any accumulated balance (capped at rent)
-  // Unverified: no discount, but earns 1% into balance
-  const appliedCashback = isVerified
-    ? Math.min(cashbackAmount + accumulatedBalanceRupees, totalRent)
-    : 0;
-  const earnedCashback = !isVerified ? cashbackAmount : 0;
+  // Always apply cashback as instant discount (1% + any accumulated balance, capped at rent)
+  const appliedCashback = Math.min(cashbackAmount + accumulatedBalanceRupees, rentAmount);
+  const earnedCashback = 0;
 
-  // Fee NOT included — PayU charges it separately
-  const payableAmount = totalRent - appliedCashback;
+  // Fee computed on net rent (AFTER cashback) — matches backend formula
+  const netRent = rentAmount - appliedCashback;
+  const rates = feeRates ?? getGatewayFeeRates();
+  const feeConfig = getFeeConfig(rates, methodType);
+  const convenienceFee = computeFee(feeConfig, netRent);
+
+  // Bank fees pill adds ~72px (pill 48 + gap 24) — shift notches & grid line down
+  const isCard = methodType === 'card';
+  const pillOffset = isCard ? 72 : 0;
+
+  // Convenience fee always shown in payable amount for both gateways
+  const gateway = getPaymentGateway();
+  const payableAmount = netRent + convenienceFee;
 
   const alreadyPaid = upcomingPayment?.already_paid ?? false;
   const daysUntilDue = upcomingPayment?.due_date
@@ -190,11 +190,7 @@ export function ConfirmPaymentContent({
               You'll earn {Math.round(cashbackPct * 100)}% cashback on this rent payment
             </RNText>
             <Pill
-              text={
-                isVerified
-                  ? `You're saving \u20B9${fmt(annualSavings)} annually`
-                  : `You'll accumulate \u20B9${fmt(cashbackAmount)}`
-              }
+              text={`You're saving \u20B9${fmt(annualSavings)} annually`}
               variant="default"
               backgroundColor="#1A1A1A"
               style={s.cashbackPill}
@@ -211,52 +207,37 @@ export function ConfirmPaymentContent({
 
         {/* ── Receipt Area with decorative grid lines ──────────────────── */}
         <View style={s.receiptContainer}>
-          <BgLine style={s.gridLines} />
+          <BgLine style={[s.gridLines, { top: 66 + pillOffset }]} />
 
           <View style={s.receiptCard}>
-            {/* Section 1: Base rent + Maintenance — Figma 799:3401 */}
+            {/* Section 1: Rent amount */}
             <View style={s.section1}>
-              <BreakdownRow label="Base rent" value={`\u20B9 ${fmt(baseRent)}`} />
-              {maintenance > 0 && (
-                <>
-                  <View style={s.dividerLine} />
-                  <BreakdownRow
-                    label="Maintenance"
-                    value={`\u20B9 ${fmt(maintenance)}`}
-                  />
-                </>
-              )}
+              <BreakdownRow label="Rent" value={`\u20B9 ${fmt(rentAmount)}`} />
             </View>
 
             {/* Section 2: Totals — Figma 799:3415 */}
             <View style={s.section2}>
               <View style={s.dividerLine} />
               <BreakdownRow
-                label="Convenience Fees"
+                label="Convenience fees"
                 value={convenienceFee === 0 ? 'Free' : `\u20B9 ${fmt(convenienceFee)}`}
               />
-              {isVerified ? (
+              {cashbackAmount > 0 && (
                 <BreakdownRow
                   label="Cashback"
                   value={`-\u20B9 ${fmt(cashbackAmount)}`}
                   isCashback
                 />
-              ) : cashbackAmount > 0 ? (
-                <BreakdownRow
-                  label="Cashback"
-                  value={`\u20B9 ${fmt(cashbackAmount)}`}
-                  isAccrued
-                />
-              ) : null}
+              )}
               <View style={s.dividerLine} />
               <BreakdownRow
-                label="Payable Amount"
+                label="Payable amount"
                 value={`\u20B9 ${fmt(payableAmount)}`}
                 isTotal
               />
 
-              {/* Bank fees pill — credit card only */}
-              {methodType === 'card' && (
+              {/* Bank fees pill — credit card only, PayU only (Cashfree bills fee ourselves) */}
+              {methodType === 'card' && gateway !== 'cashfree' && (
                 <View style={s.bankFeePill}>
                   <RNText style={s.bankFeePillText}>Additional bank fees upto 1% might apply</RNText>
                 </View>
@@ -264,9 +245,9 @@ export function ConfirmPaymentContent({
             </View>
 
 
-            {/* Side notches — Figma 799:3444, 799:3445 */}
-            <View style={[s.sideNotch, s.sideNotchLeft]} />
-            <View style={[s.sideNotch, s.sideNotchRight]} />
+            {/* Side notches — shift down when bank fees pill is visible */}
+            <View style={[s.sideNotch, s.sideNotchLeft, { top: 256 + pillOffset }]} />
+            <View style={[s.sideNotch, s.sideNotchRight, { top: 256 + pillOffset }]} />
           </View>
         </View>
 
@@ -280,7 +261,7 @@ export function ConfirmPaymentContent({
             showDivider
           />
           <RNText style={s.footerText}>
-            Settlement will be processed in less than 24 hours.
+            Settlement will be processed in less than 24 hours
           </RNText>
         </View>
       </ScrollView>
@@ -362,8 +343,10 @@ const s = StyleSheet.create({
   },
   gridLines: {
     position: 'absolute' as const,
-    top: 64,
-    left: 12,
+    alignSelf: 'center' as const,
+    width: 369,
+    height: 235,
+    zIndex: -1,
   },
   receiptCard: {
     width: 270,

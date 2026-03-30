@@ -31,19 +31,17 @@ export const SCREEN_STATE_MAP: Record<string, ScreenSeedConfig> = {
 
   // Agreement
   '/(agreement)/upload':  { targetState: 'signed_up' },
-  '/(agreement)/review':  { targetState: 'signed_up', runtimeNote: 'Upload a document first' },
   '/(agreement)/success': { targetState: 'extraction_confirmed' },
 
   // Waitlist
   '/(waitlist)':          { targetState: 'waitlisted' },
   '/(waitlist)/approved': { targetState: 'approved' },
+  '/(waitlist)/rejected': { targetState: 'waitlisted_rejected' },
 
   // Setup
-  '/(setup)':                { targetState: 'approved' },
   '/(setup)/add-bank':       { targetState: 'approved' },
   '/(setup)/add-utility':    { targetState: 'approved' },
   '/(setup)/invite-landlord':{ targetState: 'approved' },
-  '/(setup)/pending-steps':  { targetState: 'approved' },
 
   // Main
   '/(main)': {

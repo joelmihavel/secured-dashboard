@@ -20,6 +20,7 @@ import { ValidationError, AuthError, handleError } from "../_shared/errors.ts";
 import { AuditLogger } from "../_shared/audit.ts";
 import { notifyUser } from "../_shared/notifications.ts";
 import { ensureTenancyForExtraction } from "../_shared/onboarding.ts";
+import { recomputeAndStoreRisk } from "../_shared/risk-utils.ts";
 
 // ==============================================
 // TYPES
@@ -98,6 +99,15 @@ serve(async (req: Request) => {
     const results: Array<{ user_id: string; success: boolean; error?: string; warning?: string }> = [];
 
     if (body.action === "approve") {
+      // Recompute risk for each user before approval — ensures admin sees freshest data
+      for (const uid of body.user_ids) {
+        try {
+          await recomputeAndStoreRisk(uid, supabase);
+        } catch (riskErr) {
+          console.error(`[admin-waitlist] Risk recompute failed for ${uid} (non-fatal):`, riskErr);
+        }
+      }
+
       // Batch approve
       const { data, error } = await supabase
         .from("waitlist_entries")

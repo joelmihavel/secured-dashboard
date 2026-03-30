@@ -339,11 +339,19 @@ export const usePaymentStore = create<PaymentStore>()(
     })),
     {
       name: 'payment-recovery',
+      version: 1,
       storage: createJSONStorage(() => secureStoreAdapter),
       partialize: (state) => ({
         lastPaymentId: state.lastPaymentId,
         lastPaymentTimestamp: state.lastPaymentTimestamp,
       }),
+      migrate: (persisted, version) => {
+        // Version 0 (or unknown): nuke to defaults — forced update gives clean slate
+        if (version === 0 || version === undefined) {
+          return { lastPaymentId: null, lastPaymentTimestamp: null };
+        }
+        return persisted as Partial<PaymentState>;
+      },
     }
   )
 );

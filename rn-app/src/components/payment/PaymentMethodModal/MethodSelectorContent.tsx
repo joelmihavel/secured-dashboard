@@ -186,17 +186,13 @@ const PaymentMethodRow = memo(({
         </View>
       </Pressable>
 
-      {/* Disabled banner below row */}
+      {/* Setup prompt pill below disabled credit card */}
       {isDisabled && method.disabledReason && (
-        <View style={styles.disabledBanner}>
-          <RNText style={styles.disabledBannerText}>
-            {method.disabledReason}
-          </RNText>
-          <Pressable onPress={() => Linking.openURL('https://flent.in/secured/how-it-works')}>
-            <RNText style={styles.learnMoreText}>Learn More</RNText>
-          </Pressable>
+        <View style={styles.disabledPillContainer}>
+          <RNText style={styles.disabledPillLabel}>{method.disabledReason}</RNText>
         </View>
       )}
+
     </View>
   );
 });
@@ -210,22 +206,22 @@ export function MethodSelectorContent({
   onProceed,
   isInitiating,
 }: MethodSelectorContentProps) {
-  const { tenancy } = useDashboard();
+  const { tenancy, cashback, user } = useDashboard();
   const storedAmount = usePaymentStore((state) => state.amount);
   const { data: dynamicRates } = useFeeRates();
 
-  // Credit card disabled logic
-  const landlordApproved = tenancy?.verification_status?.landlord_approved ?? false;
-  const utilityVerified = tenancy?.verification_status?.utility_verified ?? false;
-  const creditCardDisabled = !landlordApproved || !utilityVerified;
-  const creditCardDisabledReason = !landlordApproved
-    ? 'Available after landlord accepts tenancy'
-    : !utilityVerified
-      ? 'Available after utility bill verification'
-      : undefined;
+  // Credit card disabled logic — unlocked for all users
+  const creditCardDisabled = false;
+  const creditCardDisabledReason = undefined;
 
   const [selectedMethod, setSelectedMethod] = useState<string>('upi-1');
-  const rentAmount = storedAmount || tenancy?.monthly_rent || 32500;
+  const rentAmount = storedAmount || tenancy?.monthly_rent || 0;
+
+  // Fee computed on post-cashback amount (matches backend + confirm screen)
+  const cashbackAmount = Math.round(rentAmount * (cashback?.discount_rate ?? 0.01));
+  const accumulatedBalanceRupees = Math.floor((user?.cashback_balance_paise ?? 0) / 100);
+  const appliedCashback = Math.min(cashbackAmount + accumulatedBalanceRupees, rentAmount);
+  const feeBaseAmount = rentAmount - appliedCashback;
 
   const paymentMethods: PaymentMethod[] = useMemo(() => {
     const rates = dynamicRates ?? getGatewayFeeRates();
@@ -235,34 +231,34 @@ export function MethodSelectorContent({
         id: 'upi-1',
         type: 'upi' as const,
         title: 'UPI',
-        fee: formatFeeLabel(rates.upi, rentAmount),
-        feeAmount: computeFee(rates.upi, rentAmount),
+        fee: formatFeeLabel(rates.upi, feeBaseAmount),
+        feeAmount: computeFee(rates.upi, feeBaseAmount),
       },
       {
         id: 'netbanking-1',
         type: 'netbanking' as const,
         title: 'Net Banking',
-        fee: formatFeeLabel(rates.netbanking, rentAmount),
-        feeAmount: computeFee(rates.netbanking, rentAmount),
+        fee: formatFeeLabel(rates.netbanking, feeBaseAmount),
+        feeAmount: computeFee(rates.netbanking, feeBaseAmount),
       },
       {
         id: 'debit-card-1',
         type: 'debit_card' as const,
         title: 'Debit Card',
-        fee: formatFeeLabel(rates.debit_card, rentAmount),
-        feeAmount: computeFee(rates.debit_card, rentAmount),
+        fee: formatFeeLabel(rates.debit_card, feeBaseAmount),
+        feeAmount: computeFee(rates.debit_card, feeBaseAmount),
       },
       {
         id: 'card-1',
         type: 'card' as const,
         title: 'Credit Card',
-        fee: formatFeeLabel(rates.credit_card, rentAmount),
-        feeAmount: computeFee(rates.credit_card, rentAmount),
+        fee: formatFeeLabel(rates.credit_card, feeBaseAmount),
+        feeAmount: computeFee(rates.credit_card, feeBaseAmount),
         isDisabled: creditCardDisabled,
         disabledReason: creditCardDisabledReason,
       },
     ];
-  }, [rentAmount, dynamicRates, creditCardDisabled, creditCardDisabledReason]);
+  }, [feeBaseAmount, dynamicRates, creditCardDisabled, creditCardDisabledReason]);
 
   const selectedPaymentMethod = paymentMethods.find((m) => m.id === selectedMethod);
   const isSelectedDisabled = selectedPaymentMethod?.isDisabled ?? false;
@@ -444,23 +440,26 @@ const styles = StyleSheet.create({
     lineHeight: 20,
     color: '#878787',
   },
-
-  // Disabled banner
-  disabledBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+  // Setup prompt pill — Figma 4109:65992
+  disabledPillContainer: {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    alignSelf: 'stretch' as const,
+    backgroundColor: '#202020',
+    borderRadius: 200, // Pill — matches dashboard announcement pill
+    paddingVertical: 8,
+    paddingHorizontal: 20,
     gap: 10,
-    marginTop: 8,
+    marginTop: 20,
   },
-  disabledBannerText: {
+  disabledPillLabel: {
     fontFamily: 'PlusJakartaSans-Regular',
     fontSize: 12,
     lineHeight: 20,
     color: '#FF9A6D',
     flex: 1,
   },
-  learnMoreText: {
+  disabledPillLink: {
     fontFamily: 'PlusJakartaSans-Regular',
     fontSize: 12,
     lineHeight: 20,

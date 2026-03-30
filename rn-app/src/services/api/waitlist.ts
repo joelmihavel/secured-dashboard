@@ -312,8 +312,8 @@ function mapRawToWaitlistStatusData(raw: RawWaitlistStatusResponse): WaitlistSta
       rejectionReasons[0] ??
       reviewReason ??
       (extractionStatus === 'failed'
-        ? 'We could not process this document. Please upload a valid rental agreement.'
-        : 'This does not appear to be a valid rental agreement. Please upload the correct document.');
+        ? 'We could not process this document. Please upload a valid rental agreement'
+        : 'This does not appear to be a valid rental agreement. Please upload the correct document');
   }
 
   // No entry means user hasn't joined waitlist yet — treat as pending
@@ -377,7 +377,7 @@ function mapRawToWaitlistStatusData(raw: RawWaitlistStatusResponse): WaitlistSta
       rejectionReasons.push(reviewReason);
     }
     if (extractionStatus === 'failed') {
-      rejectionReasons.push('Document processing failed. Please re-upload.');
+      rejectionReasons.push('Document processing failed. Please re-upload');
     }
   }
 
@@ -483,7 +483,14 @@ async function getWaitlistStatusMock(): Promise<{
   error: WaitlistError | null;
 }> {
   const { createMockWaitlistStatus } = await import('@/src/__mocks__/testDataFactory');
-  return { data: createMockWaitlistStatus('pending'), error: null };
+  const { useDevStore } = await import('@/src/__dev__/devStore');
+  const activeScenario = (useDevStore as any).getState().activeScenario as string | null;
+  let mockState: 'pending' | 'pending_long' | 'approved' | 'rejected' = 'pending';
+  if (activeScenario?.startsWith('waitlist:')) {
+    const s = activeScenario.split(':')[1];
+    if (s === 'rejected' || s === 'approved' || s === 'pending_long') mockState = s;
+  }
+  return { data: createMockWaitlistStatus(mockState), error: null };
 }
 
 // withMock() enforces same return type + __DEV__ compile-time gate
@@ -828,7 +835,7 @@ export async function claimInviteCode(
 function mapInviteCodeError(errorMessage: string): WaitlistError {
   const lower = errorMessage.toLowerCase();
   if (lower.includes('rate') || lower.includes('too many')) {
-    return { code: 'RATE_LIMITED', message: 'Too many attempts. Please wait a moment.' };
+    return { code: 'RATE_LIMITED', message: 'Too many attempts. Please wait a moment' };
   }
   if (lower.includes('not authenticated') || lower.includes('unauthorized') || lower.includes('invalid jwt') || lower.includes('jwt expired')) {
     return { code: 'NOT_AUTHENTICATED', message: 'Please sign in to continue' };
@@ -848,7 +855,7 @@ function mapInviteCodeErrorFromCode(code: string | undefined, message: string): 
     case 'CODE_REVOKED':
       return { code: 'INVALID_INVITE_CODE', message };
     case 'RATE_LIMITED':
-      return { code: 'RATE_LIMITED', message: 'Too many attempts. Please wait a moment.' };
+      return { code: 'RATE_LIMITED', message: 'Too many attempts. Please wait a moment' };
     case 'AUTH_ERROR':
       return { code: 'NOT_AUTHENTICATED', message: 'Please sign in to continue' };
     default:
@@ -879,7 +886,7 @@ function mapWaitlistError(errorMessage: string, errorBody?: Record<string, unkno
       case 'AGREEMENT_NOT_CONFIRMED':
         return { code: 'AGREEMENT_NOT_CONFIRMED', message: (errorBody?.message as string) ?? 'Agreement not confirmed' };
       case 'RATE_LIMITED':
-        return { code: 'RATE_LIMITED', message: 'Too many attempts. Please wait a moment.' };
+        return { code: 'RATE_LIMITED', message: 'Too many attempts. Please wait a moment' };
       // Fall through for unknown structured codes — use string matching below
     }
   }

@@ -66,6 +66,7 @@ interface DashboardData {
       utility_verified: boolean;
       landlord_approved: boolean;
       landlord_response: string | null;
+      landlord_status: string;
     };
   } | null;
   upcoming_payment: {
@@ -97,6 +98,8 @@ interface DashboardData {
     paid_at: string | null;
     cashback_earned: number;
     cashback_applied: number;
+    payment_method: string | null;
+    settlement_status: string | null;
   }>;
   notifications: Array<{
     id: string;
@@ -117,6 +120,8 @@ interface DashboardData {
     verified: boolean;
     pan_number_masked: string | null;
     pan_verified: boolean;
+    upi_vpa: string | null;
+    verification_method: string | null;
   } | null;
   unread_notification_count: number;
   payment_stamps: {
@@ -145,14 +150,16 @@ function statusPriority(status: string): number {
 }
 
 function computePaymentStamps(
-  tenancy: { created_at: string; rent_due_day: number },
+  tenancy: { created_at: string; rent_due_day: number; cashback_cutoff_day?: number },
   payments: Array<{ payment_month: string; paid_at: string | null; status: string }>
 ): DashboardData['payment_stamps'] {
   const now = new Date();
   // Payment tracking starts from when the tenancy was created (user joined platform),
   // NOT from agreement lease_start_date. Agreement dates are extraction metadata only.
-  // rent_due_day from the agreement is still the cutoff for on_time vs late vs missed.
+  // cashback_cutoff_day (grace period) is used for on_time/late/missed classification;
+  // rent_due_day is only for display ("Your rent is due on the 1st").
   const trackingStart = new Date(tenancy.created_at);
+  const cutoffDay = tenancy.cashback_cutoff_day ?? tenancy.rent_due_day;
 
   const summary = { on_time: 0, late: 0, missed: 0, pending: 0, total_months: 0 };
   let currentMonthStatus: 'on_time' | 'late' | 'missed' | 'pending' = 'pending';
@@ -185,9 +192,10 @@ function computePaymentStamps(
   while (cursor <= endMonth) {
     summary.total_months++;
     const monthKey = `${cursor.getFullYear()}-${String(cursor.getMonth() + 1).padStart(2, '0')}`;
-    const dueDate = new Date(cursor.getFullYear(), cursor.getMonth(), dueDay);
-    // Due cutoff: end of due_date in IST (UTC+05:30) = 18:29:59.999 UTC
-    const dueCutoff = new Date(dueDate);
+    // Classification uses cashback_cutoff_day (grace period), not rent_due_day
+    const cutoffDate = new Date(cursor.getFullYear(), cursor.getMonth(), cutoffDay);
+    // Due cutoff: end of cutoff day in IST (UTC+05:30) = 18:29:59.999 UTC
+    const dueCutoff = new Date(cutoffDate);
     dueCutoff.setUTCHours(18, 29, 59, 999);
 
     const payment = paymentMap.get(monthKey);
@@ -273,7 +281,7 @@ serve(async (req: Request) => {
           id, status, property_address, property_city,
           monthly_rent_paise, maintenance_paise, rent_due_day, lease_start_date, lease_end_date,
           landlord_name, landlord_phone, agreement_cert_id,
-          bank_verified, utility_verified, landlord_approved, landlord_response,
+          bank_verified, utility_verified, landlord_approved, landlord_response, landlord_status,
           cashback_cutoff_day, created_at, extracted_rental_info_id
         `)
         .eq("user_id", userId)
@@ -295,7 +303,7 @@ serve(async (req: Request) => {
       // 5. Recent payments (last 5)
       supabase
         .from("payments")
-        .select("id, rent_amount_paise, status, payment_month, paid_at, cashback_earned_paise, cashback_applied_paise, payment_method")
+        .select("id, rent_amount_paise, status, payment_month, paid_at, cashback_earned_paise, cashback_applied_paise, payment_method, landlord_payout_status")
         .eq("user_id", userId)
         .neq("status", "initiated")
         .order("created_at", { ascending: false })
@@ -317,7 +325,7 @@ serve(async (req: Request) => {
       // 8. Landlord bank account (for edit bank details)
       supabase
         .from("bank_accounts")
-        .select("id, account_holder_name, account_number_masked, ifsc_code, bank_name, verified, pan_number_masked, pan_verified")
+        .select("id, account_holder_name, account_number_masked, ifsc_code, bank_name, verified, pan_number_masked, pan_verified, upi_vpa, verification_method")
         .eq("user_id", userId)
         .eq("party_type", "landlord")
         .eq("is_primary", true)
@@ -350,11 +358,15 @@ serve(async (req: Request) => {
 
     let allTenancyPayments: any[] = [];
     if (tenancy?.id) {
+      // Filter out test payments (e.g. ₹10) — only real rent payments count.
+      // Uses 50% of monthly rent as threshold.
+      const minRentPaise = Math.floor((tenancy.monthly_rent_paise ?? 0) * 0.5);
       const { data: stampPayments } = await supabase
         .from("payments")
-        .select("payment_month, paid_at, status")
+        .select("payment_month, paid_at, status, rent_amount_paise")
         .eq("tenancy_id", tenancy.id)
         .in("status", ["success", "processing", "initiated"])
+        .gte("rent_amount_paise", minRentPaise)
         .order("payment_month", { ascending: true });
       allTenancyPayments = stampPayments ?? [];
     }
@@ -433,6 +445,7 @@ serve(async (req: Request) => {
       cashback_earned: (p.cashback_earned_paise ?? 0) / 100,
       cashback_applied: (p.cashback_applied_paise ?? 0) / 100,
       payment_method: p.payment_method ?? null,
+      settlement_status: p.landlord_payout_status ?? null,
     }));
 
     // Format notifications
@@ -482,11 +495,13 @@ serve(async (req: Request) => {
             tenant_names: extractedRentalInfo?.tenant_names ?? [],
             security_deposit: (extractedRentalInfo?.security_deposit_paise ?? 0) / 100,
             agreement_cert_id: tenancy.agreement_cert_id ?? null,
+            created_at: tenancy.created_at,
             verification_status: {
               bank_verified: tenancy.bank_verified,
               utility_verified: tenancy.utility_verified,
               landlord_approved: tenancy.landlord_approved,
               landlord_response: tenancy.landlord_response ?? null,
+              landlord_status: tenancy.landlord_status ?? 'none',
             },
           }
         : null,

@@ -89,9 +89,9 @@ const REFRESH_COOLDOWN_MS = 30_000; // 30 seconds
 
 /** Interval for periodic server-side session validation while foregrounded.
  * This is a fallback for when realtime DELETE subscription is disconnected.
- * Matches the JWT expiry (1 hour) — the primary instant-logout mechanism
- * is the realtime DELETE subscription, not this poll. */
-const FOREGROUND_POLL_INTERVAL_MS = 60 * 60_000; // 1 hour
+ * Set to 30 min (half of JWT expiry) for safety margin — catches expired
+ * tokens before the full hour, reducing the window where API calls fail. */
+const FOREGROUND_POLL_INTERVAL_MS = 30 * 60_000; // 30 minutes
 
 export interface UseSessionMonitorOptions {
   /** Whether monitoring is enabled. Defaults to true. */

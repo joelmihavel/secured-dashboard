@@ -70,11 +70,6 @@ export function EnterAmountContent({
   const alreadyPaid = upcomingPayment?.already_paid ?? false;
   const isOverdue = daysUntilDue < 0 && !alreadyPaid;
   const rentMonth = upcomingPayment?.rent_month ?? '';
-  const isAllVerified =
-    tenancy?.verification_status?.bank_verified &&
-    tenancy?.verification_status?.utility_verified &&
-    tenancy?.verification_status?.landlord_approved;
-
   // Auto-populate on mount
   useEffect(() => {
     const rent = initialAmount > 0 ? initialAmount : monthlyRent;
@@ -133,11 +128,11 @@ export function EnterAmountContent({
     if (parsedAmount < monthlyRent && monthlyRent > 0) {
       return { severity: 'warning', message: 'Cashback will apply on reduced rent' };
     }
-    if (parsedAmount === monthlyRent && !isAllVerified) {
-      return { severity: 'info', message: 'Cashback will be accumulated' };
+    if (parsedAmount === monthlyRent) {
+      return { severity: 'info', message: '1% cashback will be applied' };
     }
     return null;
-  }, [alreadyPaid, parsedAmount, monthlyRent, isAllVerified]);
+  }, [alreadyPaid, parsedAmount, monthlyRent]);
 
   // Can proceed? Block if already paid or amount exceeds gateway limits
   const MAX_AMOUNT = 10_00_000; // Rs 10 lakh — PayU gateway limit
@@ -216,7 +211,7 @@ export function EnterAmountContent({
               style={styles.pill}
             >
               <Text style={styles.pillTextDefault}>
-                Cashback will be accumulated
+                1% cashback will be applied
               </Text>
             </Animated.View>
           ) : null}

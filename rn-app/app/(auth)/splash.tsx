@@ -72,7 +72,7 @@ export default function SplashScreen() {
 
           <View style={styles.bottomSection}>
             <PrimaryButton
-              title="Get Started"
+              title="Get started"
               onPress={handleGetStarted}
               showDivider={true}
               testID="get-started-button"

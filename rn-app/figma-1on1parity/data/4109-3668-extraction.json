@@ -1,0 +1,239 @@
+{
+  "extractionDate": "2026-03-28",
+  "figmaFileKey": "IP4bJwxg5koRNfZ63AQJBo",
+  "fileName": "Flent Secured_v1.2",
+  "nodes": {
+    "4109:3668": {
+      "name": "Rectangle 136",
+      "type": "RECTANGLE",
+      "role": "Card background / container for cashback rate section (back of flip card)",
+      "layout": {
+        "width": 270,
+        "height": 321,
+        "position": { "x": 922, "y": 5814 },
+        "cornerRadius": 0,
+        "note": "No cornerRadius property present — sharp corners. Parent frame may provide border radius."
+      },
+      "fill": {
+        "hex": "#202020",
+        "rgba": { "r": 0.1255, "g": 0.1255, "b": 0.1255, "a": 1.0 },
+        "designToken": "colors.black[500] (Cards)",
+        "variableId": "VariableID:12:161"
+      },
+      "stroke": "none",
+      "effects": [
+        {
+          "type": "DROP_SHADOW",
+          "color": "rgba(0, 0, 0, 0.10)",
+          "offset": { "x": 0, "y": 9 },
+          "blurRadius": 19
+        },
+        {
+          "type": "DROP_SHADOW",
+          "color": "rgba(0, 0, 0, 0.09)",
+          "offset": { "x": 0, "y": 35 },
+          "blurRadius": 35
+        },
+        {
+          "type": "DROP_SHADOW",
+          "color": "rgba(0, 0, 0, 0.05)",
+          "offset": { "x": 0, "y": 78 },
+          "blurRadius": 47
+        }
+      ],
+      "childLayout": {
+        "textAreaStartsAt": { "relativeX": 26, "relativeY": 216 },
+        "topRegionHeight": 216,
+        "topRegionNote": "216px above first text — this area likely contains an image/illustration (the card front visual or pattern)",
+        "leftPadding": 26,
+        "bottomPadding": 26
+      }
+    },
+    "4109:3696": {
+      "name": "Your Cashback Rate",
+      "type": "TEXT",
+      "role": "Label text — section header for cashback rate info",
+      "content": "Your Cashback Rate",
+      "positionRelativeToCard": { "x": 26, "y": 216 },
+      "layout": {
+        "width": 110,
+        "height": 17,
+        "sizing": "HUG content (width and height)"
+      },
+      "typography": {
+        "fontFamily": "Plus Jakarta Sans",
+        "fontWeight": 400,
+        "fontStyle": "Regular",
+        "postScriptName": "PlusJakartaSans-Regular",
+        "fontSize": 12,
+        "letterSpacing": -0.24,
+        "lineHeightPx": 16.92,
+        "lineHeightPercent": 141,
+        "lineHeightUnit": "FONT_SIZE_%",
+        "textAlignHorizontal": "LEFT",
+        "textAlignVertical": "CENTER"
+      },
+      "color": {
+        "hex": "#878787",
+        "rgba": { "r": 0.5294, "g": 0.5294, "b": 0.5294, "a": 1.0 },
+        "designToken": "Labels color #878787",
+        "variableId": "VariableID:12:329 (via alias)"
+      },
+      "characterStyleOverrides": "none — uniform style throughout"
+    },
+    "4109:3699": {
+      "name": "1% back on every on-time rent",
+      "type": "TEXT",
+      "role": "Description text — cashback value proposition with mixed styling",
+      "content": "1% back   on every on-time rent ",
+      "positionRelativeToCard": { "x": 26, "y": 240 },
+      "layout": {
+        "width": 190,
+        "height": 20,
+        "sizing": "HUG content (width and height)"
+      },
+      "typography": {
+        "fontFamily": "Plus Jakarta Sans",
+        "fontWeight": 500,
+        "fontStyle": "Medium",
+        "postScriptName": "PlusJakartaSans-Medium",
+        "fontSize": 14,
+        "letterSpacing": -0.56,
+        "lineHeightPx": 19.74,
+        "lineHeightPercent": 141,
+        "lineHeightUnit": "FONT_SIZE_%",
+        "textAlignHorizontal": "LEFT",
+        "textAlignVertical": "CENTER"
+      },
+      "color": {
+        "baseHex": "#CBCBCB",
+        "baseRgba": { "r": 0.7961, "g": 0.7961, "b": 0.7961, "a": 1.0 },
+        "baseDesignToken": "Values color #CBCBCB",
+        "baseVariableId": "VariableID:12:428"
+      },
+      "characterStyleOverrides": {
+        "description": "First 7 characters use override style 1, rest use base style",
+        "segments": [
+          {
+            "text": "1% back",
+            "charIndices": "0-6",
+            "overrideId": "1",
+            "colorHex": "#000000 (raw — variable-bound via VariableID:12:433)",
+            "resolvedColor": "#FF9A6D (brand accent — inferred from design system, as #000000 would be invisible on #202020 bg)",
+            "note": "Variable VariableID:12:433 requires file_variables:read scope to confirm. Based on codebase usage patterns (PaymentFlipCard, BenefitsCard), brand accent #FF9A6D is used for highlighted cashback text."
+          },
+          {
+            "text": "   on every on-time rent ",
+            "charIndices": "7-31",
+            "overrideId": "0 (base)",
+            "colorHex": "#CBCBCB"
+          }
+        ]
+      }
+    },
+    "4109:3700": {
+      "name": "₹ 400 /month",
+      "type": "TEXT",
+      "role": "Amount display — cashback amount with multi-size typography",
+      "content": "₹  400 /month",
+      "positionRelativeToCard": { "x": 26, "y": 272 },
+      "layout": {
+        "width": 93,
+        "height": 23,
+        "sizing": "HUG content (width and height)"
+      },
+      "typography": {
+        "baseFontFamily": "Plus Jakarta Sans",
+        "baseFontWeight": 600,
+        "baseFontStyle": "SemiBold",
+        "basePostScriptName": "PlusJakartaSans-SemiBold",
+        "baseFontSize": 16,
+        "letterSpacing": -0.64,
+        "lineHeightPx": 22.56,
+        "lineHeightPercent": 141,
+        "lineHeightUnit": "FONT_SIZE_%",
+        "textAlignHorizontal": "LEFT",
+        "textAlignVertical": "CENTER"
+      },
+      "color": {
+        "hex": "#FFFFFF",
+        "rgba": { "r": 1.0, "g": 1.0, "b": 1.0, "a": 1.0 },
+        "designToken": "White",
+        "variableId": "VariableID:12:432"
+      },
+      "characterStyleOverrides": {
+        "description": "Multi-size text with 4 segments at different font sizes, all #FFFFFF SemiBold",
+        "segments": [
+          {
+            "text": "₹  ",
+            "charIndices": "0-2",
+            "overrideId": "8",
+            "fontSize": 12,
+            "fontWeight": 600,
+            "colorHex": "#FFFFFF"
+          },
+          {
+            "text": "400",
+            "charIndices": "3-5",
+            "overrideId": "0 (base)",
+            "fontSize": 16,
+            "fontWeight": 600,
+            "colorHex": "#FFFFFF"
+          },
+          {
+            "text": " ",
+            "charIndices": "6",
+            "overrideId": "7",
+            "fontSize": 16,
+            "fontWeight": 600,
+            "colorHex": "#FFFFFF"
+          },
+          {
+            "text": "/month",
+            "charIndices": "7-12",
+            "overrideId": "6",
+            "fontSize": 14,
+            "fontWeight": 600,
+            "colorHex": "#FFFFFF"
+          }
+        ]
+      }
+    }
+  },
+  "cardLayoutSummary": {
+    "cardSize": "270 x 321 px",
+    "cardBackground": "#202020 (colors.black[500])",
+    "cornerRadius": 0,
+    "shadows": "3-layer drop shadow (layered depth effect)",
+    "textArea": {
+      "leftPadding": 26,
+      "bottomPadding": 26,
+      "topOfFirstText": 216,
+      "topRegion": "216px reserved for image/illustration above text"
+    },
+    "textNodes": [
+      {
+        "label": "Your Cashback Rate",
+        "relativeY": 216,
+        "font": "PlusJakartaSans-Regular 12px",
+        "color": "#878787"
+      },
+      {
+        "label": "1% back   on every on-time rent",
+        "relativeY": 240,
+        "font": "PlusJakartaSans-Medium 14px",
+        "color": "#CBCBCB base, #FF9A6D for '1% back'"
+      },
+      {
+        "label": "₹  400 /month",
+        "relativeY": 272,
+        "font": "PlusJakartaSans-SemiBold 12/16/14px (mixed)",
+        "color": "#FFFFFF"
+      }
+    ],
+    "verticalGaps": {
+      "labelToDescription": "7px (from bottom of 'Your Cashback Rate' to top of '1% back...')",
+      "descriptionToAmount": "12px (from bottom of '1% back...' to top of '₹ 400...')"
+    }
+  }
+}

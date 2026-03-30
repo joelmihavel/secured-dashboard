@@ -55,6 +55,7 @@ import { supabase } from '@/src/services/supabase/client';
 import { isReviewMode } from '@/src/review/reviewMode';
 import { isJourneyMode } from '@/src/review/journeyMode';
 import { addBreadcrumb } from '@/src/config/sentry';
+import { useUploadStore } from '@/src/stores/upload';
 
 const LAST_ROUTE_KEY = 'flent_last_journey_target';
 
@@ -77,12 +78,43 @@ async function resolvePostOtpTarget(userId: string): Promise<string> {
     }
 
     switch (data.user_status) {
-      case 'approved':
-        return '/(setup)';
+      case 'approved': {
+        // Check if bank already verified (deferred name matching succeeded)
+        const { data: tenancyRow } = await supabase
+          .from('tenancies')
+          .select('bank_verified')
+          .eq('user_id', userId)
+          .maybeSingle();
+        // No tenancy = broken state — route to waitlist as safety net
+        return !tenancyRow ? '/(waitlist)' : tenancyRow.bank_verified ? '/(main)' : '/(setup)/add-bank';
+      }
       case 'active':
         return '/(main)';
       case 'agreement_confirmed':
-      case 'waitlisted':
+      // ^ Defensive enum value — no code sets it, backend crons auto-advance to waitlisted
+      case 'waitlisted': {
+        // Check if user is in active upload flow and hasn't done bank step
+        const { bankStepCompleted, uploadPhase, extractionId } = useUploadStore.getState();
+        if (!bankStepCompleted && uploadPhase !== 'idle' && extractionId) {
+          return '/(agreement)/add-bank-details';
+        }
+        // Check if extraction requires reupload (invalid document / failed).
+        // Route directly to upload instead of waitlist → upload flicker.
+        const { data: extraction } = await supabase
+          .from('extracted_rental_info')
+          .select('extraction_status, contract_status')
+          .eq('user_id', userId)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        if (extraction && (extraction.contract_status === 'invalid_document' || extraction.extraction_status === 'extraction_failed')) {
+          useUploadStore.getState().prepareForReupload({
+            errorMessage: 'Please upload a valid rental agreement to continue.',
+          });
+          return '/(agreement)/upload';
+        }
+        return '/(waitlist)';
+      }
       case 'not_eligible':
         return '/(waitlist)';
       case 'signed_up':
@@ -266,50 +298,43 @@ export default function OTPScreen() {
     }
   }, [phoneNumber, router]);
 
-  // Navigate on auth state change — resolve target directly to avoid
-  // re-triggering the full journey router in index.tsx (SkeletonLoader flash).
-  useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (event === "SIGNED_IN" && session && !isNavigating) {
-        setIsNavigating(true);
-        Keyboard.dismiss();
-        setIsVisible(false);
-
-        const userId = session.user.id;
-        const target = await resolvePostOtpTarget(userId);
-        addBreadcrumb('OTP verified — navigating directly', 'navigation', { target });
-
-        // Cache for fast-path on next cold start
-        if (target === '/(main)' || target === '/(setup)' || target === '/(waitlist)') {
-          SecureStore.setItemAsync(LAST_ROUTE_KEY, target).catch(() => {});
-        }
-
-        // Ensure native splash is hidden (may still be visible on fresh install)
-        SplashScreen.hideAsync().catch(() => {});
-
-        setTimeout(() => {
-          router.replace(target as never);
-        }, 300);
-      }
-    });
-    return () => subscription.unsubscribe();
-  }, [router, isNavigating]);
-
-  // Review mode: no real Supabase session, so SIGNED_IN never fires.
-  // Navigate when auth store confirms authenticated instead.
+  // Navigate when auth store confirms authenticated.
+  // IMPORTANT: Do NOT use a separate onAuthStateChange listener here — it races
+  // with AuthProvider's listener and the journey router, causing double navigation.
+  // Instead, watch the auth store status which is set by useAuth().verifyCode().
   const authStatus = useAuthStore((s) => s.status);
+  const authUserId = useAuthStore((s) => s.userId);
   useEffect(() => {
-    if ((isReviewMode() || isJourneyMode()) && authStatus === 'authenticated' && !isNavigating) {
+    if (authStatus === 'authenticated' && !isNavigating) {
       setIsNavigating(true);
       Keyboard.dismiss();
       setIsVisible(false);
       SplashScreen.hideAsync().catch(() => {});
-      setTimeout(() => {
-        // Review/journey mode — index.tsx handles routing via isReviewMode()/isJourneyMode()
-        router.replace('/');
-      }, 300);
+
+      if (isReviewMode() || isJourneyMode()) {
+        // Review/journey mode — index.tsx handles routing
+        setTimeout(() => router.replace('/' as never), 300);
+        return;
+      }
+
+      // Resolve target for real users
+      if (authUserId) {
+        resolvePostOtpTarget(authUserId).then((target) => {
+          addBreadcrumb('OTP verified — navigating', 'navigation', { target });
+          if (target === '/(main)' || target === '/(setup)/add-bank' || target === '/(waitlist)') {
+            SecureStore.setItemAsync(LAST_ROUTE_KEY, target).catch(() => {});
+          }
+          setTimeout(() => router.replace(target as never), 300);
+        }).catch(() => {
+          // Fallback — let the journey router handle it
+          setTimeout(() => router.replace('/' as never), 300);
+        });
+      } else {
+        // No userId yet — let journey router handle on next render
+        setTimeout(() => router.replace('/' as never), 300);
+      }
     }
-  }, [authStatus, router, isNavigating]);
+  }, [authStatus, authUserId, router, isNavigating]);
 
   const handleProceed = useCallback((otpValue?: string | any) => {
     // Ref-based guard: prevents double-fire even before React Query isPending updates.

@@ -17,98 +17,153 @@ const SUPABASE_ANON_KEY = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
 if (!SUPABASE_URL) {
   throw new Error(
     'EXPO_PUBLIC_SUPABASE_URL is not set. ' +
-    'Please add it to your .env file. See .env.example for reference.'
+    'Please add it to your .env file. See .env.example for reference'
   );
 }
 
 if (!SUPABASE_ANON_KEY) {
   throw new Error(
     'EXPO_PUBLIC_SUPABASE_ANON_KEY is not set. ' +
-    'Please add it to your .env file. See .env.example for reference.'
+    'Please add it to your .env file. See .env.example for reference'
   );
 }
 
 /**
- * Custom storage adapter using expo-secure-store with chunking.
+ * Custom storage adapter using expo-secure-store with atomic chunking.
  *
  * Expo Go limits SecureStore values to 2048 bytes. Supabase sessions
  * (JWT + refresh token + user metadata) easily exceed this. This adapter
- * splits large values across numbered chunks and reassembles on read,
- * so sessions persist correctly in both Expo Go and development builds.
+ * splits large values across numbered chunks and reassembles on read.
+ *
+ * ATOMICITY: Uses a generation-based write strategy to prevent corruption
+ * if the app is killed mid-write. New data is written to generation N+1 keys,
+ * then a single pointer key (`_gen`) is flipped. If the app crashes before
+ * the flip, the old generation remains valid. Old generation is cleaned up
+ * lazily on the next write.
  */
 const CHUNK_SIZE = 1800; // leave headroom below the 2048-byte limit
+
+/** Supabase SDK session storage key. Must match SDK's internal STORAGE_KEY.
+ *  Exported for use by resetAll.ts and installDetection.ts to avoid hardcoding. */
+export const SUPABASE_SESSION_STORAGE_KEY = 'supabase.auth.token';
+
+/** Read the active generation number (0 if none set) */
+async function readGen(key: string): Promise<number> {
+  const raw = await SecureStore.getItemAsync(`${key}_gen`).catch(() => null);
+  return raw ? parseInt(raw, 10) : 0;
+}
+
+/** Read chunks for a specific generation */
+async function readChunksForGen(key: string, gen: number): Promise<string | null> {
+  const prefix = gen === 0 ? key : `${key}_g${gen}`;
+  const first = await SecureStore.getItemAsync(prefix);
+  if (first === null) return null;
+
+  const countRaw = await SecureStore.getItemAsync(`${prefix}_chunks`);
+  if (!countRaw) return first; // single-chunk value
+
+  const count = parseInt(countRaw, 10);
+  const parts: string[] = [first];
+  for (let i = 1; i < count; i++) {
+    const chunk = await SecureStore.getItemAsync(`${prefix}_${i}`);
+    if (chunk === null) return null; // corrupted chunk — treat as missing
+    parts.push(chunk);
+  }
+  return parts.join('');
+}
+
+/** Delete all chunks for a specific generation */
+async function deleteGen(key: string, gen: number): Promise<void> {
+  const prefix = gen === 0 ? key : `${key}_g${gen}`;
+  const countRaw = await SecureStore.getItemAsync(`${prefix}_chunks`).catch(() => null);
+  if (countRaw) {
+    const n = parseInt(countRaw, 10);
+    for (let i = 1; i < n; i++) {
+      await SecureStore.deleteItemAsync(`${prefix}_${i}`).catch(() => {});
+    }
+    await SecureStore.deleteItemAsync(`${prefix}_chunks`).catch(() => {});
+  }
+  await SecureStore.deleteItemAsync(prefix).catch(() => {});
+}
+
+/** Serializes setItem calls to prevent concurrent writes to the same generation */
+let _writeQueue: Promise<void> = Promise.resolve();
 
 const ExpoSecureStoreAdapter = {
   getItem: async (key: string): Promise<string | null> => {
     try {
-      const first = await SecureStore.getItemAsync(key);
-      if (first === null) return null;
+      const gen = await readGen(key);
 
-      // Check if value was chunked
-      const countRaw = await SecureStore.getItemAsync(`${key}_chunks`);
-      if (!countRaw) return first; // single-chunk value
-
-      const count = parseInt(countRaw, 10);
-      const parts: string[] = [first];
-      for (let i = 1; i < count; i++) {
-        const chunk = await SecureStore.getItemAsync(`${key}_${i}`);
-        if (chunk === null) return null; // corrupted — treat as missing
-        parts.push(chunk);
+      // Try current generation first
+      if (gen > 0) {
+        const value = await readChunksForGen(key, gen);
+        if (value !== null) return value;
       }
-      return parts.join('');
+
+      // Fall back to gen 0 (legacy or first write before gen system)
+      return await readChunksForGen(key, 0);
     } catch {
       return null;
     }
   },
 
   setItem: async (key: string, value: string): Promise<void> => {
-    try {
-      // Clean up any previous chunks first
-      const oldCount = await SecureStore.getItemAsync(`${key}_chunks`);
-      if (oldCount) {
-        const n = parseInt(oldCount, 10);
-        for (let i = 1; i < n; i++) {
-          await SecureStore.deleteItemAsync(`${key}_${i}`);
-        }
-        await SecureStore.deleteItemAsync(`${key}_chunks`);
-      }
+    // Serialize writes to prevent two concurrent setItem calls from racing
+    // on the same generation number (e.g., autoRefreshToken + setSession).
+    const doWrite = async () => {
+      const currentGen = await readGen(key);
+      const newGen = currentGen + 1;
+      const prefix = `${key}_g${newGen}`;
 
+      // 1. Write new generation chunks (no existing data at this prefix)
       if (value.length <= CHUNK_SIZE) {
-        await SecureStore.setItemAsync(key, value);
-        return;
+        await SecureStore.setItemAsync(prefix, value);
+      } else {
+        const chunks: string[] = [];
+        for (let i = 0; i < value.length; i += CHUNK_SIZE) {
+          chunks.push(value.slice(i, i + CHUNK_SIZE));
+        }
+        await SecureStore.setItemAsync(prefix, chunks[0]);
+        for (let i = 1; i < chunks.length; i++) {
+          await SecureStore.setItemAsync(`${prefix}_${i}`, chunks[i]);
+        }
+        await SecureStore.setItemAsync(`${prefix}_chunks`, String(chunks.length));
       }
 
-      // Split into chunks
-      const chunks: string[] = [];
-      for (let i = 0; i < value.length; i += CHUNK_SIZE) {
-        chunks.push(value.slice(i, i + CHUNK_SIZE));
-      }
+      // 2. ATOMIC POINTER SWAP — this single write commits the new generation.
+      //    If the app crashes before this line, the old generation is still active.
+      //    If it crashes after, the new generation is active and old is stale.
+      await SecureStore.setItemAsync(`${key}_gen`, String(newGen));
 
-      await SecureStore.setItemAsync(key, chunks[0]);
-      for (let i = 1; i < chunks.length; i++) {
-        await SecureStore.setItemAsync(`${key}_${i}`, chunks[i]);
+      // 3. Lazy cleanup: delete old generation (non-fatal if app crashes here)
+      if (currentGen > 0) {
+        deleteGen(key, currentGen).catch(() => {});
       }
-      await SecureStore.setItemAsync(`${key}_chunks`, String(chunks.length));
-    } catch (err) {
+      // Also clean up gen 0 (legacy data from before gen system)
+      if (currentGen === 0) {
+        deleteGen(key, 0).catch(() => {});
+      }
+    };
+    // Chain onto the write queue — each write waits for the previous to finish
+    _writeQueue = _writeQueue.then(doWrite).catch((err) => {
       // MUST NOT throw — the Supabase SDK calls setItem internally during
       // session persistence. If this throws, the SDK's _saveSession breaks,
       // leaving the internal session state corrupt (SIGNED_OUT fires, PostgREST
       // calls fail with 401, dashboard shows black screen).
       console.error('SecureStore setItem failed:', key, err);
-    }
+    });
+    return _writeQueue;
   },
 
   removeItem: async (key: string): Promise<void> => {
     try {
-      const countRaw = await SecureStore.getItemAsync(`${key}_chunks`);
-      if (countRaw) {
-        const n = parseInt(countRaw, 10);
-        for (let i = 1; i < n; i++) {
-          await SecureStore.deleteItemAsync(`${key}_${i}`);
-        }
-        await SecureStore.deleteItemAsync(`${key}_chunks`);
-      }
-      await SecureStore.deleteItemAsync(key);
+      const gen = await readGen(key);
+      // Delete current generation
+      if (gen > 0) await deleteGen(key, gen);
+      // Delete legacy gen 0
+      await deleteGen(key, 0);
+      // Delete the gen pointer itself
+      await SecureStore.deleteItemAsync(`${key}_gen`).catch(() => {});
     } catch (err) {
       // MUST NOT throw — the Supabase SDK calls removeItem during signOut.
       // Throwing here breaks the signOut flow and leaves stale session data.
@@ -280,10 +335,13 @@ export async function callEdgeFunction<T = unknown>(
     // which races with the SDK's autoRefreshToken and causes SIGNED_OUT events
     // when refresh token rotation is enabled.
     if (response.status === 401 && requireAuth) {
+      const oldToken = headers['Authorization'];
       // Give the SDK's auto-refresh a moment to complete (it fires on token expiry)
       await new Promise(resolve => setTimeout(resolve, 1500));
       const { data: { session: retrySession } } = await getSessionSafe();
-      if (retrySession?.access_token) {
+      // Only retry if we got a DIFFERENT token (refresh actually succeeded).
+      // Retrying with the same expired token wastes a round-trip.
+      if (retrySession?.access_token && `Bearer ${retrySession.access_token}` !== oldToken) {
         headers['Authorization'] = `Bearer ${retrySession.access_token}`;
         const retryController = new AbortController();
         const retryTimeoutId = setTimeout(() => retryController.abort(), timeoutMs);
@@ -334,9 +392,9 @@ export async function callEdgeFunction<T = unknown>(
     });
     // Surface a user-friendly message instead of raw DOMException/TypeError
     const userMessage =
-      rawMessage.toLowerCase().includes('network') ? 'Network error. Please check your connection.' :
-      rawMessage.toLowerCase().includes('abort') ? 'Request was cancelled. Please try again.' :
-      isDomException ? `Something went wrong. Please try again. (${(error as DOMException).name})` :
+      rawMessage.toLowerCase().includes('network') ? 'Network error. Please check your connection' :
+      rawMessage.toLowerCase().includes('abort') ? 'Request was cancelled. Please try again' :
+      isDomException ? `Something went wrong. Please try again (${(error as DOMException).name})` :
       rawMessage;
     return {
       data: null,

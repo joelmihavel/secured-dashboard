@@ -65,12 +65,14 @@ export default function BetaSplashScreen() {
     badgeOpacity.value = withDelay(300, withTiming(1, { duration: duration.normal }));
     badgeTranslateY.value = withDelay(300, withTiming(0, { duration: duration.normal }));
 
-    // Navigate to splash (Get Started) screen after animation completes
-    // Skip auto-navigate in preview mode (used for dev screenshots)
+    // Navigate to splash (Get Started) screen after brief branded moment.
+    // Reduced from 2500ms: users now route directly to /(auth)/splash from
+    // index.tsx. This timeout only fires if someone navigates here directly
+    // (e.g., deep link). Skip in preview mode (used for dev screenshots).
     if (preview === 'true') return;
     const timeout = setTimeout(() => {
       router.replace('/(auth)/splash');
-    }, 2500);
+    }, 1200);
     return () => clearTimeout(timeout);
   }, []);
 

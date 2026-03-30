@@ -4,14 +4,13 @@
  * Figma Reference: 684-8639, 684-9249
  */
 
-import React, { memo, useRef, useState, useCallback } from 'react';
+import React, { memo, useRef, useCallback } from 'react';
 import {
   View,
   StyleSheet,
   FlatList,
   Dimensions,
-  NativeSyntheticEvent,
-  NativeScrollEvent,
+  Animated,
   ListRenderItemInfo,
 } from 'react-native';
 
@@ -43,20 +42,16 @@ export interface RentStatusCarouselProps {
 function RentStatusCarouselComponent({
   items,
 }: RentStatusCarouselProps) {
-  const [activeIndex, setActiveIndex] = useState(0);
+  const scrollX = useRef(new Animated.Value(0)).current;
   const flatListRef = useRef<FlatList<CarouselCardItem>>(null);
 
   const totalCards = items.length;
+  const SNAP = CARD_WIDTH + CARD_GAP;
 
-  // Fire only on scroll settle — replaces 60fps onScroll handler that was
-  // triggering setActiveIndex on every frame during carousel swipes.
-  const handleScrollEnd = useCallback((event: NativeSyntheticEvent<NativeScrollEvent>) => {
-    const offsetX = event.nativeEvent.contentOffset.x;
-    const index = Math.round(offsetX / (CARD_WIDTH + CARD_GAP));
-    if (index >= 0 && index < items.length) {
-      setActiveIndex(index);
-    }
-  }, [items.length]);
+  const handleScroll = Animated.event(
+    [{ nativeEvent: { contentOffset: { x: scrollX } } }],
+    { useNativeDriver: false },
+  );
 
   const renderItem = useCallback(({ item }: ListRenderItemInfo<CarouselCardItem>) => {
     switch (item.type) {
@@ -118,7 +113,8 @@ function RentStatusCarouselComponent({
         decelerationRate="fast"
         snapToInterval={CARD_WIDTH + CARD_GAP}
         snapToAlignment={isSingleCard ? 'center' : 'start'}
-        onMomentumScrollEnd={handleScrollEnd}
+        onScroll={handleScroll}
+        scrollEventThrottle={16}
         windowSize={3}
         initialNumToRender={2}
         maxToRenderPerBatch={1}
@@ -131,15 +127,29 @@ function RentStatusCarouselComponent({
       {/* Pagination dots */}
       {totalCards > 1 && (
         <View style={styles.pagination}>
-          {Array.from({ length: totalCards }).map((_, index) => (
-            <View
-              key={index}
-              style={[
-                styles.dot,
-                index === activeIndex ? styles.dotActive : styles.dotInactive,
-              ]}
-            />
-          ))}
+          {Array.from({ length: totalCards }).map((_, index) => {
+            const inputRange = [
+              (index - 1) * SNAP,
+              index * SNAP,
+              (index + 1) * SNAP,
+            ];
+            const scale = scrollX.interpolate({
+              inputRange,
+              outputRange: [1, 1.25, 1],
+              extrapolate: 'clamp',
+            });
+            const backgroundColor = scrollX.interpolate({
+              inputRange,
+              outputRange: ['#202020', '#FF9A6D', '#202020'],
+              extrapolate: 'clamp',
+            });
+            return (
+              <Animated.View
+                key={index}
+                style={[styles.dot, { backgroundColor, transform: [{ scale }] }]}
+              />
+            );
+          })}
         </View>
       )}
     </View>
@@ -178,12 +188,6 @@ const styles = StyleSheet.create({
     width: 8,
     height: 8,
     borderRadius: 4,
-  },
-  dotActive: {
-    backgroundColor: '#FF9A6D',
-  },
-  dotInactive: {
-    backgroundColor: '#202020',
   },
 });
 

@@ -20,8 +20,9 @@ export const devMockConfig: Record<ServiceName, boolean> = {
 
 /** Test phone numbers for Quick Login (matches Supabase DEMO_PHONES secret + auth-otp edge function) */
 export const TEST_PHONES = [
-  { phone: '+919999900001', otp: '123456', label: 'Active User' },
-  { phone: '+919999900002', otp: '654321', label: 'Waitlisted User' },
+  { phone: '+919999900001', otp: '123456', label: 'Apple Review (mock)' },
+  { phone: '+919999900002', otp: '654321', label: 'Apple Review (waitlist)' },
+  { phone: '+919999900003', otp: '111111', label: 'Dev Test (real data)' },
 ] as const;
 
 export function setMockToggle(service: ServiceName, enabled: boolean) {

@@ -255,18 +255,16 @@ export function useAuth() {
 
     if (isReviewMode()) deactivateReviewMode();
 
-    // Try SDK signOut (revokes refresh token server-side + clears local session).
-    // If this fails (server 500, network error), the SDK does NOT clear the
-    // session from SecureStore. clearAllStores() handles this — it explicitly
-    // deletes the Supabase session key from SecureStore as a fallback.
-    await apiSignOut().catch(() => {});
-
     clearUserContext();
-    // Nuclear cleanup: resets all Zustand stores, explicitly deletes all
-    // persisted SecureStore keys (including Supabase session + chunks),
-    // tears down WebSocket channels, and clears React Query cache.
-    // clearAllStores() already calls queryClient.clear() internally.
+    // Nuclear cleanup FIRST — wipe all Zustand stores, SecureStore keys
+    // (including Supabase session + chunks), WebSocket channels, and query cache.
+    // Done before SDK signOut so that if the app is killed mid-flow, no
+    // orphaned store data from the old user survives (M-1 fix).
     await clearAllStores();
+
+    // Then revoke the refresh token server-side. If this fails (network error),
+    // the local session is already wiped by clearAllStores above.
+    await apiSignOut().catch(() => {});
   }, []);
 
   return {

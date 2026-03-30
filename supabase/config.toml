@@ -159,9 +159,6 @@ verify_jwt = false
 [functions.apply-referral-code]
 verify_jwt = false
 
-[functions.assign-default-avatar]
-verify_jwt = false
-
 [functions.check-payment-status]
 verify_jwt = false
 
@@ -222,9 +219,6 @@ verify_jwt = false
 [functions.notify-user]
 verify_jwt = false
 
-[functions.pixelate-avatar]
-verify_jwt = false
-
 [functions.poll-settlement-status]
 verify_jwt = false
 
@@ -250,9 +244,6 @@ verify_jwt = false
 [functions.update-extraction]
 verify_jwt = false
 
-[functions.upload-avatar]
-verify_jwt = false
-
 [functions.validate-referral-code]
 verify_jwt = false
 
@@ -260,6 +251,9 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.verify-pan]
+verify_jwt = false
+
+[functions.verify-upi-vpa]
 verify_jwt = false
 
 [functions.invite-landlord-whatsapp]

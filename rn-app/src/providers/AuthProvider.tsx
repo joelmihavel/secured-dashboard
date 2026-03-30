@@ -17,6 +17,8 @@ import { registerForPushNotifications } from '@/src/services/notifications';
 import { isReviewMode, deactivateReviewMode } from '@/src/review/reviewMode';
 import { isJourneyMode, deactivateJourneyMode } from '@/src/review/journeyMode';
 import { useSessionMonitor } from '@/src/hooks/useSessionMonitor';
+import { beginTokenRefreshTracking, endTokenRefreshTracking, OTA_RELOAD_MARKER_KEY } from '@/src/config/updates';
+import { detectAndHandleFreshInstall, detectAndHandleVersionChange } from '@/src/utils/installDetection';
 import type { Session } from '@supabase/supabase-js';
 
 /**
@@ -126,6 +128,22 @@ export function AuthProvider({ children }: AuthProviderProps) {
     // 1. Get initial session
     const initSession = async () => {
       try {
+        // Fresh install detection: iOS Keychain persists across app delete/reinstall.
+        // If the app was reinstalled, wipe all stale Keychain data before proceeding.
+        // Uses a filesystem sentinel (wiped on uninstall) to detect reinstalls.
+        const wasFreshInstall = await detectAndHandleFreshInstall();
+        if (wasFreshInstall) {
+          console.log('[AuthProvider] Fresh install detected — all Keychain data cleared');
+          updateSession(null);
+          setIsLoading(false);
+          return;
+        }
+
+        // App version gate: wipe persisted Zustand stores when version changes.
+        // Prevents old-schema data from crashing new code after forced updates.
+        // Supabase session is preserved — user stays logged in.
+        await detectAndHandleVersionChange();
+
         // DB migration guard: clear stale keychain sessions from old Supabase project.
         // iOS Keychain persists across app uninstalls, so users who had the Dev DB build
         // and install the Main DB build would load a session signed by the wrong JWT secret.
@@ -150,12 +168,22 @@ export function AuthProvider({ children }: AuthProviderProps) {
           console.log('[AuthProvider] No session found — user needs to sign in');
         }
         if (initialSession) {
+          // If the JWT is expired or near-expiry (<60s), the SDK's autoRefreshToken
+          // will fire _callRefreshToken() async. Track this so reloadApp() can wait
+          // for the refresh to persist tokens before killing the JS runtime.
+          const expiresAt = initialSession.expires_at ?? 0;
+          const nowSec = Math.floor(Date.now() / 1000);
+          if (expiresAt <= nowSec + 60) {
+            beginTokenRefreshTracking();
+          }
+
           // Server-validate the cached session immediately on cold start.
           // A deleted/banned user may still have a valid JWT in SecureStore.
           // Uses direct fetch — NEVER supabase.auth.getUser() which triggers
           // the SDK's _callRefreshToken() → _removeSession() → SIGNED_OUT chain.
           const deleted = await isUserDeletedOnServer(initialSession.access_token);
           if (deleted) {
+            endTokenRefreshTracking(); // Cancel tracking — session is being cleared
             await supabase.auth.signOut({ scope: 'local' });
             updateSession(null);
             return;
@@ -184,9 +212,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
           if (userInitiatedSignOutRef.current) {
             userInitiatedSignOutRef.current = false;
             updateSession(null);
+            // Immediately clear cached route — don't wait for clearAllStores async
+            SecureStore.deleteItemAsync('flent_last_journey_target').catch(() => {});
             if (!hasRedirectedRef.current) {
               hasRedirectedRef.current = true;
-              routerRef.current.replace('/(auth)/beta-splash' as never);
+              routerRef.current.replace('/(auth)/splash' as never);
               setTimeout(() => { hasRedirectedRef.current = false; }, 2000);
             }
             return;
@@ -194,13 +224,42 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
           // SDK fires SIGNED_OUT on transient refresh failures (network timeout,
           // ISP DNS block, Cloudflare cold-start). If TOKEN_REFRESHED fires within
-          // 3s, the SIGNED_OUT was transient -- ignore it.
+          // the debounce window, the SIGNED_OUT was transient -- ignore it.
+          //
+          // After OTA reload, extend debounce from 3s to 5s: the SDK needs extra
+          // time to load persisted session from SecureStore and attempt recovery.
+          // The marker is consume-on-read to prevent stale markers from affecting
+          // future genuine sign-outs.
           //
           // NEVER call getSession() here -- it triggers _callRefreshToken() which
           // can race with autoRefreshToken and cause another SIGNED_OUT (loop).
           // Instead, wait and check if TOKEN_REFRESHED resolves the situation.
+          endTokenRefreshTracking(); // Clear any pending refresh wait
           const signOutTimestamp = Date.now();
-          setTimeout(async () => {
+
+          // Read OTA reload marker and schedule debounce in an async IIFE.
+          // The onAuthStateChange callback is synchronous — cannot use await directly.
+          // This IIFE yields to the event loop for SecureStore read, which is
+          // desirable: any TOKEN_REFRESHED event arriving during the read will
+          // update sessionRef.current before the debounce timer starts.
+          (async () => {
+            let debounceMs = 3000;
+            try {
+              const markerTs = await SecureStore.getItemAsync(OTA_RELOAD_MARKER_KEY);
+              if (markerTs) {
+                // Consume-on-read — prevents stale marker from affecting future sign-outs
+                SecureStore.deleteItemAsync(OTA_RELOAD_MARKER_KEY).catch(() => {});
+                const elapsed = Date.now() - parseInt(markerTs, 10);
+                if (elapsed < 15000) {
+                  debounceMs = 5000; // Post-OTA: 5s for recovery
+                  console.log('[AuthProvider] Post-OTA reload — extending SIGNED_OUT debounce to 5s');
+                }
+              }
+            } catch {
+              // Non-fatal — use default debounce
+            }
+
+            setTimeout(async () => {
             // If a TOKEN_REFRESHED event updated the session after this SIGNED_OUT,
             // the session ref will be non-null. Check the ref directly to avoid
             // stale closure over session state.
@@ -222,14 +281,16 @@ export function AuthProvider({ children }: AuthProviderProps) {
             await clearAllStores();
             updateSession(null);
 
-            routerRef.current.replace('/(auth)/beta-splash' as never);
+            routerRef.current.replace('/(auth)/splash' as never);
 
             // Reset after navigation settles
             setTimeout(() => {
               hasRedirectedRef.current = false;
             }, 2000);
-          }, 3000);
+          }, debounceMs);
+          })(); // End async IIFE for OTA marker read + debounce scheduling
         } else if (event === 'TOKEN_REFRESHED') {
+          endTokenRefreshTracking(); // Signal reloadApp() that tokens are persisted
           if (newSession) {
             // Token refresh succeeded -- update with fresh tokens
             updateSession(newSession);
@@ -241,6 +302,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
             console.warn('[AuthProvider] TOKEN_REFRESHED returned null — keeping cached session');
           }
         } else if (event === 'SIGNED_IN' && newSession) {
+          endTokenRefreshTracking(); // Clear any pending refresh tracking
           updateSession(newSession);
           hasRedirectedRef.current = false;
           // Register push token after successful auth

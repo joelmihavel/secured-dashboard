@@ -3,8 +3,8 @@
  *
  * Handles settlement lifecycle events from Cashfree Easy Split:
  *   VENDOR_SETTLEMENT_SUCCESS  → landlord_payout_status = settled
- *   VENDOR_SETTLEMENT_FAILED   → landlord_payout_status = failed + ops alert
- *   VENDOR_SETTLEMENT_REVERSED → landlord_payout_status = failed + ops alert
+ *   VENDOR_SETTLEMENT_FAILED   → landlord_payout_status = retrying (36hr cron → failed + refund)
+ *   VENDOR_SETTLEMENT_REVERSED → landlord_payout_status = retrying (36hr cron → failed + refund)
  *
  * Endpoint: POST /functions/v1/cashfree-split-webhook
  * Auth: HMAC-SHA256 Base64 signature via x-webhook-signature header
@@ -34,19 +34,27 @@ const CF_SPLIT_WEBHOOK_SECRET = Deno.env.get("CASHFREE_PG_APP_SECRET") ?? Deno.e
 
 interface SplitWebhookPayload {
   type: string; // VENDOR_SETTLEMENT_SUCCESS, VENDOR_SETTLEMENT_FAILED, VENDOR_SETTLEMENT_REVERSED
+  event_time?: string;
   data: {
-    order?: {
-      order_id?: string;
-    };
     settlement?: {
-      vendor_id?: string;
       settlement_id?: number | string;
-      cf_payment_id?: string | number;
+      status?: string;
+      vendor_id?: string;
+      utr?: string;
+      settlement_amount?: number;
       amount_settled?: number;
       service_charge?: number;
-      utr?: string;
-      settlement_date?: string;
+      service_tax?: number;
+      adjustment?: number;
+      vendor_transaction_amount?: number;
+      payment_amount?: number;
+      payment_from?: string;
+      payment_till?: string;
+      settlement_initiated_on?: string;
+      settled_on?: string;
       reason?: string;
+      account_mode?: string;
+      settled_orders_count?: number;
     };
   };
 }
@@ -78,7 +86,7 @@ serve(async (req: Request) => {
       return jsonResponse({ status: "ignored", reason: "missing headers" });
     }
 
-    const expectedSignature = await hmacSha256Base64(timestamp + "." + rawBody, CF_SPLIT_WEBHOOK_SECRET);
+    const expectedSignature = await hmacSha256Base64(timestamp + rawBody, CF_SPLIT_WEBHOOK_SECRET);
     if (!timingSafeCompare(receivedSignature, expectedSignature)) {
       console.error("[cashfree-split-webhook] Signature verification failed");
       return jsonResponse({ status: "ignored", reason: "invalid signature" });
@@ -92,21 +100,22 @@ serve(async (req: Request) => {
     }
 
     const eventType = payload.type;
-    const orderId = payload.data?.order?.order_id;
-    const cfPaymentId = String(payload.data?.settlement?.cf_payment_id ?? "");
-    const settlementId = String(payload.data?.settlement?.settlement_id ?? "");
-    const vendorId = payload.data?.settlement?.vendor_id ?? "";
+    const settlement = payload.data?.settlement;
+    const settlementId = String(settlement?.settlement_id ?? "");
+    const vendorId = settlement?.vendor_id ?? "";
 
-    console.log("[cashfree-split-webhook] Event:", eventType, "order_id:", orderId,
-      "cf_payment_id:", cfPaymentId, "settlement_id:", settlementId, "vendor_id:", vendorId);
+    console.log("[cashfree-split-webhook] Event:", eventType,
+      "settlement_id:", settlementId, "vendor_id:", vendorId,
+      "amount_settled:", settlement?.amount_settled,
+      "settled_orders_count:", settlement?.settled_orders_count);
 
-    // On-demand transfers may not have an order_id — require at least one identifier
-    if (!orderId && !settlementId && !vendorId) {
+    // Vendor settlement webhooks always carry settlement_id + vendor_id
+    if (!settlementId && !vendorId) {
       return jsonResponse({ status: "ignored", reason: "no identifiers" });
     }
 
-    // Dedup check — event_id format: cf-split-{identifier}-{eventType}
-    const dedupKey = `cf-split-${cfPaymentId || settlementId || orderId}-${eventType}`;
+    // Dedup by settlement_id + event type (unique per settlement lifecycle event)
+    const dedupKey = `cf-split-${settlementId || vendorId}-${eventType}`;
     const { data: existing } = await supabase
       .from("processed_webhooks")
       .select("event_id")
@@ -124,77 +133,113 @@ serve(async (req: Request) => {
       requestId: req.headers.get("x-request-id") ?? crypto.randomUUID(),
     });
 
-    // Find the payment — try multiple strategies:
-    // 1. By cf_order_id/gateway_order_id (order-level splits)
-    // 2. By cf_settlement_id (on-demand transfers — stored by settle-to-landlord)
-    // 3. By vendor_id match (fallback for on-demand transfers)
-    let payment = null;
+    // Find payment(s) by vendor_id → bank_accounts → tenancies → payments
+    // Settlement webhooks are vendor-level (no order_id), so we match via vendor identity.
+    let payments: Array<{
+      id: string;
+      user_id: string;
+      rent_amount_paise: number;
+      landlord_payout_status: string;
+      tenancy_id: string;
+      payment_month: string;
+    }> = [];
 
-    if (orderId) {
-      const { data } = await supabase
-        .from("payments")
-        .select("id, user_id, rent_amount_paise, landlord_payout_status, tenancy_id, payment_month")
-        .or(`cf_order_id.eq.${orderId},gateway_order_id.eq.${orderId}`)
-        .in("landlord_payout_status", ["pending", "processing"])
+    if (vendorId) {
+      // Look up bank account by Cashfree vendor ID
+      const { data: bankAcct } = await supabase
+        .from("bank_accounts")
+        .select("user_id")
+        .eq("cf_beneficiary_id", vendorId)
+        .eq("party_type", "landlord")
         .maybeSingle();
-      payment = data;
+
+      if (bankAcct) {
+        // Find all tenancies for this landlord
+        const { data: tenancies } = await supabase
+          .from("tenancies")
+          .select("id")
+          .eq("landlord_user_id", bankAcct.user_id);
+
+        if (tenancies?.length) {
+          const tenancyIds = tenancies.map((t: { id: string }) => t.id);
+          const { data } = await supabase
+            .from("payments")
+            .select("id, user_id, rent_amount_paise, landlord_payout_status, tenancy_id, payment_month")
+            .in("tenancy_id", tenancyIds)
+            .eq("payment_gateway", "cashfree")
+            .in("landlord_payout_status", ["processing", "retrying"])
+            .order("paid_at", { ascending: true });
+          if (data?.length) payments = data;
+        }
+      }
     }
 
-    if (!payment && settlementId) {
+    // Fallback: try settlement_id match (legacy on-demand transfers)
+    if (!payments.length && settlementId) {
       const { data } = await supabase
         .from("payments")
         .select("id, user_id, rent_amount_paise, landlord_payout_status, tenancy_id, payment_month")
         .eq("gateway_payout_id", settlementId)
-        .in("landlord_payout_status", ["pending", "processing"])
-        .maybeSingle();
-      payment = data;
+        .in("landlord_payout_status", ["pending", "ready", "processing", "retrying"])
+        .limit(1);
+      if (data?.length) payments = data;
     }
 
-    if (!payment) {
-      console.warn(`[cashfree-split-webhook] No eligible payment found (order_id=${orderId}, settlement_id=${settlementId}, event=${eventType})`);
-      // Insert dedup record and return 200 to prevent Cashfree retries
+    if (!payments.length) {
+      console.warn(`[cashfree-split-webhook] No eligible payment found (vendor_id=${vendorId}, settlement_id=${settlementId}, event=${eventType})`);
       await supabase
         .from("processed_webhooks")
         .upsert({ event_id: dedupKey, payment_gateway: "cashfree_split" }, { onConflict: "event_id" });
       return jsonResponse({ status: "ignored", reason: "no eligible payment" });
     }
 
-    const settlement = payload.data?.settlement ?? {};
+    // Settlement webhooks are vendor-level: one settlement may cover multiple payments.
+    // Process all matched payments in the batch.
+    const paymentIds = payments.map((p) => p.id);
+    const payment = payments[0]; // primary for logging/notification
+
+    console.log(`[cashfree-split-webhook] Matched ${payments.length} payment(s): ${paymentIds.join(", ")}`);
 
     // ── VENDOR_SETTLEMENT_INITIATED ──────────────────────────────────
-    if (eventType === "VENDOR_SETTLEMENT_INITIATED") {
-      await supabase
-        .from("payments")
-        .update({ landlord_payout_status: "processing" })
-        .eq("id", payment.id)
-        .eq("landlord_payout_status", "pending");
+    // Largely redundant: settle-to-landlord already sets 'processing'.
+    // Kept as a safety net for any race conditions.
+    if (eventType === "VENDOR_SETTLEMENT_INITIATED" || eventType === "VENDOR_SETTLEMENT_CREATED") {
+      for (const p of payments) {
+        await supabase
+          .from("payments")
+          .update({ landlord_payout_status: "processing" })
+          .eq("id", p.id)
+          .in("landlord_payout_status", ["pending", "ready"]);
+      }
 
       await audit.logSuccess(
         "VENDOR_SETTLEMENT_INITIATED",
         "payment",
         "payment",
         payment.id,
-        { vendor_id: settlement.vendor_id },
+        { vendor_id: vendorId, payment_count: payments.length, settlement_id: settlementId },
       );
 
-      console.log(`[cashfree-split-webhook] Settlement initiated for payment ${payment.id}`);
+      console.log(`[cashfree-split-webhook] Settlement initiated for ${payments.length} payment(s)`);
 
     // ── VENDOR_SETTLEMENT_SUCCESS ─────────────────────────────────────
     } else if (eventType === "VENDOR_SETTLEMENT_SUCCESS") {
-      const amountSettled = settlement.amount_settled ?? 0;
-      const serviceCharge = settlement.service_charge ?? 0;
+      const amountSettled = settlement?.amount_settled ?? 0;
+      const serviceCharge = settlement?.service_charge ?? 0;
+      const settledOn = settlement?.settled_on ?? new Date().toISOString();
 
-      await supabase
-        .from("payments")
-        .update({
-          landlord_payout_status: "settled",
-          landlord_payout_at: settlement.settlement_date ?? new Date().toISOString(),
-          gateway_payout_utr: settlement.utr ?? null,
-          net_collected_paise: Math.round(amountSettled * 100),
-          actual_pg_fee_paise: Math.round(serviceCharge * 100),
-        })
-        .eq("id", payment.id)
-        .in("landlord_payout_status", ["pending", "processing"]);
+      // Mark ALL processing payments for this vendor as settled
+      for (const p of payments) {
+        await supabase
+          .from("payments")
+          .update({
+            landlord_payout_status: "settled",
+            landlord_payout_at: settledOn,
+            gateway_payout_utr: settlement?.utr ?? null,
+          })
+          .eq("id", p.id)
+          .in("landlord_payout_status", ["processing", "retrying"]);
+      }
 
       await audit.logSuccess(
         "VENDOR_SETTLEMENT_SUCCESS",
@@ -202,74 +247,72 @@ serve(async (req: Request) => {
         "payment",
         payment.id,
         {
-          vendor_id: settlement.vendor_id,
-          utr: settlement.utr,
+          vendor_id: vendorId,
+          utr: settlement?.utr,
           amount_settled: amountSettled,
           service_charge: serviceCharge,
+          payment_count: payments.length,
+          settlement_id: settlementId,
         },
       );
 
-      console.log(`[cashfree-split-webhook] Settled payment ${payment.id}, UTR: ${settlement.utr}`);
+      console.log(`[cashfree-split-webhook] Settled ${payments.length} payment(s), UTR: ${settlement?.utr}`);
 
-      // Notify tenant
-      if (payment.user_id) {
-        const supabaseUrl = getSupabaseUrl();
-        const serviceKey = Deno.env.get("SB_SECRET_KEY") || Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-        notifyUser(supabaseUrl, serviceKey, {
-          user_id: payment.user_id,
-          notification_type: "settlement_complete",
-          template_vars: {
-            amount: ((payment.rent_amount_paise as number) / 100).toLocaleString("en-IN"),
-            utr: settlement.utr ?? "N/A",
-          },
-          related_entity_type: "payment",
-          related_entity_id: payment.id,
-        }).catch((e) => console.error("[cashfree-split-webhook] Notify failed:", e));
+      // Notify each affected tenant
+      const supabaseUrl = getSupabaseUrl();
+      const serviceKey = Deno.env.get("SB_SECRET_KEY") || Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+      for (const p of payments) {
+        if (p.user_id) {
+          notifyUser(supabaseUrl, serviceKey, {
+            user_id: p.user_id,
+            notification_type: "settlement_complete",
+            template_vars: {
+              amount: ((p.rent_amount_paise as number) / 100).toLocaleString("en-IN"),
+              utr: settlement?.utr ?? "N/A",
+            },
+            related_entity_type: "payment",
+            related_entity_id: p.id,
+          }).catch((e) => console.error("[cashfree-split-webhook] Notify failed:", e));
+        }
       }
 
     // ── VENDOR_SETTLEMENT_FAILED / REVERSED ───────────────────────────
+    // Set to 'retrying' (not 'failed') — Cashfree may auto-retry from vendor balance.
+    // After 36hr from paid_at with no success, poll-settlement-status → 'failed' + refund.
     } else if (eventType === "VENDOR_SETTLEMENT_FAILED" || eventType === "VENDOR_SETTLEMENT_REVERSED") {
       const isReversed = eventType === "VENDOR_SETTLEMENT_REVERSED";
 
-      await supabase
-        .from("payments")
-        .update({ landlord_payout_status: "failed" })
-        .eq("id", payment.id)
-        .in("landlord_payout_status", ["pending", "processing"]);
+      for (const p of payments) {
+        await supabase
+          .from("payments")
+          .update({ landlord_payout_status: "retrying" })
+          .eq("id", p.id)
+          .in("landlord_payout_status", ["processing", "retrying"]);
+      }
 
       await audit.logFailure(
         "VENDOR_SETTLEMENT_FAILED",
         "payment",
         isReversed ? "SETTLEMENT_REVERSED" : "SETTLEMENT_FAILED",
-        `Cashfree settlement ${isReversed ? "reversed" : "failed"} for payment ${payment.id}`,
+        `Cashfree settlement ${isReversed ? "reversed" : "failed"} for ${payments.length} payment(s)`,
         "payment",
         payment.id,
         {
-          vendor_id: settlement.vendor_id,
-          reason: settlement.reason,
+          vendor_id: vendorId,
+          reason: settlement?.reason,
           event_type: eventType,
+          payment_count: payments.length,
+          settlement_id: settlementId,
         },
       );
 
       console.error(
-        `[OPS_ALERT] ${eventType} for payment ${payment.id}`,
+        `[OPS_ALERT] ${eventType} for ${payments.length} payment(s)`,
         isReversed ? "— requires manual review" : "",
       );
 
-      // Notify tenant about settlement failure
-      if (payment.user_id) {
-        const supabaseUrl = getSupabaseUrl();
-        const serviceKey = Deno.env.get("SB_SECRET_KEY") || Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-        notifyUser(supabaseUrl, serviceKey, {
-          user_id: payment.user_id,
-          notification_type: "settlement_failed",
-          template_vars: {
-            amount: ((payment.rent_amount_paise as number) / 100).toLocaleString("en-IN"),
-          },
-          related_entity_type: "payment",
-          related_entity_id: payment.id,
-        }).catch((e) => console.error("[cashfree-split-webhook] Notify failed:", e));
-      }
+      // Do NOT notify tenant here — status is 'retrying', not terminal.
+      // poll-settlement-status sends settlement_failed notification after 36hr timeout + refund.
 
     } else {
       console.log(`[cashfree-split-webhook] Unhandled event type: ${eventType}`);

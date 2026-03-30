@@ -16,12 +16,14 @@ import { trackEvent } from '../config/analytics';
 import { isCriticalUpdate, reloadApp, notifyUpdateDetected, notifyUpdateDownloaded } from '../config/updates';
 import { usePaymentStore, selectIsProcessing } from '../stores';
 
-// Auto-apply downloaded updates after this much background time (5 minutes)
-const AUTO_APPLY_BACKGROUND_MS = 5 * 60 * 1000;
+// All updates auto-apply immediately after download — no manual interaction needed
 
 // Critical update reload retry config
 const MAX_RELOAD_RETRIES = 3;
 const RELOAD_RETRY_DELAYS = [1500, 3000, 5000]; // escalating delays
+
+// Auto-apply downloaded update when app returns from background after 5 minutes
+const AUTO_APPLY_BACKGROUND_MS = 5 * 60 * 1000;
 
 // Dynamic import to prevent crash in dev builds
 let useUpdatesHook: (() => any) | null = null;
@@ -123,10 +125,10 @@ function useOTAUpdatesInner(): UseOTAUpdatesReturn {
     if (updates.isUpdateAvailable && !updates.isDownloading && !hasHandledRef.current && !dismissed) {
       hasHandledRef.current = true;
       notifyUpdateDetected(); // Signal to index.tsx that an OTA download is starting
-      setBannerState('downloading');
+      // Don't show banner yet — download silently. Only show for critical updates.
       setDownloadProgress(0);
 
-      // Safety timeout — hide banner after 30s regardless
+      // Safety timeout — reset after 30s regardless
       safetyTimeoutRef.current = setTimeout(() => setBannerState('hidden'), 30000);
 
       fetchUpdateAsync!()
@@ -148,10 +150,11 @@ function useOTAUpdatesInner(): UseOTAUpdatesReturn {
               return;
             }
 
-            // Non-critical: show 'ready' banner so user can tap to restart
+            // Non-critical: download silently, apply on next cold start.
+            // Don't reload — don't disturb user's journey for cosmetic changes.
             trackEvent('ota_downloaded', { critical: false });
             updateReadyRef.current = true;
-            setBannerState('ready');
+            setBannerState('hidden');
             return;
           }
 

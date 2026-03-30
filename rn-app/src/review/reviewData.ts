@@ -87,7 +87,18 @@ const reviewResponses: Record<string, unknown> = {
         cashback_earned: 200,
       },
     ],
-    landlord_bank: null,
+    landlord_bank: {
+      id: 'review-landlord-bank-001',
+      account_holder_name: 'Priya Krishnamurthy',
+      account_number_masked: '****5678',
+      ifsc_code: 'HDFC0001234',
+      bank_name: 'HDFC Bank',
+      verified: true,
+      pan_number_masked: 'ABCPK****Z',
+      pan_verified: true,
+      upi_vpa: null,
+      verification_method: 'bank_penny_drop',
+    },
     notifications: [],
     unread_notification_count: 0,
     payment_stamps: {
@@ -108,6 +119,8 @@ const reviewResponses: Record<string, unknown> = {
     txn_id: 'review-txn-001',
     total_amount_paise: 2500000,
     cashback_applied_paise: 20000,
+    convenience_fee_paise: 0,
+    fee_billing_model: 'included',
     demo_mode: true,
   },
 
@@ -118,6 +131,8 @@ const reviewResponses: Record<string, unknown> = {
     gateway_verified: true,
     amount_paise: 2500000,
     cashback_earned_paise: 20000,
+    convenience_fee_paise: 0,
+    fee_billing_model: 'included',
     paid_at: new Date().toISOString(),
     error_message: null,
   },
@@ -126,10 +141,12 @@ const reviewResponses: Record<string, unknown> = {
   'get-fee-config': {
     fee_rates: {
       upi: { rate: 0, fee_type: 'percentage' },
-      credit_card: { rate: 0.0185, fee_type: 'percentage' },
+      credit_card: { rate: 0.02, fee_type: 'percentage' },
       debit_card: { rate: 0.009, fee_type: 'percentage' },
       netbanking: { rate: 1500, fee_type: 'flat_paise' },
     },
+    fee_billing_model: 'included',
+    gateway: 'cashfree',
   },
 
   // ─── Payment: History ───
@@ -139,11 +156,14 @@ const reviewResponses: Record<string, unknown> = {
         id: REVIEW_PAYMENT_ID,
         amount: 25000,
         pg_fee: 0,
+        convenience_fee: 0,
         cashback_applied: 200,
         cashback_earned: 200,
         net_amount: 24800,
         amount_paise: 2500000,
         pg_fee_paise: 0,
+        convenience_fee_paise: 0,
+        fee_billing_model: 'included',
         cashback_applied_paise: 20000,
         status: 'success',
         payment_method: 'upi',
@@ -161,11 +181,14 @@ const reviewResponses: Record<string, unknown> = {
         id: 'review-pay-002',
         amount: 25000,
         pg_fee: 0,
+        convenience_fee: 0,
         cashback_applied: 200,
         cashback_earned: 200,
         net_amount: 24800,
         amount_paise: 2500000,
         pg_fee_paise: 0,
+        convenience_fee_paise: 0,
+        fee_billing_model: 'included',
         cashback_applied_paise: 20000,
         status: 'success',
         payment_method: 'upi',
@@ -206,6 +229,9 @@ const reviewResponses: Record<string, unknown> = {
       gateway_id: 'review-pg-001',
       amount: 25000,
       pg_fee: 0,
+      convenience_fee: 0,
+      convenience_fee_paise: 0,
+      fee_billing_model: 'included',
       cashback_applied: 200,
       cashback_earned: 200,
       net_amount_paid: 24800,
@@ -322,6 +348,7 @@ const reviewResponses: Record<string, unknown> = {
         due_date: '2026-01-05',
         days_late: null,
         amount_paise: 2500000,
+        convenience_fee_paise: 0,
         cashback_earned: 200,
       },
       {
@@ -333,6 +360,7 @@ const reviewResponses: Record<string, unknown> = {
         due_date: '2026-02-05',
         days_late: null,
         amount_paise: 2500000,
+        convenience_fee_paise: 0,
         cashback_earned: 200,
       },
       {
@@ -344,6 +372,7 @@ const reviewResponses: Record<string, unknown> = {
         due_date: '2026-03-05',
         days_late: null,
         amount_paise: null,
+        convenience_fee_paise: 0,
         cashback_earned: 0,
       },
     ],
@@ -483,22 +512,9 @@ const reviewResponses: Record<string, unknown> = {
     updated_at: new Date().toISOString(),
   },
 
-  'upload-avatar': {
-    upload_url: 'https://example.com/review-avatar-upload',
-    avatar_url: 'https://example.com/review-avatar.jpg',
-    file_path: 'avatars/review-user-id.jpg',
-    expires_at: '2026-03-02T00:00:00Z',
-    max_file_size: 5242880,
-  },
-
-  'pixelate-avatar': {
-    avatarUrl: 'https://example.com/review-avatar-pixel.png',
-    thumbnailUrl: 'https://example.com/review-avatar-pixel-thumb.png',
-  },
-
   // ─── Profile: Delete Account ───
   'delete-account': {
-    message: 'Your account has been deleted successfully.',
+    message: 'Your account has been deleted successfully',
     archived_at: new Date().toISOString(),
   },
 
@@ -548,14 +564,32 @@ const reviewResponses: Record<string, unknown> = {
     verified: true,
     account_number_masked: '****5678',
     ifsc_code: 'HDFC0001234',
-    verified_name: 'Priya Krishnamurthy',
+    verified_name: 'PRIYA KRISHNAMURTHY',
     name_match_score: 100,
-    verification_status: 'verified',
+    name_match_threshold: 80,
+    verification_status: 'SUCCESS',
     bank_name: 'HDFC Bank',
     branch: 'Indiranagar Branch',
     message: 'Bank account verified',
     agreement_name_matched: true,
     matched_landlord_name: 'Priya Krishnamurthy',
+    agreement_match_score: 100,
+  },
+
+  'verify-upi-vpa': {
+    bank_account_id: 'review-upi-bank-001',
+    verified: true,
+    upi_vpa: 'landlord@okhdfc',
+    verified_name: 'PRIYA KRISHNAMURTHY',
+    name_match_score: 95,
+    name_match_threshold: 80,
+    verification_status: 'SUCCESS',
+    bank_name: 'HDFC Bank',
+    ifsc: 'HDFC0001234',
+    message: 'UPI verified successfully',
+    agreement_name_matched: true,
+    matched_landlord_name: 'Priya Krishnamurthy',
+    agreement_match_score: 95,
   },
 
   'verify-pan': {
@@ -589,6 +623,13 @@ const reviewResponses: Record<string, unknown> = {
   },
 
   'send-landlord-invite': {
+    already_approved: true,
+    status: 'approved',
+    message: 'Landlord already approved',
+  },
+
+  // Alias — code calls this name, mock uses send-landlord-invite
+  'invite-landlord-whatsapp': {
     already_approved: true,
     status: 'approved',
     message: 'Landlord already approved',

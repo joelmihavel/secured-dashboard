@@ -53,7 +53,6 @@ export default function EditProfileScreen() {
 
   const fullName = user ? `${user.first_name}${user.last_name ? ' ' + user.last_name : ''}` : '';
   const [name, setName] = useState(fullName || '');
-  const [city, setCity] = useState('Bangalore');
 
   // Extract phone parts
   const phone = user?.phone ?? '';
@@ -108,9 +107,11 @@ export default function EditProfileScreen() {
                 color={colors.white}
               />
 
-              {/* Title (41:8884): "My \nProfile" width=313, height=128 */}
+              {/* Title (41:8884): "My" gray + "Profile" orange, 2 lines */}
               <Text style={styles.titleBase}>
-                {'My \nProfile'}
+                <Text inherit style={styles.titleGray}>{'My'}</Text>
+                {'\n'}
+                <Text inherit style={styles.titleAccent}>{'Profile'}</Text>
               </Text>
             </View>
 
@@ -122,16 +123,9 @@ export default function EditProfileScreen() {
             {/* Form (41:8890): column, gap=16, paddingH=40 */}
             <View style={styles.formContainer}>
               <TextInput
-                label="User name"
+                label="Name"
                 value={name}
                 onChangeText={setName}
-              />
-
-              <TextInput
-                label="City"
-                value={city}
-                onChangeText={setCity}
-                disabled
               />
 
               <PhoneInput
@@ -146,7 +140,7 @@ export default function EditProfileScreen() {
             {/* Button area (41:8895): column, gap=16, paddingH=40 */}
             <View style={styles.buttonSection}>
               <PrimaryButton
-                title="Save Changes"
+                title="Save changes"
                 onPress={handleSave}
                 disabled={updateProfile.isPending}
                 loading={updateProfile.isPending}

@@ -35,6 +35,7 @@ import {
   calculateNameMatchScore as sharedCalculateNameMatchScore,
 } from "../_shared/name-match-service.ts";
 import { isTestUser } from "../_shared/demo-helpers.ts";
+import { recomputeAndStoreRisk } from "../_shared/risk-utils.ts";
 
 // ==============================================
 // CONFIGURATION
@@ -520,6 +521,13 @@ async function handleVerifyUtility(req: Request): Promise<Response> {
       : !isBillFetched
       ? (billResult.message ?? "Failed to fetch electricity bill")
       : "The electricity bill details do not match the rental agreement. Please ensure you are using the correct consumer number for your rented property.";
+
+    // Recompute risk after utility verification
+    try {
+      await recomputeAndStoreRisk(userId, supabase);
+    } catch (riskErr) {
+      console.error("[verify-utility] Risk recompute failed (non-fatal):", riskErr);
+    }
 
     return jsonResponse({
       success: true,

@@ -36,11 +36,17 @@ interface UploadState {
   /** Extraction ID the user explicitly abandoned via "Re-upload".
    *  useMountDiscovery skips this ID so it won't resurrect the old record. */
   dismissedExtractionId: string | null;
+  /** Whether user completed or skipped the pre-waitlist bank details step.
+   *  Prevents showing the bank screen again on cold-start routing. */
+  bankStepCompleted: boolean;
+  /** User ID that owns this upload state. Used to detect cross-user state
+   *  leakage (e.g., device shared between users or stale Keychain data). */
+  ownerId: string | null;
   _hasHydrated: boolean;
 }
 
 interface UploadActions {
-  startUpload: (fileName: string) => void;
+  startUpload: (fileName: string, userId?: string) => void;
   setExtractionId: (id: string) => void;
   setPhase: (phase: UploadPhase) => void;
   setError: (code: string, message: string) => void;
@@ -55,7 +61,11 @@ interface UploadActions {
    *  Sets dismissedExtractionId WITHOUT clearing other state — safe to call
    *  before navigation. useMountDiscovery checks this to prevent resurrection. */
   dismissCurrentExtraction: () => void;
+  /** Mark the pre-waitlist bank step as completed or skipped. */
+  completeBankStep: () => void;
   isStale: () => boolean;
+  /** Reset if stored state belongs to a different user. Returns true if reset. */
+  validateOwner: (currentUserId: string) => boolean;
   setHasHydrated: (v: boolean) => void;
 }
 
@@ -140,6 +150,8 @@ const initialState: UploadState = {
   errorCode: null,
   errorMessage: null,
   dismissedExtractionId: null,
+  bankStepCompleted: false,
+  ownerId: null,
   _hasHydrated: false,
 };
 
@@ -152,13 +164,14 @@ export const useUploadStore = create<UploadStore>()(
     immer((set, get) => ({
       ...initialState,
 
-      startUpload: (fileName) =>
+      startUpload: (fileName, userId) =>
         set((state) => {
           state.uploadPhase = 'requesting_url';
           state.fileName = fileName;
           state.lastUpdatedAt = Date.now();
           state.errorCode = null;
           state.errorMessage = null;
+          if (userId) state.ownerId = userId;
           state.dismissedExtractionId = null; // new upload = fresh start
         }),
 
@@ -214,6 +227,12 @@ export const useUploadStore = create<UploadStore>()(
           }
         }),
 
+      completeBankStep: () =>
+        set((state) => {
+          state.bankStepCompleted = true;
+          state.lastUpdatedAt = Date.now();
+        }),
+
       reset: () =>
         set((state) => {
           // Remember the abandoned extraction so useMountDiscovery won't resurrect it.
@@ -230,11 +249,13 @@ export const useUploadStore = create<UploadStore>()(
           state.lastUpdatedAt = 0;
           state.errorCode = null;
           state.errorMessage = null;
+          state.bankStepCompleted = false;
+          state.ownerId = null;
           // Note: _hasHydrated is NOT reset — it stays true once set
         }),
 
       isStale: () => {
-        const { uploadPhase, lastUpdatedAt } = get();
+        const { uploadPhase, lastUpdatedAt, bankStepCompleted } = get();
         if (uploadPhase === 'idle') return false;
         if (lastUpdatedAt === 0) return false;
         // BUG 5 FIX: Completed phase goes stale after 24 hours —
@@ -242,7 +263,22 @@ export const useUploadStore = create<UploadStore>()(
         if (uploadPhase === 'completed') {
           return Date.now() - lastUpdatedAt > COMPLETED_STALENESS_MS;
         }
+        // Don't mark as stale while extraction is server-side processing
+        // and bank step is already done — user would lose their bank step progress.
+        if (bankStepCompleted && (uploadPhase === 'server_processing' || uploadPhase === 'processing')) {
+          return Date.now() - lastUpdatedAt > COMPLETED_STALENESS_MS; // 24h, not 10min
+        }
         return Date.now() - lastUpdatedAt > STALENESS_MS;
+      },
+
+      validateOwner: (currentUserId) => {
+        const { ownerId, uploadPhase } = get();
+        if (ownerId && ownerId !== currentUserId && uploadPhase !== 'idle') {
+          console.log(`[UploadStore] Owner mismatch: stored=${ownerId}, current=${currentUserId} — resetting`);
+          get().reset();
+          return true;
+        }
+        return false;
       },
 
       setHasHydrated: (v) =>
@@ -252,6 +288,7 @@ export const useUploadStore = create<UploadStore>()(
     })),
     {
       name: STORAGE_KEY,
+      version: 1,
       storage: createJSONStorage(() => secureStoreAdapter),
       // Only persist what we need — exclude _hasHydrated (runtime-only)
       partialize: (state) => ({
@@ -262,7 +299,26 @@ export const useUploadStore = create<UploadStore>()(
         errorCode: state.errorCode,
         errorMessage: state.errorMessage,
         dismissedExtractionId: state.dismissedExtractionId,
+        bankStepCompleted: state.bankStepCompleted,
+        ownerId: state.ownerId,
       }),
+      migrate: (persisted, version) => {
+        // Version 0 (or unknown): nuke to defaults — forced update gives clean slate
+        if (version === 0 || version === undefined) {
+          return {
+            extractionId: null,
+            uploadPhase: 'idle' as UploadPhase,
+            fileName: null,
+            lastUpdatedAt: 0,
+            errorCode: null,
+            errorMessage: null,
+            dismissedExtractionId: null,
+            bankStepCompleted: false,
+            ownerId: null,
+          };
+        }
+        return persisted as Partial<UploadState>;
+      },
       onRehydrateStorage: () => (state) => {
         // Auto-reset stale non-completed uploads on hydration
         if (state && state.isStale()) {

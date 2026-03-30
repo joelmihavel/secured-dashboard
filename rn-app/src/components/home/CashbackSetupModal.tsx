@@ -1,27 +1,25 @@
 /**
  * Verification Check Sheet (CashbackSetupModal)
- * Figma Reference: 791:6679
+ * Figma Reference: 4109-3704
  *
  * Bottom sheet shown when user presses "Pay Rent" without completing verification.
- * Shows the same verification progress timeline as SetupProgressCard.
+ * Shows title + 3 horizontal setup step cards + CTA + skip link.
  *
- * - Primary Action: "Finish Setup" → navigate to /(setup)/pending-steps
+ * - Primary Action: Dynamic — next incomplete step (e.g., "Upload address proof →")
  * - Secondary Action: "I'll do it later" → skip to payment flow
  * - Disappears when all verifications are complete (caller never opens it)
  *
  * Figma Pixel-Perfect Values:
- * - Sheet: bg #1A1A1A, borderTopRadius 22.788
- * - Handle: 24x2, #4D4D4D, radius 200
- * - Title (791:6690): 28/40, Regular, letterSpacing -1, px-48
- *   "Set up to " (white) + "earn cashback " (#FF9A6D) + "on this payment." (white)
- * - Sub-header (791:10135): 14/20, Regular, #CBCBCB — "Waiting for Landlord's approval"
- * - Timeline: same 3 steps as SetupProgressCard, px-48, gap-16
- * - Actions (791:6713): px-48, gap-32
- *   - "Finish Setup" button (PrimaryButton with showDivider)
- *   - "I'll do it later": 12/20, white, underlined
+ * - Sheet: bg #1A1A1A, borderTopRadius ~23
+ * - Handle: 48x4, #4D4D4D, radius 200
+ * - Title: 28/40, Medium (500), letterSpacing -1, #A9A9A9, px-48
+ *   "Complete setup to become a verified member"
+ * - Setup cards: 3 horizontal, gap=4, same as CashbackSetupSteps
+ * - CTA button: 297px, r=8, bg implied, "Upload address proof →" 14/20 Medium #FFFFFF
+ * - Skip: "I'll do it later" 12/20 Regular #FFFFFF, px-48
  */
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import {
   View,
   Text as RNText,
@@ -40,7 +38,6 @@ import Animated, {
 import { BlurView } from 'expo-blur';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { Text } from '@/src/components/ui/Typography/Text';
 import { PrimaryButton } from '@/src/components/ui/Button/PrimaryButton';
 import { colors } from '@/src/theme';
 
@@ -81,7 +78,7 @@ export function VerificationCheckSheet({
     return () => handler.remove();
   }, [visible, onClose]);
 
-  // Slide + fade animation (UI thread via Reanimated)
+  // Slide + fade animation
   useEffect(() => {
     if (visible) {
       slideAnim.value = withSpring(0, {
@@ -105,28 +102,21 @@ export function VerificationCheckSheet({
     transform: [{ translateY: slideAnim.value }],
   }));
 
-  if (!visible) return null;
+  // Setup steps for progress bar
+  const steps = useMemo(() => [
+    { label: "Add landlord's\nbank details", completed: true },
+    { label: 'Verify your\naddress', completed: utilityVerified },
+    { label: 'Invite your\nlandlord', completed: landlordApproved },
+  ], [utilityVerified, landlordApproved]);
 
-  // Same progress logic as SetupProgressCard
-  const steps = [
-    {
-      title: "Add landlord's bank details",
-      subtitle: 'enables secure payouts',
-      isComplete: true, // bank is always done (prerequisite)
-    },
-    {
-      title: 'Upload address proof',
-      subtitle: 'for verification',
-      isComplete: utilityVerified,
-    },
-    {
-      title: 'Confirm your tenancy',
-      subtitle: landlordApproved
-        ? 'Landlord is invited'
-        : 'waiting for landlord approval',
-      isComplete: landlordApproved,
-    },
-  ];
+  // Dynamic CTA label — points to next incomplete step
+  const ctaLabel = useMemo(() => {
+    if (!utilityVerified) return 'Verify address →';
+    if (!landlordApproved) return 'Invite landlord →';
+    return 'Finish setup →';
+  }, [utilityVerified, landlordApproved]);
+
+  if (!visible) return null;
 
   return (
     <Modal
@@ -157,93 +147,58 @@ export function VerificationCheckSheet({
             { paddingBottom: Math.max(insets.bottom, 24) },
           ]}
         >
-          {/* Handle — Figma I791:6714;137:37: 24x2, #4D4D4D */}
+          {/* Handle — Figma: 48x4, #4D4D4D */}
           <View style={styles.handleContainer}>
             <View style={styles.handle} />
           </View>
 
-          {/* Title — Figma 791:6690 */}
-          <View style={styles.titleContainer}>
-            <RNText style={styles.title}>
-              <RNText style={styles.titleWhite}>{'Set up to '}</RNText>
-              <RNText style={styles.titleAccent}>{'earn cashback '}</RNText>
-              <RNText style={styles.titleWhite}>on this payment.</RNText>
-            </RNText>
-          </View>
+          {/* Content */}
+          <View style={styles.content}>
+            {/* Title — Figma: 28px/500, mixed colors, px-48 */}
+            <View style={styles.titleContainer}>
+              <RNText style={styles.title}>
+                {'Complete setup to become a '}
+                <RNText style={styles.titleAccent}>verified member</RNText>
+              </RNText>
+            </View>
 
-          {/* Progress section — Figma 791:6691 */}
-          <View style={styles.progressSection}>
-            {/* Sub-header — Figma 791:10135 */}
-            <Text style={styles.subHeader}>
-              {!utilityVerified 
-                ? 'Address proof pending' 
-                : 'Waiting for Landlord\'s approval'}
-            </Text>
+            {/* Progress Bar — same dot+line pattern as TransactionProgressBar */}
+            <View style={styles.progressBar}>
+              <View style={styles.trackRow}>
+                <View style={[styles.dot, steps[0].completed && styles.dotCompleted]} />
+                <View style={[styles.progressLine, steps[0].completed && styles.lineCompleted]} />
+                <View style={[styles.dot, steps[1].completed && styles.dotCompleted]} />
+                <View style={[styles.progressLine, steps[1].completed && styles.lineCompleted]} />
+                <View style={[styles.dot, steps[2].completed && styles.dotCompleted]} />
+              </View>
+              <View style={styles.labelRow}>
+                <RNText style={[styles.stepLabel, styles.labelLeft]}>{steps[0].label}</RNText>
+                <RNText style={[styles.stepLabel, styles.labelCenter]}>{steps[1].label}</RNText>
+                <RNText style={[styles.stepLabel, styles.labelRight]}>{steps[2].label}</RNText>
+              </View>
+            </View>
 
-            {/* Timeline — same visual as SetupProgressCard */}
-            {steps.map((step, index) => {
-              const isLast = index === steps.length - 1;
-              const nextStep = !isLast ? steps[index + 1] : null;
-              const isConnectorActive = step.isComplete && nextStep?.isComplete;
-              return (
-                <View key={index} style={styles.timelineRow}>
-                  <View style={styles.indicatorColumn}>
-                    <View style={styles.indicatorContainer}>
-                      <View
-                        style={[
-                          styles.dot,
-                          {
-                            backgroundColor: step.isComplete
-                              ? colors.brand[500]
-                              : colors.black[600],
-                          },
-                        ]}
-                      />
-                    </View>
-                    {!isLast && (
-                      <View
-                        style={[
-                          styles.connectorLine,
-                          {
-                            backgroundColor: isConnectorActive
-                              ? 'rgba(255, 154, 109, 0.5)'
-                              : colors.black[400],
-                          },
-                        ]}
-                      />
-                    )}
-                  </View>
-                  <View style={[styles.textColumn, isLast && styles.textColumnLast]}>
-                    <Text style={styles.stepTitle}>{step.title}</Text>
-                    <Text style={styles.stepSubtitle}>{step.subtitle}</Text>
-                  </View>
-                </View>
-              );
-            })}
-          </View>
-
-          {/* Actions — Figma 791:6713 */}
-          <View style={styles.actions}>
-            <PrimaryButton
-              title="Finish Setup"
-              onPress={onFinishSetup}
-              showDivider
-            />
-            <TouchableOpacity
-              onPress={onSkipToPayment}
-              style={styles.skipButton}
-              activeOpacity={0.7}
-            >
-              <Text style={styles.skipText}>I'll do it later</Text>
-            </TouchableOpacity>
+            {/* Actions — Figma: px-48, gap-32 */}
+            <View style={styles.actions}>
+              <PrimaryButton
+                title={ctaLabel}
+                onPress={onFinishSetup}
+                showDivider
+              />
+              <TouchableOpacity
+                onPress={onSkipToPayment}
+                style={styles.skipButton}
+                activeOpacity={0.7}
+              >
+                <RNText style={styles.skipText}>I'll do it later</RNText>
+              </TouchableOpacity>
+            </View>
           </View>
         </Animated.View>
       </View>
     </Modal>
   );
 }
-
-// ── Deprecated export — kept for backwards compat ───────────────────────────
 
 /** @deprecated Use VerificationCheckSheet instead */
 export const CashbackSetupModal = VerificationCheckSheet;
@@ -265,116 +220,107 @@ const styles = StyleSheet.create({
   overlayTouchable: {
     flex: 1,
   },
-  // Sheet — Figma 791:6679: bg #1A1A1A, borderTopRadius ~23
+  // Sheet — Figma: bg #1A1A1A, borderTopRadius ~23
   sheet: {
-    backgroundColor: colors.black[600], // #1A1A1A
+    backgroundColor: '#1A1A1A',
     borderTopLeftRadius: 23,
     borderTopRightRadius: 23,
     paddingTop: 15,
     zIndex: 20,
     gap: 24,
   },
-  // Handle — Figma: 24x2, #4D4D4D, centered
+  // Handle — Figma: 48x4, #4D4D4D, centered
   handleContainer: {
     alignItems: 'center',
   },
   handle: {
-    width: 24,
-    height: 2,
-    backgroundColor: colors.black[400], // #4D4D4D
+    width: 48, // Figma: 48px (updated from 24)
+    height: 4, // Figma: 4px
+    backgroundColor: '#4D4D4D',
     borderRadius: 200,
   },
-  // Title — Figma 791:6690: px-48, 28/40, letterSpacing -1
+  // Content wrapper
+  content: {
+    gap: 24, // Figma: gap between sections
+  },
+  // Title — Figma: 28px Medium, mixed colors, px-48
   titleContainer: {
     paddingHorizontal: 48,
-    paddingTop: 16,
   },
   title: {
-    fontFamily: 'PlusJakartaSans-Regular',
+    fontFamily: 'PlusJakartaSans-Medium',
     fontSize: 28,
     lineHeight: 40,
     letterSpacing: -1,
-  },
-  titleWhite: {
-    color: colors.white,
+    color: '#A9A9A9', // Figma: gray for first part
   },
   titleAccent: {
-    color: colors.brand[500], // #FF9A6D
+    fontSize: 28,
+    lineHeight: 40,
+    letterSpacing: -1,
+    color: colors.brand[500], // Figma: #FF9A6D for second part
   },
-  // Progress section — Figma 791:6691: px-48, gap-16
-  progressSection: {
+  // Progress bar — same dot+line pattern as TransactionProgressBar
+  progressBar: {
     paddingHorizontal: 48,
-    gap: 16,
-  },
-  // Sub-header — Figma 791:10135
-  subHeader: {
-    fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: 14,
-    lineHeight: 20,
-    color: colors.neutral[300], // #CBCBCB
-  },
-  // Timeline — matches SetupProgressCard exactly
-  timelineRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
     gap: 8,
   },
-  indicatorColumn: {
-    width: 20,
-    alignItems: 'center',
-    alignSelf: 'stretch',
-  },
-  indicatorContainer: {
-    width: 20,
-    height: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
+  trackRow: {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
   },
   dot: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
+    width: 11,
+    height: 11,
+    borderRadius: 4, // Figma: r=4 (rounded square)
+    backgroundColor: colors.black[500], // #202020 — pending
+    borderWidth: 1,
+    borderColor: colors.brand[500], // #FF9A6D outline
   },
-  connectorLine: {
-    width: 1,
+  dotCompleted: {
+    backgroundColor: colors.brand[500], // #FF9A6D — filled
+    borderColor: colors.brand[500],
+  },
+  progressLine: {
     flex: 1,
+    height: 1,
     backgroundColor: colors.black[400], // #4D4D4D
   },
-  textColumn: {
-    flex: 1,
-    gap: 4,
-    justifyContent: 'center',
-    paddingBottom: 16, // Figma gap between timeline rows (within 16-gap section)
+  lineCompleted: {
+    backgroundColor: colors.brand[500], // #FF9A6D
   },
-  textColumnLast: {
-    paddingBottom: 0,
+  labelRow: {
+    flexDirection: 'row' as const,
+    justifyContent: 'space-between' as const,
   },
-  stepTitle: {
-    fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: 14,
-    lineHeight: 20,
-    color: colors.neutral[300], // #CBCBCB
-  },
-  stepSubtitle: {
+  stepLabel: {
     fontFamily: 'PlusJakartaSans-Regular',
     fontSize: 12,
-    lineHeight: 20,
+    lineHeight: 16.92,
+    letterSpacing: -0.24,
     color: colors.neutral[600], // #878787
+    width: 97, // Figma: ~97px per label column
   },
-  // Actions — Figma 791:6713: px-48, gap-32
+  labelLeft: { textAlign: 'left' as const },
+  labelCenter: { textAlign: 'center' as const },
+  labelRight: { textAlign: 'right' as const },
+  // Actions — Figma: px-48, centered
   actions: {
     paddingHorizontal: 48,
-    gap: 16,
-    alignItems: 'center',
+    gap: 12,
+    alignItems: 'center' as const,
   },
   skipButton: {
-    paddingVertical: 8,
+    paddingVertical: 4,
   },
   skipText: {
     fontFamily: 'PlusJakartaSans-Regular',
     fontSize: 12,
     lineHeight: 20,
-    color: colors.white,
+    color: '#FFFFFF',
+    textAlign: 'center' as const,
     textDecorationLine: 'underline',
-  },
+    textDecorationColor: '#FFFFFF',
+    textDecorationStyle: 'solid',
+  } as const,
 });

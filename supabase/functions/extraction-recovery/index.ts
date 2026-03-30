@@ -25,7 +25,7 @@ import { serve } from "https://deno.land/std@0.208.0/http/server.ts";
 import { createServiceClient, verifyServiceRole } from "../_shared/supabase.ts";
 import { handleCors, getCorsHeaders, jsonResponse, errorResponse } from "../_shared/cors.ts";
 import { AuditLogger } from "../_shared/audit.ts";
-import { computeRisk } from "../_shared/risk-utils.ts";
+import { recomputeAndStoreRisk } from "../_shared/risk-utils.ts";
 
 // deno-lint-ignore no-explicit-any
 type Row = Record<string, any>;
@@ -344,11 +344,8 @@ serve(async (req: Request) => {
             actions.push("created waitlist entry (admin_review: due)");
             // Compute risk for the new waitlist entry
             try {
-              const risk = await computeRisk(userId, supabase);
-              await supabase.from("waitlist_entries")
-                .update({ risk_level: risk.risk_level, risk_factors: risk.risk_factors })
-                .eq("user_id", userId);
-              actions.push(`risk: ${risk.risk_level}`);
+              await recomputeAndStoreRisk(userId, supabase);
+              actions.push("risk: recomputed");
             } catch {
               actions.push("risk computation failed (stays PENDING)");
             }

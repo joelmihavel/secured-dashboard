@@ -297,7 +297,7 @@ const STATE_CONFIG = {
     buttonTitle: 'Upload again',
     buttonEnabled: true,
     // From 1-30178 - message appears OUTSIDE the card
-    errorMessage: 'The agreement is invalid or expired. Please upload a valid one.',
+    errorMessage: 'The agreement is invalid or expired. Please upload a valid one',
     showDivider: true, // Figma: divider pill above active button
     fileNameColor: FIGMA.colors.iconError, // Figma 1:30178: red filename
     showTrashIcon: true,
@@ -311,7 +311,7 @@ const STATE_CONFIG = {
     buttonTitle: 'Upload again',
     buttonEnabled: true,
     // From 1-30268 - message appears OUTSIDE the card
-    errorMessage: 'This file is too large. Maximum size is 10MB.',
+    errorMessage: 'This file is too large. Maximum size is 10MB',
     showDivider: true, // Figma: divider pill above active button
     fileNameColor: FIGMA.colors.iconError, // red filename
     showTrashIcon: true,
@@ -826,7 +826,7 @@ export default function UploadScreen() {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
 
         setTimeout(() => {
-          router.replace('/(waitlist)' as never);
+          router.replace('/(agreement)/add-bank-details' as never);
         }, FIGMA.animation.duration);
         break;
       }
@@ -947,9 +947,8 @@ export default function UploadScreen() {
 
       // Brief pause at 100% before navigating
       await new Promise((resolve) => setTimeout(resolve, 300));
-      advanceJourneyStage(); // agreement_upload → agreement_review
-      advanceJourneyStage(); // agreement_review → waitlist
-      router.replace('/(waitlist)' as never);
+      advanceJourneyStage(); // agreement_upload → setup
+      router.replace('/(agreement)/add-bank-details' as never);
       return;
     }
 
@@ -999,7 +998,8 @@ export default function UploadScreen() {
       );
 
       // Upload is done; backend extraction continues asynchronously.
-      router.replace('/(waitlist)' as never);
+      // Route to bank details (user fills dead time while extraction runs).
+      router.replace('/(agreement)/add-bank-details' as never);
     } catch (error) {
       console.error('Upload error:', error);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);

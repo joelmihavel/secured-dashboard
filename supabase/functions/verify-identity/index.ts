@@ -35,7 +35,7 @@ import {
 import { validateSchema, sanitizePhone, maskAadhaar, maskPan } from "../_shared/validation.ts";
 import { AuditLogger, AuditActions } from "../_shared/audit.ts";
 import { extractFirstName } from "../_shared/name-utils.ts";
-import { computeRisk } from "../_shared/risk-utils.ts";
+// Risk recomputation handled by m360-identity-processor.ts via recomputeAndStoreRisk
 import {
   callCashfreeSendOtp as sharedCallCashfreeSendOtp,
   callCashfreeVerifyOtp,

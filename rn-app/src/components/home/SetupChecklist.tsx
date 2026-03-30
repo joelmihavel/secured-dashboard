@@ -1,6 +1,6 @@
 /**
  * SetupChecklist Component
- * "Waiting for Landlord's approval" checklist with indicator dots
+ * "Waiting for landlord's approval" checklist with indicator dots
  * Figma Reference: 243-4258, 243-4462, etc.
  */
 
@@ -59,11 +59,11 @@ function SetupChecklistComponent({
   addressProofComplete = false,
   landlordInvited = false,
   showHeader = true,
-  headerText = "Waiting for Landlord's approval",
+  headerText = "Waiting for landlord's approval",
 }: SetupChecklistProps) {
   const items = [
     {
-      title: "Add landlord's bank details",
+      title: "Add your landlord's bank details",
       subtitle: 'enables secure payouts',
       isComplete: bankDetailsComplete,
     },
@@ -74,7 +74,7 @@ function SetupChecklistComponent({
     },
     {
       title: 'Invite your landlord',
-      subtitle: 'needed for cashback eligibility',
+      subtitle: 'needed for member verification',
       isComplete: landlordInvited,
     },
   ];

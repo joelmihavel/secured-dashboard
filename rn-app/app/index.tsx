@@ -2,7 +2,7 @@
  * Entry Point — Journey-Aware Router
  *
  * Determines the correct screen based on auth + waitlist state:
- *  1. Not authenticated -> auth flow (beta-splash)
+ *  1. Not authenticated -> auth flow (splash/get-started)
  *  2. Authenticated, waitlist pending/rejected -> waitlist screen
  *  3. Authenticated, waitlist approved -> setup
  *  4. Authenticated, active -> main dashboard
@@ -25,29 +25,65 @@ import * as SecureStore from 'expo-secure-store';
 import { getWaitlistStatus } from '@/src/services/api/waitlist';
 const DISABLE_SCREEN_PICKER = __DEV__ ? require('./(dev)/screen-picker').DISABLE_SCREEN_PICKER : true;
 const DEV_DIRECT_SCREEN = __DEV__ ? require('./(dev)/screen-picker').DEV_DIRECT_SCREEN : null;
-import { SkeletonLoader } from '@/src/components';
-import { ForceUpdateModal } from '@/src/components/ui/ForceUpdateModal';
+import { View, ActivityIndicator, StyleSheet } from 'react-native';
+import { Logo, Text, DottedGridPattern, Screen } from '@/src/components';
+import { colors, spacing, radius } from '@/src/theme';
+import { CriticalUpdateScreen } from '@/src/components/ui/CriticalUpdateScreen';
 import { useAuthContext } from '@/src/providers';
-import { useForceUpdate } from '@/src/hooks/useForceUpdate';
+import { useUpdatePolicy, clearUpdatePolicyCache } from '@/src/hooks/useUpdatePolicy';
 import { useUploadStore } from '@/src/stores/upload';
 import { usePaymentStore } from '@/src/stores/payment';
 import { isReviewMode } from '@/src/review/reviewMode';
 import { isJourneyMode, getJourneyRouteTarget } from '@/src/review/journeyMode';
 import { addBreadcrumb } from '@/src/config/sentry';
 import { supabase } from '@/src/services/supabase/client';
-import { waitForColdStartOTA, reloadApp } from '@/src/config/updates';
+// OTA updates handled by useOTAUpdates hook — no cold-start blocking
 
 const LAST_ROUTE_KEY = 'flent_last_journey_target';
+
+/** Routes that are valid for caching. Must match the write set in the
+ *  navigation effect below. Agreement routes are transient — they re-resolve
+ *  from user_status on each cold start and should NOT be cached. */
+const VALID_CACHED_ROUTES = new Set<string>([
+  '/(main)',
+  '/(setup)/add-bank',
+  '/(waitlist)',
+]);
+
+/** Read cached route, validating it belongs to the given user (M-3 fix).
+ *  Stored as "route|userId" — if userId doesn't match, returns null. */
+async function readCachedRoute(userId: string): Promise<string | null> {
+  const raw = await SecureStore.getItemAsync(LAST_ROUTE_KEY).catch(() => null);
+  if (!raw) return null;
+  const [route, storedUserId] = raw.split('|');
+  // Accept route if user matches OR if no userId stored (legacy format)
+  if (storedUserId && storedUserId !== userId) return null;
+  if (!route || !VALID_CACHED_ROUTES.has(route)) return null;
+  return route;
+}
+
+/** Write cached route scoped to user ID */
+function writeCachedRoute(route: string, userId: string): void {
+  if (VALID_CACHED_ROUTES.has(route)) {
+    SecureStore.setItemAsync(LAST_ROUTE_KEY, `${route}|${userId}`).catch(() => {});
+  }
+}
+
+/** Clear cached route (sign-out) */
+function clearCachedRoute(): void {
+  SecureStore.deleteItemAsync(LAST_ROUTE_KEY).catch(() => {});
+}
 
 // Global screenshot params for dev pipeline — set state for screens that need mock data
 // e.g. SCREENSHOT_PARAMS = { state: 'filled' } injects state into useScreenshotParams()
 export const SCREENSHOT_PARAMS: Record<string, string> | null = null;
 
 type JourneyTarget =
-  | '/(auth)/beta-splash'
+  | '/(auth)/splash'
   | '/(agreement)/upload'
+  | '/(agreement)/add-bank-details'
   | '/(waitlist)'
-  | '/(setup)'
+  | '/(setup)/add-bank'
   | '/(main)'
   | '/(dev)/screen-picker';
 
@@ -115,11 +151,23 @@ async function queryUserStatus(userId: string): Promise<string | null> {
 function statusToTarget(userStatus: string): JourneyTarget | null {
   switch (userStatus) {
     case 'approved':
-      return '/(setup)';
+      return null; // Needs async bank_verified check — handled by caller
     case 'active':
       return '/(main)';
     case 'agreement_confirmed':
-    case 'waitlisted':
+    // ^ No production code sets this status, but it exists as a defensive enum value.
+    // Backend recovery crons (extraction-recovery, pre-approval-audit) treat it
+    // the same as signed_up and auto-advance to waitlisted. Handle same as waitlisted.
+    case 'waitlisted': {
+      // If user is in an active upload flow and hasn't done bank step,
+      // show bank screen before waitlist. Only applies to users currently
+      // going through onboarding (uploadPhase not idle), not pre-existing users.
+      const { bankStepCompleted, uploadPhase, extractionId } = useUploadStore.getState();
+      if (!bankStepCompleted && uploadPhase !== 'idle' && extractionId) {
+        return '/(agreement)/add-bank-details';
+      }
+      return null; // Deferred — caller checks requiresReupload via extraction query
+    }
     case 'not_eligible':
       return '/(waitlist)';
     case 'signed_up':
@@ -175,11 +223,14 @@ export default function Index() {
   const router = useRouter();
   const rootNavigationState = useRootNavigationState();
   const { isAuthenticated, isLoading: authLoading, session: authSession } = useAuthContext();
-  const { isRequired: forceUpdateRequired, message: forceUpdateMessage, isLoading: forceUpdateLoading } = useForceUpdate();
+  const updatePolicy = useUpdatePolicy();
   const [journeyResolved, setJourneyResolved] = useState(false);
   const [target, setTarget] = useState<JourneyTarget | string | null>(null);
   const hasNavigatedRef = useRef(false);
   const isResolvingRef = useRef(false); // Guard against concurrent journey resolutions
+  // Track when this component mounts so the OTA bounded wait can be dynamically
+  // capped to stay under the 6s safety timeout. Uses a ref to capture mount time once.
+  const _mountTimestamp = useRef(Date.now()).current;
 
   const resolveAuthenticatedJourney = useCallback(async (userId: string) => {
     // Prevent re-entry: multiple auth events (INITIAL_SESSION, SIGNED_IN,
@@ -200,6 +251,9 @@ export default function Index() {
         });
       }
 
+      // ── OWNER VALIDATION: reset upload store if it belongs to a different user ──
+      useUploadStore.getState().validateOwner(userId);
+
       // ── PAYMENT RECOVERY: check for in-progress payments from app crash ──
       // Moved here from usePaymentRecovery hook in _layout.tsx because
       // navigating from _layout.tsx races with expo-router's assertIsReady.
@@ -212,11 +266,22 @@ export default function Index() {
         if (lastPaymentId && lastPaymentTimestamp) {
           const elapsed = Date.now() - lastPaymentTimestamp;
           if (elapsed <= 5 * 60 * 1000) {
-            // Recent payment in progress — resume polling on status screen
-            clearLastPayment(); // Clear immediately so next cold start won't redirect again
-            setTarget(`/(payment)/status?paymentId=${lastPaymentId}&initialStatus=pending`);
-            setJourneyResolved(true);
-            return;
+            // Verify payment belongs to current user (prevents cross-user recovery)
+            const { data: paymentRow } = await supabase
+              .from('payments')
+              .select('id')
+              .eq('id', lastPaymentId)
+              .eq('user_id', userId)
+              .maybeSingle();
+            if (!paymentRow) {
+              clearLastPayment();
+            } else {
+              // Recent payment in progress — resume polling on status screen
+              clearLastPayment(); // Clear immediately so next cold start won't redirect again
+              setTarget(`/(payment)/status?paymentId=${lastPaymentId}&initialStatus=pending`);
+              setJourneyResolved(true);
+              return;
+            }
           }
           clearLastPayment();
         }
@@ -226,18 +291,42 @@ export default function Index() {
       // Avoids 1-3s of network calls (getUser + PostgREST) on every app open.
       // The cached route is validated in background; if stale, user gets
       // redirected on next render cycle.
-      const cachedRoute = await SecureStore.getItemAsync(LAST_ROUTE_KEY).catch(() => null);
-      if (cachedRoute && (cachedRoute === '/(main)' || cachedRoute === '/(setup)' || cachedRoute === '/(waitlist)')) {
+      const cachedRoute = await readCachedRoute(userId);
+      if (cachedRoute) {
         console.log('[journey-router] Fast path: using cached route', cachedRoute);
         setTarget(cachedRoute);
         setJourneyResolved(true);
         // Validate in background — if user_status changed, redirect
         queryUserStatus(userId).then(async (userStatus) => {
           if (!userStatus) return; // Network failed, keep cached route
-          const correctTarget = statusToTarget(userStatus);
+          // Wait for upload store hydration before reading bankStepCompleted
+          if (!useUploadStore.getState()._hasHydrated) {
+            await new Promise<void>((resolve) => {
+              const unsub = useUploadStore.subscribe((s) => {
+                if (s._hasHydrated) { unsub(); resolve(); }
+              });
+              setTimeout(() => { unsub(); resolve(); }, 500);
+            });
+          }
+          let correctTarget = statusToTarget(userStatus);
+
+          // statusToTarget returns null for deferred statuses (need async checks)
+          if (!correctTarget && userStatus === 'approved') {
+            const { data: tenancyRow } = await supabase
+              .from('tenancies')
+              .select('bank_verified')
+              .eq('user_id', userId)
+              .maybeSingle();
+            correctTarget = !tenancyRow ? '/(waitlist)' : tenancyRow.bank_verified ? '/(main)' : '/(setup)/add-bank';
+          } else if (!correctTarget && (userStatus === 'waitlisted' || userStatus === 'agreement_confirmed')) {
+            // Background validation for waitlisted — don't need reupload check here,
+            // just default to waitlist (reupload redirect happens on the waitlist screen)
+            correctTarget = '/(waitlist)';
+          }
+
           if (correctTarget && correctTarget !== cachedRoute) {
             console.log('[journey-router] Background validation: route changed', cachedRoute, '->', correctTarget);
-            SecureStore.setItemAsync(LAST_ROUTE_KEY, correctTarget).catch(() => {});
+            writeCachedRoute(correctTarget, userId);
             router.replace(correctTarget as never);
           }
         }).catch(() => {}); // Non-fatal background check
@@ -290,8 +379,8 @@ export default function Index() {
         // Both paths failed even after token refresh — genuine network issue.
         // Trust the cached route if available (user was here before).
         // Only default to upload if there's no prior history at all.
-        const fallbackRoute = await SecureStore.getItemAsync(LAST_ROUTE_KEY).catch(() => null);
-        if (fallbackRoute && (fallbackRoute === '/(main)' || fallbackRoute === '/(setup)' || fallbackRoute === '/(waitlist)')) {
+        const fallbackRoute = await readCachedRoute(userId);
+        if (fallbackRoute) {
           console.warn('[journey-router] Routing failed — using cached route:', fallbackRoute);
           setTarget(fallbackRoute);
         } else {
@@ -307,13 +396,51 @@ export default function Index() {
       const resolved = statusToTarget(userStatus);
       if (resolved) {
         setTarget(resolved);
+      } else if (userStatus === 'approved') {
+        // approved — check if bank already verified (deferred name matching succeeded)
+        const { data: tenancyRow } = await supabase
+          .from('tenancies')
+          .select('bank_verified')
+          .eq('user_id', userId)
+          .maybeSingle();
+
+        // No tenancy = broken state (approved requires tenancy from extraction flow).
+        // Route to waitlist as safety net — extraction-recovery cron will fix the state.
+        setTarget(!tenancyRow ? '/(waitlist)' : tenancyRow.bank_verified ? '/(main)' : '/(setup)/add-bank');
+      } else if (userStatus === 'waitlisted' || userStatus === 'agreement_confirmed') {
+        // waitlisted — check if extraction requires reupload (invalid document / failed).
+        // Without this check, the waitlist screen loads → detects requiresReupload →
+        // redirects to upload, causing a visible flicker.
+        const { data: extraction } = await supabase
+          .from('extracted_rental_info')
+          .select('extraction_status, contract_status')
+          .eq('user_id', userId)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        if (extraction && (extraction.contract_status === 'invalid_document' || extraction.extraction_status === 'extraction_failed')) {
+          // Prepare upload store for reupload so the upload screen shows the right state
+          useUploadStore.getState().prepareForReupload({
+            errorMessage: 'Please upload a valid rental agreement to continue.',
+          });
+          setTarget('/(agreement)/upload');
+        } else {
+          setTarget('/(waitlist)');
+        }
       } else {
         // signed_up — need to check extraction state to route correctly
         // First: check if there's a completed extraction awaiting backend review.
         // If so, the upload is done — route to waitlist, not back to upload.
         const manualReview = await checkPendingExtraction(userId);
         if (manualReview) {
-          setTarget('/(waitlist)');
+          // Extraction complete — but check if bank step was done first
+          const { bankStepCompleted } = useUploadStore.getState();
+          if (bankStepCompleted) {
+            setTarget('/(waitlist)');
+          } else {
+            setTarget('/(agreement)/add-bank-details');
+          }
         } else {
           // Check upload store for async-processing vs upload
           const uploadState = useUploadStore.getState();
@@ -330,7 +457,12 @@ export default function Index() {
             // persisted state may still have both fields set.
             uploadState.dismissedExtractionId !== uploadState.extractionId
           ) {
-            setTarget('/(waitlist)');
+            // Upload done — check if bank step completed/skipped
+            if (uploadState.bankStepCompleted) {
+              setTarget('/(waitlist)');
+            } else {
+              setTarget('/(agreement)/add-bank-details');
+            }
           } else {
             // If extraction was dismissed but store wasn't fully persisted, clean up
             if (uploadState.dismissedExtractionId && uploadState.extractionId === uploadState.dismissedExtractionId) {
@@ -347,8 +479,8 @@ export default function Index() {
       });
       console.error('[journey-router] resolveAuthenticatedJourney error:', err);
       // Trust cached route on exceptions — don't send active users to upload
-      const fallbackRoute = await SecureStore.getItemAsync(LAST_ROUTE_KEY).catch(() => null);
-      if (fallbackRoute && (fallbackRoute === '/(main)' || fallbackRoute === '/(setup)' || fallbackRoute === '/(waitlist)')) {
+      const fallbackRoute = await readCachedRoute(userId);
+      if (fallbackRoute) {
         setTarget(fallbackRoute);
       } else {
         setTarget('/(agreement)/upload');
@@ -361,7 +493,7 @@ export default function Index() {
 
   // Reset journey state when user signs out so the router re-evaluates.
   // Without this, journeyResolved stays true after sign-out, and the router
-  // never re-fires to redirect to beta-splash. AuthProvider navigates on
+  // never re-fires to redirect to splash. AuthProvider navigates on
   // user-initiated sign-out, but this handles edge cases (OTA reload after
   // sign-out, transient SIGNED_OUT → recovery → genuine sign-out later).
   const wasAuthenticatedRef = useRef(isAuthenticated);
@@ -411,7 +543,7 @@ export default function Index() {
     }
 
     if (!isAuthenticated) {
-      setTarget('/(auth)/beta-splash');
+      setTarget('/(auth)/splash');
       setJourneyResolved(true);
       return;
     }
@@ -450,36 +582,89 @@ export default function Index() {
   useEffect(() => {
     if (!journeyResolved || !target || hasNavigatedRef.current) return;
     if (!rootNavigationState?.key) return;
+    // Don't navigate if force update modal should be showing — the render
+    // returns CriticalUpdateScreen instead. Without this guard, the navigation
+    // effect can race with the force update check on the same render cycle.
+    if (updatePolicy.isRequired) return;
     hasNavigatedRef.current = true;
     router.replace(target as never);
-    // Cache the route for instant navigation on next app launch
-    if (target === '/(main)' || target === '/(setup)' || target === '/(waitlist)') {
-      SecureStore.setItemAsync(LAST_ROUTE_KEY, target).catch(() => {});
-    } else if (target === '/(auth)/beta-splash') {
-      // User signed out — clear cached route
-      SecureStore.deleteItemAsync(LAST_ROUTE_KEY).catch(() => {});
+    // Cache the route scoped to the current user for instant navigation on next launch
+    const currentUserId = authSession?.user?.id;
+    if (currentUserId && VALID_CACHED_ROUTES.has(target)) {
+      writeCachedRoute(target, currentUserId);
+    } else if (target === '/(auth)/splash') {
+      clearCachedRoute();
     }
-    // If an OTA update finished downloading during auth resolution, reload
-    // behind the still-visible splash for a seamless update. Don't WAIT for
-    // in-progress downloads -- waitForColdStartOTA() returns immediately now.
-    // Updates still downloading will apply on next launch or background return.
-    waitForColdStartOTA().then(async (shouldReload) => {
-      if (shouldReload) {
-        console.log('[journey-router] OTA update ready — reloading behind splash');
-        const reloaded = await reloadApp();
-        if (reloaded) return; // App is restarting — nothing more to do
-        // reloadApp failed — fall through to hide splash normally
-      }
-      // No OTA update (or reload failed) -- hide splash after brief delay
+    // Skip OTA reload for payment recovery — don't interrupt active payment flow.
+    // clearLastPayment() was already called, and a reload would lose the real-time
+    // polling view. The update will apply on next launch or background return.
+    const isPaymentRecovery = typeof target === 'string' && target.startsWith('/(payment)/');
+    if (isPaymentRecovery) {
       setTimeout(() => SplashScreen.hideAsync().catch(() => {}), 300);
-    });
-  }, [journeyResolved, target, router, rootNavigationState?.key]);
+      return;
+    }
+    // Don't block cold start for OTA updates. Non-critical updates apply on
+    // next launch silently. Critical updates are handled by useOTAUpdates hook
+    // after the app is visible (with native reload screen). This ensures users
+    // are never blocked or delayed on app open.
+    setTimeout(() => SplashScreen.hideAsync().catch(() => {}), 300);
+  }, [journeyResolved, target, router, rootNavigationState?.key, updatePolicy.isRequired]);
 
-  // Force update blocks ALL navigation — user must update from App Store
-  if (forceUpdateRequired) {
-    return <ForceUpdateModal message={forceUpdateMessage} />;
+  // Critical update blocks ALL navigation — user must update (OTA or native)
+  if (updatePolicy.isRequired) {
+    return (
+      <CriticalUpdateScreen
+        policy={updatePolicy}
+        onDismiss={() => clearUpdatePolicyCache()}
+      />
+    );
   }
 
-  // Always render skeleton — invisible behind navigated screen, avoids ghost screen in Stack
-  return <SkeletonLoader />;
+  // OTA splash — reuses beta-splash visual (dotted pattern + logo + badge).
+  // Visible as fallback if native splash hides before navigation completes.
+  return (
+    <Screen
+      padded={false} safeAreaTop={false} safeAreaBottom={false}
+      style={{ backgroundColor: colors.black[700] }}
+    >
+      <DottedGridPattern fadeMask={false} />
+      <View style={otaSplashStyles.container}>
+        <Logo size={40} />
+        <View style={otaSplashStyles.badge}>
+          <Text variant="bodySmMedium" style={otaSplashStyles.badgeText}>
+            BETA LAUNCH
+          </Text>
+        </View>
+        <ActivityIndicator
+          size="small"
+          color={colors.brand[500]}
+          style={otaSplashStyles.spinner}
+        />
+      </View>
+    </Screen>
+  );
 }
+
+const otaSplashStyles = StyleSheet.create({
+  container: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  badge: {
+    marginTop: 12,
+    backgroundColor: colors.brand[500],
+    borderRadius: radius.xs,
+    paddingHorizontal: spacing.xs,
+    paddingVertical: spacing.xxs,
+  },
+  badgeText: {
+    letterSpacing: -0.2,
+    color: colors.black[900],
+    textAlign: 'center',
+  },
+  spinner: {
+    position: 'absolute',
+    bottom: 80,
+  },
+});

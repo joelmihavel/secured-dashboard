@@ -342,7 +342,7 @@ export async function uploadFileToSignedUrl(
         success: false,
         error: {
           code: 'UPLOAD_FAILED',
-          message: 'Upload URL expired. Please try again.',
+          message: 'Upload URL expired. Please try again',
         },
       };
     }
@@ -362,7 +362,7 @@ export async function uploadFileToSignedUrl(
         success: false,
         error: {
           code: 'UPLOAD_FAILED',
-          message: 'Upload was interrupted. Please try again.',
+          message: 'Upload was interrupted. Please try again',
         },
       };
     }
@@ -372,7 +372,7 @@ export async function uploadFileToSignedUrl(
       error: {
         code: 'NETWORK_ERROR',
         message: message.toLowerCase().includes('network')
-          ? 'Network error. Please check your connection and try again.'
+          ? 'Network error. Please check your connection and try again'
           : message,
       },
     };
@@ -714,21 +714,21 @@ function mapAgreementError(errorMessage: string, errorBody?: Record<string, unkn
       case 'AUTH_ERROR':
         return { code: 'NOT_AUTHENTICATED', message: 'Please sign in to continue' };
       case 'OCR_FAILED':
-        return { code: 'OCR_FAILED', message: (errorBody?.message as string) ?? 'Failed to read the document. Please try again.' };
+        return { code: 'OCR_FAILED', message: (errorBody?.message as string) ?? 'Failed to read the document. Please try again' };
       case 'ALREADY_CONFIRMED':
         return { code: 'ALREADY_CONFIRMED', message: (errorBody?.message as string) ?? 'This extraction has already been confirmed' };
       case 'PROCESSING_IN_PROGRESS':
-        return { code: 'PROCESSING_IN_PROGRESS', message: (errorBody?.message as string) ?? 'A document is already being processed. Please wait.' };
+        return { code: 'PROCESSING_IN_PROGRESS', message: (errorBody?.message as string) ?? 'A document is already being processed. Please wait' };
       case 'PROCESSING_TIMEOUT':
-        return { code: 'UNKNOWN_ERROR', message: 'Processing took too long. Please try uploading again.' };
+        return { code: 'UNKNOWN_ERROR', message: 'Processing took too long. Please try uploading again' };
       case 'SAFETY_FILTER_BLOCKED':
-        return { code: 'UNKNOWN_ERROR', message: "We couldn't process this document. Please try a different copy." };
+        return { code: 'UNKNOWN_ERROR', message: "We couldn't process this document. Please try a different copy" };
       case 'RATE_LIMITED':
-        return { code: 'UNKNOWN_ERROR', message: 'Too many requests. Please wait a moment and try again.' };
+        return { code: 'UNKNOWN_ERROR', message: 'Too many requests. Please wait a moment and try again' };
       case 'INVALID_FILE_TYPE':
         return { code: 'INVALID_FILE_TYPE', message: 'Please upload a PDF file' };
       case 'FILE_TOO_LARGE':
-        return { code: 'FILE_TOO_LARGE', message: 'File is too large. Maximum size is 50MB.' };
+        return { code: 'FILE_TOO_LARGE', message: 'File is too large. Maximum size is 50MB' };
       // Fall through for unknown structured codes — use string matching below
     }
   }
@@ -742,10 +742,10 @@ function mapAgreementError(errorMessage: string, errorBody?: Record<string, unkn
     return { code: 'INVALID_FILE_TYPE', message: 'Please upload a PDF file' };
   }
   if (lower.includes('file too large') || lower.includes('maximum size')) {
-    return { code: 'FILE_TOO_LARGE', message: 'File is too large. Maximum size is 50MB.' };
+    return { code: 'FILE_TOO_LARGE', message: 'File is too large. Maximum size is 50MB' };
   }
   if (lower.includes('processing in progress') || lower.includes('current extraction')) {
-    return { code: 'PROCESSING_IN_PROGRESS', message: 'A document is already being processed. Please wait.' };
+    return { code: 'PROCESSING_IN_PROGRESS', message: 'A document is already being processed. Please wait' };
   }
   if (lower.includes('not found') || lower.includes('extraction record')) {
     return { code: 'EXTRACTION_NOT_FOUND', message: 'Extraction record not found' };
@@ -757,13 +757,13 @@ function mapAgreementError(errorMessage: string, errorBody?: Record<string, unkn
     return { code: 'ALREADY_CONFIRMED', message: 'This extraction has already been confirmed' };
   }
   if (lower.includes('processing') && (lower.includes('timeout') || lower.includes('timed out'))) {
-    return { code: 'UNKNOWN_ERROR', message: 'Processing took too long. Please try uploading again.' };
+    return { code: 'UNKNOWN_ERROR', message: 'Processing took too long. Please try uploading again' };
   }
   if (lower.includes('rate limit') || lower.includes('rate_limited') || lower.includes('too many requests')) {
-    return { code: 'UNKNOWN_ERROR', message: 'Too many requests. Please wait a moment and try again.' };
+    return { code: 'UNKNOWN_ERROR', message: 'Too many requests. Please wait a moment and try again' };
   }
   if (lower.includes('safety') || lower.includes('safety_filter')) {
-    return { code: 'UNKNOWN_ERROR', message: "We couldn't process this document. Please try a different copy." };
+    return { code: 'UNKNOWN_ERROR', message: "We couldn't process this document. Please try a different copy" };
   }
   if (lower.includes('network') || lower.includes('fetch') || lower.includes('timed out')) {
     return { code: 'NETWORK_ERROR', message: 'Please check your internet connection' };
@@ -778,7 +778,7 @@ function mapAgreementErrorFromMessage(message: string): AgreementError {
     return { code: 'INVALID_FILE_TYPE', message: 'Only PDF documents are supported' };
   }
   if (message.includes('OCR_FAILED')) {
-    return { code: 'OCR_FAILED', message: 'Failed to read the document. Please try again.' };
+    return { code: 'OCR_FAILED', message: 'Failed to read the document. Please try again' };
   }
 
   return mapAgreementError(message);

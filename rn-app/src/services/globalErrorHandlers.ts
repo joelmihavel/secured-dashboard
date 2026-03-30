@@ -118,7 +118,7 @@ export function installGlobalErrorHandlers(): void {
     reportFatalError({
       source: 'unhandled_rejection',
       title: 'Something went wrong',
-      message: 'An unexpected error occurred. Please try again.',
+      message: 'An unexpected error occurred. Please try again',
       technicalMessage: message,
       originalError: reason,
     });
@@ -155,7 +155,7 @@ export function installGlobalErrorHandlers(): void {
         reportFatalError({
           source: 'unhandled_rejection',
           title: 'Something went wrong',
-          message: 'The app encountered an unexpected error.',
+          message: 'The app encountered an unexpected error',
           technicalMessage: error.message,
           originalError: error,
         });

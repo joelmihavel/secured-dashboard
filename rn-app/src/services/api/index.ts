@@ -20,11 +20,8 @@ export * from './payments';
 // Profile (selective re-export to avoid name collision with payments module)
 export {
   updateProfile,
-  requestAvatarUpload,
-  uploadAvatarFile,
   type UpdateProfileRequest,
   type ProfileData,
-  type AvatarUploadData,
   type ProfileError,
   type ProfileErrorCode,
   type PaymentMethodsData,

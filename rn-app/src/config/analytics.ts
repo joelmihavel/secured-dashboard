@@ -110,7 +110,6 @@ export const AnalyticsEvents = {
 
   // Profile
   PROFILE_UPDATED: 'profile_updated',
-  AVATAR_UPLOADED: 'avatar_uploaded',
 
   // OTA Updates
   OTA_CHECK: 'ota_check',

@@ -39,6 +39,9 @@ interface ReceiptData {
     cashback_applied_paise: number;
     cashback_earned: number;
     cashback_earned_paise: number;
+    convenience_fee: number;
+    convenience_fee_paise: number;
+    fee_billing_model: string;
     net_amount_paid: number;
     net_amount_paid_paise: number;
     payment_method: string | null;
@@ -149,7 +152,8 @@ serve(async (req: Request) => {
       .select(`
         id, payu_txn_id, payu_mihpayid, payu_bank_ref_num, settlement_utr,
         payment_gateway, gateway_payment_id, payment_method_details,
-        rent_amount_paise, pg_fee_paise, cashback_applied_paise, cashback_earned_paise,
+        rent_amount_paise, pg_fee_paise, convenience_fee_paise, fee_billing_model,
+        cashback_applied_paise, cashback_earned_paise,
         payment_method, status, payment_month, paid_at, created_at, due_date,
         tenancies (
           id, property_address, property_city, property_state, property_pincode,
@@ -203,6 +207,8 @@ serve(async (req: Request) => {
 
     // Calculate tax breakdown
     const pgFeePaise = payment.pg_fee_paise ?? 0;
+    const convenienceFeePaise = payment.convenience_fee_paise ?? 0;
+    const paymentFeeBillingModel = payment.fee_billing_model ?? "pg_billed";
     const taxData = includeTax ? calculateTax(pgFeePaise) : null;
 
     // Build receipt data
@@ -231,6 +237,9 @@ serve(async (req: Request) => {
         cashback_applied_paise: cashbackAppliedPaise,
         cashback_earned: cashbackEarnedPaise / 100,
         cashback_earned_paise: cashbackEarnedPaise,
+        convenience_fee: convenienceFeePaise / 100,
+        convenience_fee_paise: convenienceFeePaise,
+        fee_billing_model: paymentFeeBillingModel,
         net_amount_paid: netAmountPaise / 100,
         net_amount_paid_paise: netAmountPaise,
         payment_method: formatPaymentMethod(payment.payment_method),

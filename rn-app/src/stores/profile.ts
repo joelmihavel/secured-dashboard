@@ -18,7 +18,6 @@ export type ProfileTab = 'overview' | 'payments' | 'agreement' | 'settings';
 interface ProfileFormState {
   fullName: string;
   email: string;
-  avatarUri: string | null;
   isDirty: boolean;
 }
 
@@ -51,7 +50,6 @@ interface ProfileActions {
 
   // Form updates
   updateForm: (fields: Partial<ProfileFormState>) => void;
-  setAvatarUri: (uri: string) => void;
 
   // Notification preferences
   toggleNotificationPref: (key: keyof NotificationPreferences) => void;
@@ -77,7 +75,6 @@ type ProfileStore = ProfileState & ProfileActions;
 const initialForm: ProfileFormState = {
   fullName: '',
   email: '',
-  avatarUri: null,
   isDirty: false,
 };
 
@@ -129,12 +126,6 @@ export const useProfileStore = create<ProfileStore>()(
     updateForm: (fields) =>
       set((state) => {
         Object.assign(state.form, fields);
-        state.form.isDirty = true;
-      }),
-
-    setAvatarUri: (uri) =>
-      set((state) => {
-        state.form.avatarUri = uri;
         state.form.isDirty = true;
       }),
 

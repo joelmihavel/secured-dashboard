@@ -28,7 +28,7 @@
  * Progress: height 12, track #4D4D4D, fill ~88% #CC7B57
  */
 
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useRef, useState } from 'react';
 import {
   View,
   StyleSheet,
@@ -41,7 +41,7 @@ import {
   FlatList,
 } from 'react-native';
 import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
-import { useRouter, useLocalSearchParams } from 'expo-router';
+import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
@@ -71,7 +71,6 @@ const FIGMA_COLORS = {
 
 export default function AddUtilityScreen() {
   const router = useRouter();
-  const { reentry } = useLocalSearchParams<{ reentry?: string }>();
   const insets = useSafeAreaInsets();
   const verifyUtility = useVerifyUtility();
   const { tenancy } = useDashboard();
@@ -82,6 +81,9 @@ export default function AddUtilityScreen() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [apiError, setApiError] = useState<string | null>(null);
   const [showOperatorPicker, setShowOperatorPicker] = useState(false);
+  const [verified, setVerified] = useState(false);
+  // Use ref for landlordApproved to avoid stale closure in handleSubmit
+  const landlordApprovedRef = useRef(false);
 
   // Animated progress bar
   const progress = useSharedValue(33.33);
@@ -111,22 +113,21 @@ export default function AddUtilityScreen() {
     }
   }, [operators, selectedOperator]);
 
+  const landlordApproved = tenancy?.verification_status?.landlord_approved ?? false;
+  landlordApprovedRef.current = landlordApproved;
+
   const handleBack = useCallback(() => {
-    if (reentry) {
-      router.replace('/(main)' as never);
-    } else {
-      router.back();
-    }
-  }, [router, reentry]);
+    router.back();
+  }, [router]);
 
   const handleSkip = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    if (reentry) {
+    if (landlordApproved) {
       router.replace('/(main)' as never);
     } else {
       router.push('/(setup)/invite-landlord' as never);
     }
-  }, [router, reentry]);
+  }, [router, landlordApproved]);
 
   const handleConsumerNumberChange = useCallback((text: string) => {
     setConsumerNumber(text.replace(/\D/g, ''));
@@ -174,9 +175,10 @@ export default function AddUtilityScreen() {
       {
         onSuccess: (data) => {
           if (data.verified) {
+            setVerified(true);
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
             setTimeout(() => {
-              if (reentry) {
+              if (landlordApprovedRef.current) {
                 router.replace('/(main)' as never);
               } else {
                 router.push('/(setup)/invite-landlord' as never);
@@ -229,7 +231,7 @@ export default function AddUtilityScreen() {
 
           {/* Title - Figma: gray="Verify" accent="your address" */}
           <View style={styles.titleContainer}>
-            <ScreenTitle gray="Verify" accent="utility bill" />
+            <ScreenTitle gray="Verify your" accent="address" />
           </View>
 
           {/* Description - Figma: 12px/20px PlusJakartaSans-Regular #A9A9A9 */}
@@ -298,9 +300,9 @@ export default function AddUtilityScreen() {
           {/* Button Section - Figma: gap 16 */}
           <View style={styles.buttonSection}>
             <PrimaryButton
-              title="Proceed"
+              title={verified ? 'Verified ✓' : 'Proceed'}
               onPress={handleSubmit}
-              disabled={!isFormValid}
+              disabled={!isFormValid || verified}
               loading={verifyUtility.isPending}
             />
 
@@ -387,9 +389,9 @@ const styles = StyleSheet.create({
   backButton: {
     marginBottom: 40,
   },
-  // Title container - Figma: sectionGap 48
+  // Title container - gap 16 to description (matching invite-landlord titleSection gap: 16)
   titleContainer: {
-    marginBottom: 48,
+    marginBottom: 16,
   },
   // Description - Figma: 12px/20px PlusJakartaSans-Regular #A9A9A9
   description: {

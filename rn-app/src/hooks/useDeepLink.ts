@@ -69,22 +69,22 @@ const DEEP_LINK_ROUTES: Record<string, string> = {
   // Waitlist
   '/waitlist': '/(waitlist)',
   '/waitlist/approved': '/(waitlist)/approved',
+  '/waitlist/rejected': '/(waitlist)/rejected',
   // Path-based state switching for dev tooling (query params unreliable in dev client)
   '/waitlist/state/pending': '/(waitlist)',
-  '/waitlist/state/accepted': '/(waitlist)',
-  '/waitlist/state/rejected': '/(waitlist)',
+  '/waitlist/state/approved': '/(waitlist)/approved',
+  '/waitlist/state/rejected': '/(waitlist)/rejected',
   '/waitlist/state/pending_long': '/(waitlist)',
   '/waitlist/state/referral': '/(waitlist)',
   '/waitlist/state/referral_invalid': '/(waitlist)',
 
   // Agreement
   '/agreement/upload': '/(agreement)/upload',
-  '/agreement/review': '/(agreement)/review',
   '/agreement/success': '/(waitlist)',
 
   // Setup
-  '/setup': '/(setup)/pending-steps',
-  '/setup/onboarding': '/(setup)',
+  '/setup': '/(main)',
+  '/setup/onboarding': '/(setup)/add-bank',
   '/setup/bank': '/(setup)/add-bank',
   '/setup/utility': '/(setup)/add-utility',
   '/setup/landlord': '/(setup)/invite-landlord',
@@ -103,7 +103,6 @@ const DEEP_LINK_ROUTES: Record<string, string> = {
   // Profile
   '/profile': '/(profile)',
   '/profile/edit': '/(profile)/edit',
-  '/profile/payment-methods': '/(profile)/payment-methods',
   '/profile/agreement': '/(profile)/agreement',
 };
 
@@ -185,7 +184,7 @@ export function handleDeepLinkUrl(url: string): boolean {
       _pendingDeepLinkParams = Object.fromEntries(paramEntries);
     }
 
-    // Extract state from path-based routes (e.g., /waitlist/state/accepted → state=accepted)
+    // Extract state from path-based routes (e.g., /waitlist/state/approved → state=approved)
     const cleanPath = (path.startsWith('/') ? path : `/${path}`).split('?')[0];
     const statePathMatch = cleanPath.match(/\/state\/([a-z_]+)$/);
     if (statePathMatch) {

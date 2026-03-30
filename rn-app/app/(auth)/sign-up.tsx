@@ -256,7 +256,7 @@ export default function SignUpScreen() {
             <View style={styles.bottomSection}>
               {/* Get Started Button - Figma shows NO divider above button */}
               <PrimaryButton
-                title="Get Started"
+                title="Get started"
                 onPress={handleGetStarted}
                 disabled={!isFormValid}
                 loading={isSendingOtp}
