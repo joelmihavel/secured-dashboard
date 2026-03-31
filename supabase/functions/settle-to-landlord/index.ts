@@ -282,27 +282,31 @@ serve(async (req: Request) => {
       if (payment.payment_gateway === "cashfree") {
         const vendorId = bankAccount.cf_beneficiary_id;
         if (!vendorId) {
-          console.error(`[settle-to-landlord] No cf_beneficiary_id for bank ${bankAccount.id}`);
+          // Vendor not yet created — revert to "ready" so next cron run retries
+          // (sync-vendors will create the vendor, then settle-to-landlord picks it up)
+          console.warn(`[settle-to-landlord] No cf_beneficiary_id for bank ${bankAccount.id} — reverting to ready for retry`);
           await supabase.from("payments").update({
-            landlord_payout_status: "failed",
-            gateway_payout_status: "Landlord not registered as Cashfree vendor",
+            landlord_payout_status: "ready",
+            gateway_payout_status: "Waiting for Cashfree vendor creation",
           }).eq("id", payment.id);
           results.push({
-            payment_id: payment.id, status: "failed", amount_paise: payoutAmountPaise,
-            landlord_name: tenancy.landlord_name, error: "No Cashfree vendor ID",
+            payment_id: payment.id, status: "deferred", amount_paise: payoutAmountPaise,
+            landlord_name: tenancy.landlord_name, error: "No Cashfree vendor ID — will retry",
           });
           continue;
         }
 
         if (bankAccount.cf_beneficiary_status !== "ACTIVE") {
-          console.error(`[settle-to-landlord] Vendor ${vendorId} status is ${bankAccount.cf_beneficiary_status}, skipping payment ${payment.id}`);
+          // Vendor exists but not yet active — revert to "ready" for retry
+          // (sync-vendors polls vendor status daily, will become ACTIVE eventually)
+          console.warn(`[settle-to-landlord] Vendor ${vendorId} status is ${bankAccount.cf_beneficiary_status}, deferring payment ${payment.id}`);
           await supabase.from("payments").update({
-            landlord_payout_status: "failed",
-            gateway_payout_status: `Vendor not active: ${bankAccount.cf_beneficiary_status}`,
+            landlord_payout_status: "ready",
+            gateway_payout_status: `Vendor not active yet: ${bankAccount.cf_beneficiary_status}`,
           }).eq("id", payment.id);
           results.push({
-            payment_id: payment.id, status: "failed", amount_paise: payoutAmountPaise,
-            landlord_name: tenancy.landlord_name, error: `Vendor status: ${bankAccount.cf_beneficiary_status}`,
+            payment_id: payment.id, status: "deferred", amount_paise: payoutAmountPaise,
+            landlord_name: tenancy.landlord_name, error: `Vendor status: ${bankAccount.cf_beneficiary_status} — will retry`,
           });
           continue;
         }
