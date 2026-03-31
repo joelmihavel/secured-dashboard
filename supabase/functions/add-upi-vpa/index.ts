@@ -17,9 +17,13 @@ import { handleCors, jsonResponse } from "../_shared/cors.ts";
 import { ValidationError, ExternalServiceError, handleError } from "../_shared/errors.ts";
 import { validateSchema } from "../_shared/validation.ts";
 import { AuditLogger } from "../_shared/audit.ts";
+import { sha512 } from "../_shared/crypto.ts";
 import {
+  PAYU_MERCHANT_KEY,
+  PAYU_MERCHANT_SALT,
+  PAYU_INFO_URL,
   IS_SANDBOX,
-  callPayUValidateVpa,
+  fetchWithTimeout,
 } from "../_shared/payu-config.ts";
 
 // UPI provider detection patterns
@@ -81,23 +85,62 @@ interface VpaValidationResult {
 }
 
 async function validateUpiVpa(vpa: string): Promise<VpaValidationResult> {
-  // Skip external validation in sandbox (PayU sandbox doesn't support validateVpa)
+  // Skip external validation if PayU is not configured
+  if (!PAYU_MERCHANT_KEY || !PAYU_MERCHANT_SALT) {
+    console.warn("[add-upi-vpa] PayU not configured, skipping VPA validation");
+    return { valid: true, message: "Validation skipped - PayU not configured" };
+  }
+
+  // PayU test/sandbox keys don't support validate_vpa on info.payu.in
   if (IS_SANDBOX) {
     console.log("[add-upi-vpa] Sandbox mode — skipping PayU VPA validation");
     return { valid: true, message: "Validation skipped - sandbox mode" };
   }
 
   try {
-    const result = await callPayUValidateVpa(vpa);
+    const command = "validate_vpa";
+    const hashString = `${PAYU_MERCHANT_KEY}|${command}|${vpa}|${PAYU_MERCHANT_SALT}`;
+    const hash = await sha512(hashString);
+
+    const formData = new URLSearchParams();
+    formData.set("key", PAYU_MERCHANT_KEY);
+    formData.set("command", command);
+    formData.set("var1", vpa);
+    formData.set("hash", hash);
+
+    const response = await fetchWithTimeout(PAYU_INFO_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
+      body: formData.toString(),
+    });
+
+    if (!response.ok) {
+      console.warn(`[add-upi-vpa] PayU validate_vpa API error: ${response.status}`);
+      // Don't fail on API errors - allow with warning
+      return { valid: true, message: "Validation service unavailable" };
+    }
+
+    const data = await response.json();
+
+    // PayU returns: { status: 1, msg: "...", isVPAValid: 1, payerAccountName: "..." }
+    if (data.status !== 1) {
+      console.warn("[add-upi-vpa] PayU validate_vpa returned non-success:", data.msg);
+      return { valid: true, message: "Validation service returned error" };
+    }
+
+    const isValid = data.isVPAValid === 1;
+
     return {
-      valid: result.status === "VALID",
-      name: result.name_at_bank ?? undefined,
-      message: result.message,
+      valid: isValid,
+      name: data.payerAccountName ?? undefined,
+      message: isValid ? "VPA verified via PayU" : (data.msg ?? "VPA not found"),
     };
-  } catch (err) {
-    console.warn("[add-upi-vpa] PayU VPA validation failed (non-fatal):", err);
-    // Don't fail on validation errors — allow the flow to continue
-    return { valid: true, message: "Validation service unavailable" };
+  } catch (error) {
+    console.error("[add-upi-vpa] VPA validation error:", error);
+    // Don't block on validation errors - allow with warning
+    return { valid: true, message: "Validation service error" };
   }
 }
 
