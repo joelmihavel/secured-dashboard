@@ -65,7 +65,7 @@ export interface CashfreeVendorInput {
   // UPI VPA path (alternative — Cashfree accepts either bank or upi)
   upi_vpa?: string;
   pan?: string;
-  schedule_option?: number; // 8=hourly 24x7, 14=every 15min 24x7, 2=T+2. Default: 14
+  schedule_option?: number; // 2=T+2 (only enabled schedule). Contact Cashfree to enable 8/14 for faster settlement.
 }
 
 export interface CashfreeOrderStatus {
@@ -242,7 +242,7 @@ export async function createVendor(input: CashfreeVendorInput): Promise<Cashfree
     name: input.name,
     phone: input.phone,
     verify_account: true,
-    schedule_option: input.schedule_option ?? 14, // 14 = every 15 minutes 24x7
+    schedule_option: input.schedule_option ?? 2, // T+2 (only enabled schedule for merchant 1215890)
   };
 
   if (isUpi) {

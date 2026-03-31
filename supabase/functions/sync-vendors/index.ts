@@ -208,7 +208,7 @@ serve(async (req: Request) => {
                 // UPI path
                 ...(isUpiAccount ? { upi_vpa: account.upi_vpa } : {}),
                 pan,
-                schedule_option: 14, // every 15 minutes 24x7
+                schedule_option: 2, // T+2 (only enabled schedule)
               });
               console.log(`[sync-vendors] createVendor response — vendor_id: ${vendor.vendor_id}, status: ${vendor.status}`);
               results.created++;
