@@ -22,7 +22,7 @@ import {
   RateLimitError,
   handleError,
 } from "../_shared/errors.ts";
-import { validateSchema, isValidAmountPaise, isValidUuid } from "../_shared/validation.ts";
+import { validateSchema, isValidAmountPaise, isValidUuid, parseRentMonth } from "../_shared/validation.ts";
 import { AuditLogger, AuditActions } from "../_shared/audit.ts";
 import { IdempotencyManager, getIdempotencyKey } from "../_shared/idempotency.ts";
 import { generateTransactionId } from "../_shared/crypto.ts";
@@ -334,7 +334,7 @@ serve(async (req: Request) => {
       && tenancy.landlord_approved;
 
     const cutoffDay = tenancy.cashback_cutoff_day ?? tenancy.rent_due_day ?? 7;
-    const [rentYear, rentMonthNum] = rent_month.split("-").map(Number);
+    const { year: rentYear, month: rentMonthNum } = parseRentMonth(rent_month);
     const cutoffDate = new Date(Date.UTC(rentYear, rentMonthNum - 1, cutoffDay, 18, 29, 59, 999));
     const now = new Date();
     const isPastCutoff = now > cutoffDate;
@@ -551,7 +551,7 @@ serve(async (req: Request) => {
 // ==============================================
 
 function calculateDueDate(rentMonth: string): string {
-  const [year, month] = rentMonth.split("-").map(Number);
+  const { year, month } = parseRentMonth(rentMonth);
   const dueDate = new Date(year, month - 1, 5);
   return dueDate.toISOString().split("T")[0];
 }

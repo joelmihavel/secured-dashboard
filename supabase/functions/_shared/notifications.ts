@@ -422,3 +422,48 @@ export async function queueNotification(
     status: "pending",
   });
 }
+
+/**
+ * Send notification with queue fallback.
+ * Tries notifyUser first; on failure, queues for async retry.
+ */
+export async function notifyUserWithFallback(
+  supabaseUrl: string,
+  serviceKey: string,
+  supabase: { from: (table: string) => unknown },
+  params: {
+    user_id: string;
+    notification_type: NotificationType;
+    template_vars?: Record<string, string>;
+    data?: Record<string, string>;
+    priority?: "high" | "normal" | "default";
+    related_entity_type?: string;
+    related_entity_id?: string;
+  },
+): Promise<void> {
+  const result = await notifyUser(supabaseUrl, serviceKey, params);
+  if (!result.success) {
+    console.warn(
+      `[notify] Direct notification failed for ${params.user_id} (${params.notification_type}): ${result.error}. Queueing for retry.`,
+    );
+    try {
+      await queueNotification(supabase, {
+        userId: params.user_id,
+        type: "push",
+        payload: {
+          notification_type: params.notification_type,
+          template_vars: params.template_vars,
+          data: params.data,
+          related_entity_type: params.related_entity_type,
+          related_entity_id: params.related_entity_id,
+          original_error: result.error,
+        },
+      });
+    } catch (queueErr) {
+      console.error(
+        `[notify] Queue fallback also failed for ${params.user_id}:`,
+        queueErr,
+      );
+    }
+  }
+}

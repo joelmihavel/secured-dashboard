@@ -21,7 +21,7 @@ import { createServiceClient, verifyServiceRole, getSupabaseUrl } from "../_shar
 import { handleCors, jsonResponse, errorResponse } from "../_shared/cors.ts";
 import { AppError, handleError } from "../_shared/errors.ts";
 import { AuditLogger } from "../_shared/audit.ts";
-import { notifyUser } from "../_shared/notifications.ts";
+import { notifyUserWithFallback } from "../_shared/notifications.ts";
 
 // ==============================================
 // TYPES
@@ -154,19 +154,24 @@ serve(async (req: Request) => {
         continue;
       }
 
-      // Send settlement_complete notification to user
+      // Send settlement_complete notification to user (with queue fallback)
       if (payment.user_id) {
         const amountRupees = (payoutPaise / 100).toLocaleString("en-IN");
-        notifyUser(getSupabaseUrl(), (Deno.env.get("SB_SECRET_KEY") || Deno.env.get("SUPABASE_SERVICE_ROLE_KEY"))!, {
-          user_id: payment.user_id,
-          notification_type: "settlement_complete",
-          template_vars: {
-            amount: amountRupees,
-            landlord_name: tenancy?.landlord_name ?? "your landlord",
+        notifyUserWithFallback(
+          getSupabaseUrl(),
+          (Deno.env.get("SB_SECRET_KEY") || Deno.env.get("SUPABASE_SERVICE_ROLE_KEY"))!,
+          supabase,
+          {
+            user_id: payment.user_id,
+            notification_type: "settlement_complete",
+            template_vars: {
+              amount: amountRupees,
+              landlord_name: tenancy?.landlord_name ?? "your landlord",
+            },
+            related_entity_type: "payment",
+            related_entity_id: paymentId,
           },
-          related_entity_type: "payment",
-          related_entity_id: paymentId,
-        }).catch((e) => console.error(`Failed to notify user for payment ${paymentId}:`, e));
+        ).catch(() => {});
       }
 
       await audit.logSuccess(

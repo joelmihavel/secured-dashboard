@@ -12,6 +12,7 @@ import { serve } from "https://deno.land/std@0.208.0/http/server.ts";
 import { createServiceClient } from "../_shared/supabase.ts";
 import { handleCors, jsonResponse, errorResponse } from "../_shared/cors.ts";
 import { AppError, PaymentError, handleError } from "../_shared/errors.ts";
+import { parseRentMonth } from "../_shared/validation.ts";
 import { AuditLogger, AuditActions } from "../_shared/audit.ts";
 import { notifyUser } from "../_shared/notifications.ts";
 import { verifyPayUWebhookHashWithCharges, sha512, hmacSha256Base64, timingSafeCompare } from "../_shared/crypto.ts";
@@ -869,7 +870,7 @@ serve(async (req: Request) => {
     if (isSuccess && (payment.cashback_applied_paise > 0 || payment.cashback_earned_paise > 0)) {
       const tenancyData = payment.tenancy as Record<string, any> | null;
       const cutoffDay = tenancyData?.cashback_cutoff_day ?? tenancyData?.rent_due_day ?? 7;
-      const [rentYear, rentMonthNum] = (payment.payment_month as string).split("-").map(Number);
+      const { year: rentYear, month: rentMonthNum } = parseRentMonth(payment.payment_month as string);
       // End of cutoff day in IST (UTC+05:30) → 18:29:59 UTC
       const cutoffDate = new Date(Date.UTC(rentYear, rentMonthNum - 1, cutoffDay, 18, 29, 59, 999));
       // Use the payment timestamp from PayU (addedon) stored in updateData.paid_at,

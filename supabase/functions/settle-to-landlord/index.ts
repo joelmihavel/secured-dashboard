@@ -17,7 +17,7 @@ import { AppError, handleError } from "../_shared/errors.ts";
 import { AuditLogger } from "../_shared/audit.ts";
 import { getSystemTransferFlag } from "../_shared/transfer-flags.ts";
 import { createAdjustment, CashfreeError } from "../_shared/cashfree-easysplit.ts";
-import { notifyUser } from "../_shared/notifications.ts";
+import { notifyUserWithFallback } from "../_shared/notifications.ts";
 
 // ==============================================
 // CONFIGURATION
@@ -189,14 +189,19 @@ serve(async (req: Request) => {
           payment.id,
           { tenancy_id: tenancy?.id, payout_paise: payoutAmountPaise, rent_paise: maxAllowedPayout },
         );
-        // Notify user of settlement failure
-        notifyUser(getSupabaseUrl(), (Deno.env.get("SB_SECRET_KEY") || Deno.env.get("SUPABASE_SERVICE_ROLE_KEY"))!, {
-          user_id: payment.user_id,
-          notification_type: "settlement_failed",
-          template_vars: { amount: (payoutAmountPaise / 100).toLocaleString("en-IN") },
-          related_entity_type: "payment",
-          related_entity_id: payment.id,
-        }).catch((e) => console.error("Failed to notify user of settlement failure:", e));
+        // Notify user of settlement failure (with queue fallback)
+        notifyUserWithFallback(
+          getSupabaseUrl(),
+          (Deno.env.get("SB_SECRET_KEY") || Deno.env.get("SUPABASE_SERVICE_ROLE_KEY"))!,
+          supabase,
+          {
+            user_id: payment.user_id,
+            notification_type: "settlement_failed",
+            template_vars: { amount: (payoutAmountPaise / 100).toLocaleString("en-IN") },
+            related_entity_type: "payment",
+            related_entity_id: payment.id,
+          },
+        ).catch(() => {});
 
         results.push({
           payment_id: payment.id,
@@ -232,14 +237,19 @@ serve(async (req: Request) => {
           { tenancy_id: tenancy.id, amount_paise: payoutAmountPaise },
         );
 
-        // Notify user of settlement failure
-        notifyUser(getSupabaseUrl(), (Deno.env.get("SB_SECRET_KEY") || Deno.env.get("SUPABASE_SERVICE_ROLE_KEY"))!, {
-          user_id: payment.user_id,
-          notification_type: "settlement_failed",
-          template_vars: { amount: (payoutAmountPaise / 100).toLocaleString("en-IN") },
-          related_entity_type: "payment",
-          related_entity_id: payment.id,
-        }).catch((e) => console.error("Failed to notify user of settlement failure:", e));
+        // Notify user of settlement failure (with queue fallback)
+        notifyUserWithFallback(
+          getSupabaseUrl(),
+          (Deno.env.get("SB_SECRET_KEY") || Deno.env.get("SUPABASE_SERVICE_ROLE_KEY"))!,
+          supabase,
+          {
+            user_id: payment.user_id,
+            notification_type: "settlement_failed",
+            template_vars: { amount: (payoutAmountPaise / 100).toLocaleString("en-IN") },
+            related_entity_type: "payment",
+            related_entity_id: payment.id,
+          },
+        ).catch(() => {});
 
         results.push({
           payment_id: payment.id,

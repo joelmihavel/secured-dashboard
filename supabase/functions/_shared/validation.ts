@@ -250,6 +250,23 @@ export function isValidDate(dateStr: string): boolean {
 }
 
 /**
+ * Parses and validates a rent_month string (YYYY-MM or YYYY-MM-DD).
+ * Returns { year, month } or throws ValidationError on invalid format.
+ */
+export function parseRentMonth(rentMonth: string): { year: number; month: number } {
+  const match = rentMonth.match(/^(\d{4})-(\d{2})(?:-\d{2})?$/);
+  if (!match) {
+    throw new ValidationError(`Invalid rent_month format: "${rentMonth}". Expected YYYY-MM or YYYY-MM-DD.`);
+  }
+  const year = parseInt(match[1], 10);
+  const month = parseInt(match[2], 10);
+  if (month < 1 || month > 12 || year < 2024 || year > 2100) {
+    throw new ValidationError(`Invalid rent_month values: year=${year}, month=${month}`);
+  }
+  return { year, month };
+}
+
+/**
  * Validates rent due day (1-28).
  */
 export function isValidRentDueDay(day: unknown): boolean {
