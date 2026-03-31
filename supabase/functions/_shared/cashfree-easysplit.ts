@@ -367,7 +367,14 @@ export async function createAdjustment(params: {
     throw new CashfreeError("Adjustment amount must be greater than 0", 0);
   }
 
+  // adjustment_id is a long (number) — derive from paymentId UUID by hashing to a numeric value
+  // Use last 15 digits of a numeric hash to stay within safe integer range
+  const hashNum = Array.from(new TextEncoder().encode(paymentId))
+    .reduce((acc, byte) => (acc * 31 + byte) % 999_999_999_999_999, 0);
+  const adjustmentId = hashNum || Date.now(); // fallback to timestamp if hash is 0
+
   const body = {
+    adjustment_id: adjustmentId,
     vendor_id: vendorId,
     amount: parseFloat((amountPaise / 100).toFixed(2)),
     type: "CREDIT",
