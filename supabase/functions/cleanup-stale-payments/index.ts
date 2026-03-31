@@ -137,7 +137,7 @@ serve(async (req: Request) => {
 
         if (mappedStatus === "success") {
           updateData.paid_at = new Date().toISOString();
-          updateData.landlord_payout_status = "pending";
+          updateData.landlord_payout_status = "ready";
           updateData.landlord_payout_paise = payment.rent_amount_paise;
         }
 

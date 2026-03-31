@@ -124,7 +124,7 @@ async function releaseHeldPayments(
       try {
         await supabase
           .from("payments")
-          .update({ landlord_payout_status: "pending" })
+          .update({ landlord_payout_status: "ready" })
           .eq("id", payment.id)
           .eq("landlord_payout_status", "held");
         result.updated++;
@@ -203,7 +203,7 @@ async function reconcileStuckPayments(
 
         if (newStatus === "success") {
           updateData.paid_at = new Date().toISOString();
-          updateData.landlord_payout_status = payment.payment_gateway === "cashfree" ? "ready" : "pending";
+          updateData.landlord_payout_status = "ready"; // Both PayU and Cashfree — settle-to-landlord queries "ready"
           updateData.landlord_payout_paise = payment.rent_amount_paise;
         }
 

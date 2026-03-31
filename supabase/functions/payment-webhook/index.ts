@@ -378,8 +378,17 @@ serve(async (req: Request) => {
       // Amount validation (convert CF rupees to paise)
       const webhookAmountPaise = Math.round(parseFloat(cfAmount) * 100);
       if (webhookAmountPaise !== cfPayment.total_amount_paise) {
-        console.error(`[webhook] AMOUNT MISMATCH: webhook=${webhookAmountPaise} vs db=${cfPayment.total_amount_paise}`);
-        return errorResponse('Amount mismatch', 400, 'AMOUNT_MISMATCH');
+        console.error(`[webhook] SECURITY: Amount mismatch for payment ${cfPayment.id}: webhook=${webhookAmountPaise} vs db=${cfPayment.total_amount_paise}`);
+        // Mark payment failed — don't return 400 (causes infinite Cashfree retries)
+        await supabase.from("payments").update({
+          status: "failed",
+          gateway_metadata: {
+            ...(typeof cfPayment.gateway_metadata === 'object' ? cfPayment.gateway_metadata : {}),
+            amount_mismatch: { webhook: webhookAmountPaise, expected: cfPayment.total_amount_paise },
+          },
+        }).eq("id", cfPayment.id);
+        // Return 200 to acknowledge webhook and stop retries
+        return jsonResponse({ success: false, message: "Amount mismatch — payment marked failed" });
       }
 
       // Map Cashfree status to our status
@@ -778,8 +787,8 @@ serve(async (req: Request) => {
       // cashback_earned_paise is already set correctly at initiation time
       // (0 for verified instant-discount, >0 for unverified earning)
 
-      // Queue landlord payout on success
-      updateData.landlord_payout_status = 'pending';
+      // Mark ready for settlement — settle-to-landlord queries 'ready'
+      updateData.landlord_payout_status = 'ready';
       updateData.landlord_payout_paise = payment.rent_amount_paise;
     }
 

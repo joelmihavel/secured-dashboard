@@ -169,6 +169,12 @@ async function reverseCashback(
       description: "Cashback reversed due to refund",
     });
 
+    // Debit the reversed amount from user's cashback balance
+    await supabase.rpc("decrement_cashback_balance", {
+      p_user_id: userId,
+      p_amount: cashbackEarnedPaise,
+    });
+
     totalReversed += cashbackEarnedPaise;
   }
 

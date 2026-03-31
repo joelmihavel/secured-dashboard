@@ -91,6 +91,7 @@ serve(async (req: Request) => {
       .select(`
         id, tenancy_id, user_id, status, rent_amount_paise,
         cashback_applied_paise, cashback_earned_paise,
+        accumulated_redeemed_paise,
         pg_fee_paise, convenience_fee_paise, fee_billing_model,
         total_amount_paise, landlord_payout_paise,
         landlord_payout_status, payu_txn_id, payu_mihpayid,
@@ -145,7 +146,7 @@ serve(async (req: Request) => {
             if (mappedStatus === "success") {
               updateData.paid_at = new Date().toISOString();
               // cashback_earned_paise already set at initiation (>0 for unverified, 0 for verified)
-              updateData.landlord_payout_status = "pending";
+              updateData.landlord_payout_status = "ready";
               updateData.landlord_payout_paise = payment.rent_amount_paise;
             }
 
