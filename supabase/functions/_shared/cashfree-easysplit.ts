@@ -58,9 +58,12 @@ export interface CashfreeVendorInput {
   name: string;
   phone: string;
   email?: string;
-  account_number: string; // plaintext — decrypt before passing
-  account_holder: string;
-  ifsc: string;
+  // Bank account path (traditional)
+  account_number?: string; // plaintext — decrypt before passing
+  account_holder?: string;
+  ifsc?: string;
+  // UPI VPA path (alternative — Cashfree accepts either bank or upi)
+  upi_vpa?: string;
   pan?: string;
   schedule_option?: number; // 1=T+1, 2=T+2, 7=weekly. Default: 1
 }
@@ -119,6 +122,7 @@ async function cfFetch(
   if (body) {
     const redacted = JSON.parse(JSON.stringify(body));
     if (redacted?.bank?.account_number) redacted.bank.account_number = "***";
+    if (redacted?.upi?.vpa) redacted.upi.vpa = "***@***";
     if (redacted?.kyc_details?.pan) redacted.kyc_details.pan = "***";
     console.log(`[cashfree] ${method} ${CF_BASE_URL}${path} body:`, JSON.stringify(redacted));
   } else {
@@ -211,26 +215,45 @@ export async function createOrder(params: {
 // ==============================================
 
 /**
- * Registers a landlord bank account as a Cashfree Easy Split vendor.
+ * Registers a landlord as a Cashfree Easy Split vendor.
+ * Supports two paths:
+ *   - Bank account: provide account_number + account_holder + ifsc
+ *   - UPI VPA: provide upi_vpa (Cashfree accepts either bank or upi)
+ *
  * Status will initially be IN_BENE_CREATION — sync-vendors polls until ACTIVE.
  *
  * SECURITY: account_number must be plaintext. Decrypt before calling.
  *           Never log the account_number value.
  */
 export async function createVendor(input: CashfreeVendorInput): Promise<CashfreeVendor> {
+  const isUpi = !!input.upi_vpa;
+  const isBank = !!(input.account_number && input.ifsc);
+
+  if (!isUpi && !isBank) {
+    throw new CashfreeError(
+      "Either bank details (account_number + ifsc) or upi_vpa is required to create a vendor",
+      0,
+    );
+  }
+
   const body: Record<string, unknown> = {
     vendor_id: input.vendor_id,
     status: "ACTIVE",
     name: input.name,
     phone: input.phone,
-    verify_account: true, // penny-drop verification required in production
-    schedule_option: input.schedule_option ?? 2, // T+2 (T+1 not enabled for this merchant)
-    bank: {
-      account_number: input.account_number,
-      account_holder: input.account_holder,
-      ifsc: input.ifsc,
-    },
+    verify_account: true,
+    schedule_option: input.schedule_option ?? 2,
   };
+
+  if (isUpi) {
+    body.upi = { vpa: input.upi_vpa, account_holder: input.name };
+  } else {
+    body.bank = {
+      account_number: input.account_number,
+      account_holder: input.account_holder ?? input.name,
+      ifsc: input.ifsc,
+    };
+  }
 
   // email is required by Cashfree API — use placeholder if not provided
   body.email = input.email ?? `vendor-${input.vendor_id}@flent.app`;

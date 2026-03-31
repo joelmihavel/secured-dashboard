@@ -294,16 +294,21 @@ serve(async (req: Request) => {
     // Skip when no tenancy — pre-waitlist flow has no landlord to register.
     if (hasTenancy && panValid && matchResult.matched) {
       try {
-        // Fetch bank account with encrypted fields for vendor creation
+        // Fetch bank account with encrypted fields + UPI VPA for vendor creation
         const { data: fullBankAccount } = await supabase
           .from("bank_accounts")
-          .select("id, account_holder_name, account_number_encrypted, ifsc_code, cf_beneficiary_id")
+          .select("id, account_holder_name, account_number_encrypted, ifsc_code, upi_vpa, verification_method, cf_beneficiary_id")
           .eq("id", bank_account_id)
           .single();
 
         if (fullBankAccount && !fullBankAccount.cf_beneficiary_id) {
-          // Decrypt account number for Cashfree API
-          const accountNumber = await decrypt(fullBankAccount.account_number_encrypted);
+          const isUpiAccount = fullBankAccount.verification_method === "upi_penny_drop" || (!fullBankAccount.account_number_encrypted && fullBankAccount.upi_vpa);
+
+          // Decrypt account number for Cashfree API (only for bank accounts)
+          let accountNumber: string | undefined;
+          if (!isUpiAccount && fullBankAccount.account_number_encrypted) {
+            accountNumber = await decrypt(fullBankAccount.account_number_encrypted);
+          }
 
           // Fetch user phone/email for vendor record
           const { data: userRecord } = await supabase
@@ -323,9 +328,14 @@ serve(async (req: Request) => {
               name: fullBankAccount.account_holder_name,
               email,
               phone,
-              account_number: accountNumber,
-              account_holder: fullBankAccount.account_holder_name,
-              ifsc: fullBankAccount.ifsc_code,
+              // Bank path (traditional)
+              ...((!isUpiAccount && accountNumber) ? {
+                account_number: accountNumber,
+                account_holder: fullBankAccount.account_holder_name,
+                ifsc: fullBankAccount.ifsc_code,
+              } : {}),
+              // UPI path
+              ...(isUpiAccount ? { upi_vpa: fullBankAccount.upi_vpa } : {}),
               pan: sanitizedPan,
               schedule_option: 2,
             });

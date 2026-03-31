@@ -84,6 +84,8 @@ serve(async (req: Request) => {
         account_holder_name,
         account_number_encrypted,
         ifsc_code,
+        upi_vpa,
+        verification_method,
         cf_beneficiary_id,
         cf_beneficiary_status,
         pan_number_encrypted,
@@ -117,24 +119,33 @@ serve(async (req: Request) => {
         if (!account.cf_beneficiary_id) {
           console.log(`[sync-vendors] Creating new vendor for bank_account ${account.id}`);
 
-          // Decrypt account number — plaintext exists in memory only for this call
-          let accountNumber: string;
-          try {
-            accountNumber = await decrypt(account.account_number_encrypted);
-            console.log(`[sync-vendors] Decrypted account number for bank_account ${account.id}`);
-          } catch (decryptErr) {
-            const msg = (decryptErr as Error).message;
-            console.error(`[sync-vendors] Failed to decrypt account for bank_account ${account.id}:`, msg);
-            await audit.logFailure(
-              "VENDOR_DECRYPT_ERROR",
-              "system",
-              "DECRYPT_FAILED",
-              msg,
-              "bank_account",
-              account.id,
-            );
-            results.errors++;
-            continue;
+          const isUpiAccount = account.verification_method === "upi_penny_drop" || (!account.account_number_encrypted && account.upi_vpa);
+
+          // Decrypt account number for bank accounts (not needed for UPI)
+          let accountNumber = "";
+          if (!isUpiAccount) {
+            if (!account.account_number_encrypted) {
+              console.warn(`[sync-vendors] Skipping bank_account ${account.id} — no account number and no UPI VPA`);
+              results.errors++;
+              continue;
+            }
+            try {
+              accountNumber = await decrypt(account.account_number_encrypted);
+              console.log(`[sync-vendors] Decrypted account number for bank_account ${account.id}`);
+            } catch (decryptErr) {
+              const msg = (decryptErr as Error).message;
+              console.error(`[sync-vendors] Failed to decrypt account for bank_account ${account.id}:`, msg);
+              await audit.logFailure(
+                "VENDOR_DECRYPT_ERROR",
+                "system",
+                "DECRYPT_FAILED",
+                msg,
+                "bank_account",
+                account.id,
+              );
+              results.errors++;
+              continue;
+            }
           }
 
           const vendorId = `VENDOR${account.id.replace(/-/g, "")}`;
@@ -177,7 +188,8 @@ serve(async (req: Request) => {
             continue;
           }
 
-          console.log(`[sync-vendors] Calling createVendor — vendor_id: ${vendorId}, name: ${account.account_holder_name}, phone: "${phone}", email: "${email}", ifsc: ${account.ifsc_code}, pan_verified: ${account.pan_verified}`);
+          const method = isUpiAccount ? "UPI" : "Bank";
+          console.log(`[sync-vendors] Calling createVendor (${method}) — vendor_id: ${vendorId}, name: ${account.account_holder_name}, phone: "${phone}", email: "${email}", ${isUpiAccount ? `upi: ${account.upi_vpa}` : `ifsc: ${account.ifsc_code}`}, pan_verified: ${account.pan_verified}`);
 
           try {
             let vendor;
@@ -187,11 +199,16 @@ serve(async (req: Request) => {
                 name: account.account_holder_name,
                 email,
                 phone,
-                account_number: accountNumber,
-                account_holder: account.account_holder_name,
-                ifsc: account.ifsc_code,
+                // Bank path
+                ...(!isUpiAccount ? {
+                  account_number: accountNumber,
+                  account_holder: account.account_holder_name,
+                  ifsc: account.ifsc_code,
+                } : {}),
+                // UPI path
+                ...(isUpiAccount ? { upi_vpa: account.upi_vpa } : {}),
                 pan,
-                schedule_option: 2, // T+2 (T+1 not enabled for this merchant)
+                schedule_option: 2,
               });
               console.log(`[sync-vendors] createVendor response — vendor_id: ${vendor.vendor_id}, status: ${vendor.status}`);
               results.created++;
@@ -218,10 +235,10 @@ serve(async (req: Request) => {
               "landlord",
               "bank_account",
               account.id,
-              { vendor_id: vendorId, status: vendor.status },
+              { vendor_id: vendorId, status: vendor.status, method },
             );
 
-            console.log(`[sync-vendors] Vendor ${vendorId} synced, status: ${vendor.status}`);
+            console.log(`[sync-vendors] Vendor ${vendorId} synced (${method}), status: ${vendor.status}`);
           } finally {
             // Clear sensitive values from memory
             accountNumber = "";
