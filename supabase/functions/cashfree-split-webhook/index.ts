@@ -162,13 +162,16 @@ serve(async (req: Request) => {
 
         if (tenancies?.length) {
           const tenancyIds = tenancies.map((t: { id: string }) => t.id);
+          // Only match the OLDEST eligible payment (FIFO) to avoid updating
+          // ALL payments for a landlord when a single settlement arrives.
           const { data } = await supabase
             .from("payments")
             .select("id, user_id, rent_amount_paise, landlord_payout_status, tenancy_id, payment_month")
             .in("tenancy_id", tenancyIds)
             .eq("payment_gateway", "cashfree")
             .in("landlord_payout_status", ["processing", "retrying"])
-            .order("paid_at", { ascending: true });
+            .order("paid_at", { ascending: true })
+            .limit(1);
           if (data?.length) payments = data;
         }
       }

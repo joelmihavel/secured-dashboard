@@ -119,6 +119,27 @@ serve(async (req: Request) => {
       },
     );
 
+    // Alert on terminal/problematic vendor statuses that block payouts
+    const ALERT_STATUSES = ["BLOCKED", "BENE_CREATION_FAILED", "BANK_VALIDATION_FAILED", "ACTION_REQUIRED"];
+    if (ALERT_STATUSES.includes(newStatus)) {
+      console.error(`[OPS_ALERT] Vendor ${vendorId} is ${newStatus} — landlord payouts will fail, manual intervention required`);
+
+      await audit.logFailure(
+        "VENDOR_STATUS_ALERT",
+        "landlord",
+        newStatus,
+        `Cashfree vendor ${vendorId} status changed to ${newStatus} — payouts blocked`,
+        "bank_account",
+        updated?.id,
+        {
+          vendor_id: vendorId,
+          old_status: oldStatus,
+          new_status: newStatus,
+          user_id: updated?.user_id,
+        },
+      );
+    }
+
     return jsonResponse({ status: "success", message: "Vendor status updated" });
   } catch (error) {
     console.error("[cashfree-vendor-webhook] Error:", error);

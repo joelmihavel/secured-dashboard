@@ -20,6 +20,7 @@ import { createServiceClient, hasServiceRoleAuth } from "../_shared/supabase.ts"
 import { handleCors, jsonResponse, errorResponse } from "../_shared/cors.ts";
 import { handleError } from "../_shared/errors.ts";
 import { sha512 } from "../_shared/crypto.ts";
+import { getOrderPaymentStatus } from "../_shared/cashfree-easysplit.ts";
 
 // ==============================================
 // CONFIGURATION
@@ -30,6 +31,7 @@ const PAYU_MERCHANT_SALT = Deno.env.get("PAYU_MERCHANT_SALT")!;
 
 // Only reconcile payments older than 10 minutes (give webhook time to arrive)
 const STALE_THRESHOLD_MINUTES = 10;
+const BATCH_SIZE = 20;
 
 // PayU status mapping (same as payment-webhook and check-payment-status)
 const PAYU_STATUS_MAP: Record<string, string> = {
@@ -94,7 +96,7 @@ serve(async (req: Request) => {
       .lt("created_at", cutoff)
       .not("payu_txn_id", "is", null)
       .neq("payment_gateway", "demo")
-      .limit(20);
+      .limit(BATCH_SIZE);
 
     if (error) {
       throw error;
@@ -167,18 +169,115 @@ serve(async (req: Request) => {
       }
     }
 
+    // ==============================================
+    // CASHFREE STALE PAYMENTS — same cutoff, different identifier
+    // ==============================================
+
+    const { data: cfStalePayments } = await supabase
+      .from("payments")
+      .select(
+        "id, user_id, tenancy_id, cf_order_id, status, " +
+        "rent_amount_paise, cashback_applied_paise, cashback_earned_paise, " +
+        "accumulated_redeemed_paise, created_at",
+      )
+      .not("cf_order_id", "is", null)
+      .in("status", ["initiated", "processing"])
+      .lt("created_at", cutoff)
+      .limit(BATCH_SIZE);
+
+    let cfReconciled = 0;
+    let cfStillProcessing = 0;
+    let cfVerifyFailed = 0;
+
+    for (const payment of cfStalePayments ?? []) {
+      if (!payment.cf_order_id) continue;
+
+      try {
+        const cfResult = await getOrderPaymentStatus(payment.cf_order_id);
+        const orderStatus = (cfResult.order_status ?? "").toUpperCase();
+
+        // PAID → success, EXPIRED/TERMINATED → failed, anything else → still processing
+        let mappedStatus: string;
+        if (orderStatus === "PAID") {
+          mappedStatus = "success";
+        } else if (["EXPIRED", "TERMINATED"].includes(orderStatus)) {
+          mappedStatus = "failed";
+        } else {
+          cfStillProcessing++;
+          continue;
+        }
+
+        // Skip if already in the target status
+        if (mappedStatus === payment.status) continue;
+
+        const updateData: Record<string, unknown> = {
+          status: mappedStatus,
+          gateway_status: orderStatus,
+        };
+
+        if (mappedStatus === "success") {
+          updateData.paid_at = new Date().toISOString();
+          updateData.landlord_payout_status = "ready";
+          updateData.landlord_payout_paise = payment.rent_amount_paise;
+        }
+
+        // Optimistic lock: only update if status hasn't changed
+        const { data: lockResult } = await supabase
+          .from("payments")
+          .update(updateData)
+          .eq("id", payment.id)
+          .eq("status", payment.status)
+          .select("id")
+          .maybeSingle();
+
+        if (lockResult) {
+          cfReconciled++;
+
+          // Handle cashback ledger entries on success
+          if (mappedStatus === "success" && payment.user_id) {
+            await handleCashbackOnSuccess(supabase, payment);
+          }
+        }
+      } catch (e) {
+        console.error(
+          `Failed to verify Cashfree payment ${payment.id}:`,
+          e instanceof Error ? e.message : e,
+        );
+        cfVerifyFailed++;
+      }
+    }
+
+    const totalChecked = (stalePayments?.length ?? 0) + (cfStalePayments?.length ?? 0);
+    const totalReconciled = reconciled + cfReconciled;
+    const totalProcessing = stillProcessing + cfStillProcessing;
+    const totalVerifyFailed = verifyFailed + cfVerifyFailed;
+
     console.log(
-      `cleanup-stale-payments: checked=${stalePayments?.length ?? 0} ` +
-      `reconciled=${reconciled} processing=${stillProcessing} failed=${verifyFailed}`,
+      `cleanup-stale-payments: checked=${totalChecked} ` +
+      `reconciled=${totalReconciled} processing=${totalProcessing} failed=${totalVerifyFailed} ` +
+      `(payu: ${stalePayments?.length ?? 0} checked, ${reconciled} reconciled | ` +
+      `cashfree: ${cfStalePayments?.length ?? 0} checked, ${cfReconciled} reconciled)`,
     );
 
     return jsonResponse({
       success: true,
       data: {
-        reconciled,
-        still_processing: stillProcessing,
-        verify_failed: verifyFailed,
-        total_checked: stalePayments?.length ?? 0,
+        reconciled: totalReconciled,
+        still_processing: totalProcessing,
+        verify_failed: totalVerifyFailed,
+        total_checked: totalChecked,
+        payu: {
+          checked: stalePayments?.length ?? 0,
+          reconciled,
+          still_processing: stillProcessing,
+          verify_failed: verifyFailed,
+        },
+        cashfree: {
+          checked: cfStalePayments?.length ?? 0,
+          reconciled: cfReconciled,
+          still_processing: cfStillProcessing,
+          verify_failed: cfVerifyFailed,
+        },
       },
     });
   } catch (error) {
@@ -205,7 +304,7 @@ async function handleCashbackOnSuccess(
 ): Promise<void> {
   const userId = payment.user_id;
 
-  // PATH A: Verified — log instant discount + debit accumulated
+  // PATH A: Verified — log instant discount
   if (payment.cashback_applied_paise > 0) {
     try {
       await supabase.from("cashback_ledger").insert({
@@ -219,27 +318,32 @@ async function handleCashbackOnSuccess(
         reference_id: payment.id,
         description: "1% instant discount on rent payment (reconciliation)",
       });
-
-      const accumulatedUsed = payment.accumulated_redeemed_paise ?? 0;
-      if (accumulatedUsed > 0) {
-        await supabase.from("cashback_ledger").insert({
-          user_id: userId,
-          transaction_type: "applied",
-          amount_paise: accumulatedUsed,
-          balance_after_paise: 0,
-          payment_id: payment.id,
-          tenancy_id: payment.tenancy_id,
-          reference_type: "payment",
-          reference_id: payment.id,
-          description: "Accumulated cashback redeemed (reconciliation)",
-        });
-        await supabase.rpc("decrement_cashback_balance", {
-          p_user_id: userId,
-          p_amount: accumulatedUsed,
-        });
-      }
     } catch (e) {
       console.error("Failed to log cashback discount on reconciliation:", e);
+    }
+  }
+
+  // PATH A2: Debit accumulated cashback redeemed (independent of instant discount)
+  const accumulatedUsed = payment.accumulated_redeemed_paise ?? 0;
+  if (accumulatedUsed > 0) {
+    try {
+      await supabase.from("cashback_ledger").insert({
+        user_id: userId,
+        transaction_type: "applied",
+        amount_paise: accumulatedUsed,
+        balance_after_paise: 0,
+        payment_id: payment.id,
+        tenancy_id: payment.tenancy_id,
+        reference_type: "payment",
+        reference_id: payment.id,
+        description: "Accumulated cashback redeemed (reconciliation)",
+      });
+      await supabase.rpc("decrement_cashback_balance", {
+        p_user_id: userId,
+        p_amount: accumulatedUsed,
+      });
+    } catch (e) {
+      console.error("Failed to debit accumulated cashback on reconciliation:", e);
     }
   }
 

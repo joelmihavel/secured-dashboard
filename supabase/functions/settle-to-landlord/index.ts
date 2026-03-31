@@ -81,7 +81,7 @@ serve(async (req: Request) => {
       .select(`
         id, tenancy_id, user_id, rent_amount_paise, landlord_payout_paise,
         total_amount_paise, flent_subsidy_paise,
-        landlord_payout_status, payu_settlement_status, payu_txn_id,
+        landlord_payout_status, gateway_payout_status, payu_settlement_status, payu_txn_id,
         payment_gateway, gateway_order_id, gateway_settlement_status,
         cf_order_id,
         transfer_hold, transfer_hold_reason,
@@ -114,7 +114,7 @@ serve(async (req: Request) => {
 
     const results: Array<{
       payment_id: string;
-      status: "processing" | "failed";
+      status: "processing" | "failed" | "deferred";
       amount_paise: number;
       landlord_name: string;
       error?: string;
@@ -297,16 +297,45 @@ serve(async (req: Request) => {
         }
 
         if (bankAccount.cf_beneficiary_status !== "ACTIVE") {
-          // Vendor exists but not yet active — revert to "ready" for retry
-          // (sync-vendors polls vendor status daily, will become ACTIVE eventually)
-          console.warn(`[settle-to-landlord] Vendor ${vendorId} status is ${bankAccount.cf_beneficiary_status}, deferring payment ${payment.id}`);
+          // Vendor exists but not yet active — check retry count before reverting to "ready"
+          const currentVendorStatus = bankAccount.cf_beneficiary_status;
+          const currentGatewayStatus = (payment as Record<string, unknown>).gateway_payout_status ?? "";
+          const retryCount = (typeof currentGatewayStatus === "string" ? currentGatewayStatus : "").split("retry").length - 1;
+
+          if (retryCount >= 10) {
+            // Max retries exceeded — mark as permanently failed
+            console.error(`[settle-to-landlord] Vendor ${vendorId} stuck in ${currentVendorStatus} after ${retryCount} retries — marking payment ${payment.id} as failed`);
+            await supabase.from("payments").update({
+              landlord_payout_status: "failed",
+              gateway_payout_status: `Vendor stuck in ${currentVendorStatus} after ${retryCount} retries`,
+            }).eq("id", payment.id);
+
+            await audit.logFailure(
+              "LANDLORD_PAYOUT_FAILED",
+              "payment",
+              "VENDOR_STUCK_MAX_RETRIES",
+              `Vendor ${vendorId} stuck in ${currentVendorStatus} after ${retryCount} retries`,
+              "payment",
+              payment.id,
+              { vendor_id: vendorId, vendor_status: currentVendorStatus, retry_count: retryCount },
+            );
+
+            results.push({
+              payment_id: payment.id, status: "failed", amount_paise: payoutAmountPaise,
+              landlord_name: tenancy.landlord_name, error: `Vendor stuck in ${currentVendorStatus} after ${retryCount} retries`,
+            });
+            continue;
+          }
+
+          // Revert to "ready" with incremented retry count
+          console.warn(`[settle-to-landlord] Vendor ${vendorId} status is ${currentVendorStatus}, deferring payment ${payment.id} (retry ${retryCount + 1})`);
           await supabase.from("payments").update({
             landlord_payout_status: "ready",
-            gateway_payout_status: `Vendor not active yet: ${bankAccount.cf_beneficiary_status}`,
+            gateway_payout_status: `Vendor not active (${currentVendorStatus}) — retry ${retryCount + 1}`,
           }).eq("id", payment.id);
           results.push({
             payment_id: payment.id, status: "deferred", amount_paise: payoutAmountPaise,
-            landlord_name: tenancy.landlord_name, error: `Vendor status: ${bankAccount.cf_beneficiary_status} — will retry`,
+            landlord_name: tenancy.landlord_name, error: `Vendor status: ${currentVendorStatus} — will retry (${retryCount + 1}/10)`,
           });
           continue;
         }
@@ -343,14 +372,18 @@ serve(async (req: Request) => {
           });
         } catch (cfErr) {
           const errMsg = cfErr instanceof CashfreeError ? cfErr.message : String(cfErr);
-          console.error(`[settle-to-landlord] Cashfree adjustment failed for ${payment.id}:`, cfErr);
+          const isCfError = cfErr instanceof CashfreeError;
+          const statusCode = isCfError ? (cfErr as CashfreeError).statusCode : 0;
+          const isTransient = statusCode >= 500 || statusCode === 0; // 5xx or network/timeout error
+
+          console.error(`[settle-to-landlord] Cashfree adjustment failed for ${payment.id} (HTTP ${statusCode}, transient=${isTransient}):`, cfErr);
           await supabase.from("payments").update({
-            landlord_payout_status: "failed",
-            gateway_payout_status: `Cashfree adjustment failed: ${errMsg}`,
+            landlord_payout_status: isTransient ? "ready" : "failed",
+            gateway_payout_status: `Cashfree adjustment ${isTransient ? "deferred" : "failed"}: ${errMsg}`,
           }).eq("id", payment.id);
 
           results.push({
-            payment_id: payment.id, status: "failed", amount_paise: payoutAmountPaise,
+            payment_id: payment.id, status: isTransient ? "deferred" : "failed", amount_paise: payoutAmountPaise,
             landlord_name: tenancy.landlord_name, error: errMsg,
           });
         }

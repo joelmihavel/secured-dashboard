@@ -638,6 +638,26 @@ serve(async (req: Request) => {
       requestId: req.headers.get("x-request-id") ?? crypto.randomUUID(),
     });
 
+    // PayU dedup: check processed_webhooks table BEFORE main processing (prevents race condition
+    // on first occurrence where mihpayid is not yet persisted to the payment row)
+    const payuDedupKey = `payu-${payload.mihpayid}-${payload.status}`;
+    const { data: existingPayuWebhook } = await supabase
+      .from("processed_webhooks")
+      .select("id")
+      .eq("event_id", payuDedupKey)
+      .maybeSingle();
+    if (existingPayuWebhook) {
+      console.log(`[webhook] PayU duplicate: ${payuDedupKey}`);
+      return jsonResponse({ success: true, message: "Duplicate webhook" });
+    }
+    // Insert dedup record early — if processing fails, the next retry will re-process
+    // (we rely on the idempotent status checks below to handle partial failures)
+    await supabase.from("processed_webhooks").insert({
+      event_id: payuDedupKey,
+      payment_gateway: "payu",
+      payment_id: payload.txnid,
+    }).catch(() => {});
+
     // Find the payment record with tenancy details (including monthly_rent_paise for cashback cap)
     const { data: payment, error: paymentError } = await supabase
       .from("payments")
@@ -783,7 +803,11 @@ serve(async (req: Request) => {
     };
 
     if (isSuccess) {
-      updateData.paid_at = new Date().toISOString();
+      // Use PayU's payment completion timestamp (addedon) instead of webhook arrival time.
+      // This prevents cutoff mis-evaluation when webhooks arrive late.
+      updateData.paid_at = payload.addedon
+        ? new Date(payload.addedon).toISOString()
+        : new Date().toISOString();
       // cashback_earned_paise is already set correctly at initiation time
       // (0 for verified instant-discount, >0 for unverified earning)
 
@@ -848,7 +872,9 @@ serve(async (req: Request) => {
       const [rentYear, rentMonthNum] = (payment.payment_month as string).split("-").map(Number);
       // End of cutoff day in IST (UTC+05:30) → 18:29:59 UTC
       const cutoffDate = new Date(Date.UTC(rentYear, rentMonthNum - 1, cutoffDay, 18, 29, 59, 999));
-      const paidAt = new Date(updateData.paid_at ?? payment.paid_at ?? Date.now());
+      // Use the payment timestamp from PayU (addedon) stored in updateData.paid_at,
+      // NOT Date.now() which is the webhook arrival time
+      const paidAt = new Date((updateData.paid_at as string) ?? payment.paid_at ?? new Date().toISOString());
 
       if (paidAt > cutoffDate) {
         console.warn(`[payment-webhook] Payment ${payment.id} completed past cutoff (paid: ${paidAt.toISOString()}, cutoff: ${cutoffDate.toISOString()}). Zeroing cashback.`);

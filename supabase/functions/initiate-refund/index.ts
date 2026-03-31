@@ -247,9 +247,14 @@ serve(async (req: Request) => {
       );
     }
 
-    // Check if already refunded
-    if (payment.status === "refunded" || payment.refund_amount_paise > 0) {
-      throw new PaymentError("Payment has already been refunded", "ALREADY_REFUNDED");
+    // Check if already fully refunded
+    if (payment.status === "refunded") {
+      throw new PaymentError("Payment has already been fully refunded", "ALREADY_REFUNDED");
+    }
+    const alreadyRefundedPaise = payment.refund_amount_paise ?? 0;
+    const maxRefundablePaise = payment.total_amount_paise - alreadyRefundedPaise;
+    if (maxRefundablePaise <= 0) {
+      throw new PaymentError("No remaining amount to refund", "FULLY_REFUNDED");
     }
 
     // Block refund if settlement is in progress or completed — prevents double payout
@@ -276,9 +281,8 @@ serve(async (req: Request) => {
       }
     }
 
-    // Determine refund amount
-    const maxRefundablePaise = payment.total_amount_paise - (payment.refund_amount_paise || 0);
-    const refundAmountPaise = amount_paise ?? maxRefundablePaise;
+    // Determine refund amount (maxRefundablePaise already computed above)
+    let refundAmountPaise = amount_paise ?? maxRefundablePaise;
 
     if (refundAmountPaise > maxRefundablePaise) {
       throw new ValidationError(
@@ -286,6 +290,9 @@ serve(async (req: Request) => {
         { amount_paise: "Exceeds maximum" }
       );
     }
+
+    // Clamp to remaining refundable (defensive — should never trigger after the check above)
+    refundAmountPaise = Math.min(refundAmountPaise, maxRefundablePaise);
 
     // Check for existing pending refund
     const { data: existingRefund } = await supabase
@@ -417,20 +424,24 @@ serve(async (req: Request) => {
       await supabase
         .from("payments")
         .update({
-          refund_amount_paise: (payment.refund_amount_paise || 0) + refundAmountPaise,
+          refund_amount_paise: alreadyRefundedPaise + refundAmountPaise,
           refund_reason: reason,
           refund_initiated_at: new Date().toISOString(),
-          status: refundAmountPaise >= payment.total_amount_paise ? "refunded" : "partially_refunded",
+          status: (alreadyRefundedPaise + refundAmountPaise) >= payment.total_amount_paise ? "refunded" : "partially_refunded",
         })
         .eq("id", payment_id);
 
-      // Reverse cashback
+      // Reverse cashback — prorated to refund percentage
+      const refundRatio = refundAmountPaise / payment.total_amount_paise;
+      const cashbackToReverse = Math.round((payment.cashback_earned_paise ?? 0) * refundRatio);
+      const cashbackAppliedToReverse = Math.round((payment.cashback_applied_paise ?? 0) * refundRatio);
+
       const cashbackReversed = await reverseCashback(
         supabase,
         userId,
         payment_id,
-        payment.cashback_earned_paise || 0,
-        payment.cashback_applied_paise || 0
+        cashbackToReverse,
+        cashbackAppliedToReverse
       );
 
       await supabase
