@@ -287,6 +287,52 @@ export async function getVendor(vendorId: string): Promise<CashfreeVendor> {
 }
 
 // ==============================================
+// 3b. UPDATE VENDOR
+// ==============================================
+
+/**
+ * Updates an existing Cashfree Easy Split vendor.
+ * Use to change settlement schedule, bank/UPI details, or KYC.
+ */
+export async function updateVendor(
+  vendorId: string,
+  updates: {
+    schedule_option?: number;
+    name?: string;
+    email?: string;
+    phone?: string;
+    upi_vpa?: string;
+    account_number?: string;
+    account_holder?: string;
+    ifsc?: string;
+  },
+): Promise<CashfreeVendor> {
+  const body: Record<string, unknown> = {};
+
+  if (updates.schedule_option !== undefined) body.schedule_option = updates.schedule_option;
+  if (updates.name) body.name = updates.name;
+  if (updates.email) body.email = updates.email;
+  if (updates.phone) body.phone = updates.phone;
+
+  if (updates.upi_vpa) {
+    body.upi = { vpa: updates.upi_vpa, account_holder: updates.name };
+  } else if (updates.account_number && updates.ifsc) {
+    body.bank = {
+      account_number: updates.account_number,
+      account_holder: updates.account_holder ?? updates.name,
+      ifsc: updates.ifsc,
+    };
+  }
+
+  const result = await cfFetch(
+    "PATCH",
+    `/pg/easy-split/vendors/${encodeURIComponent(vendorId)}`,
+    body,
+  ) as CashfreeVendor;
+  return result;
+}
+
+// ==============================================
 // 4. CREATE ADJUSTMENT (MERCHANT → VENDOR LEDGER)
 // ==============================================
 
