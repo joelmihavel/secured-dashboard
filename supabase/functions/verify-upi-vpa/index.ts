@@ -1,7 +1,7 @@
 /**
  * Flent Secured v2 - Verify UPI VPA Edge Function
  *
- * Verifies a landlord's UPI VPA using Cashfree UPI Penny Drop API.
+ * Verifies a landlord's UPI VPA using PayU VPA Validation API.
  * Used when tenants add their landlord's UPI ID for rent settlement.
  *
  * Endpoint: POST /functions/v1/verify-upi-vpa
@@ -32,18 +32,13 @@ import {
   matchAgainstAgreementNames,
   runOpportunisticNameMatch,
 } from "../_shared/name-match-service.ts";
-import { generateCfSignature } from "../_shared/cashfree-m360-otp.ts";
+import { callPayUValidateVpa } from "../_shared/payu-config.ts";
 import { isTestUser } from "../_shared/demo-helpers.ts";
 import { recomputeAndStoreRisk } from "../_shared/risk-utils.ts";
 
 // ==============================================
 // CONFIGURATION
 // ==============================================
-
-const CASHFREE_APP_ID = Deno.env.get("CASHFREE_APP_ID");
-const CASHFREE_SECRET_KEY = Deno.env.get("CASHFREE_SECRET_KEY");
-const CASHFREE_BASE_URL =
-  Deno.env.get("CASHFREE_BASE_URL") ?? "https://sandbox.cashfree.com/verification";
 
 // Name matching threshold (80%)
 const NAME_MATCH_THRESHOLD = 0.8;
@@ -59,20 +54,6 @@ interface VerifyUpiVpaRequest {
   tenancy_id?: string; // Optional — not present for pre-waitlist UPI verification
   upi_vpa: string;
   party_type?: "landlord" | "tenant";
-}
-
-interface CashfreeUpiPennyDropResponse {
-  status: "VALID" | "INVALID";
-  name_at_bank?: string;
-  bank_account?: string;
-  ifsc?: string;
-  utr?: string;
-  name_match_score?: number;
-  ifsc_details?: {
-    bank?: string;
-    branch?: string;
-  };
-  message?: string;
 }
 
 // ==============================================
@@ -305,8 +286,8 @@ serve(async (req: Request) => {
       allLandlordNames = resolved.names;
     }
 
-    // Call Cashfree UPI Penny Drop API
-    const pennyDropResult = await callCashfreeUpiPennyDrop(normalizedVpa);
+    // Call PayU VPA Validation API
+    const pennyDropResult = await callPayUValidateVpa(normalizedVpa);
 
     // Handle INVALID VPA early with concise error for UI hint text
     if (pennyDropResult.status === "INVALID") {
@@ -626,91 +607,3 @@ serve(async (req: Request) => {
   }
 });
 
-// ==============================================
-// CASHFREE UPI PENNY DROP API
-// ==============================================
-
-async function callCashfreeUpiPennyDrop(
-  vpa: string
-): Promise<CashfreeUpiPennyDropResponse> {
-  if (!CASHFREE_APP_ID || !CASHFREE_SECRET_KEY) {
-    throw new ExternalServiceError(
-      "Cashfree",
-      "API credentials not configured"
-    );
-  }
-
-  const verificationId = `FLENT_${Date.now()}_${crypto.randomUUID().slice(0, 8)}`;
-
-  try {
-    // Build headers with x-cf-signature for public key auth
-    const headers: Record<string, string> = {
-      "Content-Type": "application/json",
-      "x-client-id": CASHFREE_APP_ID,
-      "x-client-secret": CASHFREE_SECRET_KEY,
-      "x-api-version": "2024-12-01",
-    };
-    try {
-      const { signature } = await generateCfSignature(CASHFREE_APP_ID);
-      headers["x-cf-signature"] = signature;
-    } catch (sigErr) {
-      console.warn("[verify-upi-vpa] x-cf-signature not added:", sigErr instanceof Error ? sigErr.message : String(sigErr));
-    }
-
-    const requestBody = {
-      verification_id: verificationId,
-      vpa,
-      user_consent: {
-        obtained: true,
-        type: "EXPLICIT",
-        timestamp: new Date().toISOString(),
-        purpose: "bank_verification_for_rent",
-      },
-    };
-
-    console.log(`[verify-upi-vpa] Calling Cashfree UPI Penny Drop: ${CASHFREE_BASE_URL}/upi/penny-drop`);
-    console.log(`[verify-upi-vpa] VPA: ${vpa}, verification_id: ${verificationId}`);
-
-    const response = await fetch(`${CASHFREE_BASE_URL}/upi/penny-drop`, {
-      method: "POST",
-      headers,
-      body: JSON.stringify(requestBody),
-    });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      console.error("[verify-upi-vpa] Cashfree error:", JSON.stringify({ status: response.status, body: data }));
-      throw new ExternalServiceError(
-        "Cashfree",
-        data.message ?? data.code ?? `HTTP ${response.status}`
-      );
-    }
-
-    console.log("[verify-upi-vpa] Cashfree response:", {
-      status: data.status,
-      name_at_bank: data.name_at_bank ? "***" : null,
-      has_bank_account: !!data.bank_account,
-      has_ifsc: !!data.ifsc,
-    });
-
-    return {
-      status: data.status, // "VALID" or "INVALID"
-      name_at_bank: data.name_at_bank,
-      bank_account: data.bank_account ?? null,
-      ifsc: data.ifsc ?? null,
-      utr: data.utr ?? null,
-      name_match_score: data.name_match_score ?? null,
-      ifsc_details: data.ifsc_details ?? null,
-      message: data.message,
-    };
-  } catch (error) {
-    if (error instanceof ExternalServiceError) throw error;
-
-    console.error("Cashfree UPI Penny Drop failed:", error);
-    throw new ExternalServiceError(
-      "Cashfree",
-      error instanceof Error ? error.message : "Unknown error"
-    );
-  }
-}
