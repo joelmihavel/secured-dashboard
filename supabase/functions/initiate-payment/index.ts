@@ -21,7 +21,7 @@ import {
   RateLimitError,
   handleError,
 } from "../_shared/errors.ts";
-import { validateSchema, isValidAmountPaise, isValidUuid, parseRentMonth } from "../_shared/validation.ts";
+import { validateSchema, isValidAmountPaise, isValidUuid } from "../_shared/validation.ts";
 import { AuditLogger, AuditActions } from "../_shared/audit.ts";
 import { IdempotencyManager, getIdempotencyKey } from "../_shared/idempotency.ts";
 import { generatePayUHash, generateTransactionId, sha512, hmacSha256 } from "../_shared/crypto.ts";
@@ -439,7 +439,7 @@ serve(async (req: Request) => {
     // Cutoff gate — cashback only if payment is made on or before the cutoff day
     // cutoff_day comes from the rent agreement; defaults to 7 if not specified
     const cutoffDay = tenancy.cashback_cutoff_day ?? tenancy.rent_due_day ?? 7;
-    const { year: rentYear, month: rentMonthNum } = parseRentMonth(rent_month);
+    const [rentYear, rentMonthNum] = rent_month.split("-").map(Number);
     // Cutoff date: end of cutoff day in IST (UTC+05:30) → 18:29:59 UTC
     const cutoffDate = new Date(Date.UTC(rentYear, rentMonthNum - 1, cutoffDay, 18, 29, 59, 999));
     const now = new Date();
@@ -871,12 +871,13 @@ serve(async (req: Request) => {
 
 /**
  * Calculates the due date for a rent payment.
- * Default: 5th of the rent month
+ * Uses tenancy rent_due_day, clamped to the month's last day.
  */
-function calculateDueDate(rentMonth: string): string {
-  const { year, month } = parseRentMonth(rentMonth);
-  // Due date is 5th of the rent month
-  const dueDate = new Date(year, month - 1, 5);
+function calculateDueDate(rentMonth: string, rentDueDay: number = 5): string {
+  const [year, month] = rentMonth.split("-").map(Number);
+  const daysInMonth = new Date(year, month, 0).getDate();
+  const clampedDay = Math.min(rentDueDay, daysInMonth);
+  const dueDate = new Date(year, month - 1, clampedDay);
   return dueDate.toISOString().split("T")[0];
 }
 

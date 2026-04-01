@@ -378,36 +378,46 @@ serve(async (req: Request) => {
     // Calculate upcoming payment (depends on tenancy)
     // Always use the current calendar month — do NOT auto-advance to the next
     // unpaid month. Multiple payments for the same month are allowed.
+    //
+    // CRITICAL: Use IST (UTC+5:30) for all date calculations. Deno Deploy runs in UTC,
+    // but all users are in India. Without IST, there's a 5.5-hour window at each month
+    // boundary where the server disagrees with the client about which month it is.
     let upcomingPayment = null;
     if (tenancy) {
-      const today = new Date();
-      const currentMonth = today.getMonth();
-      const currentYear = today.getFullYear();
+      const IST_OFFSET_MS = 5.5 * 60 * 60 * 1000;
+      const nowUTC = new Date();
+      const nowIST = new Date(nowUTC.getTime() + IST_OFFSET_MS);
+      const currentMonth = nowIST.getUTCMonth();
+      const currentYear = nowIST.getUTCFullYear();
+      const todayDay = nowIST.getUTCDate();
 
-      const dueDate = new Date(currentYear, currentMonth, tenancy.rent_due_day);
-      const daysUntilDue = Math.ceil(
-        (dueDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)
-      );
+      // Clamp rent_due_day to the last day of the month (e.g., rent_due_day=31 in Feb → 28)
+      const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+      const clampedDueDay = Math.min(tenancy.rent_due_day, daysInMonth);
+
+      const dueDate = new Date(currentYear, currentMonth, clampedDueDay);
+      const daysUntilDue = clampedDueDay - todayDay;
 
       const rentMonthYYYYMM = `${currentYear}-${String(currentMonth + 1).padStart(2, "0")}`;
       const rentMonthStr = `${rentMonthYYYYMM}-01`;
 
       // Check if the actual rent was paid this month.
-      // Only count payments where rent_amount_paise >= monthly_rent_paise (ignores ₹10 test payments).
+      // Count payments >= 50% of monthly rent (ignores ₹10 test payments but allows partial payments).
       // Use limit(1) instead of maybeSingle() — multiple qualifying payments may exist.
+      const minRentThreshold = Math.floor(tenancy.monthly_rent_paise * 0.5);
       const { data: existingPayments } = await supabase
         .from("payments")
         .select("id, status, rent_amount_paise")
         .eq("tenancy_id", tenancy.id)
         .eq("payment_month", rentMonthStr)
         .eq("status", "success")
-        .gte("rent_amount_paise", tenancy.monthly_rent_paise)
+        .gte("rent_amount_paise", minRentThreshold)
         .limit(1);
       const existingPayment = existingPayments?.[0] ?? null;
 
       const cutoffDay = tenancy.cashback_cutoff_day ?? 7;
       const cutoffDate = new Date(Date.UTC(currentYear, currentMonth, cutoffDay, 18, 29, 59, 999));
-      const pastCutoff = new Date() > cutoffDate;
+      const pastCutoff = nowUTC > cutoffDate;
 
       upcomingPayment = {
         due_date: dueDate.toISOString().split("T")[0],
