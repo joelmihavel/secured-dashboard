@@ -203,16 +203,20 @@ export default function HomeScreen() {
   // User's first name for greeting
   const userName = user?.first_name ?? 'there';
 
-  // Payment due calculations — always use SERVER-provided values, never recalculate on client.
-  // Server (UTC) and client (IST) can disagree on the current month near month boundaries,
-  // causing wrong "due in X days" if calculated independently.
+  // Payment due calculations
   const alreadyPaid = upcomingPayment?.already_paid ?? false;
-  // Use server's days_until_due for current month. When paid, derive next due from server's due_date.
+  // When already paid, compute days until next month's due date for "Next rent payment in X days"
   const daysUntilNextDue = useMemo(() => {
     if (!alreadyPaid || !upcomingPayment?.due_date || !tenancy?.rent_due_day) return null;
-    // Server returns current month's due_date. Next due = add 1 month.
-    const currentDue = new Date(upcomingPayment.due_date + 'T00:00:00');
-    const nextDue = new Date(currentDue.getFullYear(), currentDue.getMonth() + 1, tenancy.rent_due_day);
+    // Derive from server's due_date (IST-aware) — don't use client's local clock for month
+    const serverDue = new Date(upcomingPayment.due_date + 'T00:00:00');
+    const nextMonthIdx = serverDue.getMonth() + 1;
+    const nextYear = nextMonthIdx > 11 ? serverDue.getFullYear() + 1 : serverDue.getFullYear();
+    const nextMonth = nextMonthIdx > 11 ? 0 : nextMonthIdx;
+    // Clamp rent_due_day to next month's actual days (e.g., 31 in Feb → 28)
+    const daysInNextMonth = new Date(nextYear, nextMonth + 1, 0).getDate();
+    const clampedDay = Math.min(tenancy.rent_due_day, daysInNextMonth);
+    const nextDue = new Date(nextYear, nextMonth, clampedDay);
     return Math.ceil((nextDue.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
   }, [alreadyPaid, upcomingPayment?.due_date, tenancy?.rent_due_day]);
   const daysUntilDue = alreadyPaid ? null : (upcomingPayment?.days_until_due ?? 0);
@@ -289,13 +293,12 @@ export default function HomeScreen() {
 
   const handleAddPayment = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    // Don't check setup if data hasn't loaded — go to payment, it'll re-check
-    if (!isLoading && !isSetupComplete) {
+    if (!isSetupComplete) {
       setShowVerificationSheet(true);
     } else {
       router.push('/(payment)/enter-rent' as never);
     }
-  }, [isSetupComplete, isLoading, router]);
+  }, [isSetupComplete, router]);
 
   // Generate carousel items based on state
   const carouselItems = useMemo((): CarouselCardItem[] => {
@@ -599,12 +602,11 @@ export default function HomeScreen() {
         }, []);
 
         const handlePayNow = useCallback(() => {
-          console.log('[PAY] handlePayNow fired, isSetupComplete:', isSetupComplete, 'isLoading:', isLoading);
+          console.log('[PAY] handlePayNow fired, isSetupComplete:', isSetupComplete);
           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
           // Reset verification-skipped flag each time user starts a new payment attempt
           setVerificationSkippedStore(false);
-          // Don't check setup if dashboard data hasn't loaded — go to payment, it'll re-check
-          if (!isLoading && !isSetupComplete) {
+          if (!isSetupComplete) {
             console.log('[PAY] Setup incomplete — showing verification sheet');
             setShowVerificationSheet(true);
           } else {
