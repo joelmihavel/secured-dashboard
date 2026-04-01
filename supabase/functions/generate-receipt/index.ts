@@ -146,29 +146,40 @@ serve(async (req: Request) => {
       throw new AppError("payment_id is required", "VALIDATION_ERROR", 400);
     }
 
-    // Fetch payment with related data
-    const { data: payment, error: paymentError } = await supabase
-      .from("payments")
-      .select(`
-        id, payu_txn_id, payu_mihpayid, payu_bank_ref_num, settlement_utr,
-        payment_gateway, gateway_payment_id, payment_method_details,
-        rent_amount_paise, pg_fee_paise, convenience_fee_paise, fee_billing_model,
-        cashback_applied_paise, cashback_earned_paise,
-        payment_method, status, payment_month, paid_at, created_at, due_date,
-        tenancies (
-          id, property_address, property_city, property_state, property_pincode,
-          landlord_name, landlord_pan_masked, agreement_cert_id, rent_due_day,
-          users!tenancies_user_id_fkey (
-            first_name, last_name, phone, pan_number
-          ),
-          bank_accounts (
-            account_number_masked, party_type
+    // Fetch payment with related data (retry once — webhook may still be writing)
+    let payment: any = null;
+    let paymentError: any = null;
+    for (let attempt = 0; attempt < 2; attempt++) {
+      const result = await supabase
+        .from("payments")
+        .select(`
+          id, payu_txn_id, payu_mihpayid, payu_bank_ref_num, settlement_utr,
+          payment_gateway, gateway_payment_id, payment_method_details,
+          rent_amount_paise, pg_fee_paise, convenience_fee_paise, fee_billing_model,
+          cashback_applied_paise, cashback_earned_paise,
+          payment_method, status, payment_month, paid_at, created_at, due_date,
+          tenancies (
+            id, property_address, property_city, property_state, property_pincode,
+            landlord_name, landlord_pan_masked, agreement_cert_id, rent_due_day,
+            users!tenancies_user_id_fkey (
+              first_name, last_name, phone, pan_number
+            ),
+            bank_accounts (
+              account_number_masked, party_type
+            )
           )
-        )
-      `)
-      .eq("id", paymentId)
-      .eq("user_id", userId)
-      .single();
+        `)
+        .eq("id", paymentId)
+        .eq("user_id", userId)
+        .single();
+      payment = result.data;
+      paymentError = result.error;
+      if (payment?.status === "success") break;
+      // Payment exists but not yet success (webhook race) — wait and retry
+      if (attempt === 0 && (!payment || payment.status !== "success")) {
+        await new Promise(r => setTimeout(r, 2000));
+      }
+    }
 
     if (paymentError || !payment) {
       throw new AppError("Payment not found or access denied", "NOT_FOUND", 404);
