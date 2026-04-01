@@ -439,7 +439,8 @@ export default function HomeScreen() {
         // WARN 23 FIX: Paid cards show actual cashback only, never projected amounts.
         let historicalCashback: number;
         if (cardStatus === 'paid') {
-          historicalCashback = (stamp.cashback_applied_paise ?? 0) / 100;
+          // Show total cashback: applied (instant discount) + earned (into balance)
+          historicalCashback = ((stamp.cashback_applied_paise ?? 0) + (stamp.cashback_earned_paise ?? 0)) / 100;
         } else if (cardStatus === 'late' || cardStatus === 'missed') {
           historicalCashback = potentialCb;
         } else {
