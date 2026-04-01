@@ -63,6 +63,7 @@ serve(async (req: Request) => {
     const systemConfig = await getSystemTransferFlag(supabase);
 
     const releaseResult = await releaseHeldPayments(supabase, audit, systemConfig);
+    const stuckPendingResult = await recoverStuckPendingPayouts(supabase, audit);
     const [reconciliationResult, monitoringResult, refundResult] = await Promise.all([
       reconcileStuckPayments(supabase, audit),
       monitorPendingPayouts(supabase, audit),
@@ -76,7 +77,7 @@ serve(async (req: Request) => {
       "system",
       undefined,
       undefined,
-      { duration_ms: durationMs, released: releaseResult, reconciliation: reconciliationResult, monitoring: monitoringResult, refunds: refundResult },
+      { duration_ms: durationMs, released: releaseResult, stuck_pending: stuckPendingResult, reconciliation: reconciliationResult, monitoring: monitoringResult, refunds: refundResult },
     );
 
     return jsonResponse({
@@ -84,6 +85,7 @@ serve(async (req: Request) => {
       data: {
         duration_ms: durationMs,
         released_held_payments: releaseResult,
+        stuck_pending_recovered: stuckPendingResult,
         reconciliation: reconciliationResult,
         monitoring: monitoringResult,
         refunds: refundResult,
@@ -142,6 +144,70 @@ async function releaseHeldPayments(
     }
   } catch (err) {
     console.error("[release] Error:", err);
+    result.errors++;
+  }
+
+  return result;
+}
+
+// ==============================================
+// SAFETY NET: Recover stuck pending payouts
+// ==============================================
+
+/**
+ * Payments where status='success' but landlord_payout_status='pending'
+ * are stuck — the webhook set success but failed to set 'ready'.
+ * This safety net catches them after 30 minutes and transitions to 'ready'.
+ */
+async function recoverStuckPendingPayouts(
+  supabase: ReturnType<typeof createServiceClient>,
+  audit: AuditLogger,
+): Promise<TierResult> {
+  const result: TierResult = { checked: 0, updated: 0, errors: 0 };
+
+  try {
+    const { data: stuckPayments } = await supabase
+      .from("payments")
+      .select("id")
+      .eq("status", "success")
+      .eq("landlord_payout_status", "pending")
+      .eq("transfer_hold", false)
+      .lt("paid_at", new Date(Date.now() - 30 * 60_000).toISOString())
+      .limit(BATCH_SIZE);
+
+    if (!stuckPayments?.length) return result;
+
+    result.checked = stuckPayments.length;
+    console.warn(`[stuck-pending] Found ${stuckPayments.length} stuck payments (success + pending > 30min)`);
+
+    for (const payment of stuckPayments) {
+      try {
+        const { data: updated } = await supabase
+          .from("payments")
+          .update({ landlord_payout_status: "ready" })
+          .eq("id", payment.id)
+          .eq("landlord_payout_status", "pending")
+          .select("id")
+          .maybeSingle();
+
+        if (updated) {
+          result.updated++;
+          console.log(`[stuck-pending] Recovered payment ${payment.id} → ready`);
+        }
+      } catch (err) {
+        console.error(`[stuck-pending] Failed for payment ${payment.id}:`, err);
+        result.errors++;
+      }
+    }
+
+    if (result.updated > 0) {
+      await audit.logSuccess("STUCK_PENDING_RECOVERED", "payment", undefined, undefined, {
+        recovered_count: result.updated,
+      });
+      console.error(`[OPS_ALERT] ${result.updated} payment(s) were stuck in success+pending — auto-recovered to ready`);
+    }
+  } catch (err) {
+    console.error("[stuck-pending] Error:", err);
     result.errors++;
   }
 
