@@ -11,6 +11,14 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { ensureWaitlistState, finalizeExtractionForOnboarding } from "../_shared/onboarding.ts";
 import { getCorsHeaders } from "../_shared/cors.ts";
+import { notifyUser } from "../_shared/notifications.ts";
+
+function getSupabaseUrl(): string {
+  return Deno.env.get("SUPABASE_URL") || Deno.env.get("SB_URL") || "";
+}
+function getServiceKey(): string {
+  return Deno.env.get("SB_SECRET_KEY") || Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
+}
 
 // ============================================
 // INTERFACES
@@ -212,6 +220,14 @@ function validateMinimumRequiredFields(data: Partial<ExtractedData>): {
 Deno.serve(async (req) => {
   const corsHeaders = getCorsHeaders(req);
 
+  // Response helper — uses per-request corsHeaders (not deprecated module-level constant)
+  function jsonResponse(data: object, status = 200) {
+    return new Response(JSON.stringify(data), {
+      status,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
+
   // Handle CORS preflight
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
@@ -225,6 +241,7 @@ Deno.serve(async (req) => {
   const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
   let extraction_id: string | undefined;
+  let userId: string | undefined;
   let completedExtractionPersisted = false;
 
   try {
@@ -245,6 +262,7 @@ Deno.serve(async (req) => {
       return jsonResponse({ success: false, error: "Unauthorized" }, 401);
     }
 
+    userId = user.id;
     console.log(`[process-document] Authenticated user: ${user.id}`);
 
     const body = await req.json();
@@ -274,7 +292,7 @@ Deno.serve(async (req) => {
       }, 404);
     }
 
-    // Idempotency guard: skip if already completed or abandoned
+    // Idempotency guard: skip if already completed, in-progress, or abandoned
     if (extractionRecord.extraction_status === "completed") {
       console.log(`[process-document] Extraction ${extraction_id} already completed — skipping re-processing`);
       return jsonResponse({
@@ -283,6 +301,15 @@ Deno.serve(async (req) => {
         message: "Already processed",
         extraction_status: "completed",
       }, 200);
+    }
+    if (extractionRecord.extraction_status === "processing") {
+      console.log(`[process-document] Extraction ${extraction_id} already processing — skipping duplicate request`);
+      return jsonResponse({
+        success: false,
+        extracted_rental_info_id: extraction_id,
+        message: "Already processing",
+        extraction_status: "processing",
+      }, 409);
     }
     if (extractionRecord.user_verified) {
       console.log(`[process-document] Extraction ${extraction_id} was abandoned (user_verified=true) — skipping`);
@@ -313,6 +340,12 @@ Deno.serve(async (req) => {
         extraction_status: "failed",
         extraction_error: "Only PDF documents are allowed",
       });
+
+      // Notify user of upload failure (non-blocking)
+      notifyUser(getSupabaseUrl(), getServiceKey(), {
+        user_id: user.id,
+        notification_type: "agreement_upload_failed",
+      }).catch((e) => console.warn("[process-document] Failed to send agreement_upload_failed notification:", e));
 
       return jsonResponse({
         success: false,
@@ -380,15 +413,37 @@ Deno.serve(async (req) => {
         geminiApiKey
       );
     } else if (!gcpCredentials) {
-      return new Response(
-        JSON.stringify({ error: "Document processing not configured", code: "SERVICE_UNAVAILABLE" }),
-        { status: 503, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      await updateExtractionStatus(supabase, extraction_id, {
+        extraction_status: "extraction_failed",
+        extraction_error: "Document processing service not configured",
+      });
+
+      // Notify user of upload failure (non-blocking)
+      notifyUser(getSupabaseUrl(), getServiceKey(), {
+        user_id: user.id,
+        notification_type: "agreement_upload_failed",
+      }).catch((e) => console.warn("[process-document] Failed to send agreement_upload_failed notification:", e));
+
+      return jsonResponse(
+        { error: "Document processing not configured", code: "SERVICE_UNAVAILABLE" },
+        503
       );
     } else {
       // Has GCP credentials but no processor ID
-      return new Response(
-        JSON.stringify({ error: "Document processor not configured", code: "SERVICE_UNAVAILABLE" }),
-        { status: 503, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      await updateExtractionStatus(supabase, extraction_id, {
+        extraction_status: "extraction_failed",
+        extraction_error: "Document processing service not configured",
+      });
+
+      // Notify user of upload failure (non-blocking)
+      notifyUser(getSupabaseUrl(), getServiceKey(), {
+        user_id: user.id,
+        notification_type: "agreement_upload_failed",
+      }).catch((e) => console.warn("[process-document] Failed to send agreement_upload_failed notification:", e));
+
+      return jsonResponse(
+        { error: "Document processor not configured", code: "SERVICE_UNAVAILABLE" },
+        503
       );
     }
 
@@ -526,6 +581,14 @@ Deno.serve(async (req) => {
 
     const resolvedExtractionStatus = extractedData.fields_extracted > 0 ? "completed" : "extraction_failed";
 
+    // Notify user if extraction failed (0 fields extracted, non-blocking)
+    if (resolvedExtractionStatus === "extraction_failed") {
+      notifyUser(getSupabaseUrl(), getServiceKey(), {
+        user_id: user.id,
+        notification_type: "agreement_upload_failed",
+      }).catch((e) => console.warn("[process-document] Failed to send agreement_upload_failed notification:", e));
+    }
+
     const shouldAutoFinalize =
       extractedData.fields_extracted > 0
       && (evaluationResult.contract_status === "user_review"
@@ -582,14 +645,28 @@ Deno.serve(async (req) => {
 
     // Update status to failed with error details for client-side display
     if (extraction_id && !completedExtractionPersisted) {
-      await updateExtractionStatus(supabase, extraction_id, {
+      const { error: statusUpdateError } = await updateExtractionStatus(supabase, extraction_id, {
         extraction_status: "failed",
         extraction_error: errorMessage,
       });
+      if (statusUpdateError) {
+        console.error(`[process-document] CRITICAL: Failed to persist failure status for extraction ${extraction_id}. Row may be stuck as 'processing'. DB error:`, statusUpdateError);
+      }
+
+      // Notify user of upload failure (non-blocking)
+      if (userId) {
+        notifyUser(getSupabaseUrl(), getServiceKey(), {
+          user_id: userId,
+          notification_type: "agreement_upload_failed",
+        }).catch((e) => console.warn("[process-document] Failed to send agreement_upload_failed notification:", e));
+      }
     } else if (extraction_id && completedExtractionPersisted) {
-      await updateExtractionStatus(supabase, extraction_id, {
+      const { error: statusUpdateError } = await updateExtractionStatus(supabase, extraction_id, {
         extraction_error: errorMessage,
       });
+      if (statusUpdateError) {
+        console.error(`[process-document] CRITICAL: Failed to persist extraction_error for extraction ${extraction_id}. DB error:`, statusUpdateError);
+      }
     }
 
     return jsonResponse({
@@ -640,8 +717,7 @@ async function processWithDocumentAI(
             content: base64Content,
             mimeType: mimeType,
           },
-          // Bug 2 fix: Enable imageless mode (raises page limit from 15 to 30)
-          // and cap at first 30 pages to avoid PAGE_LIMIT_EXCEEDED for large docs
+          // Cap at first 30 pages to avoid timeout on very large docs
           processOptions: {
             ocrConfig: {
               premiumFeatures: { computeStyleInfo: false },
@@ -811,6 +887,14 @@ async function processWithDocumentAI(
       extractedData = mergeGeminiResults(extractedData, geminiResult);
       extractedData.extraction_method = 'combined';
       console.log(`[process-document] Gemini extraction: ${extractedData.fields_extracted} fields extracted`);
+    } else if (geminiDebug.gemini_attempted && !geminiResult) {
+      // Both Gemini paths failed — fall back to Document AI only
+      console.warn("[process-document] WARNING: All Gemini extraction paths failed. Falling back to Document AI only.");
+      extractedData.extraction_method = 'gcp_doc_ai';
+      // If Document AI also extracted 0 fields, the document is unprocessable
+      if (extractedData.fields_extracted === 0) {
+        throw new Error("Both Gemini and Document AI failed to extract any fields from the document");
+      }
     }
   }
 
@@ -1028,7 +1112,22 @@ IMPORTANT:
   // Parse JSON from response (handle markdown code blocks if present)
   const jsonMatch = textContent.match(/\{[\s\S]*\}/);
   if (jsonMatch) {
-    const parsed = JSON.parse(jsonMatch[0]);
+    let parsed: any;
+    try {
+      parsed = JSON.parse(jsonMatch[0]);
+    } catch (parseErr) {
+      // Greedy regex may have captured too much — try non-greedy balanced extraction
+      const balanced = extractBalancedJson(textContent);
+      if (balanced) {
+        try {
+          parsed = JSON.parse(balanced);
+        } catch {
+          throw new Error(`Vertex AI Gemini returned malformed JSON: ${(parseErr as Error).message}. First 200 chars: ${jsonMatch[0].substring(0, 200)}`);
+        }
+      } else {
+        throw new Error(`Vertex AI Gemini returned malformed JSON: ${(parseErr as Error).message}. First 200 chars: ${jsonMatch[0].substring(0, 200)}`);
+      }
+    }
     if (Object.keys(parsed).length === 0) {
       throw new Error("Vertex AI Gemini returned empty JSON");
     }
@@ -1177,7 +1276,22 @@ IMPORTANT:
     // Parse JSON from response (handle markdown code blocks)
     const jsonMatch = textContent.match(/\{[\s\S]*\}/);
     if (jsonMatch) {
-      const parsed = JSON.parse(jsonMatch[0]);
+      let parsed: any;
+      try {
+        parsed = JSON.parse(jsonMatch[0]);
+      } catch (parseErr) {
+        // Greedy regex may have captured too much — try non-greedy balanced extraction
+        const balanced = extractBalancedJson(textContent);
+        if (balanced) {
+          try {
+            parsed = JSON.parse(balanced);
+          } catch {
+            throw new Error(`Gemini API returned malformed JSON: ${(parseErr as Error).message}. First 200 chars: ${jsonMatch[0].substring(0, 200)}`);
+          }
+        } else {
+          throw new Error(`Gemini API returned malformed JSON: ${(parseErr as Error).message}. First 200 chars: ${jsonMatch[0].substring(0, 200)}`);
+        }
+      }
       const fieldCount = Object.keys(parsed).length;
       console.log("[process-document] Gemini parsed result:", fieldCount + " fields");
       if (fieldCount === 0) {
@@ -1221,11 +1335,12 @@ function mergeGeminiResults(docAI: ExtractedData, gemini: any): ExtractedData {
     micromarket: gemini.micromarket || docAI.micromarket,
     area_name: gemini.micromarket || docAI.area_name,
     // FIX: Convert Gemini rupees to paise (multiply by 100) to match column semantics
+    // Strip commas (Indian format: 2,00,000) and guard against NaN
     monthly_rent_paise: gemini.monthly_rent
-      ? parseInt(String(gemini.monthly_rent)) * 100
+      ? (isNaN(parseInt(String(gemini.monthly_rent).replace(/,/g, ''))) ? docAI.monthly_rent_paise : parseInt(String(gemini.monthly_rent).replace(/,/g, '')) * 100)
       : docAI.monthly_rent_paise,
     security_deposit_paise: gemini.security_deposit
-      ? parseInt(String(gemini.security_deposit)) * 100
+      ? (isNaN(parseInt(String(gemini.security_deposit).replace(/,/g, ''))) ? docAI.security_deposit_paise : parseInt(String(gemini.security_deposit).replace(/,/g, '')) * 100)
       : docAI.security_deposit_paise,
     rent_escalation_percent: gemini.rent_escalation_percent != null
       ? Number(gemini.rent_escalation_percent)
@@ -1258,11 +1373,12 @@ function mergeGeminiResults(docAI: ExtractedData, gemini: any): ExtractedData {
     second_party: gemini.second_party || docAI.second_party,
     stamp_duty_paid_by: gemini.stamp_duty_paid_by || docAI.stamp_duty_paid_by,
     // FIX: Convert Gemini rupees to paise (multiply by 100) to match column semantics
+    // Strip commas and guard against NaN
     consideration_price_paise: gemini.consideration_price
-      ? parseInt(String(gemini.consideration_price)) * 100
+      ? (isNaN(parseInt(String(gemini.consideration_price).replace(/,/g, ''))) ? docAI.consideration_price_paise : parseInt(String(gemini.consideration_price).replace(/,/g, '')) * 100)
       : docAI.consideration_price_paise,
     stamp_duty_amount_paise: gemini.stamp_duty_amount
-      ? parseInt(String(gemini.stamp_duty_amount)) * 100
+      ? (isNaN(parseInt(String(gemini.stamp_duty_amount).replace(/,/g, ''))) ? docAI.stamp_duty_amount_paise : parseInt(String(gemini.stamp_duty_amount).replace(/,/g, '')) * 100)
       : docAI.stamp_duty_amount_paise,
     // Room/BHK fields
     rooms_in_agreement: gemini.rooms_in_agreement != null ? Number(gemini.rooms_in_agreement) : (docAI as any).rooms_in_agreement || null,
@@ -1493,11 +1609,53 @@ function arrayBufferToBase64(buffer: ArrayBuffer): string {
   return btoa(binary);
 }
 
+/**
+ * Extract the first balanced JSON object from text using a brace counter.
+ * Handles cases where the greedy regex /\{[\s\S]*\}/ captures too much
+ * (e.g., trailing text after the closing brace).
+ */
+function extractBalancedJson(text: string): string | null {
+  const start = text.indexOf('{');
+  if (start === -1) return null;
+
+  let depth = 0;
+  let inString = false;
+  let escape = false;
+
+  for (let i = start; i < text.length; i++) {
+    const ch = text[i];
+
+    if (escape) {
+      escape = false;
+      continue;
+    }
+    if (ch === '\\' && inString) {
+      escape = true;
+      continue;
+    }
+    if (ch === '"') {
+      inString = !inString;
+      continue;
+    }
+    if (inString) continue;
+
+    if (ch === '{') depth++;
+    else if (ch === '}') {
+      depth--;
+      if (depth === 0) {
+        return text.substring(start, i + 1);
+      }
+    }
+  }
+
+  return null; // Unbalanced braces
+}
+
 function parseAmount(value: string): number {
-  // NOTE: Returns amount in INR (rupees), NOT paise - despite column names ending in _paise
-  const cleaned = value.replace(/[^0-9.,]/g, "").replace(",", "");
+  // Returns amount in paise (rupees * 100) to match _paise column semantics
+  const cleaned = value.replace(/[^0-9.,]/g, "").replace(/,/g, "");
   const amount = parseFloat(cleaned);
-  return isNaN(amount) ? 0 : Math.round(amount);
+  return isNaN(amount) ? 0 : Math.round(amount * 100);
 }
 
 function parseDate(value: string): string | undefined {
@@ -1695,7 +1853,7 @@ async function updateExtractionStatus(
   supabase: any,
   extractionId: string,
   updates: Record<string, any>
-) {
+): Promise<{ error: any }> {
   const { error } = await supabase
     .from("extracted_rental_info")
     .update(updates)
@@ -1704,6 +1862,8 @@ async function updateExtractionStatus(
   if (error) {
     console.error("[process-document] Failed to update extraction status:", error);
   }
+
+  return { error };
 }
 
 async function updateWaitlistEntries(
@@ -1734,13 +1894,6 @@ async function updateWaitlistEntries(
     // Non-fatal - waitlist_entries is for V1 compatibility only
     console.log("[process-document] Note: waitlist_entries update failed (non-fatal):", error.message);
   }
-}
-
-function jsonResponse(data: object, status = 200) {
-  return new Response(JSON.stringify(data), {
-    status,
-    headers: { ...corsHeaders, "Content-Type": "application/json" },
-  });
 }
 
 // ============================================

@@ -8,6 +8,10 @@
  * 4. reminder_utility — 2 days after approval if utility not verified
  * 5. reminder_landlord_invite — 3 days after approval if landlord not invited
  * 6. reminder_agreement — 2 days after signup if no agreement uploaded
+ * 7. setup_incomplete — approved users who haven't finished setup (1+ days)
+ * 8. onboarding_dropoff — signed_up users with no waitlist entry (2+ days)
+ * 9. landlord_pending — invited landlord not confirmed (2+ days)
+ * 10. milestone_streak — 3 or 6 consecutive on-time payments
  *
  * Schedule: Daily at 10:00 AM IST (04:30 UTC) via pg_cron
  * Auth: Service role only
@@ -283,7 +287,248 @@ serve(async (req: Request) => {
     }
 
     // ========================================
-    // 4. CLEANUP old dedup entries (older than 7 days)
+    // 4. SETUP INCOMPLETE (approved users who haven't finished setup, 1+ days)
+    // ========================================
+
+    const { data: approvedNotSetup } = await supabase
+      .from("users")
+      .select("id, created_at")
+      .eq("user_status", "approved");
+
+    if (approvedNotSetup && approvedNotSetup.length > 0) {
+      for (const user of approvedNotSetup) {
+        const createdAt = new Date(user.created_at);
+        const daysSince = Math.floor((today.getTime() - createdAt.getTime()) / (1000 * 60 * 60 * 24));
+        if (daysSince < 1) continue;
+
+        const dedupKey = `${user.id}:setup_incomplete:${today.toISOString().slice(0, 10)}`;
+        const { data: existing } = await supabase
+          .from("notification_dedup")
+          .select("id")
+          .eq("dedup_key", dedupKey)
+          .maybeSingle();
+
+        if (!existing) {
+          try {
+            await notifyUser(supabaseUrl, serviceKey, {
+              user_id: user.id,
+              notification_type: "setup_incomplete",
+            });
+            await supabase.from("notification_dedup").insert({
+              dedup_key: dedupKey,
+              user_id: user.id,
+              notification_type: "setup_incomplete",
+            }).catch(() => {});
+            results.push({ type: "setup_incomplete", sent: 1, skipped: 0, errors: 0 });
+          } catch {
+            results.push({ type: "setup_incomplete", sent: 0, skipped: 0, errors: 1 });
+          }
+        }
+      }
+    }
+
+    // ========================================
+    // 5. ONBOARDING DROP-OFF (signed_up, no waitlist entry, 2+ days)
+    // ========================================
+
+    // Note: This is similar to reminder_agreement but uses different WA template copy.
+    // The existing reminder_agreement (section 3) handles push; this adds the WA-specific type.
+    const { data: dropoffUsers } = await supabase
+      .from("users")
+      .select("id, full_name, created_at")
+      .eq("user_status", "signed_up")
+      .lt("created_at", new Date(today.getTime() - 2 * 24 * 60 * 60 * 1000).toISOString());
+
+    if (dropoffUsers && dropoffUsers.length > 0) {
+      const dropoffUserIds = dropoffUsers.map((u: any) => u.id);
+      const { data: withWaitlist } = await supabase
+        .from("waitlist_entries")
+        .select("user_id")
+        .in("user_id", dropoffUserIds);
+
+      const hasWaitlistEntry = new Set((withWaitlist ?? []).map((w: any) => w.user_id));
+
+      for (const user of dropoffUsers) {
+        if (hasWaitlistEntry.has(user.id)) continue;
+
+        const dedupKey = `${user.id}:onboarding_dropoff:${today.toISOString().slice(0, 10)}`;
+        const { data: existing } = await supabase
+          .from("notification_dedup")
+          .select("id")
+          .eq("dedup_key", dedupKey)
+          .maybeSingle();
+
+        if (!existing) {
+          try {
+            await notifyUser(supabaseUrl, serviceKey, {
+              user_id: user.id,
+              notification_type: "onboarding_dropoff",
+              template_vars: { name: user.full_name || "there" },
+            });
+            await supabase.from("notification_dedup").insert({
+              dedup_key: dedupKey,
+              user_id: user.id,
+              notification_type: "onboarding_dropoff",
+            }).catch(() => {});
+            results.push({ type: "onboarding_dropoff", sent: 1, skipped: 0, errors: 0 });
+          } catch {
+            results.push({ type: "onboarding_dropoff", sent: 0, skipped: 0, errors: 1 });
+          }
+        }
+      }
+    }
+
+    // ========================================
+    // 6. LANDLORD PENDING (invited but not confirmed, 2+ days)
+    // ========================================
+
+    const { data: pendingLandlord } = await supabase
+      .from("tenancies")
+      .select("id, user_id, landlord_invite_sent_at")
+      .eq("landlord_status", "invited")
+      .not("landlord_invite_sent_at", "is", null);
+
+    if (pendingLandlord && pendingLandlord.length > 0) {
+      for (const tenancy of pendingLandlord) {
+        if (!tenancy.landlord_invite_sent_at) continue;
+        const inviteSentAt = new Date(tenancy.landlord_invite_sent_at);
+        const daysSinceInvite = Math.floor((today.getTime() - inviteSentAt.getTime()) / (1000 * 60 * 60 * 24));
+        if (daysSinceInvite < 2) continue;
+
+        const dedupKey = `${tenancy.user_id}:landlord_pending:${today.toISOString().slice(0, 10)}`;
+        const { data: existing } = await supabase
+          .from("notification_dedup")
+          .select("id")
+          .eq("dedup_key", dedupKey)
+          .maybeSingle();
+
+        if (!existing) {
+          try {
+            await notifyUser(supabaseUrl, serviceKey, {
+              user_id: tenancy.user_id,
+              notification_type: "landlord_pending",
+              related_entity_type: "tenancy",
+              related_entity_id: tenancy.id,
+            });
+            await supabase.from("notification_dedup").insert({
+              dedup_key: dedupKey,
+              user_id: tenancy.user_id,
+              notification_type: "landlord_pending",
+            }).catch(() => {});
+            results.push({ type: "landlord_pending", sent: 1, skipped: 0, errors: 0 });
+          } catch {
+            results.push({ type: "landlord_pending", sent: 0, skipped: 0, errors: 1 });
+          }
+        }
+      }
+    }
+
+    // ========================================
+    // 7. MILESTONE STREAKS (3 or 6 consecutive on-time payments)
+    // ========================================
+
+    // Get active tenancies with their rent_due_day
+    const { data: activeTenantsForStreak } = await supabase
+      .from("tenancies")
+      .select("id, user_id, rent_due_day")
+      .eq("status", "active");
+
+    if (activeTenantsForStreak && activeTenantsForStreak.length > 0) {
+      for (const tenancy of activeTenantsForStreak) {
+        // Get all successful payments for this user, ordered by month
+        const { data: userPayments } = await supabase
+          .from("payments")
+          .select("payment_month, paid_at")
+          .eq("user_id", tenancy.user_id)
+          .eq("status", "success")
+          .order("payment_month", { ascending: false });
+
+        if (!userPayments || userPayments.length < 3) continue;
+
+        // Compute consecutive on-time streak from most recent
+        const dueDay = tenancy.rent_due_day ?? 1;
+        let streak = 0;
+
+        for (let i = 0; i < userPayments.length; i++) {
+          const payment = userPayments[i];
+          if (!payment.paid_at || !payment.payment_month) break;
+
+          // Check if paid on time (within 3 days of due date as grace period)
+          const paymentDate = new Date(payment.paid_at);
+          const monthStart = new Date(payment.payment_month);
+          const dueDate = new Date(monthStart.getFullYear(), monthStart.getMonth(), Math.min(dueDay, 28));
+          const graceCutoff = new Date(dueDate.getTime() + 3 * 24 * 60 * 60 * 1000);
+
+          if (paymentDate <= graceCutoff) {
+            streak++;
+          } else {
+            break; // Streak broken
+          }
+
+          // Check month continuity (each payment_month should be 1 month before the previous)
+          if (i > 0) {
+            const prevMonth = new Date(userPayments[i - 1].payment_month);
+            const currMonth = new Date(payment.payment_month);
+            const monthDiff = (prevMonth.getFullYear() - currMonth.getFullYear()) * 12 +
+              (prevMonth.getMonth() - currMonth.getMonth());
+            if (monthDiff !== 1) break; // Gap in months
+          }
+        }
+
+        // Fire notification at 3 and 6 month milestones
+        for (const milestone of [3, 6]) {
+          if (streak >= milestone) {
+            const dedupKey = `${tenancy.user_id}:milestone_streak:${milestone}`;
+            const { data: existing } = await supabase
+              .from("notification_dedup")
+              .select("id")
+              .eq("dedup_key", dedupKey)
+              .maybeSingle();
+
+            if (!existing) {
+              // Calculate total cashback earned
+              const { data: cashbackData } = await supabase
+                .from("payments")
+                .select("cashback_amount")
+                .eq("user_id", tenancy.user_id)
+                .eq("status", "success");
+
+              const totalCashback = (cashbackData ?? [])
+                .reduce((sum: number, p: any) => sum + (p.cashback_amount ?? 0), 0);
+              const cashbackStr = (totalCashback / 100).toLocaleString("en-IN");
+
+              try {
+                await notifyUser(supabaseUrl, serviceKey, {
+                  user_id: tenancy.user_id,
+                  notification_type: "milestone_streak",
+                  template_vars: {
+                    streak_months: String(milestone),
+                    total_cashback: cashbackStr,
+                  },
+                  related_entity_type: "tenancy",
+                  related_entity_id: tenancy.id,
+                });
+                await supabase.from("notification_dedup").insert({
+                  dedup_key: dedupKey,
+                  user_id: tenancy.user_id,
+                  notification_type: "milestone_streak",
+                }).catch(() => {});
+                const existingResult = results.find(r => r.type === `milestone_streak_${milestone}`);
+                if (existingResult) existingResult.sent++;
+                else results.push({ type: `milestone_streak_${milestone}`, sent: 1, skipped: 0, errors: 0 });
+              } catch {
+                const existingResult = results.find(r => r.type === `milestone_streak_${milestone}`);
+                if (existingResult) existingResult.errors++;
+                else results.push({ type: `milestone_streak_${milestone}`, sent: 0, skipped: 0, errors: 1 });
+              }
+            }
+          }
+        }
+      }
+    }
+
+    // ========================================
+    // 8. CLEANUP old dedup entries (older than 7 days)
     // ========================================
     await supabase
       .from("notification_dedup")

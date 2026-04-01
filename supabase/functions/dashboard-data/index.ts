@@ -196,10 +196,9 @@ function computePaymentStamps(
     summary.total_months++;
     const monthKey = `${cursor.getFullYear()}-${String(cursor.getMonth() + 1).padStart(2, '0')}`;
     // Classification uses cashback_cutoff_day (grace period), not rent_due_day
-    const cutoffDate = new Date(cursor.getFullYear(), cursor.getMonth(), cutoffDay);
-    // Due cutoff: end of cutoff day in IST (UTC+05:30) = 18:29:59.999 UTC
-    const dueCutoff = new Date(cutoffDate);
-    dueCutoff.setUTCHours(18, 29, 59, 999);
+    // Due cutoff: end of cutoff day in IST (23:59:59 IST = 18:29:59 UTC)
+    // Use Date.UTC to avoid local-timezone ambiguity (consistent with upcomingPayment at line 422)
+    const dueCutoff = new Date(Date.UTC(cursor.getFullYear(), cursor.getMonth(), cutoffDay, 18, 29, 59, 999));
 
     const payment = paymentMap.get(monthKey);
     const isCurrentMonth = cursor.getFullYear() === nowIST.getUTCFullYear() && cursor.getMonth() === nowIST.getUTCMonth();
@@ -293,12 +292,15 @@ serve(async (req: Request) => {
         .limit(1)
         .maybeSingle(),
 
-      // 3. Total cashback earned (earned + discount entries)
+      // 3. Total savings from payments (cashback_applied = actual discount on each payment)
+      // cashback_applied_paise already includes both instant % and redeemed accumulation
+      // cashback_earned_paise is what was earned for the graph (separate from savings)
+      // Source of truth is payments table, not cashback_ledger (avoids double-counting)
       supabase
-        .from("cashback_ledger")
-        .select("amount_paise, transaction_type")
+        .from("payments")
+        .select("cashback_applied_paise, cashback_earned_paise")
         .eq("user_id", userId)
-        .in("transaction_type", ["earned", "discount"]),
+        .eq("status", "success"),
 
       // 4. Legacy wallet balance (transition period)
       supabase.rpc("get_available_cashback", { p_user_id: userId }),
@@ -337,7 +339,7 @@ serve(async (req: Request) => {
 
     const userProfile = userProfileResult.data;
     const tenancy = tenancyResult.data;
-    const discountEntries = cashbackBalanceResult.data ?? [];
+    const savingsFromPayments = cashbackBalanceResult.data ?? [];
     const legacyWalletBalance = cashbackStatsResult.data ?? 0;
     const payments = paymentsResult.data ?? [];
     const notifications = notificationsResult.data ?? [];
@@ -436,9 +438,10 @@ serve(async (req: Request) => {
       };
     }
 
-    // Calculate savings summary (earned + discount entries)
-    const totalSavingsPaise = discountEntries.reduce(
-      (sum: number, e: { amount_paise: number }) => sum + e.amount_paise, 0
+    // Total savings = sum of cashback_applied_paise across all successful payments
+    // This is the actual discount received on each payment (includes instant % + redeemed accumulation)
+    const totalSavingsPaise = savingsFromPayments.reduce(
+      (sum: number, p: { cashback_applied_paise: number }) => sum + (p.cashback_applied_paise ?? 0), 0
     );
     // Available cashback balance from RPC (canonical source of truth)
     const availableCashbackPaise = legacyWalletBalance ?? 0;

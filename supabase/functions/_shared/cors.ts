@@ -24,8 +24,8 @@ const PRODUCTION_ORIGINS = [
   "https://app.flentsecured.com",
   "https://landlord.flentsecured.com",
   "https://uowjtrzmszuaiokqxgir.supabase.co",
-  "https://hiw-landlord.flent.in",
   "https://inquisitive-millions-803120.framer.app",
+  "https://flent.in",
 ];
 
 const DEVELOPMENT_ORIGINS = [
@@ -34,8 +34,6 @@ const DEVELOPMENT_ORIGINS = [
   "http://localhost:8081",
   "capacitor://localhost",
   "http://localhost",
-  "https://hiw-landlord.flent.in",
-  "https://inquisitive-millions-803120.framer.app",
 ];
 
 const ALLOWED_ORIGINS = IS_PRODUCTION ? PRODUCTION_ORIGINS : DEVELOPMENT_ORIGINS;

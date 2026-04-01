@@ -16,6 +16,14 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.47.10";
 import { handleCors, getCorsHeaders, jsonResponse } from "../_shared/cors.ts";
 import { AuthError, ValidationError, handleError } from "../_shared/errors.ts";
 import { AuditLogger, AuditActions } from "../_shared/audit.ts";
+import { notifyUser } from "../_shared/notifications.ts";
+
+function getSupabaseUrl(): string {
+  return Deno.env.get("SUPABASE_URL") || Deno.env.get("SB_URL") || "";
+}
+function getServiceKey(): string {
+  return Deno.env.get("SB_SECRET_KEY") || Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
+}
 // NOTE: ensureWaitlistState removed — it prematurely advances user_status to
 // 'waitlisted' before the upload completes. If the function crashes after the
 // status change but before returning success, the user is stuck at waitlist
@@ -333,6 +341,12 @@ serve(async (req) => {
         joinError instanceof Error ? joinError.message : String(joinError),
       );
     }
+
+    // Notify user: agreement under review (non-blocking)
+    notifyUser(getSupabaseUrl(), getServiceKey(), {
+      user_id: user.id,
+      notification_type: "under_review",
+    }).catch((e) => console.warn("[upload-document] Failed to send under_review notification:", e));
 
     await adminClient.from("waitlist_entries").update(
       {

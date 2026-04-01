@@ -30,8 +30,10 @@ import {
   PREFERENCE_MAP,
   DB_TYPE_MAP,
   interpolateTemplate,
+  WHATSAPP_TEMPLATE_MAP,
   type NotificationType,
 } from "../_shared/notification-templates.ts";
+import { sendWhatsAppForUser } from "../_shared/notifications.ts";
 
 // ==============================================
 // TYPES
@@ -54,6 +56,7 @@ interface NotifyUserResponse {
     in_app_created: boolean;
     push_sent_count: number;
     push_failed_count: number;
+    wa_sent: boolean;
   };
 }
 
@@ -152,11 +155,13 @@ serve(async (req: Request) => {
     // ------------------------------------------
     const prefColumn = PREFERENCE_MAP[notification_type];
     let pushAllowed = true;
+    // WhatsApp preference (default: allowed)
+    let waAllowed = true;
 
     if (prefColumn) {
       const { data: prefs } = await supabase
         .from("notification_preferences")
-        .select(`push_enabled, ${prefColumn}`)
+        .select(`push_enabled, whatsapp_enabled, ${prefColumn}`)
         .eq("user_id", user_id)
         .single();
 
@@ -168,19 +173,27 @@ serve(async (req: Request) => {
         } else if ((prefs as any)[prefColumn] === false) {
           pushAllowed = false;
         }
+        // deno-lint-ignore no-explicit-any
+        if ((prefs as any).whatsapp_enabled === false) {
+          waAllowed = false;
+        }
       }
       // If no prefs row → fail-open: send anyway
     } else {
       // No preference column (always-send types like waitlist) — still check global push_enabled
       const { data: prefs } = await supabase
         .from("notification_preferences")
-        .select("push_enabled")
+        .select("push_enabled, whatsapp_enabled")
         .eq("user_id", user_id)
         .single();
 
       // deno-lint-ignore no-explicit-any
       if (prefs && (prefs as any).push_enabled === false) {
         pushAllowed = false;
+      }
+      // deno-lint-ignore no-explicit-any
+      if (prefs && (prefs as any).whatsapp_enabled === false) {
+        waAllowed = false;
       }
     }
 
@@ -227,70 +240,94 @@ serve(async (req: Request) => {
     }
 
     // ------------------------------------------
-    // 4. Send push notification (if allowed)
+    // 4. Send push + WhatsApp in parallel
     // ------------------------------------------
     let pushSentCount = 0;
     let pushFailedCount = 0;
+    let waSent = false;
 
+    // Build promises for parallel execution
+    const channelPromises: Promise<{ channel: string; result: unknown }>[] = [];
+
+    // Push notification promise
     if (pushAllowed) {
-      // Get unread count for badge
-      let badgeCount = 1;
-      const { data: countResult } = await supabase.rpc(
-        "get_unread_notification_count",
-        { p_user_id: user_id },
-      );
-      if (typeof countResult === "number") {
-        badgeCount = countResult;
-      }
+      const pushPromise = (async () => {
+        let badgeCount = 1;
+        const { data: countResult } = await supabase.rpc(
+          "get_unread_notification_count",
+          { p_user_id: user_id },
+        );
+        if (typeof countResult === "number") {
+          badgeCount = countResult;
+        }
 
-      // Build push data payload
-      const pushData: Record<string, string> = {
-        ...extraData,
-        notification_type,
-        route,
-      };
-      if (notificationId) {
-        pushData.notification_id = notificationId;
-      }
-      if (related_entity_type) {
-        pushData.related_entity_type = related_entity_type;
-      }
-      if (related_entity_id) {
-        pushData.related_entity_id = related_entity_id;
-      }
+        const pushData: Record<string, string> = {
+          ...extraData,
+          notification_type,
+          route,
+        };
+        if (notificationId) pushData.notification_id = notificationId;
+        if (related_entity_type) pushData.related_entity_type = related_entity_type;
+        if (related_entity_id) pushData.related_entity_id = related_entity_id;
 
-      // Call send-push-notification edge function internally
-      const supabaseUrl = getSupabaseUrl();
-      const serviceKey = (Deno.env.get("SB_SECRET_KEY") || Deno.env.get("SUPABASE_SERVICE_ROLE_KEY"))!;
+        const supabaseUrl = getSupabaseUrl();
+        const serviceKey = (Deno.env.get("SB_SECRET_KEY") || Deno.env.get("SUPABASE_SERVICE_ROLE_KEY"))!;
 
-      const pushResponse = await fetch(
-        `${supabaseUrl}/functions/v1/send-push-notification`,
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${serviceKey}`,
-            "Content-Type": "application/json",
+        const pushResponse = await fetch(
+          `${supabaseUrl}/functions/v1/send-push-notification`,
+          {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${serviceKey}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              user_id, title, body: bodyText,
+              data: pushData, badge: badgeCount,
+              sound: "default", priority,
+            }),
           },
-          body: JSON.stringify({
-            user_id,
-            title,
-            body: bodyText,
-            data: pushData,
-            badge: badgeCount,
-            sound: "default",
-            priority,
-          }),
-        },
-      );
+        );
 
-      if (pushResponse.ok) {
-        const pushResult = await pushResponse.json();
-        pushSentCount = pushResult.data?.sent_count ?? 0;
-        pushFailedCount = pushResult.data?.failed_count ?? 0;
-      } else {
-        const errorText = await pushResponse.text().catch(() => "Unknown");
-        console.error("Push notification call failed:", errorText);
-        pushFailedCount = 1;
+        if (pushResponse.ok) {
+          const pushResult = await pushResponse.json();
+          return { sent: pushResult.data?.sent_count ?? 0, failed: pushResult.data?.failed_count ?? 0 };
+        } else {
+          const errorText = await pushResponse.text().catch(() => "Unknown");
+          console.error("Push notification call failed:", errorText);
+          return { sent: 0, failed: 1 };
+        }
+      })();
+      channelPromises.push(pushPromise.then((r) => ({ channel: "push", result: r })));
+    }
+
+    // WhatsApp notification promise
+    if (waAllowed && WHATSAPP_TEMPLATE_MAP[notification_type]) {
+      const waPromise = sendWhatsAppForUser(
+        supabase, user_id, notification_type, template_vars,
+      ).catch((e: Error) => {
+        console.error("[notify-user] WhatsApp error:", e);
+        return { success: false, error: e.message };
+      });
+      channelPromises.push(waPromise.then((r) => ({ channel: "wa", result: r })));
+    }
+
+    // Execute all channels in parallel
+    const settled = await Promise.allSettled(channelPromises);
+
+    for (const outcome of settled) {
+      if (outcome.status !== "fulfilled") continue;
+      const { channel, result } = outcome.value;
+      if (channel === "push") {
+        const pushRes = result as { sent: number; failed: number };
+        pushSentCount = pushRes.sent;
+        pushFailedCount = pushRes.failed;
+      } else if (channel === "wa") {
+        const waRes = result as { success: boolean; error?: string };
+        waSent = waRes.success;
+        if (!waRes.success) {
+          console.warn(`[notify-user] WhatsApp failed for ${user_id}: ${waRes.error}`);
+        }
       }
     }
 
@@ -309,6 +346,7 @@ serve(async (req: Request) => {
         push_allowed: pushAllowed,
         push_sent_count: pushSentCount,
         push_failed_count: pushFailedCount,
+        wa_sent: waSent,
       },
     );
 
@@ -319,6 +357,7 @@ serve(async (req: Request) => {
         in_app_created: inAppCreated,
         push_sent_count: pushSentCount,
         push_failed_count: pushFailedCount,
+        wa_sent: waSent,
       },
     };
 

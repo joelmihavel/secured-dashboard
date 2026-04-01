@@ -20,6 +20,8 @@ const EMAIL_FROM_ADDRESS = Deno.env.get("EMAIL_FROM_ADDRESS") ?? "Flent Secured 
 // Twilio
 const TWILIO_ACCOUNT_SID = Deno.env.get("TWILIO_ACCOUNT_SID");
 const TWILIO_AUTH_TOKEN = Deno.env.get("TWILIO_AUTH_TOKEN");
+const TWILIO_API_KEY_SID = Deno.env.get("TWILIO_API_KEY_SID");
+const TWILIO_API_KEY_SECRET = Deno.env.get("TWILIO_API_KEY_SECRET");
 const TWILIO_WHATSAPP_NUMBER = Deno.env.get("TWILIO_WHATSAPP_NUMBER") ?? "whatsapp:+14155238886";
 const TWILIO_SMS_NUMBER = Deno.env.get("TWILIO_SMS_NUMBER");
 
@@ -124,13 +126,16 @@ async function twilioRequest(
   endpoint: string,
   body: Record<string, string>
 ): Promise<{ success: boolean; data?: unknown; error?: string }> {
-  if (!TWILIO_ACCOUNT_SID || !TWILIO_AUTH_TOKEN) {
+  if (!TWILIO_ACCOUNT_SID || (!TWILIO_AUTH_TOKEN && !TWILIO_API_KEY_SECRET)) {
     console.warn("Twilio credentials not configured");
     return { success: false, error: "Twilio not configured" };
   }
 
   const url = `https://api.twilio.com/2010-04-01/Accounts/${TWILIO_ACCOUNT_SID}${endpoint}`;
-  const auth = btoa(`${TWILIO_ACCOUNT_SID}:${TWILIO_AUTH_TOKEN}`);
+  // Prefer API Key auth if available, fall back to Account SID + Auth Token
+  const authUser = TWILIO_API_KEY_SID || TWILIO_ACCOUNT_SID;
+  const authPass = TWILIO_API_KEY_SECRET || TWILIO_AUTH_TOKEN;
+  const auth = btoa(`${authUser}:${authPass}`);
 
   try {
     const response = await fetch(url, {
@@ -211,6 +216,73 @@ export async function sendWhatsApp(
   }
 
   return { success: false, error: result.error };
+}
+
+// ==============================================
+// WHATSAPP FOR USER (HIGH-LEVEL HELPER)
+// ==============================================
+
+/**
+ * Sends a WhatsApp notification to a user using their stored phone number
+ * and the appropriate Twilio Content Template for the notification type.
+ *
+ * Returns gracefully if:
+ * - WA notifications are globally disabled (WA_NOTIFICATIONS_ENABLED=false)
+ * - No WhatsApp template exists for this notification type
+ * - The ContentSid env var is not set (template not yet approved)
+ * - User has no phone number
+ */
+export async function sendWhatsAppForUser(
+  supabase: { from: (table: string) => any },
+  userId: string,
+  notificationType: NotificationType,
+  templateVars: Record<string, string> = {},
+): Promise<NotificationResult> {
+  // Global kill-switch
+  if (Deno.env.get("WA_NOTIFICATIONS_ENABLED") === "false") {
+    return { success: false, error: "WA notifications disabled" };
+  }
+
+  const waConfig = WHATSAPP_TEMPLATE_MAP[notificationType];
+  if (!waConfig) {
+    return { success: false, error: `No WA template for ${notificationType}` };
+  }
+
+  // Resolve ContentSid from env var
+  const contentSid = Deno.env.get(waConfig.contentSidEnvVar);
+  if (!contentSid) {
+    console.warn(`[WA] Missing env var: ${waConfig.contentSidEnvVar}`);
+    return { success: false, error: "Missing template SID env var" };
+  }
+
+  // Fetch user phone
+  const { data: user, error: userError } = await supabase
+    .from("users")
+    .select("phone")
+    .eq("id", userId)
+    .single();
+
+  if (userError || !user?.phone) {
+    return { success: false, error: "User has no phone number" };
+  }
+
+  // Explicit phone normalization
+  const normalizedPhone = formatPhoneWithCountryCode(sanitizePhone(user.phone));
+
+  // Map template variables in order, warn on missing keys
+  const templateParams = waConfig.variableKeys.map((k) => {
+    const val = templateVars[k];
+    if (!val) {
+      console.warn(`[WA] Missing variable '${k}' for ${notificationType}`);
+    }
+    return val ?? "";
+  });
+
+  return sendWhatsApp({
+    to: normalizedPhone,
+    template: contentSid,
+    templateParams: templateParams.length > 0 ? templateParams : undefined,
+  });
 }
 
 // ==============================================
@@ -305,7 +377,11 @@ export async function sendPushNotification(
 // NOTIFY USER (HIGH-LEVEL ORCHESTRATOR)
 // ==============================================
 
-import type { NotificationType } from "./notification-templates.ts";
+import {
+  WHATSAPP_TEMPLATE_MAP,
+  type NotificationType,
+} from "./notification-templates.ts";
+import { sanitizePhone, formatPhoneWithCountryCode } from "./validation.ts";
 
 /**
  * Convenience wrapper that calls the notify-user edge function.

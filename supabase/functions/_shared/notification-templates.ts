@@ -26,7 +26,14 @@ export type NotificationType =
   | "app_update"
   | "reminder_utility"
   | "reminder_landlord_invite"
-  | "reminder_agreement";
+  | "reminder_agreement"
+  | "onboarding_dropoff"
+  | "agreement_upload_failed"
+  | "under_review"
+  | "setup_incomplete"
+  | "landlord_pending"
+  | "payment_refunded"
+  | "milestone_streak";
 
 interface NotificationTemplate {
   title: string;
@@ -101,6 +108,34 @@ export const NOTIFICATION_TEMPLATES: Record<
     title: "Upload your rent agreement",
     body: "It'll only take a minute to verify your tenancy.",
   },
+  onboarding_dropoff: {
+    title: "Complete your signup",
+    body: "Upload your rental agreement to unlock access & start earning 1% cashback.",
+  },
+  agreement_upload_failed: {
+    title: "Upload didn't go through",
+    body: "Your agreement upload failed. Try again to start earning cashback.",
+  },
+  under_review: {
+    title: "Agreement under review",
+    body: "We're reviewing your agreement. Approvals typically take < 6 hours.",
+  },
+  setup_incomplete: {
+    title: "Almost there!",
+    body: "Complete your setup to unlock 1% cashback on rent payments.",
+  },
+  landlord_pending: {
+    title: "Waiting on your landlord",
+    body: "We're waiting on your landlord's confirmation. We'll keep you posted.",
+  },
+  payment_refunded: {
+    title: "Payment refunded",
+    body: "Your payment of ₹{amount} has been refunded. It should hit your account within 48 hours.",
+  },
+  milestone_streak: {
+    title: "Streak milestone!",
+    body: "{streak_months} months of on-time rent. You've earned ₹{total_cashback} back!",
+  },
 };
 
 // ==============================================
@@ -142,6 +177,13 @@ export const NOTIFICATION_ROUTES: Record<NotificationType, string> = {
   reminder_utility: "/(setup)/add-utility",
   reminder_landlord_invite: "/(setup)/invite-landlord",
   reminder_agreement: "/(agreement)/upload",
+  onboarding_dropoff: "/(agreement)/upload",
+  agreement_upload_failed: "/(agreement)/upload",
+  under_review: "/(waitlist)",
+  setup_incomplete: "/(setup)",
+  landlord_pending: "/(main)",
+  payment_refunded: "/(main)",
+  milestone_streak: "/(main)",
 };
 
 // ==============================================
@@ -168,6 +210,13 @@ export const PREFERENCE_MAP: Record<NotificationType, string | null> = {
   reminder_utility: "verification_updates",
   reminder_landlord_invite: "verification_updates",
   reminder_agreement: "verification_updates",
+  onboarding_dropoff: null,           // always send
+  agreement_upload_failed: null,      // always send
+  under_review: null,                 // always send
+  setup_incomplete: "verification_updates",
+  landlord_pending: "landlord_updates",
+  payment_refunded: "payment_confirmations",
+  milestone_streak: "payment_confirmations",
 };
 
 // ==============================================
@@ -194,4 +243,41 @@ export const DB_TYPE_MAP: Record<NotificationType, string> = {
   reminder_utility: "reminder_utility",
   reminder_landlord_invite: "reminder_landlord_invite",
   reminder_agreement: "reminder_agreement",
+  onboarding_dropoff: "onboarding_dropoff",
+  agreement_upload_failed: "agreement_upload_failed",
+  under_review: "under_review",
+  setup_incomplete: "setup_incomplete",
+  landlord_pending: "landlord_pending",
+  payment_refunded: "payment_refunded",
+  milestone_streak: "milestone_streak",
+};
+
+// ==============================================
+// WHATSAPP TEMPLATE MAP
+// ==============================================
+
+/**
+ * Maps notification type → Twilio WhatsApp Content Template.
+ * ContentSids are stored as env vars for easy updates without code deploys.
+ * Only types with WhatsApp templates are included (Partial).
+ */
+export interface WhatsAppTemplateConfig {
+  contentSidEnvVar: string;    // Env var name holding the HXxxxxxxxxx ContentSid
+  variableKeys: string[];      // Keys from template_vars to map to {{1}}, {{2}}, ...
+}
+
+export const WHATSAPP_TEMPLATE_MAP: Partial<Record<NotificationType, WhatsAppTemplateConfig>> = {
+  onboarding_dropoff:      { contentSidEnvVar: "WA_TPL_ONBOARDING_DROPOFF",  variableKeys: ["name"] },
+  agreement_upload_failed: { contentSidEnvVar: "WA_TPL_AGREEMENT_FAILED",    variableKeys: [] },
+  under_review:            { contentSidEnvVar: "WA_TPL_UNDER_REVIEW",        variableKeys: [] },
+  waitlist_approved:       { contentSidEnvVar: "WA_TPL_APPROVED",            variableKeys: [] },
+  waitlist_rejected:       { contentSidEnvVar: "WA_TPL_AGREEMENT_REJECTED",  variableKeys: [] },
+  setup_incomplete:        { contentSidEnvVar: "WA_TPL_SETUP_INCOMPLETE",    variableKeys: [] },
+  landlord_pending:        { contentSidEnvVar: "WA_TPL_LANDLORD_PENDING",    variableKeys: [] },
+  rent_due:                { contentSidEnvVar: "WA_TPL_RENT_DUE",            variableKeys: [] },
+  rent_overdue:            { contentSidEnvVar: "WA_TPL_MISSED_PAYMENT",      variableKeys: [] },
+  payment_success:         { contentSidEnvVar: "WA_TPL_PAYMENT_SUCCESS",     variableKeys: ["cashback"] },
+  payment_failed:          { contentSidEnvVar: "WA_TPL_PAYMENT_FAILED",      variableKeys: [] },
+  payment_refunded:        { contentSidEnvVar: "WA_TPL_PAYMENT_REFUNDED",    variableKeys: [] },
+  milestone_streak:        { contentSidEnvVar: "WA_TPL_MILESTONE_STREAK",    variableKeys: ["streak_months", "total_cashback"] },
 };

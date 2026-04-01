@@ -37,7 +37,7 @@ import { generateSecureRandom } from "../_shared/crypto.ts";
 // ==============================================
 
 const INVITE_EXPIRY_HOURS = 72;
-const LANDLORD_PORTAL_URL = "https://landlord.flentsecured.com";
+const LANDLORD_PORTAL_URL = "https://flent.in/secured/invite-landlord";
 
 // ==============================================
 // TYPES

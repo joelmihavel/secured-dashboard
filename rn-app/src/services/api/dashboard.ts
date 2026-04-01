@@ -653,7 +653,10 @@ export function mapCashbackModule(
   // ── Stats ─────────────────────────────────────────────────────
   const monthlyRent = tenancy?.monthly_rent ?? 0;
   const discountRate = cashback?.discount_rate ?? 0.01;
-  const earned = cashback?.total_savings ?? 0;
+  // "EARNED" = savings applied on payments + unspent balance still available
+  // total_savings = cashback_applied across all payments (actual discount received)
+  // available_balance = earned but not yet redeemed (will auto-apply on next payment)
+  const earned = (cashback?.total_savings ?? 0) + (cashback?.available_balance ?? 0);
   const potential = Math.round(monthlyRent * discountRate * 12);
 
   // ── Remaining cashback ──────────────────────────────────────────

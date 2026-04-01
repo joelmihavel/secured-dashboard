@@ -20,7 +20,14 @@ export type NotificationType =
   | 'app_update'
   | 'reminder_utility'
   | 'reminder_landlord_invite'
-  | 'reminder_agreement';
+  | 'reminder_agreement'
+  | 'onboarding_dropoff'
+  | 'agreement_upload_failed'
+  | 'under_review'
+  | 'setup_incomplete'
+  | 'landlord_pending'
+  | 'payment_refunded'
+  | 'milestone_streak';
 
 interface NotificationTemplate {
   title: string;
@@ -88,6 +95,34 @@ export const NOTIFICATION_TEMPLATES: Record<NotificationType, NotificationTempla
     title: 'Upload your rent agreement',
     body: "It'll only take a minute to verify your tenancy.",
   },
+  onboarding_dropoff: {
+    title: 'Complete your signup',
+    body: 'Upload your rental agreement to unlock access & start earning 1% cashback.',
+  },
+  agreement_upload_failed: {
+    title: "Upload didn't go through",
+    body: 'Your agreement upload failed. Try again to start earning cashback.',
+  },
+  under_review: {
+    title: 'Agreement under review',
+    body: "We're reviewing your agreement. Approvals typically take < 6 hours.",
+  },
+  setup_incomplete: {
+    title: 'Almost there!',
+    body: 'Complete your setup to unlock 1% cashback on rent payments.',
+  },
+  landlord_pending: {
+    title: 'Waiting on your landlord',
+    body: "We're waiting on your landlord's confirmation. We'll keep you posted.",
+  },
+  payment_refunded: {
+    title: 'Payment refunded',
+    body: 'Your payment of ₹{amount} has been refunded. It should hit your account within 48 hours.',
+  },
+  milestone_streak: {
+    title: 'Streak milestone!',
+    body: "{streak_months} months of on-time rent. You've earned ₹{total_cashback} back!",
+  },
 };
 
 /**
@@ -100,3 +135,33 @@ export function interpolateTemplate(
 ): string {
   return template.replace(/\{(\w+)\}/g, (match, key) => vars[key] ?? match);
 }
+
+/**
+ * Maps notification type -> deep link route within the app.
+ * Used to navigate the user to the right screen when tapping a notification.
+ * Keep in sync with: supabase/functions/_shared/notification-templates.ts
+ */
+export const NOTIFICATION_ROUTES: Record<NotificationType, string> = {
+  waitlist_approved: '/(waitlist)/approved',
+  waitlist_rejected: '/(waitlist)/rejected',
+  payment_success: '/(payment)/status',
+  payment_failed: '/(payment)/status',
+  rent_due: '/(payment)/enter-rent',
+  settlement_complete: '/(main)',
+  settlement_failed: '/(main)',
+  rent_due_tomorrow: '/(payment)/enter-rent',
+  rent_overdue: '/(payment)/enter-rent',
+  landlord_confirmed: '/(main)',
+  landlord_rejected: '/(setup)/invite-landlord',
+  app_update: '/(main)',
+  reminder_utility: '/(setup)/add-utility',
+  reminder_landlord_invite: '/(setup)/invite-landlord',
+  reminder_agreement: '/(agreement)/upload',
+  onboarding_dropoff: '/(agreement)/upload',
+  agreement_upload_failed: '/(agreement)/upload',
+  under_review: '/(waitlist)',
+  setup_incomplete: '/(setup)',
+  landlord_pending: '/(main)',
+  payment_refunded: '/(main)',
+  milestone_streak: '/(main)',
+};

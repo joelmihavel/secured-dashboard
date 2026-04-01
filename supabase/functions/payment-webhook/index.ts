@@ -247,6 +247,26 @@ serve(async (req: Request) => {
             processed_at: new Date().toISOString(),
           }).eq('id', refundRecord.id);
 
+          // Notify user of successful refund (non-blocking)
+          if (refundStatus === 'SUCCESS') {
+            const { data: refundPayment } = await supabase
+              .from('payments')
+              .select('user_id')
+              .eq('id', refundRecord.payment_id)
+              .single();
+
+            if (refundPayment?.user_id) {
+              const refundAmountRupees = (refundRecord.amount_paise / 100).toLocaleString("en-IN");
+              notifyUser(getSupabaseUrl(), getServiceKey(), {
+                user_id: refundPayment.user_id,
+                notification_type: "payment_refunded",
+                template_vars: { amount: refundAmountRupees },
+                related_entity_type: "payment",
+                related_entity_id: String(refundRecord.payment_id),
+              }).catch((e) => console.warn("[payment-webhook] Failed to send payment_refunded notification:", e));
+            }
+          }
+
           // If refund FAILED — revert payment status and re-credit reversed cashback
           if (refundStatus === 'FAILED' || refundStatus === 'CANCELLED') {
             await supabase.from('payments').update({
@@ -329,6 +349,18 @@ serve(async (req: Request) => {
               }).catch((e: unknown) => console.error('[webhook] Failed to create refund record:', e));
 
               console.log(`[webhook] Dashboard refund: payment ${cfPayment.id} → ${newStatus} (refund_id=${refundId})`);
+
+              // Notify user of successful dashboard refund (non-blocking)
+              if (refundStatus === 'SUCCESS' && cfPayment.user_id) {
+                const dashboardRefundAmountRupees = (refundData.refund_amount ?? 0).toLocaleString("en-IN");
+                notifyUser(getSupabaseUrl(), getServiceKey(), {
+                  user_id: cfPayment.user_id,
+                  notification_type: "payment_refunded",
+                  template_vars: { amount: dashboardRefundAmountRupees },
+                  related_entity_type: "payment",
+                  related_entity_id: String(cfPayment.id),
+                }).catch((e) => console.warn("[payment-webhook] Failed to send payment_refunded notification:", e));
+              }
             } else {
               console.warn(`[webhook] Payment not found for dashboard refund order_id=${refundOrderId}`);
             }
