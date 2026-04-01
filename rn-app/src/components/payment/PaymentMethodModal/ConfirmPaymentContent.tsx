@@ -230,8 +230,15 @@ export function ConfirmPaymentContent({
               />
               {cashbackAmount > 0 && (
                 <BreakdownRow
-                  label="Cashback"
+                  label="Cashback (1%)"
                   value={`-\u20B9 ${fmt(cashbackAmount)}`}
+                  isCashback
+                />
+              )}
+              {accumulatedBalanceRupees > 0 && (
+                <BreakdownRow
+                  label="Cashback balance"
+                  value={`-\u20B9 ${fmt(accumulatedBalanceRupees)}`}
                   isCashback
                 />
               )}
