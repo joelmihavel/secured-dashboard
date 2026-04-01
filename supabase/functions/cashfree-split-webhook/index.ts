@@ -133,8 +133,8 @@ serve(async (req: Request) => {
       requestId: req.headers.get("x-request-id") ?? crypto.randomUUID(),
     });
 
-    // Find payment(s) by vendor_id → bank_accounts → tenancies → payments
-    // Settlement webhooks are vendor-level (no order_id), so we match via vendor identity.
+    // Find payment(s) — match by cf_adjustment_id first (precise), then vendor FIFO (fallback).
+    const paymentFields = "id, user_id, rent_amount_paise, landlord_payout_status, tenancy_id, payment_month";
     let payments: Array<{
       id: string;
       user_id: string;
@@ -144,8 +144,25 @@ serve(async (req: Request) => {
       payment_month: string;
     }> = [];
 
-    if (vendorId) {
-      // Look up bank account by Cashfree vendor ID
+    // Primary: match by cf_adjustment_id (stored when settle-to-landlord calls createAdjustment)
+    // Cashfree settlement webhooks include adjustment_id in the payload
+    const webhookAdjustmentId = (event as Record<string, unknown>).data?.adjustment_id
+      ?? (event as Record<string, unknown>).data?.settlement?.adjustment_id;
+    if (webhookAdjustmentId) {
+      const { data } = await supabase
+        .from("payments")
+        .select(paymentFields)
+        .eq("cf_adjustment_id", Number(webhookAdjustmentId))
+        .in("landlord_payout_status", ["processing", "retrying"])
+        .limit(1);
+      if (data?.length) {
+        payments = data;
+        console.log(`[cashfree-split-webhook] Matched payment ${data[0].id} by cf_adjustment_id=${webhookAdjustmentId}`);
+      }
+    }
+
+    // Fallback: vendor_id → bank_accounts → tenancies → payments (FIFO)
+    if (!payments.length && vendorId) {
       const { data: bankAcct } = await supabase
         .from("bank_accounts")
         .select("user_id")
@@ -154,7 +171,6 @@ serve(async (req: Request) => {
         .maybeSingle();
 
       if (bankAcct) {
-        // Find all tenancies for this landlord
         const { data: tenancies } = await supabase
           .from("tenancies")
           .select("id")
@@ -162,11 +178,9 @@ serve(async (req: Request) => {
 
         if (tenancies?.length) {
           const tenancyIds = tenancies.map((t: { id: string }) => t.id);
-          // Only match the OLDEST eligible payment (FIFO) to avoid updating
-          // ALL payments for a landlord when a single settlement arrives.
           const { data } = await supabase
             .from("payments")
-            .select("id, user_id, rent_amount_paise, landlord_payout_status, tenancy_id, payment_month")
+            .select(paymentFields)
             .in("tenancy_id", tenancyIds)
             .eq("payment_gateway", "cashfree")
             .in("landlord_payout_status", ["processing", "retrying"])
@@ -177,11 +191,11 @@ serve(async (req: Request) => {
       }
     }
 
-    // Fallback: try settlement_id match (legacy on-demand transfers)
+    // Legacy fallback: settlement_id match
     if (!payments.length && settlementId) {
       const { data } = await supabase
         .from("payments")
-        .select("id, user_id, rent_amount_paise, landlord_payout_status, tenancy_id, payment_month")
+        .select(paymentFields)
         .eq("gateway_payout_id", settlementId)
         .in("landlord_payout_status", ["pending", "ready", "processing", "retrying"])
         .limit(1);

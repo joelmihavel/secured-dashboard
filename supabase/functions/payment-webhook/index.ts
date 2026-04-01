@@ -292,12 +292,11 @@ serve(async (req: Request) => {
             console.warn(`[webhook] Refund ${refundId} FAILED — reverted payment ${refundRecord.payment_id} to success`);
           }
 
-          // Record in processed_webhooks
+          // Record in processed_webhooks (correct schema: event_id, payment_gateway, payment_id)
           await supabase.from('processed_webhooks').insert({
             event_id: String(eventId),
-            source: 'cashfree',
-            event_type: 'REFUND_STATUS_WEBHOOK',
-            payload: event,
+            payment_gateway: 'cashfree',
+            payment_id: refundRecord.payment_id,
           }).catch(() => {});
         } else {
           // No refund record — refund was initiated from Cashfree dashboard directly.
@@ -651,13 +650,8 @@ serve(async (req: Request) => {
       console.log(`[webhook] PayU duplicate: ${payuDedupKey}`);
       return jsonResponse({ success: true, message: "Duplicate webhook" });
     }
-    // Insert dedup record early — if processing fails, the next retry will re-process
-    // (we rely on the idempotent status checks below to handle partial failures)
-    await supabase.from("processed_webhooks").insert({
-      event_id: payuDedupKey,
-      payment_gateway: "payu",
-      payment_id: payload.txnid,
-    }).catch(() => {});
+    // Dedup record inserted AFTER payment lookup succeeds — prevents blocking
+    // legitimate retries when payment is temporarily not found (race condition).
 
     // Find the payment record with tenancy details (including monthly_rent_paise for cashback cap)
     const { data: payment, error: paymentError } = await supabase
@@ -670,6 +664,13 @@ serve(async (req: Request) => {
       console.error("Payment not found for txnid:", payload.txnid);
       throw new PaymentError("Payment not found", "PAYMENT_NOT_FOUND");
     }
+
+    // Insert dedup now that payment is confirmed to exist
+    await supabase.from("processed_webhooks").insert({
+      event_id: payuDedupKey,
+      payment_gateway: "payu",
+      payment_id: payment.id,
+    }).catch(() => {});
 
     // S9: Cross-validate UDFs against payment record — reject on mismatch
     if (payload.udf1 && payload.udf1 !== payment.tenancy_id) {

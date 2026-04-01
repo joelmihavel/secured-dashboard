@@ -83,7 +83,7 @@ serve(async (req: Request) => {
         total_amount_paise, flent_subsidy_paise,
         landlord_payout_status, gateway_payout_status, payu_settlement_status, payu_txn_id,
         payment_gateway, gateway_order_id, gateway_settlement_status,
-        cf_order_id,
+        cf_order_id, payout_retry_count,
         transfer_hold, transfer_hold_reason,
         payment_month, paid_at,
         tenancy:tenancies(
@@ -309,8 +309,7 @@ serve(async (req: Request) => {
         if (bankAccount.cf_beneficiary_status !== "ACTIVE") {
           // Vendor exists but not yet active — check retry count before reverting to "ready"
           const currentVendorStatus = bankAccount.cf_beneficiary_status;
-          const currentGatewayStatus = (payment as Record<string, unknown>).gateway_payout_status ?? "";
-          const retryCount = (typeof currentGatewayStatus === "string" ? currentGatewayStatus : "").split("retry").length - 1;
+          const retryCount = payment.payout_retry_count ?? 0;
 
           if (retryCount >= 10) {
             // Max retries exceeded — mark as permanently failed
@@ -342,6 +341,7 @@ serve(async (req: Request) => {
           await supabase.from("payments").update({
             landlord_payout_status: "ready",
             gateway_payout_status: `Vendor not active (${currentVendorStatus}) — retry ${retryCount + 1}`,
+            payout_retry_count: retryCount + 1,
           }).eq("id", payment.id);
           results.push({
             payment_id: payment.id, status: "deferred", amount_paise: payoutAmountPaise,
@@ -368,6 +368,7 @@ serve(async (req: Request) => {
           await supabase.from("payments").update({
             landlord_payout_status: "processing",
             gateway_payout_status: "adjustment_credited",
+            cf_adjustment_id: adjustResult.adjustment_id ?? null,
           }).eq("id", payment.id);
 
           await audit.logSuccess("LANDLORD_PAYOUT_INITIATED", "payment", "payment", payment.id, {

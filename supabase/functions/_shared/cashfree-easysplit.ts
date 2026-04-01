@@ -362,6 +362,7 @@ const CF_ADJUSTMENT_API_VERSION = "2023-08-01";
 export interface AdjustmentResult {
   message: string;
   status: string;
+  adjustment_id?: number;
 }
 
 export async function createAdjustment(params: {
@@ -398,6 +399,8 @@ export async function createAdjustment(params: {
     CF_ADJUSTMENT_API_VERSION,
   ) as AdjustmentResult;
 
+  // Attach the adjustment_id so caller can store it for settlement webhook matching
+  result.adjustment_id = adjustmentId;
   return result;
 }
 
