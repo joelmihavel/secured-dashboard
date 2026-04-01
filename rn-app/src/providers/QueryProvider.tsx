@@ -29,9 +29,11 @@ import { addBreadcrumb } from '@/src/config/sentry';
 if (Platform.OS !== 'web') {
   AppState.addEventListener('change', (status) => {
     if (status === 'active') {
-      // Brief delay for native views to stabilize before triggering refetches.
-      // WebSocket reconnection is non-blocking and React Query refetches run in parallel.
-      setTimeout(() => focusManager.setFocused(true), 500);
+      // Delay to let SDK's autoRefreshToken complete before React Query
+      // triggers authenticated refetches. At 500ms, refetches race with token
+      // refresh → double _callRefreshToken → SIGNED_OUT. 2s gives the SDK time
+      // to refresh and update the session cache via TOKEN_REFRESHED event.
+      setTimeout(() => focusManager.setFocused(true), 2000);
     } else {
       focusManager.setFocused(false);
     }

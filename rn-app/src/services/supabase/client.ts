@@ -217,6 +217,47 @@ export async function getSessionSafe() {
   return _getSessionInFlight;
 }
 
+// ==============================================
+// SESSION CACHE (Fix for auth logout race condition)
+// ==============================================
+//
+// callEdgeFunction reads tokens from this cache instead of calling
+// getSession() which triggers _callRefreshToken() and races with
+// the SDK's autoRefreshToken timer → spurious SIGNED_OUT.
+//
+// Cache is updated by AuthProvider via onAuthStateChange events
+// (SIGNED_IN, TOKEN_REFRESHED, SIGNED_OUT). This is safe because
+// the SDK fires TOKEN_REFRESHED BEFORE the new session is persisted,
+// so the cache always has the latest valid token.
+
+let _cachedAccessToken: string | null = null;
+let _tokenUpdatedAt = 0;
+
+/** Called by AuthProvider on every auth state change */
+export function updateCachedSession(session: { access_token: string } | null) {
+  _cachedAccessToken = session?.access_token ?? null;
+  _tokenUpdatedAt = Date.now();
+}
+
+/**
+ * Get the current access token without triggering SDK refresh.
+ * Falls back to getSessionSafe() only on cold start (cache empty).
+ */
+export async function getAccessTokenSafe(): Promise<string | null> {
+  // Cache hit — token was set by onAuthStateChange
+  if (_cachedAccessToken) return _cachedAccessToken;
+
+  // Cold start fallback — cache not yet populated by AuthProvider.
+  // This single getSession() call is acceptable on cold start because
+  // autoRefreshToken hasn't started competing yet.
+  const { data: { session } } = await getSessionSafe();
+  if (session?.access_token) {
+    _cachedAccessToken = session.access_token;
+    _tokenUpdatedAt = Date.now();
+  }
+  return session?.access_token ?? null;
+}
+
 /**
  * Get the Supabase functions URL for edge function calls
  */
@@ -273,19 +314,17 @@ export async function callEdgeFunction<T = unknown>(
     };
 
     // Add auth token if required and available.
-    // IMPORTANT: Never call refreshSession() here — it races with the SDK's
-    // built-in autoRefreshToken timer and causes refresh token rotation conflicts
-    // (the old token gets invalidated, the second caller gets SIGNED_OUT).
-    // Instead, trust getSession() which returns the SDK's managed session.
-    // If the token is expired, the SDK will have already refreshed it (or will
-    // on the next tick). If the request gets a 401, the retry block below
-    // will handle it with a single controlled refresh.
+    // IMPORTANT: Uses cached access token from onAuthStateChange events.
+    // NEVER calls getSession() here — it triggers the SDK's _callRefreshToken()
+    // which races with autoRefreshToken → double token consumption → SIGNED_OUT.
+    // The cache is updated by AuthProvider on TOKEN_REFRESHED/SIGNED_IN events,
+    // so it always has the latest valid token without triggering refresh.
     if (requireAuth) {
-      const { data: { session } } = await getSessionSafe();
-      if (!session?.access_token) {
+      const accessToken = await getAccessTokenSafe();
+      if (!accessToken) {
         return { data: null, error: 'Not authenticated' };
       }
-      headers['Authorization'] = `Bearer ${session.access_token}`;
+      headers['Authorization'] = `Bearer ${accessToken}`;
     }
 
     const fetchOptions: RequestInit = {
@@ -330,19 +369,18 @@ export async function callEdgeFunction<T = unknown>(
 
     let data = await safeJson(response);
 
-    // Retry once on 401: wait briefly for the SDK's auto-refresh to complete,
-    // then re-read the session. This avoids calling refreshSession() manually
-    // which races with the SDK's autoRefreshToken and causes SIGNED_OUT events
-    // when refresh token rotation is enabled.
+    // Retry once on 401: wait for the SDK's auto-refresh to update the cache,
+    // then retry with the new token. Uses the session cache (not getSession)
+    // to avoid triggering _callRefreshToken races.
     if (response.status === 401 && requireAuth) {
       const oldToken = headers['Authorization'];
-      // Give the SDK's auto-refresh a moment to complete (it fires on token expiry)
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      const { data: { session: retrySession } } = await getSessionSafe();
-      // Only retry if we got a DIFFERENT token (refresh actually succeeded).
-      // Retrying with the same expired token wastes a round-trip.
-      if (retrySession?.access_token && `Bearer ${retrySession.access_token}` !== oldToken) {
-        headers['Authorization'] = `Bearer ${retrySession.access_token}`;
+      // Wait for SDK's autoRefreshToken to fire and update our cache via
+      // onAuthStateChange → TOKEN_REFRESHED → updateCachedSession
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      const newToken = _cachedAccessToken;
+      // Only retry if cache has a DIFFERENT token (refresh succeeded)
+      if (newToken && `Bearer ${newToken}` !== oldToken) {
+        headers['Authorization'] = `Bearer ${newToken}`;
         const retryController = new AbortController();
         const retryTimeoutId = setTimeout(() => retryController.abort(), timeoutMs);
         try {

@@ -11,7 +11,7 @@
 import React, { createContext, useContext, useEffect, useState, useRef, useMemo, useCallback } from 'react';
 import { useRouter } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
-import { supabase } from '@/src/services/supabase/client';
+import { supabase, updateCachedSession } from '@/src/services/supabase/client';
 import { clearAllStores } from '@/src/stores/resetAll';
 import { registerForPushNotifications } from '@/src/services/notifications';
 import { isReviewMode, deactivateReviewMode } from '@/src/review/reviewMode';
@@ -110,6 +110,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const updateSession = useCallback((s: Session | null) => {
     sessionRef.current = s;
     setSession(s);
+    // Feed the session cache used by callEdgeFunction — avoids getSession()
+    // calls that race with autoRefreshToken and cause spurious SIGNED_OUT.
+    updateCachedSession(s);
   }, []);
 
   // Expose a way for useAuth().signOut() to signal that it's handling cleanup.
@@ -266,6 +269,21 @@ export function AuthProvider({ children }: AuthProviderProps) {
             if (sessionRef.current) {
               console.warn('[AuthProvider] SIGNED_OUT ignored -- session recovered via TOKEN_REFRESHED');
               return;
+            }
+
+            // Safety net: verify the session is truly gone by reading from SDK.
+            // This catches cases where TOKEN_REFRESHED fired but the ref wasn't
+            // updated (timing issue with async IIFE). One final check before
+            // destroying the user's session.
+            try {
+              const { data: { session: verifySession } } = await supabase.auth.getSession();
+              if (verifySession?.access_token) {
+                console.warn('[AuthProvider] SIGNED_OUT ignored -- getSession() still has valid session');
+                updateSession(verifySession);
+                return;
+              }
+            } catch {
+              // getSession() failed — proceed with sign-out
             }
 
             // No recovery -- genuine sign-out
