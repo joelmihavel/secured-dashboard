@@ -153,8 +153,8 @@ serve(async (req: Request) => {
       const result = await supabase
         .from("payments")
         .select(`
-          id, payu_txn_id, payu_mihpayid, payu_bank_ref_num, settlement_utr,
-          payment_gateway, gateway_payment_id, payment_method_details,
+          id, payu_txn_id, payu_mihpayid, payu_bank_ref_num, settlement_utr, gateway_payout_utr,
+          payment_gateway, gateway_payment_id, cf_order_id, payment_method_details,
           rent_amount_paise, pg_fee_paise, convenience_fee_paise, fee_billing_model,
           cashback_applied_paise, cashback_earned_paise,
           payment_method, status, payment_month, paid_at, created_at, due_date,
@@ -238,8 +238,8 @@ serve(async (req: Request) => {
 
       payment: {
         id: payment.id,
-        transaction_id: payment.payu_txn_id,
-        payment_gateway_id: payment.payu_mihpayid,
+        transaction_id: payment.payu_txn_id || payment.cf_order_id || payment.gateway_payment_id,
+        payment_gateway_id: payment.payu_mihpayid || payment.gateway_payment_id,
         amount: amountPaise / 100,
         amount_paise: amountPaise,
         pg_fee: pgFeePaise / 100,
@@ -405,9 +405,9 @@ function maskPan(pan: string | null | undefined): string | null {
 }
 
 /** Resolves UTR (Unique Transaction Reference).
- *  Priority: settlement_utr (from vendor webhook) > payu_bank_ref_num > payu_mihpayid */
+ *  Priority: gateway_payout_utr (Cashfree bank UTR) > settlement_utr > payu_bank_ref_num > cf_order_id > payu_mihpayid */
 function resolveUtr(payment: any): string | null {
-  return payment.settlement_utr || payment.payu_bank_ref_num || payment.payu_mihpayid || null;
+  return payment.gateway_payout_utr || payment.settlement_utr || payment.payu_bank_ref_num || payment.cf_order_id || payment.payu_mihpayid || null;
 }
 
 /**
