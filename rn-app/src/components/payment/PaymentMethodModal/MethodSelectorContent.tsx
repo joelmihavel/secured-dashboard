@@ -293,6 +293,13 @@ export function MethodSelectorContent({
         </RNText>
       </View>
 
+      {/* Cashback pill */}
+      <View style={styles.cashbackPillContainer}>
+        <View style={styles.cashbackPill}>
+          <RNText style={styles.cashbackPillText}>You'll pay 1% less on rent</RNText>
+        </View>
+      </View>
+
       {/* Payment Method Rows — cascading reveal */}
       <View style={styles.methodsContainer}>
         {paymentMethods.map((method, index) => (
@@ -368,6 +375,26 @@ const styles = StyleSheet.create({
     color: colors.white,
   },
   headingAccent: {
+    color: FIGMA.headingAccent,
+  },
+
+  // Cashback pill
+  cashbackPillContainer: {
+    paddingHorizontal: 48,
+    marginTop: 12,
+    marginBottom: 4,
+  },
+  cashbackPill: {
+    alignSelf: 'flex-start',
+    backgroundColor: '#1A1A1A',
+    borderRadius: 100,
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+  },
+  cashbackPillText: {
+    fontFamily: 'PlusJakartaSans-Medium',
+    fontSize: 12,
+    lineHeight: 16,
     color: FIGMA.headingAccent,
   },
 
