@@ -871,12 +871,13 @@ serve(async (req: Request) => {
 
 /**
  * Calculates the due date for a rent payment.
- * Default: 5th of the rent month
+ * Uses tenancy rent_due_day, clamped to the month's last day.
  */
-function calculateDueDate(rentMonth: string): string {
+function calculateDueDate(rentMonth: string, rentDueDay: number = 5): string {
   const [year, month] = rentMonth.split("-").map(Number);
-  // Due date is 5th of the rent month
-  const dueDate = new Date(year, month - 1, 5);
+  const daysInMonth = new Date(year, month, 0).getDate();
+  const clampedDay = Math.min(rentDueDay, daysInMonth);
+  const dueDate = new Date(year, month - 1, clampedDay);
   return dueDate.toISOString().split("T")[0];
 }
 

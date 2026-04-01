@@ -37,8 +37,8 @@ function HeadlineSectionComponent({
       case 'due':
         return (
           <RNText style={styles.headline}>
-            <RNText style={styles.grayText}>Your rent is due{'\n'}in </RNText>
-            <RNText style={styles.accentText}>{daysUntilDue} days</RNText>
+            <RNText style={styles.grayText}>{daysUntilDue === 0 ? 'Your rent is due\n' : 'Your rent is due\nin '}</RNText>
+            <RNText style={styles.accentText}>{daysUntilDue === 0 ? 'today' : `${daysUntilDue} days`}</RNText>
           </RNText>
         );
       case 'overdue':
