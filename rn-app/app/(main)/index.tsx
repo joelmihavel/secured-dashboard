@@ -203,15 +203,18 @@ export default function HomeScreen() {
   // User's first name for greeting
   const userName = user?.first_name ?? 'there';
 
-  // Payment due calculations
+  // Payment due calculations — always use SERVER-provided values, never recalculate on client.
+  // Server (UTC) and client (IST) can disagree on the current month near month boundaries,
+  // causing wrong "due in X days" if calculated independently.
   const alreadyPaid = upcomingPayment?.already_paid ?? false;
-  // When already paid, compute days until next month's due date for "Next rent payment in X days"
+  // Use server's days_until_due for current month. When paid, derive next due from server's due_date.
   const daysUntilNextDue = useMemo(() => {
-    if (!alreadyPaid || !tenancy?.rent_due_day) return null;
-    const now = new Date();
-    const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, tenancy.rent_due_day);
-    return Math.ceil((nextMonth.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-  }, [alreadyPaid, tenancy?.rent_due_day]);
+    if (!alreadyPaid || !upcomingPayment?.due_date || !tenancy?.rent_due_day) return null;
+    // Server returns current month's due_date. Next due = add 1 month.
+    const currentDue = new Date(upcomingPayment.due_date + 'T00:00:00');
+    const nextDue = new Date(currentDue.getFullYear(), currentDue.getMonth() + 1, tenancy.rent_due_day);
+    return Math.ceil((nextDue.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+  }, [alreadyPaid, upcomingPayment?.due_date, tenancy?.rent_due_day]);
   const daysUntilDue = alreadyPaid ? null : (upcomingPayment?.days_until_due ?? 0);
   const isOverdue = alreadyPaid ? false : (upcomingPayment?.is_overdue ?? false);
   const isMissed = isOverdue && (daysUntilDue ?? 0) <= -30 && (daysUntilDue ?? 0) > -60; // Missed if overdue by more than 30 days
@@ -286,12 +289,13 @@ export default function HomeScreen() {
 
   const handleAddPayment = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    if (!isSetupComplete) {
+    // Don't check setup if data hasn't loaded — go to payment, it'll re-check
+    if (!isLoading && !isSetupComplete) {
       setShowVerificationSheet(true);
     } else {
       router.push('/(payment)/enter-rent' as never);
     }
-  }, [isSetupComplete, router]);
+  }, [isSetupComplete, isLoading, router]);
 
   // Generate carousel items based on state
   const carouselItems = useMemo((): CarouselCardItem[] => {
@@ -595,11 +599,12 @@ export default function HomeScreen() {
         }, []);
 
         const handlePayNow = useCallback(() => {
-          console.log('[PAY] handlePayNow fired, isSetupComplete:', isSetupComplete);
+          console.log('[PAY] handlePayNow fired, isSetupComplete:', isSetupComplete, 'isLoading:', isLoading);
           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
           // Reset verification-skipped flag each time user starts a new payment attempt
           setVerificationSkippedStore(false);
-          if (!isSetupComplete) {
+          // Don't check setup if dashboard data hasn't loaded — go to payment, it'll re-check
+          if (!isLoading && !isSetupComplete) {
             console.log('[PAY] Setup incomplete — showing verification sheet');
             setShowVerificationSheet(true);
           } else {
