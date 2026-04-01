@@ -21,17 +21,13 @@ import {
 // VALIDATION
 // ==============================================
 
-const CODE_REGEX_SHORT = /^[A-Z0-9]{4}$/;       // Standard: 2 letters + 2 digits
-const CODE_REGEX_VIP = /^[A-Z0-9]{3,20}$/;       // VIP: 3-20 alphanumeric chars
+const CODE_REGEX = /^[A-Z0-9]{4}$/;
 const MAX_ATTEMPTS_PER_MINUTE = 5;
 
 function validateCodeFormat(code: string): boolean {
-  // VIP codes are longer — accept any 3-20 char alphanumeric
-  if (CODE_REGEX_VIP.test(code)) return true;
+  if (!CODE_REGEX.test(code)) return false;
 
-  if (!CODE_REGEX_SHORT.test(code)) return false;
-
-  // Standard codes: must have exactly 2 letters and 2 digits
+  // Must have exactly 2 letters and 2 digits
   const letters = code.replace(/[^A-Z]/g, "").length;
   const digits = code.replace(/[^0-9]/g, "").length;
   return letters === 2 && digits === 2;
