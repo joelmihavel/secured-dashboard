@@ -293,13 +293,6 @@ export function MethodSelectorContent({
         </RNText>
       </View>
 
-      {/* Cashback pill */}
-      <View style={styles.cashbackPillContainer}>
-        <View style={styles.cashbackPill}>
-          <RNText style={styles.cashbackPillText}>You'll pay 1% less on rent</RNText>
-        </View>
-      </View>
-
       {/* Payment Method Rows — cascading reveal */}
       <View style={styles.methodsContainer}>
         {paymentMethods.map((method, index) => (
@@ -315,6 +308,13 @@ export function MethodSelectorContent({
             {index < paymentMethods.length - 1 && <SolidDivider />}
           </React.Fragment>
         ))}
+      </View>
+
+      {/* Cashback pill — below payment methods, center aligned */}
+      <View style={styles.cashbackPillContainer}>
+        <View style={styles.cashbackPill}>
+          <RNText style={styles.cashbackPillText}>You'll pay 1% less</RNText>
+        </View>
       </View>
 
       {/* CTA Section */}
@@ -378,24 +378,23 @@ const styles = StyleSheet.create({
     color: FIGMA.headingAccent,
   },
 
-  // Cashback pill
+  // Cashback pill — below methods, center aligned, orange transparent bg
   cashbackPillContainer: {
-    paddingHorizontal: 48,
-    marginTop: 12,
+    alignItems: 'center',
+    marginTop: 16,
     marginBottom: 4,
   },
   cashbackPill: {
-    alignSelf: 'flex-start',
-    backgroundColor: '#1A1A1A',
+    backgroundColor: '#FF9A6D',
     borderRadius: 100,
-    paddingHorizontal: 14,
-    paddingVertical: 6,
+    paddingHorizontal: 16,
+    paddingVertical: 7,
   },
   cashbackPillText: {
     fontFamily: 'PlusJakartaSans-Medium',
     fontSize: 12,
     lineHeight: 16,
-    color: FIGMA.headingAccent,
+    color: '#000000',
   },
 
   // Methods container — Figma: px 48, gap 16
