@@ -366,7 +366,7 @@ serve(async (req: Request) => {
     if (await isTestUser(userId, supabase)) {
       const demoTxnId = `DEMO-${crypto.randomUUID()}`;
       const demoRentPaise = validatedBody.amount_paise ?? tenancy.monthly_rent_paise;
-      const demoDueDate = calculateDueDate(rent_month);
+      const demoDueDate = calculateDueDate(rent_month, tenancy.rent_due_day);
 
       const { data: demoPayment, error: demoError } = await supabase
         .from("payments")
@@ -561,8 +561,8 @@ serve(async (req: Request) => {
       });
     }
 
-    // Calculate due date (5th of the rent month, or next month if already past)
-    const dueDate = calculateDueDate(rent_month);
+    // Calculate due date using tenancy's actual rent_due_day
+    const dueDate = calculateDueDate(rent_month, tenancy.rent_due_day);
 
     // Create payment record — rent_amount_paise stores the ORIGINAL rent, not the reduced amount
     const { data: payment, error: paymentError } = await supabase

@@ -267,7 +267,7 @@ serve(async (req: Request) => {
     if (await isTestUser(userId, supabase)) {
       const demoTxnId = `DEMO-CF-${crypto.randomUUID()}`;
       const demoRentPaise = validatedBody.amount_paise ?? tenancy.monthly_rent_paise;
-      const demoDueDate = calculateDueDate(rent_month);
+      const demoDueDate = calculateDueDate(rent_month, tenancy.rent_due_day);
 
       const { data: demoPayment, error: demoError } = await supabase
         .from("payments")
@@ -387,7 +387,7 @@ serve(async (req: Request) => {
     }
 
     const txnId = generateTransactionId("FLENT");
-    const dueDate = calculateDueDate(rent_month);
+    const dueDate = calculateDueDate(rent_month, tenancy.rent_due_day);
 
     // Create payment record
     const { data: payment, error: paymentError } = await supabase
@@ -550,9 +550,11 @@ serve(async (req: Request) => {
 // HELPERS
 // ==============================================
 
-function calculateDueDate(rentMonth: string): string {
+function calculateDueDate(rentMonth: string, rentDueDay: number = 5): string {
   const [year, month] = rentMonth.split("-").map(Number);
-  const dueDate = new Date(year, month - 1, 5);
+  const daysInMonth = new Date(year, month, 0).getDate();
+  const clampedDay = Math.min(rentDueDay, daysInMonth);
+  const dueDate = new Date(year, month - 1, clampedDay);
   return dueDate.toISOString().split("T")[0];
 }
 

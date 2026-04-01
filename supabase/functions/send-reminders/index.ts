@@ -90,9 +90,18 @@ serve(async (req: Request) => {
         if (paidUserIds.has(tenancy.user_id)) continue; // Already paid/processing
 
         const dueDay = tenancy.rent_due_day ?? 1;
-        const daysUntilDue = dueDay - todayDay;
+        // Compute actual days until due — handles month boundaries correctly.
+        // Simple subtraction (dueDay - todayDay) fails when due date is in next month
+        // (e.g., rent_due_day=1, today=March 29 → -28 instead of 3).
+        const daysInMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
+        const clampedDueDay = Math.min(dueDay, daysInMonth);
+        const dueThisMonth = new Date(today.getFullYear(), today.getMonth(), clampedDueDay);
+        const dueNextMonth = new Date(today.getFullYear(), today.getMonth() + 1, Math.min(dueDay, new Date(today.getFullYear(), today.getMonth() + 2, 0).getDate()));
+        const targetDue = dueThisMonth.getTime() >= today.getTime() ? dueThisMonth : dueNextMonth;
+        const daysUntilDue = Math.round((targetDue.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
         const amountStr = (tenancy.monthly_rent ?? 0).toLocaleString("en-IN");
-        const dueDate = `${dueDay} ${["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][today.getMonth()]}`;
+        const dueMonthIdx = targetDue.getMonth();
+        const dueDate = `${dueDay} ${["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][dueMonthIdx]}`;
 
         let notificationType: NotificationType | null = null;
 
