@@ -305,6 +305,7 @@ export async function updateVendor(
     account_number?: string;
     account_holder?: string;
     ifsc?: string;
+    pan?: string;
   },
 ): Promise<CashfreeVendor> {
   const body: Record<string, unknown> = {};
@@ -321,6 +322,14 @@ export async function updateVendor(
       account_number: updates.account_number,
       account_holder: updates.account_holder ?? updates.name,
       ifsc: updates.ifsc,
+    };
+  }
+
+  if (updates.pan) {
+    body.kyc_details = {
+      account_type: "Individual",
+      business_type: "Real Estate, Housing, Rentals",
+      pan: updates.pan,
     };
   }
 

@@ -25,6 +25,7 @@ import { decrypt } from "../_shared/crypto.ts";
 import {
   createVendor,
   getVendor,
+  updateVendor,
   CashfreeError,
 } from "../_shared/cashfree-easysplit.ts";
 
@@ -257,6 +258,25 @@ serve(async (req: Request) => {
             .eq("id", account.id);
 
           results.refreshed++;
+
+          if (vendor.status === "ACTION_REQUIRED" && account.pan_number_encrypted && account.pan_verified) {
+            // ACTION_REQUIRED usually means KYC docs missing — try updating with PAN
+            try {
+              const pan = (await decrypt(account.pan_number_encrypted)).trim().toUpperCase();
+              if (/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/.test(pan)) {
+                console.log(`[sync-vendors] Updating ACTION_REQUIRED vendor ${account.cf_beneficiary_id} with PAN KYC`);
+                const updated = await updateVendor(account.cf_beneficiary_id, { pan });
+                await supabase.from("bank_accounts").update({ cf_beneficiary_status: updated.status }).eq("id", account.id);
+                console.log(`[sync-vendors] Vendor ${account.cf_beneficiary_id} updated: ${updated.status}`);
+                if (!STUCK_STATUSES.has(updated.status)) {
+                  results.refreshed++;
+                  continue; // Skip the blocked count — vendor is now progressing
+                }
+              }
+            } catch (kycErr) {
+              console.error(`[sync-vendors] Failed to update vendor KYC:`, (kycErr as Error).message);
+            }
+          }
 
           if (STUCK_STATUSES.has(vendor.status)) {
             results.blocked++;
