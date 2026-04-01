@@ -317,7 +317,8 @@ export default function Index() {
               .select('bank_verified')
               .eq('user_id', userId)
               .maybeSingle();
-            correctTarget = !tenancyRow ? '/(waitlist)' : tenancyRow.bank_verified ? '/(main)' : '/(setup)/add-bank';
+            // Always route approved users to setup — setup flow handles the full checklist
+            correctTarget = !tenancyRow ? '/(waitlist)' : '/(setup)/add-bank';
           } else if (!correctTarget && (userStatus === 'waitlisted' || userStatus === 'agreement_confirmed')) {
             // Background validation for waitlisted — don't need reupload check here,
             // just default to waitlist (reupload redirect happens on the waitlist screen)
@@ -406,7 +407,9 @@ export default function Index() {
 
         // No tenancy = broken state (approved requires tenancy from extraction flow).
         // Route to waitlist as safety net — extraction-recovery cron will fix the state.
-        setTarget(!tenancyRow ? '/(waitlist)' : tenancyRow.bank_verified ? '/(main)' : '/(setup)/add-bank');
+        // Always route approved users to setup — even if bank is verified, they may
+        // still need to complete utility/landlord steps. The setup flow handles the checklist.
+        setTarget(!tenancyRow ? '/(waitlist)' : '/(setup)/add-bank');
       } else if (userStatus === 'waitlisted' || userStatus === 'agreement_confirmed') {
         // waitlisted — check if extraction requires reupload (invalid document / failed).
         // Without this check, the waitlist screen loads → detects requiresReupload →
