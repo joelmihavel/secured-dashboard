@@ -153,7 +153,10 @@ function computePaymentStamps(
   tenancy: { created_at: string; rent_due_day: number; cashback_cutoff_day?: number },
   payments: Array<{ payment_month: string; paid_at: string | null; status: string }>
 ): DashboardData['payment_stamps'] {
-  const now = new Date();
+  // Use IST for month determination — consistent with upcomingPayment calculation
+  const IST_OFFSET_MS = 5.5 * 60 * 60 * 1000;
+  const nowIST = new Date(Date.now() + IST_OFFSET_MS);
+  const now = new Date(); // UTC for cutoff comparisons (cutoffDate is already UTC-adjusted)
   // Payment tracking starts from when the tenancy was created (user joined platform),
   // NOT from agreement lease_start_date. Agreement dates are extraction metadata only.
   // cashback_cutoff_day (grace period) is used for on_time/late/missed classification;
@@ -187,7 +190,7 @@ function computePaymentStamps(
   }
 
   let cursor = new Date(startYear, startMonth, 1);
-  const endMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+  const endMonth = new Date(nowIST.getUTCFullYear(), nowIST.getUTCMonth(), 1);
 
   while (cursor <= endMonth) {
     summary.total_months++;
@@ -199,8 +202,8 @@ function computePaymentStamps(
     dueCutoff.setUTCHours(18, 29, 59, 999);
 
     const payment = paymentMap.get(monthKey);
-    const isCurrentMonth = cursor.getFullYear() === now.getFullYear() && cursor.getMonth() === now.getMonth();
-    const isFutureMonth = cursor > now;
+    const isCurrentMonth = cursor.getFullYear() === nowIST.getUTCFullYear() && cursor.getMonth() === nowIST.getUTCMonth();
+    const isFutureMonth = cursor > endMonth;
 
     // Grey (pending) is the zero state. Stamps only change when:
     // - Payment completed (success) → on_time or late

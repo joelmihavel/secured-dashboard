@@ -207,11 +207,18 @@ export default function HomeScreen() {
   const alreadyPaid = upcomingPayment?.already_paid ?? false;
   // When already paid, compute days until next month's due date for "Next rent payment in X days"
   const daysUntilNextDue = useMemo(() => {
-    if (!alreadyPaid || !tenancy?.rent_due_day) return null;
-    const now = new Date();
-    const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, tenancy.rent_due_day);
-    return Math.ceil((nextMonth.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-  }, [alreadyPaid, tenancy?.rent_due_day]);
+    if (!alreadyPaid || !upcomingPayment?.due_date || !tenancy?.rent_due_day) return null;
+    // Derive from server's due_date (IST-aware) — don't use client's local clock for month
+    const serverDue = new Date(upcomingPayment.due_date + 'T00:00:00');
+    const nextMonthIdx = serverDue.getMonth() + 1;
+    const nextYear = nextMonthIdx > 11 ? serverDue.getFullYear() + 1 : serverDue.getFullYear();
+    const nextMonth = nextMonthIdx > 11 ? 0 : nextMonthIdx;
+    // Clamp rent_due_day to next month's actual days (e.g., 31 in Feb → 28)
+    const daysInNextMonth = new Date(nextYear, nextMonth + 1, 0).getDate();
+    const clampedDay = Math.min(tenancy.rent_due_day, daysInNextMonth);
+    const nextDue = new Date(nextYear, nextMonth, clampedDay);
+    return Math.ceil((nextDue.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+  }, [alreadyPaid, upcomingPayment?.due_date, tenancy?.rent_due_day]);
   const daysUntilDue = alreadyPaid ? null : (upcomingPayment?.days_until_due ?? 0);
   const isOverdue = alreadyPaid ? false : (upcomingPayment?.is_overdue ?? false);
   const isMissed = isOverdue && (daysUntilDue ?? 0) <= -30 && (daysUntilDue ?? 0) > -60; // Missed if overdue by more than 30 days

@@ -113,7 +113,9 @@ export function EnterAmountContent({
     ? 'RENT PAID'
     : isOverdue
       ? 'OVERDUE'
-      : `DUE IN ${Math.abs(daysUntilDue)} DAYS`;
+      : daysUntilDue === 0
+        ? 'DUE TODAY'
+        : `DUE IN ${Math.abs(daysUntilDue)} DAYS`;
 
   // Validation
   const validation = useMemo((): ValidationBubble | null => {
