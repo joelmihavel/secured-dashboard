@@ -359,6 +359,8 @@ export interface ReceiptData {
     gatewayId: string | null;
     amount: number;
     pgFee: number;
+    cashback_applied: number;
+    cashback_earned: number;
     paymentMethod: string | null;
     status: string;
     rentMonth: string;
@@ -468,6 +470,8 @@ function mapRawReceiptData(raw: RawReceiptData): ReceiptData {
       gatewayId: raw.payment.payment_gateway_id,
       amount: raw.payment.amount,
       pgFee: raw.payment.pg_fee,
+      cashback_applied: raw.payment.cashback_applied ?? 0,
+      cashback_earned: raw.payment.cashback_earned ?? 0,
       paymentMethod: raw.payment.payment_method,
       status: raw.payment.status,
       rentMonth: raw.payment.rent_month,

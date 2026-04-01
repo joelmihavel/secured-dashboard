@@ -91,7 +91,7 @@ serve(async (req: Request) => {
         cf_beneficiary_status,
         pan_number_encrypted,
         pan_verified,
-        users!inner(phone, email)
+        users!inner(phone, email, first_name)
       `)
       .eq("party_type", "landlord")
       .eq("verified", true)
@@ -112,8 +112,8 @@ serve(async (req: Request) => {
     results.checked = accounts.length;
 
     for (const account of accounts) {
-      const user = account.users as { phone: string; email?: string } | null;
-      console.log(`[sync-vendors] Processing bank_account ${account.id} — cf_beneficiary_id: ${account.cf_beneficiary_id ?? "null"}, phone set: ${!!user?.phone}, email set: ${!!user?.email}, pan_encrypted: ${!!account.pan_number_encrypted}, pan_verified: ${account.pan_verified}`);
+      const user = account.users as { phone: string; email?: string; first_name?: string } | null;
+      console.log(`[sync-vendors] Processing bank_account ${account.id} — tenant: ${user?.first_name ?? "?"}, landlord: ${account.account_holder_name}, cf_beneficiary_id: ${account.cf_beneficiary_id ?? "null"}, pan_encrypted: ${!!account.pan_number_encrypted}, pan_verified: ${account.pan_verified}`);
 
       try {
         // ── NEW VENDOR: cf_beneficiary_id not yet set ─────────────────────
@@ -149,7 +149,11 @@ serve(async (req: Request) => {
             }
           }
 
-          const vendorId = `VENDOR${account.id.replace(/-/g, "")}`;
+          // Vendor ID: FL_{TENANT_NAME}_{first8_hex} — short, readable on Cashfree dashboard
+          // Tenant name = user who added this landlord bank (the renter)
+          const tenantTag = (user?.first_name ?? "X").toUpperCase().replace(/[^A-Z]/g, "").slice(0, 10);
+          const shortHex = account.id.replace(/-/g, "").slice(0, 8);
+          const vendorId = `FL_${tenantTag}_${shortHex}`;
           const phone = (user?.phone ?? "").replace(/^\+91/, "");
           const email = user?.email ?? `${account.id}@flent.app`;
 

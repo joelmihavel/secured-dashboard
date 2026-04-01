@@ -153,7 +153,7 @@ serve(async (req: Request) => {
       const result = await supabase
         .from("payments")
         .select(`
-          id, payu_txn_id, payu_mihpayid, payu_bank_ref_num, settlement_utr, gateway_payout_utr,
+          id, payu_txn_id, payu_mihpayid, payu_bank_ref_num, settlement_utr, gateway_payout_utr, landlord_payout_utr, gateway_settlement_utr,
           payment_gateway, gateway_payment_id, cf_order_id, payment_method_details,
           rent_amount_paise, pg_fee_paise, convenience_fee_paise, fee_billing_model,
           cashback_applied_paise, cashback_earned_paise,
@@ -165,7 +165,7 @@ serve(async (req: Request) => {
               first_name, last_name, phone, pan_number
             ),
             bank_accounts (
-              account_number_masked, party_type
+              account_number_masked, account_holder_name, party_type
             )
           )
         `)
@@ -214,6 +214,9 @@ serve(async (req: Request) => {
     );
     const landlordBankMasked = landlordBankAccounts.length > 0
       ? landlordBankAccounts[0].account_number_masked
+      : null;
+    const landlordBankHolderName = landlordBankAccounts.length > 0
+      ? landlordBankAccounts[0].account_holder_name
       : null;
 
     // Calculate tax breakdown
@@ -277,7 +280,9 @@ serve(async (req: Request) => {
       },
 
       landlord: {
-        name: tenancy?.landlord_name ?? "N/A",
+        name: (tenancy?.landlord_name && tenancy.landlord_name !== "Landlord")
+          ? tenancy.landlord_name
+          : landlordBankHolderName ?? "N/A",
         bank_account_masked: landlordBankMasked,
         pan_masked: tenancy?.landlord_pan_masked ?? null,
       },
@@ -404,10 +409,17 @@ function maskPan(pan: string | null | undefined): string | null {
   return pan.slice(0, 5) + '****' + pan.slice(-1);
 }
 
-/** Resolves UTR (Unique Transaction Reference).
- *  Priority: gateway_payout_utr (Cashfree bank UTR) > settlement_utr > payu_bank_ref_num > cf_order_id > payu_mihpayid */
+/** Resolves UTR (Unique Transaction Reference) — real bank UTRs only.
+ *  Internal IDs (cf_order_id, payu_mihpayid, gateway_payment_id) are NOT bank UTRs
+ *  and must never be shown on external-facing receipts.
+ *  Returns null if settlement hasn't completed yet → UI shows "Pending". */
 function resolveUtr(payment: any): string | null {
-  return payment.gateway_payout_utr || payment.settlement_utr || payment.payu_bank_ref_num || payment.cf_order_id || payment.payu_mihpayid || null;
+  return payment.gateway_payout_utr
+    || payment.landlord_payout_utr
+    || payment.gateway_settlement_utr
+    || payment.settlement_utr
+    || payment.payu_bank_ref_num
+    || null;
 }
 
 /**

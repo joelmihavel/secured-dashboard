@@ -1,12 +1,10 @@
 /**
  * receiptHtml.ts
  *
- * Generates a complete HTML string for a rent payment receipt PDF.
- * Designed for use with expo-print (WebKit renderer on iOS/Android).
- *
- * Design language: Dark theme matching Flent Secured app design system.
- * Background #131313, cards #202020, brand accent #FF9A6D.
- * Optimised for A4/Letter PDF output.
+ * Compact receipt PDF for iPhone + WhatsApp sharing.
+ * Page: 390x680 (phone-card ratio) — fills mobile screen, sharp WA thumbnail.
+ * Design: App design system (#131313 bg, #202020 cards, #FF9A6D accent).
+ * Content: Rent amount only, no cashback.
  */
 
 // ---------------------------------------------------------------------------
@@ -48,528 +46,166 @@ export interface ReceiptHtmlData {
 // Helpers
 // ---------------------------------------------------------------------------
 
-function formatIndianAmount(value: number): string {
-  return value.toLocaleString('en-IN', {
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 2,
-  });
+function formatINR(value: number): string {
+  return value.toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
 }
 
-function formatDate(isoString: string): string {
-  const date = new Date(isoString);
-  const months = [
-    'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
-  ];
-  return `${date.getDate()} ${months[date.getMonth()]} ${date.getFullYear()}`;
+function fmtDate(iso: string): string {
+  const d = new Date(iso);
+  const m = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  return `${d.getDate()} ${m[d.getMonth()]} ${d.getFullYear()}`;
 }
 
-function formatTime(isoString: string): string {
-  const date = new Date(isoString);
-  const h = date.getHours();
-  const m = String(date.getMinutes()).padStart(2, '0');
-  const ampm = h >= 12 ? 'PM' : 'AM';
-  const h12 = h % 12 || 12;
-  return `${h12}:${m} ${ampm}`;
+function fmtTime(iso: string): string {
+  const d = new Date(iso);
+  const h = d.getHours(), mm = String(d.getMinutes()).padStart(2,'0');
+  return `${h % 12 || 12}:${mm} ${h >= 12 ? 'PM' : 'AM'}`;
 }
 
-function esc(value: string | null | undefined): string {
-  if (value == null) return '';
-  return value
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
+function esc(v: string | null | undefined): string {
+  if (v == null) return '';
+  return v.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
 // ---------------------------------------------------------------------------
-// Design tokens (inline for PDF — no external deps)
+// Design tokens (matches app: colors.black, colors.brand)
 // ---------------------------------------------------------------------------
 
-const C = {
-  bg: '#0E0E0E',
-  cardBg: '#181818',
-  card: '#1E1E1E',
-  cardBorder: '#2A2A2A',
-  cardBorderLight: '#333333',
-  accent: '#FF9A6D',
-  accentLight: '#FFAE8A',
-  accentDim: 'rgba(255,154,109,0.12)',
-  accentDimBorder: 'rgba(255,154,109,0.25)',
-  textPrimary: '#E0E0E0',
-  textSecondary: '#A9A9A9',
-  textMuted: '#777777',
-  textDim: '#555555',
-  divider: '#272727',
-  successGreen: '#34D399',
-  successBg: 'rgba(52,211,153,0.10)',
-  successBorder: 'rgba(52,211,153,0.25)',
-  errorRed: '#F87171',
-  errorBg: 'rgba(248,113,113,0.10)',
-  white: '#FFFFFF',
-  pillBg: '#2A2A2A',
+const T = {
+  bg:       '#131313',  // colors.black[700] — app background
+  card:     '#202020',  // colors.black[500] — card background
+  border:   '#2A2A2A',  // card borders
+  accent:   '#FF9A6D',  // colors.brand[500]
+  white:    '#FFFFFF',
+  text1:    '#DDDDDD',  // primary text
+  text2:    '#A9A9A9',  // secondary text
+  text3:    '#878787',  // labels
+  muted:    '#555555',  // very dim text
+  green:    '#34D399',  // success
+  red:      '#F87171',  // error
 } as const;
 
 // ---------------------------------------------------------------------------
 // Builder
 // ---------------------------------------------------------------------------
 
-export function buildReceiptHtml(receipt: ReceiptHtmlData): string {
-  const { payment, tenant, property, landlord, agreement } = receipt;
-
-  const transactionRef = payment.utr
-    ? payment.utr
-    : payment.transactionId
-      ? payment.transactionId
-      : 'N/A';
-
-  const propertyLine = property.city
-    ? `${esc(property.address)}, ${esc(property.city)}`
-    : esc(property.address);
-
-  const methodDisplay = payment.paymentMethod
-    ? payment.paymentMethod.toUpperCase()
-    : 'N/A';
-
-  const timelinessBadge =
-    payment.timeliness === 'on_time'
-      ? `<span class="badge badge-success">ON TIME</span>`
-      : payment.timeliness === 'late'
-        ? `<span class="badge badge-late">LATE</span>`
-        : '';
-
-  const totalPaid = payment.amount + payment.pgFee;
+export function buildReceiptHtml(r: ReceiptHtmlData): string {
+  const { payment: p, tenant, property, landlord } = r;
+  const ref = p.utr ?? 'Pending';
+  const method = p.paymentMethod ? p.paymentMethod.toUpperCase() : '—';
+  const addr = property.city ? `${esc(property.address)}, ${esc(property.city)}` : esc(property.address);
 
   return `<!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Rent Receipt - ${esc(receipt.receiptNumber)}</title>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=390"/>
 <style>
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-  @page { size: 390px 844px; margin: 0; }
-  html, body {
-    width: 390px;
-    min-height: 844px;
-    background: ${C.bg};
-    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-    font-size: 13px;
-    line-height: 1.5;
-    color: ${C.textPrimary};
-    padding: 40px 32px;
-    -webkit-print-color-adjust: exact;
-    print-color-adjust: exact;
-  }
-  .container {
-    width: 100%;
-  }
+*{margin:0;padding:0;box-sizing:border-box}
+@page{size:390px 680px;margin:0}
+html,body{width:390px;height:680px;background:${T.bg};font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',sans-serif;color:${T.text1};-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.p{padding:28px 24px 20px;height:100%;display:flex;flex-direction:column}
 
-  /* Brand header */
-  .header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 28px;
-  }
-  .brand {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
-  .brand-name {
-    font-size: 20px;
-    font-weight: 700;
-    color: ${C.white};
-    letter-spacing: -0.3px;
-  }
-  .brand-name span { color: ${C.accent}; }
-  .brand-sub {
-    font-size: 9px;
-    color: ${C.textMuted};
-    text-transform: uppercase;
-    letter-spacing: 2px;
-    margin-top: 2px;
-  }
-  .receipt-meta {
-    text-align: right;
-  }
-  .receipt-meta .label {
-    font-size: 9px;
-    color: ${C.textMuted};
-    text-transform: uppercase;
-    letter-spacing: 0.8px;
-  }
-  .receipt-meta .value {
-    font-size: 12px;
-    font-weight: 600;
-    color: ${C.textPrimary};
-    font-variant-numeric: tabular-nums;
-    margin-top: 1px;
-  }
-  .receipt-meta .date {
-    font-size: 11px;
-    color: ${C.textSecondary};
-    margin-top: 2px;
-  }
+.top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:24px}
+.brand-row{display:flex;align-items:center;gap:8px}
+.brand{font-size:18px;font-weight:700;color:${T.accent};letter-spacing:-0.3px}
+.brand-sub{font-size:8px;color:${T.text3};text-transform:uppercase;letter-spacing:1.5px;margin-top:1px}
+.meta{text-align:right}
+.meta-l{font-size:8px;color:${T.text3};text-transform:uppercase;letter-spacing:0.8px}
+.meta-v{font-size:11px;font-weight:600;color:${T.text2};margin-top:1px}
+.meta-d{font-size:10px;color:${T.text3};margin-top:1px}
 
-  /* Main card */
-  .main-card {
-    background: ${C.card};
-    border: 1px solid ${C.cardBorder};
-    border-radius: 16px;
-    overflow: hidden;
-  }
-  .accent-bar {
-    height: 3px;
-    background: linear-gradient(90deg, ${C.accent} 0%, ${C.accentLight} 50%, ${C.accent} 100%);
-  }
-  .card-body {
-    padding: 28px 28px 24px;
-  }
+.hero{background:${T.card};border:1px solid ${T.border};border-radius:14px;padding:22px 20px;margin-bottom:20px;display:flex;justify-content:space-between;align-items:center}
+.amt-l{font-size:9px;color:${T.text3};text-transform:uppercase;letter-spacing:1px;margin-bottom:4px}
+.amt{font-size:38px;font-weight:700;color:${T.white};line-height:1;letter-spacing:-1px}
+.amt .c{font-size:18px;color:${T.text3};font-weight:400;margin-right:2px}
+.amt-s{font-size:10px;color:${T.text3};margin-top:5px}
+.stamp{border:2px solid ${T.green};border-radius:8px;padding:7px 16px;transform:rotate(-5deg);-webkit-transform:rotate(-5deg)}
+.stamp span{font-size:18px;font-weight:800;color:${T.green};letter-spacing:4px}
+.bdg{display:inline-block;font-size:8px;font-weight:700;padding:2px 7px;border-radius:4px;letter-spacing:0.5px;margin-top:6px}
+.bdg-ok{background:rgba(52,211,153,.12);color:${T.green};border:1px solid rgba(52,211,153,.3)}
+.bdg-late{background:rgba(248,113,113,.12);color:${T.red};border:1px solid rgba(248,113,113,.3)}
 
-  /* Hero amount section */
-  .hero {
-    background: ${C.bg};
-    border: 1px solid ${C.cardBorder};
-    border-radius: 12px;
-    padding: 24px 28px;
-    margin-bottom: 28px;
-  }
-  .hero-inner {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-  }
-  .amount-label {
-    font-size: 10px;
-    color: ${C.textMuted};
-    text-transform: uppercase;
-    letter-spacing: 1.2px;
-    margin-bottom: 8px;
-  }
-  .amount-value {
-    font-size: 38px;
-    font-weight: 700;
-    color: ${C.white};
-    line-height: 1;
-    font-variant-numeric: tabular-nums;
-    letter-spacing: -0.5px;
-  }
-  .amount-value .currency {
-    font-size: 22px;
-    font-weight: 400;
-    color: ${C.textMuted};
-    vertical-align: top;
-    position: relative;
-    top: 4px;
-    margin-right: 2px;
-  }
-  .amount-time {
-    font-size: 11px;
-    color: ${C.textMuted};
-    margin-top: 8px;
-  }
-  .paid-stamp {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    border: 2.5px solid ${C.successGreen};
-    border-radius: 10px;
-    padding: 10px 22px;
-    transform: rotate(-4deg);
-    -webkit-transform: rotate(-4deg);
-  }
-  .paid-stamp span {
-    font-size: 22px;
-    font-weight: 800;
-    color: ${C.successGreen};
-    letter-spacing: 5px;
-    line-height: 1;
-  }
-  .badge {
-    display: inline-block;
-    font-size: 9px;
-    font-weight: 700;
-    padding: 3px 10px;
-    border-radius: 6px;
-    letter-spacing: 0.8px;
-    margin-top: 8px;
-  }
-  .badge-success {
-    background: ${C.successBg};
-    color: ${C.successGreen};
-    border: 1px solid ${C.successBorder};
-  }
-  .badge-late {
-    background: ${C.errorBg};
-    color: ${C.errorRed};
-    border: 1px solid rgba(248,113,113,0.25);
-  }
+.sec{flex:1}
+.rows{background:${T.card};border:1px solid ${T.border};border-radius:12px;padding:4px 16px;margin-bottom:14px}
+.row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid ${T.border}}
+.row:last-child{border-bottom:none}
+.row-l{font-size:12px;color:${T.text3}}
+.row-v{font-size:12px;color:${T.text1};font-weight:500;text-align:right;max-width:200px}
+.row-v.m{font-family:'SF Mono',Menlo,monospace;font-size:11px;color:${T.text2};word-break:break-all}
+.pill{display:inline-block;background:rgba(255,154,109,.1);color:${T.accent};border:1px solid rgba(255,154,109,.25);padding:2px 10px;border-radius:5px;font-size:10px;font-weight:700;letter-spacing:0.3px}
 
-  /* Section headers */
-  .section-title {
-    font-size: 10px;
-    font-weight: 700;
-    color: ${C.accent};
-    text-transform: uppercase;
-    letter-spacing: 1.8px;
-    margin-bottom: 14px;
-    padding-bottom: 8px;
-    border-bottom: 1px solid ${C.divider};
-  }
+.pts{display:flex;gap:10px;margin-bottom:14px}
+.pt{flex:1;background:${T.card};border:1px solid ${T.border};border-radius:10px;padding:12px 14px}
+.pt-l{font-size:8px;color:${T.text3};text-transform:uppercase;letter-spacing:1px;margin-bottom:4px}
+.pt-n{font-size:13px;font-weight:600;color:${T.text1};margin-bottom:2px}
+.pt-d{font-size:10px;color:${T.text3};line-height:1.4}
+.pan{display:inline-block;background:rgba(255,154,109,.08);border:1px solid rgba(255,154,109,.2);color:#E07A4E;font-size:9px;font-weight:600;padding:1px 6px;border-radius:3px;margin-top:4px;font-family:'SF Mono',Menlo,monospace}
 
-  /* Detail rows */
-  .detail-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 10px 0;
-    border-bottom: 1px solid ${C.divider};
-  }
-  .detail-row:last-child { border-bottom: none; }
-  .detail-row .label {
-    font-size: 13px;
-    color: ${C.textMuted};
-  }
-  .detail-row .value {
-    font-size: 13px;
-    color: ${C.textPrimary};
-    font-weight: 500;
-    text-align: right;
-  }
-  .detail-row .value.bold {
-    font-size: 14px;
-    color: ${C.white};
-    font-weight: 700;
-  }
-  .detail-row .value.mono {
-    font-size: 12px;
-    color: ${C.textSecondary};
-    font-family: 'SF Mono', SFMono-Regular, Menlo, Consolas, monospace;
-    word-break: break-all;
-    max-width: 240px;
-  }
-  .method-pill {
-    display: inline-block;
-    background: ${C.accentDim};
-    color: ${C.accent};
-    border: 1px solid ${C.accentDimBorder};
-    padding: 3px 14px;
-    border-radius: 6px;
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: 0.5px;
-  }
+.prop{background:${T.card};border:1px solid ${T.border};border-radius:10px;padding:10px 14px;margin-bottom:14px}
+.prop-l{font-size:8px;color:${T.text3};text-transform:uppercase;letter-spacing:1px;margin-bottom:2px}
+.prop-v{font-size:11px;color:${T.text2};line-height:1.4}
 
-  /* Party cards */
-  .parties-grid {
-    display: flex;
-    gap: 12px;
-    margin-top: 14px;
-  }
-  .party-card {
-    flex: 1;
-    background: ${C.bg};
-    border: 1px solid ${C.cardBorder};
-    border-radius: 10px;
-    padding: 16px 18px;
-  }
-  .party-label {
-    font-size: 9px;
-    color: ${C.textMuted};
-    text-transform: uppercase;
-    letter-spacing: 1.2px;
-    margin-bottom: 8px;
-  }
-  .party-name {
-    font-size: 15px;
-    font-weight: 600;
-    color: ${C.white};
-    margin-bottom: 4px;
-  }
-  .party-detail {
-    font-size: 11px;
-    color: ${C.textSecondary};
-    line-height: 1.5;
-  }
-  .pan-tag {
-    display: inline-block;
-    background: ${C.accentDim};
-    border: 1px solid ${C.accentDimBorder};
-    color: ${C.accent};
-    font-size: 10px;
-    font-weight: 600;
-    padding: 2px 8px;
-    border-radius: 4px;
-    margin-top: 6px;
-    font-family: 'SF Mono', SFMono-Regular, Menlo, Consolas, monospace;
-    letter-spacing: 0.5px;
-  }
-
-  /* Spacer */
-  .spacer { height: 24px; }
-  .spacer-sm { height: 16px; }
-
-  /* Footer */
-  .footer {
-    padding: 18px 28px;
-    border-top: 1px solid ${C.divider};
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-  }
-  .footer-brand {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-  .footer-brand-text {
-    font-size: 13px;
-    font-weight: 600;
-    color: ${C.textSecondary};
-  }
-  .footer-brand-text span { color: ${C.accent}; }
-  .footer-note {
-    font-size: 9px;
-    color: ${C.textDim};
-    text-align: right;
-    max-width: 220px;
-    line-height: 1.4;
-  }
+.foot{display:flex;justify-content:space-between;align-items:center;padding-top:10px;border-top:1px solid ${T.border}}
+.foot-b{font-size:11px;font-weight:600;color:${T.accent}}
+.foot-n{font-size:8px;color:${T.muted};text-align:right;line-height:1.3}
 </style>
 </head>
 <body>
+<div class="p">
 
-<div class="container">
-
-  <!-- HEADER -->
-  <div class="header">
-    <div class="brand">
-      <svg width="24" height="28" viewBox="0 0 34 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path d="M12.4751 40H3.72631V21.2062H0V16.0217H3.72631C1.65252 7.98576 7.50667 3.16855 10.693 1.76445C20.025 -3.16081 29.7028 3.38457 33.3751 7.27293V40H24.6263V11.6473C19.5714 3.35216 13.2312 5.27474 10.693 7.27293C7.45266 12.8463 12.0431 15.4277 14.7433 16.0217H19.2798V21.2062H12.4751V40Z" fill="${C.accent}"/>
-      </svg>
-      <div>
-        <div class="brand-name"><span>Flent</span> Secured</div>
-        <div class="brand-sub">Rent Receipt</div>
-      </div>
+<div class="top">
+  <div>
+    <div class="brand-row">
+      <svg width="20" height="24" viewBox="0 0 34 40" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12.4751 40H3.72631V21.2062H0V16.0217H3.72631C1.65252 7.98576 7.50667 3.16855 10.693 1.76445C20.025 -3.16081 29.7028 3.38457 33.3751 7.27293V40H24.6263V11.6473C19.5714 3.35216 13.2312 5.27474 10.693 7.27293C7.45266 12.8463 12.0431 15.4277 14.7433 16.0217H19.2798V21.2062H12.4751V40Z" fill="${T.accent}"/></svg>
+      <div class="brand">Secured</div>
     </div>
-    <div class="receipt-meta">
-      <div class="label">Receipt No.</div>
-      <div class="value">${esc(receipt.receiptNumber)}</div>
-      <div class="date">${esc(formatDate(payment.paidAt))}</div>
-    </div>
+    <div class="brand-sub">by Flent &middot; Rent Receipt</div>
   </div>
-
-  <!-- MAIN CARD -->
-  <div class="main-card">
-    <div class="accent-bar"></div>
-    <div class="card-body">
-
-      <!-- HERO: Amount + PAID Stamp -->
-      <div class="hero">
-        <div class="hero-inner">
-          <div>
-            <div class="amount-label">Amount Paid</div>
-            <div class="amount-value">
-              <span class="currency">&#8377;</span>${esc(formatIndianAmount(payment.amount))}
-            </div>
-            <div class="amount-time">${esc(formatTime(payment.paidAt))}</div>
-          </div>
-          <div style="text-align:center;">
-            <div class="paid-stamp"><span>PAID</span></div>
-            ${timelinessBadge ? `<div style="text-align:center;">${timelinessBadge}</div>` : ''}
-          </div>
-        </div>
-      </div>
-
-      <!-- PAYMENT DETAILS -->
-      <div class="section-title">Payment Details</div>
-      <div>
-        <div class="detail-row">
-          <div class="label">Rent Month</div>
-          <div class="value" style="font-weight:600;">${esc(payment.rentMonthDisplay)}</div>
-        </div>
-        <div class="detail-row">
-          <div class="label">Rent Amount</div>
-          <div class="value">&#8377;${esc(formatIndianAmount(payment.amount))}</div>
-        </div>
-        ${payment.pgFee > 0 ? `
-        <div class="detail-row">
-          <div class="label">Convenience Fee</div>
-          <div class="value">&#8377;${esc(formatIndianAmount(payment.pgFee))}</div>
-        </div>
-        <div class="detail-row">
-          <div class="label" style="font-weight:600;">Total Paid</div>
-          <div class="value bold">&#8377;${esc(formatIndianAmount(totalPaid))}</div>
-        </div>` : ''}
-        <div class="detail-row">
-          <div class="label">Payment Method</div>
-          <div class="value"><span class="method-pill">${esc(methodDisplay)}</span></div>
-        </div>
-        <div class="detail-row" style="border-bottom:none;">
-          <div class="label">Transaction Ref</div>
-          <div class="value mono">${esc(transactionRef)}</div>
-        </div>
-      </div>
-
-      <div class="spacer"></div>
-
-      <!-- PARTIES -->
-      <div class="section-title">Parties</div>
-      <div class="parties-grid">
-        <div class="party-card">
-          <div class="party-label">Tenant</div>
-          <div class="party-name">${esc(tenant.name) || '&mdash;'}</div>
-          ${tenant.phone ? `<div class="party-detail">${esc(tenant.phone)}</div>` : ''}
-          ${tenant.email ? `<div class="party-detail" style="word-break:break-all;">${esc(tenant.email)}</div>` : ''}
-          ${tenant.panMasked ? `<div class="pan-tag">PAN ${esc(tenant.panMasked)}</div>` : ''}
-        </div>
-        <div class="party-card">
-          <div class="party-label">Landlord</div>
-          <div class="party-name">${esc(landlord.name)}</div>
-          ${landlord.panMasked ? `<div class="pan-tag">PAN ${esc(landlord.panMasked)}</div>` : ''}
-        </div>
-      </div>
-
-      <div class="spacer"></div>
-
-      <!-- PROPERTY & AGREEMENT -->
-      ${propertyLine || agreement.certId ? `
-      <div class="section-title">Property</div>
-      <div>
-        ${propertyLine ? `
-        <div class="detail-row">
-          <div class="label">Address</div>
-          <div class="value">${propertyLine}</div>
-        </div>` : ''}
-        ${agreement.certId ? `
-        <div class="detail-row" style="border-bottom:none;">
-          <div class="label">Agreement ID</div>
-          <div class="value mono">${esc(agreement.certId)}</div>
-        </div>` : ''}
-      </div>
-      <div class="spacer-sm"></div>
-      ` : ''}
-
-    </div>
-
-    <!-- FOOTER -->
-    <div class="footer">
-      <div class="footer-brand">
-        <svg width="14" height="16" viewBox="0 0 34 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M12.4751 40H3.72631V21.2062H0V16.0217H3.72631C1.65252 7.98576 7.50667 3.16855 10.693 1.76445C20.025 -3.16081 29.7028 3.38457 33.3751 7.27293V40H24.6263V11.6473C19.5714 3.35216 13.2312 5.27474 10.693 7.27293C7.45266 12.8463 12.0431 15.4277 14.7433 16.0217H19.2798V21.2062H12.4751V40Z" fill="${C.accent}"/>
-        </svg>
-        <div class="footer-brand-text"><span>Flent</span> Secured</div>
-      </div>
-      <div class="footer-note">
-        Computer-generated receipt.<br/>Does not require a signature.
-      </div>
-    </div>
-  </div>
-
+  <div class="meta"><div class="meta-l">Receipt</div><div class="meta-v">${esc(r.receiptNumber)}</div><div class="meta-d">${esc(fmtDate(p.paidAt))}</div></div>
 </div>
 
+<div class="hero">
+  <div>
+    <div class="amt-l">Rent Paid</div>
+    <div class="amt"><span class="c">&#8377;</span>${esc(formatINR(p.amount))}</div>
+    <div class="amt-s">${esc(fmtDate(p.paidAt))} &middot; ${esc(fmtTime(p.paidAt))}</div>
+    ${p.timeliness === 'on_time' ? '<div class="bdg bdg-ok">ON TIME</div>' : p.timeliness === 'late' ? '<div class="bdg bdg-late">LATE</div>' : ''}
+  </div>
+  <div class="stamp"><span>PAID</span></div>
+</div>
+
+<div class="sec">
+  <div class="rows">
+    <div class="row"><div class="row-l">Rent Month</div><div class="row-v" style="font-weight:600">${esc(p.rentMonthDisplay)}</div></div>
+    <div class="row"><div class="row-l">Amount</div><div class="row-v">&#8377; ${esc(formatINR(p.amount))}</div></div>
+    <div class="row"><div class="row-l">Method</div><div class="row-v"><span class="pill">${esc(method)}</span></div></div>
+    <div class="row"><div class="row-l">Transaction Ref</div><div class="row-v m">${esc(ref)}</div></div>
+  </div>
+
+  <div class="pts">
+    <div class="pt">
+      <div class="pt-l">Tenant</div>
+      <div class="pt-n">${esc(tenant.name) || '—'}</div>
+      ${tenant.phone ? `<div class="pt-d">${esc(tenant.phone)}</div>` : ''}
+      ${tenant.panMasked ? `<div class="pan">PAN ${esc(tenant.panMasked.replace(/\*/g, ''))}</div>` : ''}
+    </div>
+    <div class="pt">
+      <div class="pt-l">Landlord</div>
+      <div class="pt-n">${esc(landlord.name)}</div>
+      ${landlord.panMasked ? `<div class="pan">PAN ${esc(landlord.panMasked.replace(/\*/g, ''))}</div>` : ''}
+    </div>
+  </div>
+
+  ${addr ? `<div class="prop"><div class="prop-l">Property</div><div class="prop-v">${addr}</div></div>` : ''}
+</div>
+
+<div class="foot">
+  <div class="foot-b">Secured by Flent</div>
+  <div class="foot-n">Computer-generated receipt<br/>No signature required</div>
+</div>
+
+</div>
 </body>
 </html>`;
 }
@@ -594,11 +230,7 @@ export function buildFallbackReceiptData(params: FallbackReceiptParams): Receipt
     : `FR-${Date.now().toString().slice(-8)}`;
 
   const now = new Date();
-  const months = [
-    'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
-  ];
-  const rentMonth = `${months[now.getMonth()]} ${now.getFullYear()}`;
+  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
   return {
     receiptNumber,
@@ -607,27 +239,14 @@ export function buildFallbackReceiptData(params: FallbackReceiptParams): Receipt
       pgFee: 0,
       paymentMethod: params.method ?? null,
       paidAt: now.toISOString(),
-      rentMonthDisplay: rentMonth,
+      rentMonthDisplay: `${months[now.getMonth()]} ${now.getFullYear()}`,
       utr: null,
       timeliness: null,
       transactionId: params.transactionId ?? null,
     },
-    tenant: {
-      name: '',
-      phone: null,
-      email: null,
-      panMasked: null,
-    },
-    property: {
-      address: '',
-      city: null,
-    },
-    landlord: {
-      name: params.landlordName ?? '',
-      panMasked: null,
-    },
-    agreement: {
-      certId: params.agreementId ?? null,
-    },
+    tenant: { name: '', phone: null, email: null, panMasked: null },
+    property: { address: '', city: null },
+    landlord: { name: params.landlordName ?? '', panMasked: null },
+    agreement: { certId: params.agreementId ?? null },
   };
 }

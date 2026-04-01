@@ -269,14 +269,14 @@ export default function PaymentSuccessScreen() {
   const displayData = React.useMemo(() => {
     if (receiptData) {
       const { payment: rp, landlord } = receiptData;
-      const cbAmount = Number(cashback) || 0;
+      const cbAmount = rp.cashback_applied ?? Number(cashback) || 0;
       return {
         amount: rp.amount.toLocaleString('en-IN'),
         cashbackApplied: cbAmount.toLocaleString('en-IN'),
         date: formatDisplayDate(rp.paidAt),
         method: rp.paymentMethod ?? method.toUpperCase(),
         landlordName: landlord.name,
-        transactionId: rp.transactionId || transactionId,
+        utr: rp.utr || 'Pending',
       };
     }
     const formatted = Number(amount) ? Number(amount).toLocaleString('en-IN') : amount;
@@ -287,7 +287,7 @@ export default function PaymentSuccessScreen() {
       date: formatDisplayDate(new Date().toISOString()),
       method: method ? method.toUpperCase() : '\u2014',
       landlordName: params.landlordName || 'N/A',
-      transactionId: transactionId || 'Pending',
+      utr: 'Pending',
     };
   }, [receiptData, amount, cashback, method, transactionId, params.landlordName]);
 
@@ -327,7 +327,7 @@ export default function PaymentSuccessScreen() {
             <DashedDivider color={FIGMA_COLORS.dividerColor} style={styles.divider} />
             <ReceiptRow label="Landlord" value={displayData.landlordName} />
             <DashedDivider color={FIGMA_COLORS.dividerColor} style={styles.divider} />
-            <ReceiptRow label="UTR" value={displayData.transactionId} />
+            <ReceiptRow label="UTR" value={displayData.utr} />
             <View style={styles.settlementInfoBox}>
               <Text style={styles.settlementInfoText}>
                 {'\u2139\uFE0F Settlement will be processed within 24 hrs'}
