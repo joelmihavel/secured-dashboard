@@ -137,14 +137,18 @@ export default function HomeScreen() {
   const unreadCount = resolvedData?.unread_notification_count ?? 0;
   const paymentStamps = resolvedData?.payment_stamps ?? null;
 
-  // Mark all notifications as read when dashboard loads with unread count
+  // Mark all notifications as read once when dashboard first loads with unread count.
+  // Uses a ref to fire only once per mount — avoids infinite loop where marking read
+  // triggers realtime refetch which changes unreadCount and re-fires the effect.
+  const markedReadRef = useRef(false);
   useEffect(() => {
-    if (unreadCount > 0) {
+    if (unreadCount > 0 && !markedReadRef.current) {
+      markedReadRef.current = true;
       import('@/src/services/api/notifications').then(({ markAllNotificationsRead }) => {
         markAllNotificationsRead();
       });
     }
-  }, [unreadCount > 0]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [unreadCount]);
 
   const recentPayments = useMemo(
     () => mapRecentPayments(resolvedData?.recent_payments ?? []),
