@@ -83,7 +83,7 @@ serve(async (req: Request) => {
         total_amount_paise, flent_subsidy_paise,
         landlord_payout_status, gateway_payout_status, payu_settlement_status, payu_txn_id,
         payment_gateway, gateway_order_id, gateway_settlement_status,
-        cf_order_id, payout_retry_count,
+        cf_order_id, cf_adjustment_id, payout_retry_count,
         transfer_hold, transfer_hold_reason,
         payment_month, paid_at,
         tenancy:tenancies(
@@ -350,6 +350,20 @@ serve(async (req: Request) => {
           continue;
         }
 
+        // Duplicate guard: if an adjustment was already created for this payment, skip
+        if (payment.cf_adjustment_id) {
+          console.warn(`[settle-to-landlord] Payment ${payment.id} already has cf_adjustment_id=${payment.cf_adjustment_id} — skipping duplicate adjustment`);
+          await supabase.from("payments").update({
+            landlord_payout_status: "processing",
+            gateway_payout_status: "adjustment_credited",
+          }).eq("id", payment.id);
+          results.push({
+            payment_id: payment.id, status: "processing", amount_paise: payoutAmountPaise,
+            landlord_name: tenancy.landlord_name,
+          });
+          continue;
+        }
+
         try {
           const adjustResult = await createAdjustment({
             vendorId,
@@ -385,18 +399,45 @@ serve(async (req: Request) => {
           const errMsg = cfErr instanceof CashfreeError ? cfErr.message : String(cfErr);
           const isCfError = cfErr instanceof CashfreeError;
           const statusCode = isCfError ? (cfErr as CashfreeError).statusCode : 0;
-          const isTransient = statusCode >= 500 || statusCode === 0; // 5xx or network/timeout error
 
-          console.error(`[settle-to-landlord] Cashfree adjustment failed for ${payment.id} (HTTP ${statusCode}, transient=${isTransient}):`, cfErr);
-          await supabase.from("payments").update({
-            landlord_payout_status: isTransient ? "ready" : "failed",
-            gateway_payout_status: `Cashfree adjustment ${isTransient ? "deferred" : "failed"}: ${errMsg}`,
-          }).eq("id", payment.id);
+          // For transient errors (5xx/timeout), keep as "processing" — the adjustment
+          // may have been created at Cashfree despite the error response. Reverting to
+          // "ready" would cause a duplicate adjustment on the next cron run.
+          // The recon cron (poll-settlement-status) will reconcile these.
+          const isTransient = statusCode >= 500 || statusCode === 0;
+          const isDuplicate = isCfError && (statusCode === 409 || errMsg.toLowerCase().includes("duplicate") || errMsg.toLowerCase().includes("already exists"));
 
-          results.push({
-            payment_id: payment.id, status: isTransient ? "deferred" : "failed", amount_paise: payoutAmountPaise,
-            landlord_name: tenancy.landlord_name, error: errMsg,
-          });
+          console.error(`[settle-to-landlord] Cashfree adjustment failed for ${payment.id} (HTTP ${statusCode}, transient=${isTransient}, duplicate=${isDuplicate}):`, cfErr);
+
+          if (isDuplicate) {
+            // Adjustment already exists at Cashfree — treat as success
+            await supabase.from("payments").update({
+              landlord_payout_status: "processing",
+              gateway_payout_status: "adjustment_credited (duplicate detected)",
+            }).eq("id", payment.id);
+            results.push({
+              payment_id: payment.id, status: "processing", amount_paise: payoutAmountPaise,
+              landlord_name: tenancy.landlord_name,
+            });
+          } else if (isTransient) {
+            // Keep as "processing" — do NOT revert to "ready" to prevent duplicate adjustments
+            await supabase.from("payments").update({
+              gateway_payout_status: `Cashfree adjustment pending (transient ${statusCode}): ${errMsg}`,
+            }).eq("id", payment.id);
+            results.push({
+              payment_id: payment.id, status: "processing", amount_paise: payoutAmountPaise,
+              landlord_name: tenancy.landlord_name, error: `Transient error — will reconcile`,
+            });
+          } else {
+            await supabase.from("payments").update({
+              landlord_payout_status: "failed",
+              gateway_payout_status: `Cashfree adjustment failed: ${errMsg}`,
+            }).eq("id", payment.id);
+            results.push({
+              payment_id: payment.id, status: "failed", amount_paise: payoutAmountPaise,
+              landlord_name: tenancy.landlord_name, error: errMsg,
+            });
+          }
         }
         continue;
       }
