@@ -33,6 +33,8 @@ AppState.addEventListener('change', (state) => {
  */
 export function useErrorNavigation(): void {
   const router = useRouter();
+  const routerRef = React.useRef(router);
+  routerRef.current = router;
   const segments = useSegments();
   // Keep a ref to the latest segments so the listener closure always reads
   // the CURRENT route, not the stale value from the last effect run.
@@ -114,7 +116,7 @@ export function useErrorNavigation(): void {
       }
 
       try {
-        router.replace({
+        routerRef.current.replace({
           pathname: '/error',
           params: {
             title: report.title,
@@ -135,6 +137,6 @@ export function useErrorNavigation(): void {
     });
 
     return unsubscribe;
-  // eslint-disable-next-line react-hooks/exhaustive-deps -- segments read via ref, not closure
-  }, [router]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- router & segments read via refs
+  }, []);
 }
