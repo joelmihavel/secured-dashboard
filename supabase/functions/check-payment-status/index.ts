@@ -210,10 +210,7 @@ serve(async (req: Request) => {
                     reference_id: payment.id,
                     description: "1% cashback earned (reconciliation)",
                   });
-                  await supabase.rpc("increment_cashback_balance", {
-                    p_user_id: userId,
-                    p_amount: payment.cashback_earned_paise,
-                  });
+                  // sync_cashback_balance trigger on cashback_ledger handles users.cashback_balance_paise
                 } catch (e) {
                   console.error("Failed to credit earned cashback on reconciliation:", e);
                 }

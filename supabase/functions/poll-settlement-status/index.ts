@@ -651,15 +651,12 @@ async function checkRefundEligibility(
         const accumulatedUsed = (payment as Record<string, any>).accumulated_redeemed_paise ?? 0;
         if (accumulatedUsed > 0) {
           try {
-            await supabase.rpc("increment_cashback_balance", {
-              p_user_id: payment.user_id,
-              p_amount: accumulatedUsed,
-            });
+            // sync_cashback_balance trigger on cashback_ledger handles users.cashback_balance_paise
             await supabase.from("cashback_ledger").insert({
               user_id: payment.user_id,
               transaction_type: "reinstatement",
               amount_paise: accumulatedUsed,
-              balance_after_paise: 0, // approximate — RPC handles actual balance
+              balance_after_paise: 0,
               payment_id: payment.id,
               tenancy_id: payment.tenancy_id,
               reference_type: "refund",

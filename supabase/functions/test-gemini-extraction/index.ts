@@ -61,9 +61,16 @@ serve(async (req) => {
         return new Response(JSON.stringify({ error: "File download failed", detail: downloadError?.message }), { status: 500, headers });
       }
 
-      // Convert to base64 for Document AI
+      // Convert to base64 for Document AI (chunked to avoid stack overflow on large files)
       const arrayBuffer = await fileData.arrayBuffer();
-      const base64Content = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
+      const bytes = new Uint8Array(arrayBuffer);
+      const chunkSize = 0x8000;
+      let binary = '';
+      for (let i = 0; i < bytes.length; i += chunkSize) {
+        const chunk = bytes.subarray(i, Math.min(i + chunkSize, bytes.length));
+        binary += String.fromCharCode.apply(null, Array.from(chunk));
+      }
+      const base64Content = btoa(binary);
 
       console.log(`[test-gemini] Downloaded file: ${arrayBuffer.byteLength} bytes, OCR-ing with Document AI...`);
 

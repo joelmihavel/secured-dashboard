@@ -287,10 +287,7 @@ serve(async (req: Request) => {
 
               if (paymentData) {
                 try {
-                  await supabase.rpc('increment_cashback_balance', {
-                    p_user_id: paymentData.user_id,
-                    p_amount: reversedAmount,
-                  });
+                  // sync_cashback_balance trigger on cashback_ledger handles users.cashback_balance_paise
                   await supabase.from('cashback_ledger').insert({
                     user_id: paymentData.user_id,
                     transaction_type: 'reinstatement',
@@ -559,10 +556,7 @@ serve(async (req: Request) => {
               reference_id: cfPayment.id,
               description: `1% cashback earned (pending verification)`,
             });
-            await supabase.rpc("increment_cashback_balance", {
-              p_user_id: cfUserId,
-              p_amount: cfPayment.cashback_earned_paise,
-            });
+            // sync_cashback_balance trigger on cashback_ledger handles users.cashback_balance_paise
           } catch (e) {
             console.error("[webhook] Failed to credit Cashfree earned cashback:", e);
           }
@@ -993,10 +987,7 @@ serve(async (req: Request) => {
           reference_id: payment.id,
           description: `1% cashback earned (pending verification)`,
         });
-        await supabase.rpc("increment_cashback_balance", {
-          p_user_id: userId,
-          p_amount: payment.cashback_earned_paise,
-        });
+        // sync_cashback_balance trigger on cashback_ledger handles users.cashback_balance_paise
       } catch (e) {
         console.error("Failed to credit earned cashback:", e);
       }
