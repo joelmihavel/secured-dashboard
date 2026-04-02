@@ -253,6 +253,10 @@ serve(async (req: Request) => {
             landlord_payout_status: "settled",
             landlord_payout_at: settledOn,
             gateway_payout_utr: settlement?.utr ?? null,
+            gateway_settlement_status: "settled",
+            settlement_status: "settled",
+            gateway_payout_status: "settlement_success",
+            gateway_settled_at: settledOn,
           })
           .eq("id", p.id)
           .in("landlord_payout_status", ["processing", "retrying"]);

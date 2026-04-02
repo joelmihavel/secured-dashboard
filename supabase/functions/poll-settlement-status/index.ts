@@ -400,6 +400,7 @@ async function reconcileVendorSettlements(
               .update({
                 landlord_payout_status: "settled",
                 settlement_status: "settled",
+                gateway_settlement_status: "settled",
                 gateway_payout_utr: match.settlement_utr,
                 gateway_payout_status: "settlement_success",
                 gateway_settled_at: match.settlement_time,
