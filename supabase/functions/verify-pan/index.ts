@@ -337,7 +337,7 @@ serve(async (req: Request) => {
               // UPI path
               ...(isUpiAccount ? { upi_vpa: fullBankAccount.upi_vpa } : {}),
               pan: sanitizedPan,
-              schedule_option: 2, // T+2 (only enabled schedule)
+              schedule_option: 9, // every 3 hours 24*7
             });
           } catch (createErr) {
             // Vendor may already exist from a prior attempt

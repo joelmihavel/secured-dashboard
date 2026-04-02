@@ -2,7 +2,7 @@
  * Admin Fix Vendors — one-time + ongoing admin tool for vendor operations.
  *
  * Actions:
- *   - update_schedule: Batch-update all existing vendors to schedule_option 14 (15-min settlement)
+ *   - update_schedule: Batch-update all existing vendors to schedule_option 9 (every 3h 24*7)
  *   - create_missing: Create vendors for verified bank accounts that don't have one yet
  *   - fix_user: For a specific user, create vendor + retry settlement for their failed payments
  *
@@ -46,7 +46,7 @@ serve(async (req: Request) => {
     // ── ACTION: update_schedule ──────────────────────────────────
     // Batch-update all existing vendors from T+2 to 15-min settlement
     if (action === "update_schedule") {
-      const targetSchedule = body.schedule_option ?? 14;
+      const targetSchedule = body.schedule_option ?? 9;
 
       const { data: accounts, error } = await supabase
         .from("bank_accounts")
@@ -157,7 +157,7 @@ serve(async (req: Request) => {
             } : {}),
             ...(isUpi ? { upi_vpa: bankAccount.upi_vpa } : {}),
             pan,
-            schedule_option: 14,
+            schedule_option: 9,
           });
         } catch (createErr) {
           if (createErr instanceof CashfreeError && createErr.message.includes("vendor already exists")) {
@@ -174,10 +174,10 @@ serve(async (req: Request) => {
 
         steps.push(`Vendor created: ${vendor.vendor_id}, status: ${vendor.status}`);
       } else {
-        // Vendor exists — update schedule to 14
+        // Vendor exists — update schedule to 9 (every 3h 24*7)
         try {
-          const vendor = await updateVendor(bankAccount.cf_beneficiary_id, { schedule_option: 14 });
-          steps.push(`Vendor ${bankAccount.cf_beneficiary_id} schedule updated to 14, status: ${vendor.status}`);
+          const vendor = await updateVendor(bankAccount.cf_beneficiary_id, { schedule_option: 9 });
+          steps.push(`Vendor ${bankAccount.cf_beneficiary_id} schedule updated to 9, status: ${vendor.status}`);
         } catch (err) {
           steps.push(`Vendor schedule update failed: ${err instanceof Error ? err.message : String(err)}`);
         }

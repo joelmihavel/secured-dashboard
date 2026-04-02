@@ -65,7 +65,7 @@ export interface CashfreeVendorInput {
   // UPI VPA path (alternative — Cashfree accepts either bank or upi)
   upi_vpa?: string;
   pan?: string;
-  schedule_option?: number; // 2=T+2 (only enabled schedule). Contact Cashfree to enable 8/14 for faster settlement.
+  schedule_option?: number; // 9=every 3h 24*7 (default). Other: 2=T+2, 8=hourly 24*7, 14=15min 24*7
 }
 
 export interface CashfreeOrderStatus {
@@ -242,7 +242,7 @@ export async function createVendor(input: CashfreeVendorInput): Promise<Cashfree
     name: input.name,
     phone: input.phone,
     verify_account: true,
-    schedule_option: input.schedule_option ?? 2, // T+2 (only enabled schedule for merchant 1215890)
+    schedule_option: input.schedule_option ?? 9, // every 3 hours 24*7
   };
 
   if (isUpi) {
@@ -348,7 +348,7 @@ export async function updateVendor(
 /**
  * Credits funds from merchant ledger to vendor ledger on Cashfree.
  * Cashfree then auto-settles vendor balance to their bank on the vendor's
- * schedule (Instant Settlement = 1 hour).
+ * schedule (Instant Settlement = every 3 hours 24*7).
  *
  * Uses API version 2023-08-01 (only version where this endpoint exists).
  *
