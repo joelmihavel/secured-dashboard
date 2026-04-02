@@ -490,3 +490,67 @@ export async function getOrderPaymentStatus(cfOrderId: string): Promise<Cashfree
   const result = await cfFetch("GET", `/pg/orders/${encodeURIComponent(cfOrderId)}`) as CashfreeOrderStatus;
   return result;
 }
+
+// ==============================================
+// 7. VENDOR RECON (Settlement UTR Backup)
+// ==============================================
+
+/**
+ * Fetches vendor settlement reconciliation data from Cashfree.
+ * Returns settlement UTRs, amounts, and status for a vendor within a date range.
+ *
+ * Use as a BACKUP when the cashfree-split-webhook misses a settlement event.
+ * The recon API includes both order-level and adjustment-level settlements.
+ *
+ * @param vendorId   - Cashfree vendor_id (bank_accounts.cf_beneficiary_id)
+ * @param startDate  - ISO8601 start date
+ * @param endDate    - ISO8601 end date
+ * @param cursor     - Pagination cursor (null for first page)
+ */
+export interface VendorReconEntry {
+  settlement_id: number;
+  settlement_utr: string | null;
+  settled: boolean;
+  settlement_time: string | null;
+  amount: number;
+  merchant_vendor_id: string;
+  type: string;
+  credit: string;
+  debit: string;
+  entity_id: string | null;
+  merchant_order_id: string | null;
+}
+
+export interface VendorReconResult {
+  cursor: string | null;
+  limit: number;
+  data: VendorReconEntry[];
+}
+
+export async function getVendorRecon(params: {
+  vendorId: string;
+  startDate: string;
+  endDate: string;
+  cursor?: string | null;
+  limit?: number;
+}): Promise<VendorReconResult> {
+  const body = {
+    pagination: {
+      limit: params.limit ?? 100,
+      ...(params.cursor ? { cursor: params.cursor } : {}),
+    },
+    filters: {
+      merchant_vendor_id: params.vendorId,
+      start_date: params.startDate,
+      end_date: params.endDate,
+    },
+  };
+
+  const result = await cfFetch(
+    "POST",
+    "/pg/recon/vendor",
+    body,
+  ) as VendorReconResult;
+
+  return result;
+}

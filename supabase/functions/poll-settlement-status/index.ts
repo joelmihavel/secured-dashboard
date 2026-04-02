@@ -21,7 +21,7 @@ import { handleCors, jsonResponse, errorResponse } from "../_shared/cors.ts";
 import { AppError, handleError } from "../_shared/errors.ts";
 import { AuditLogger } from "../_shared/audit.ts";
 import { getSystemTransferFlag, type SystemTransferFlag } from "../_shared/transfer-flags.ts";
-import { getOrderPaymentStatus, createRefund, CashfreeError } from "../_shared/cashfree-easysplit.ts";
+import { getOrderPaymentStatus, createRefund, getVendorRecon, CashfreeError } from "../_shared/cashfree-easysplit.ts";
 import { notifyUser } from "../_shared/notifications.ts";
 import { getSupabaseUrl } from "../_shared/supabase.ts";
 
@@ -64,10 +64,11 @@ serve(async (req: Request) => {
 
     const releaseResult = await releaseHeldPayments(supabase, audit, systemConfig);
     const stuckPendingResult = await recoverStuckPendingPayouts(supabase, audit);
-    const [reconciliationResult, monitoringResult, refundResult] = await Promise.all([
+    const [reconciliationResult, monitoringResult, refundResult, vendorReconResult] = await Promise.all([
       reconcileStuckPayments(supabase, audit),
       monitorPendingPayouts(supabase, audit),
       checkRefundEligibility(supabase, audit),
+      reconcileVendorSettlements(supabase, audit),
     ]);
 
     const durationMs = Date.now() - startTime;
@@ -77,7 +78,7 @@ serve(async (req: Request) => {
       "system",
       undefined,
       undefined,
-      { duration_ms: durationMs, released: releaseResult, stuck_pending: stuckPendingResult, reconciliation: reconciliationResult, monitoring: monitoringResult, refunds: refundResult },
+      { duration_ms: durationMs, released: releaseResult, stuck_pending: stuckPendingResult, reconciliation: reconciliationResult, monitoring: monitoringResult, refunds: refundResult, vendor_recon: vendorReconResult },
     );
 
     return jsonResponse({
@@ -89,6 +90,7 @@ serve(async (req: Request) => {
         reconciliation: reconciliationResult,
         monitoring: monitoringResult,
         refunds: refundResult,
+        vendor_recon: vendorReconResult,
       },
     });
   } catch (error) {
@@ -307,6 +309,132 @@ async function reconcileStuckPayments(
     }
   } catch (err) {
     console.error("[reconciliation] Error:", err);
+    result.errors++;
+  }
+
+  return result;
+}
+
+// ==============================================
+// VENDOR RECON: Backup for missed split webhooks
+// ==============================================
+
+/**
+ * Polls Cashfree Vendor Recon API for payments stuck in 'processing'
+ * where the split webhook was missed. Matches by vendor_id + amount
+ * and updates gateway_payout_utr + landlord_payout_status.
+ *
+ * Only checks payments that have been in 'processing' for >1 hour
+ * (gives the webhook time to arrive first).
+ */
+async function reconcileVendorSettlements(
+  supabase: ReturnType<typeof createServiceClient>,
+  audit: AuditLogger,
+): Promise<TierResult> {
+  const result: TierResult = { checked: 0, updated: 0, errors: 0 };
+
+  try {
+    // Find Cashfree payments stuck in processing for >1 hour
+    const oneHourAgo = new Date(Date.now() - 60 * 60_000).toISOString();
+    const { data: stuckPayments } = await supabase
+      .from("payments")
+      .select(`
+        id, rent_amount_paise, landlord_payout_paise, paid_at,
+        tenancy:tenancies!inner(
+          bank_accounts!inner(cf_beneficiary_id, party_type)
+        )
+      `)
+      .eq("status", "success")
+      .eq("payment_gateway", "cashfree")
+      .in("landlord_payout_status", ["processing", "retrying"])
+      .lt("landlord_payout_at", oneHourAgo)
+      .limit(BATCH_SIZE);
+
+    if (!stuckPayments?.length) return result;
+
+    result.checked = stuckPayments.length;
+    console.log(`[vendor-recon] Found ${stuckPayments.length} stuck Cashfree payment(s) — checking vendor settlements`);
+
+    // Group by vendor to minimize API calls
+    const vendorPayments = new Map<string, typeof stuckPayments>();
+    for (const payment of stuckPayments) {
+      const tenancy = payment.tenancy as any;
+      const landlordBank = (tenancy?.bank_accounts ?? []).find((ba: any) => ba.party_type === "landlord");
+      const vendorId = landlordBank?.cf_beneficiary_id;
+      if (!vendorId) continue;
+
+      if (!vendorPayments.has(vendorId)) vendorPayments.set(vendorId, []);
+      vendorPayments.get(vendorId)!.push(payment);
+    }
+
+    // For each vendor, call recon API and match settlements
+    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60_000).toISOString();
+    const now = new Date().toISOString();
+
+    for (const [vendorId, payments] of vendorPayments) {
+      try {
+        const recon = await getVendorRecon({
+          vendorId,
+          startDate: sevenDaysAgo,
+          endDate: now,
+        });
+
+        if (!recon.data?.length) continue;
+
+        // Filter to settled entries with UTR
+        const settledEntries = recon.data.filter(e => e.settled && e.settlement_utr);
+
+        for (const payment of payments) {
+          const payoutAmountRupees = ((payment.landlord_payout_paise ?? payment.rent_amount_paise) / 100);
+
+          // Match by vendor + amount (within ₹1 tolerance for rounding)
+          const match = settledEntries.find(e =>
+            Math.abs(e.amount - payoutAmountRupees) < 1
+          );
+
+          if (match) {
+            const { error: updateErr } = await supabase
+              .from("payments")
+              .update({
+                landlord_payout_status: "settled",
+                settlement_status: "settled",
+                gateway_payout_utr: match.settlement_utr,
+                gateway_payout_status: "settlement_success",
+                gateway_settled_at: match.settlement_time,
+              })
+              .eq("id", payment.id)
+              .in("landlord_payout_status", ["processing", "retrying"]);
+
+            if (!updateErr) {
+              result.updated++;
+              console.log(`[vendor-recon] Payment ${payment.id} → settled (UTR: ${match.settlement_utr})`);
+
+              // Remove matched entry to prevent double-matching
+              const idx = settledEntries.indexOf(match);
+              if (idx >= 0) settledEntries.splice(idx, 1);
+
+              await audit.logSuccess("VENDOR_RECON_SETTLED", "payment", "payment", payment.id, {
+                vendor_id: vendorId,
+                utr: match.settlement_utr,
+                settlement_id: match.settlement_id,
+                amount: payoutAmountRupees,
+              });
+            } else {
+              result.errors++;
+            }
+          }
+        }
+      } catch (err) {
+        console.error(`[vendor-recon] Failed for vendor ${vendorId}:`, err);
+        result.errors++;
+      }
+    }
+
+    if (result.updated > 0) {
+      console.log(`[vendor-recon] Reconciled ${result.updated} vendor settlement(s) via backup recon API`);
+    }
+  } catch (err) {
+    console.error("[vendor-recon] Error:", err);
     result.errors++;
   }
 
