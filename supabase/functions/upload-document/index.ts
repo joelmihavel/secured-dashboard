@@ -16,7 +16,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.47.10";
 import { handleCors, getCorsHeaders, jsonResponse } from "../_shared/cors.ts";
 import { AuthError, ValidationError, handleError } from "../_shared/errors.ts";
 import { AuditLogger, AuditActions } from "../_shared/audit.ts";
-import { notifyUser } from "../_shared/notifications.ts";
+import { scheduleNotification } from "../_shared/notifications.ts";
 
 function getSupabaseUrl(): string {
   return Deno.env.get("SUPABASE_URL") || Deno.env.get("SB_URL") || "";
@@ -343,7 +343,7 @@ serve(async (req) => {
     }
 
     // Notify user: agreement under review (non-blocking)
-    notifyUser(getSupabaseUrl(), getServiceKey(), {
+    scheduleNotification(adminClient, getSupabaseUrl(), getServiceKey(), {
       user_id: user.id,
       notification_type: "under_review",
     }).catch((e) => console.warn("[upload-document] Failed to send under_review notification:", e));

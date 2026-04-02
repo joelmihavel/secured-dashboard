@@ -14,7 +14,7 @@ import { handleCors, jsonResponse, errorResponse } from "../_shared/cors.ts";
 import { AppError, PaymentError, handleError } from "../_shared/errors.ts";
 import { parseRentMonth } from "../_shared/validation.ts";
 import { AuditLogger, AuditActions } from "../_shared/audit.ts";
-import { notifyUser } from "../_shared/notifications.ts";
+import { scheduleNotification } from "../_shared/notifications.ts";
 import { verifyPayUWebhookHashWithCharges, sha512, hmacSha256Base64, timingSafeCompare } from "../_shared/crypto.ts";
 import {
   PAYU_MERCHANT_KEY,
@@ -257,7 +257,7 @@ serve(async (req: Request) => {
 
             if (refundPayment?.user_id) {
               const refundAmountRupees = (refundRecord.amount_paise / 100).toLocaleString("en-IN");
-              notifyUser(getSupabaseUrl(), getServiceKey(), {
+              scheduleNotification(supabase, getSupabaseUrl(), getServiceKey(), {
                 user_id: refundPayment.user_id,
                 notification_type: "payment_refunded",
                 template_vars: { amount: refundAmountRupees },
@@ -353,7 +353,7 @@ serve(async (req: Request) => {
               // Notify user of successful dashboard refund (non-blocking)
               if (refundStatus === 'SUCCESS' && cfPayment.user_id) {
                 const dashboardRefundAmountRupees = (refundData.refund_amount ?? 0).toLocaleString("en-IN");
-                notifyUser(getSupabaseUrl(), getServiceKey(), {
+                scheduleNotification(supabase, getSupabaseUrl(), getServiceKey(), {
                   user_id: cfPayment.user_id,
                   notification_type: "payment_refunded",
                   template_vars: { amount: dashboardRefundAmountRupees },
@@ -577,6 +577,17 @@ serve(async (req: Request) => {
         const cfUserId = cfPayment.user_id ?? cfTenancyData?.user_id;
         if (cfUserId) {
           await sendPaymentFailedNotification(supabase, cfUserId, cfPayment, cfStatus);
+        }
+      } else if (newCfStatus === 'processing') {
+        const cfTenancyData = cfPayment.tenancy as Record<string, any> | null;
+        const cfUserId = cfPayment.user_id ?? cfTenancyData?.user_id;
+        if (cfUserId) {
+          scheduleNotification(supabase, getSupabaseUrl(), getServiceKey(), {
+            user_id: cfUserId,
+            notification_type: "payment_processing",
+            related_entity_type: "payment",
+            related_entity_id: String(cfPayment.id),
+          }).catch((e) => console.warn("[payment-webhook] payment_processing notification failed:", e));
         }
       }
 
@@ -1165,6 +1176,7 @@ serve(async (req: Request) => {
     } else if (newStatus === "failed" && userId) {
       await sendPaymentFailedNotification(supabase, userId, payment, payload.error_Message);
     }
+    // PayU payment_processing notification removed — all payments now on Cashfree
 
     // Log audit event
     await audit.log({
@@ -1233,11 +1245,10 @@ async function sendPaymentSuccessNotification(
     const savedRupees = (savedPaise / 100).toLocaleString("en-IN");
     const firstName = user?.full_name?.split(" ")[0] ?? "there";
 
-    await notifyUser(getSupabaseUrl(), getServiceKey(), {
+    await scheduleNotification(supabase, getSupabaseUrl(), getServiceKey(), {
       user_id: userId,
       notification_type: "payment_success",
       template_vars: { name: firstName, amount: amountRupees, cashback: savedRupees },
-      data: { payment_id: String(payment.id), initialStatus: "success", source: "receipt_view" },
       related_entity_type: "payment",
       related_entity_id: String(payment.id),
     }).catch((e) => console.error("Payment success notification failed:", e));
@@ -1247,7 +1258,7 @@ async function sendPaymentSuccessNotification(
 }
 
 async function sendPaymentFailedNotification(
-  _supabase: ReturnType<typeof createServiceClient>,
+  supabase: ReturnType<typeof createServiceClient>,
   userId: string,
   payment: Record<string, unknown>,
   _errorMessage?: string
@@ -1255,11 +1266,10 @@ async function sendPaymentFailedNotification(
   try {
     const amountRupees = ((payment.rent_amount_paise as number) / 100).toLocaleString("en-IN");
 
-    await notifyUser(getSupabaseUrl(), getServiceKey(), {
+    await scheduleNotification(supabase, getSupabaseUrl(), getServiceKey(), {
       user_id: userId,
       notification_type: "payment_failed",
       template_vars: { amount: amountRupees },
-      data: { payment_id: String(payment.id), initialStatus: "failed", source: "receipt_view" },
       related_entity_type: "payment",
       related_entity_id: String(payment.id),
     }).catch((e) => console.error("Payment failed notification failed:", e));

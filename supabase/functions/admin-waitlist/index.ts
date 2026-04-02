@@ -18,7 +18,7 @@ import { createServiceClient, getSupabaseUrl } from "../_shared/supabase.ts";
 import { handleCors, jsonResponse, getCorsHeaders } from "../_shared/cors.ts";
 import { ValidationError, AuthError, handleError } from "../_shared/errors.ts";
 import { AuditLogger } from "../_shared/audit.ts";
-import { notifyUser } from "../_shared/notifications.ts";
+import { scheduleNotification } from "../_shared/notifications.ts";
 import { ensureTenancyForExtraction } from "../_shared/onboarding.ts";
 import { recomputeAndStoreRisk } from "../_shared/risk-utils.ts";
 
@@ -267,11 +267,21 @@ serve(async (req: Request) => {
 
         await Promise.allSettled(
           Array.from(approvedIds).map((uid) =>
-            notifyUser(supabaseUrl, serviceKey, {
+            scheduleNotification(supabase, supabaseUrl, serviceKey, {
               user_id: uid,
               notification_type: "waitlist_approved",
               template_vars: { name: nameMap.get(uid) ?? "there" },
             })
+          )
+        );
+
+        // Schedule setup_incomplete nudge (15 min + 6h reminder)
+        await Promise.allSettled(
+          Array.from(approvedIds).map((uid) =>
+            scheduleNotification(supabase, supabaseUrl, serviceKey, {
+              user_id: uid,
+              notification_type: "setup_incomplete",
+            }).catch((e) => console.warn("[admin-waitlist] Failed to schedule setup_incomplete:", e))
           )
         );
       }
@@ -332,7 +342,7 @@ serve(async (req: Request) => {
 
         await Promise.allSettled(
           Array.from(rejectedIds).map((uid) =>
-            notifyUser(supabaseUrl, serviceKey, {
+            scheduleNotification(supabase, supabaseUrl, serviceKey, {
               user_id: uid,
               notification_type: "waitlist_rejected",
             })

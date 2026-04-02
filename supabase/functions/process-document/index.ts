@@ -11,7 +11,7 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { ensureWaitlistState, finalizeExtractionForOnboarding } from "../_shared/onboarding.ts";
 import { getCorsHeaders } from "../_shared/cors.ts";
-import { notifyUser } from "../_shared/notifications.ts";
+import { scheduleNotification } from "../_shared/notifications.ts";
 
 function getSupabaseUrl(): string {
   return Deno.env.get("SUPABASE_URL") || Deno.env.get("SB_URL") || "";
@@ -342,7 +342,7 @@ Deno.serve(async (req) => {
       });
 
       // Notify user of upload failure (non-blocking)
-      notifyUser(getSupabaseUrl(), getServiceKey(), {
+      scheduleNotification(supabase, getSupabaseUrl(), getServiceKey(), {
         user_id: user.id,
         notification_type: "agreement_upload_failed",
       }).catch((e) => console.warn("[process-document] Failed to send agreement_upload_failed notification:", e));
@@ -419,7 +419,7 @@ Deno.serve(async (req) => {
       });
 
       // Notify user of upload failure (non-blocking)
-      notifyUser(getSupabaseUrl(), getServiceKey(), {
+      scheduleNotification(supabase, getSupabaseUrl(), getServiceKey(), {
         user_id: user.id,
         notification_type: "agreement_upload_failed",
       }).catch((e) => console.warn("[process-document] Failed to send agreement_upload_failed notification:", e));
@@ -436,7 +436,7 @@ Deno.serve(async (req) => {
       });
 
       // Notify user of upload failure (non-blocking)
-      notifyUser(getSupabaseUrl(), getServiceKey(), {
+      scheduleNotification(supabase, getSupabaseUrl(), getServiceKey(), {
         user_id: user.id,
         notification_type: "agreement_upload_failed",
       }).catch((e) => console.warn("[process-document] Failed to send agreement_upload_failed notification:", e));
@@ -583,7 +583,7 @@ Deno.serve(async (req) => {
 
     // Notify user if extraction failed (0 fields extracted, non-blocking)
     if (resolvedExtractionStatus === "extraction_failed") {
-      notifyUser(getSupabaseUrl(), getServiceKey(), {
+      scheduleNotification(supabase, getSupabaseUrl(), getServiceKey(), {
         user_id: user.id,
         notification_type: "agreement_upload_failed",
       }).catch((e) => console.warn("[process-document] Failed to send agreement_upload_failed notification:", e));
@@ -655,7 +655,7 @@ Deno.serve(async (req) => {
 
       // Notify user of upload failure (non-blocking)
       if (userId) {
-        notifyUser(getSupabaseUrl(), getServiceKey(), {
+        scheduleNotification(supabase, getSupabaseUrl(), getServiceKey(), {
           user_id: userId,
           notification_type: "agreement_upload_failed",
         }).catch((e) => console.warn("[process-document] Failed to send agreement_upload_failed notification:", e));

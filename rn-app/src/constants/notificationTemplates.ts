@@ -26,6 +26,7 @@ export type NotificationType =
   | 'under_review'
   | 'setup_incomplete'
   | 'landlord_pending'
+  | 'payment_processing'
   | 'payment_refunded'
   | 'milestone_streak';
 
@@ -115,6 +116,10 @@ export const NOTIFICATION_TEMPLATES: Record<NotificationType, NotificationTempla
     title: 'Waiting on your landlord',
     body: "We're waiting on your landlord's confirmation. We'll keep you posted.",
   },
+  payment_processing: {
+    title: 'Payment in progress',
+    body: "Your payment is on its way. Shouldn't take long.",
+  },
   payment_refunded: {
     title: 'Payment refunded',
     body: 'Your payment of ₹{amount} has been refunded. It should hit your account within 48 hours.',
@@ -162,6 +167,7 @@ export const NOTIFICATION_ROUTES: Record<NotificationType, string> = {
   under_review: '/(waitlist)',
   setup_incomplete: '/(setup)',
   landlord_pending: '/(main)',
+  payment_processing: '/(main)',
   payment_refunded: '/(main)',
   milestone_streak: '/(main)',
 };

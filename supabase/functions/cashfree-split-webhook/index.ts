@@ -146,8 +146,8 @@ serve(async (req: Request) => {
 
     // Primary: match by cf_adjustment_id (stored when settle-to-landlord calls createAdjustment)
     // Cashfree settlement webhooks include adjustment_id in the payload
-    const webhookAdjustmentId = (event as Record<string, unknown>).data?.adjustment_id
-      ?? (event as Record<string, unknown>).data?.settlement?.adjustment_id;
+    const webhookAdjustmentId = (payload as Record<string, unknown>).data?.adjustment_id
+      ?? (payload as Record<string, unknown>).data?.settlement?.adjustment_id;
     if (webhookAdjustmentId) {
       const { data } = await supabase
         .from("payments")

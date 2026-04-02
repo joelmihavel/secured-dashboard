@@ -32,6 +32,7 @@ export type NotificationType =
   | "under_review"
   | "setup_incomplete"
   | "landlord_pending"
+  | "payment_processing"
   | "payment_refunded"
   | "milestone_streak";
 
@@ -128,6 +129,10 @@ export const NOTIFICATION_TEMPLATES: Record<
     title: "Waiting on your landlord",
     body: "We're waiting on your landlord's confirmation. We'll keep you posted.",
   },
+  payment_processing: {
+    title: "Payment in progress",
+    body: "Your payment is on its way. Shouldn't take long.",
+  },
   payment_refunded: {
     title: "Payment refunded",
     body: "Your payment of ₹{amount} has been refunded. It should hit your account within 48 hours.",
@@ -182,6 +187,7 @@ export const NOTIFICATION_ROUTES: Record<NotificationType, string> = {
   under_review: "/(waitlist)",
   setup_incomplete: "/(setup)",
   landlord_pending: "/(main)",
+  payment_processing: "/(main)",
   payment_refunded: "/(main)",
   milestone_streak: "/(main)",
 };
@@ -215,6 +221,7 @@ export const PREFERENCE_MAP: Record<NotificationType, string | null> = {
   under_review: null,                 // always send
   setup_incomplete: "verification_updates",
   landlord_pending: "landlord_updates",
+  payment_processing: "payment_confirmations",
   payment_refunded: "payment_confirmations",
   milestone_streak: "payment_confirmations",
 };
@@ -248,6 +255,7 @@ export const DB_TYPE_MAP: Record<NotificationType, string> = {
   under_review: "under_review",
   setup_incomplete: "setup_incomplete",
   landlord_pending: "landlord_pending",
+  payment_processing: "payment_processing",
   payment_refunded: "payment_refunded",
   milestone_streak: "milestone_streak",
 };
@@ -278,6 +286,52 @@ export const WHATSAPP_TEMPLATE_MAP: Partial<Record<NotificationType, WhatsAppTem
   rent_overdue:            { contentSidEnvVar: "WA_TPL_MISSED_PAYMENT",      variableKeys: [] },
   payment_success:         { contentSidEnvVar: "WA_TPL_PAYMENT_SUCCESS",     variableKeys: ["cashback"] },
   payment_failed:          { contentSidEnvVar: "WA_TPL_PAYMENT_FAILED",      variableKeys: [] },
+  payment_processing:      { contentSidEnvVar: "WA_TPL_PAYMENT_PROCESSING", variableKeys: [] },
   payment_refunded:        { contentSidEnvVar: "WA_TPL_PAYMENT_REFUNDED",    variableKeys: [] },
   milestone_streak:        { contentSidEnvVar: "WA_TPL_MILESTONE_STREAK",    variableKeys: ["streak_months", "total_cashback"] },
+};
+
+// ==============================================
+// NOTIFICATION TIMING CONFIG
+// ==============================================
+
+/**
+ * Dynamic timing configuration for each notification type.
+ * Controls when first send and reminder are triggered after an event.
+ *
+ * triggerDelaySec: seconds after event to send first notification (0 = immediate)
+ * reminderDelaySec: seconds after event to send reminder (null = no reminder)
+ *
+ * Timing is configurable — change values here to adjust for all notifications.
+ */
+export interface NotificationTimingConfig {
+  triggerDelaySec: number;         // 0 = immediate
+  reminderDelaySec: number | null; // null = no reminder
+}
+
+const MIN_15 = 15 * 60;    // 900 seconds
+const HOUR_6 = 6 * 60 * 60; // 21600 seconds
+
+export const NOTIFICATION_TIMING: Partial<Record<NotificationType, NotificationTimingConfig>> = {
+  // 15 min + 6h reminder
+  // onboarding_dropoff: handled by send-onboarding-reminders cron (not via scheduler)
+  agreement_upload_failed: { triggerDelaySec: MIN_15, reminderDelaySec: HOUR_6 },
+  setup_incomplete:        { triggerDelaySec: MIN_15, reminderDelaySec: HOUR_6 },
+  landlord_pending:        { triggerDelaySec: MIN_15, reminderDelaySec: HOUR_6 },
+  rent_overdue:            { triggerDelaySec: MIN_15, reminderDelaySec: HOUR_6 },
+
+  // Immediate + 6h reminder
+  waitlist_approved:       { triggerDelaySec: 0, reminderDelaySec: HOUR_6 },
+  waitlist_rejected:       { triggerDelaySec: 0, reminderDelaySec: HOUR_6 },
+  payment_failed:          { triggerDelaySec: 0, reminderDelaySec: HOUR_6 },
+
+  // Immediate, no reminder
+  under_review:            { triggerDelaySec: 0, reminderDelaySec: null },
+  payment_success:         { triggerDelaySec: 0, reminderDelaySec: null },
+  payment_processing:      { triggerDelaySec: 0, reminderDelaySec: null },
+  payment_refunded:        { triggerDelaySec: 0, reminderDelaySec: null },
+  milestone_streak:        { triggerDelaySec: 0, reminderDelaySec: null },
+
+  // Rent due is calendar-based (1st, 3rd, 5th of month) — handled separately
+  // rent_due has no entry here; it uses the rent-due cron
 };

@@ -286,6 +286,104 @@ export async function sendWhatsAppForUser(
 }
 
 // ==============================================
+// NOTIFICATION SCHEDULER
+// ==============================================
+
+/**
+ * Schedules a notification for delayed sending via the notification_schedule table.
+ * Inserts both a first send and optional reminder based on NOTIFICATION_TIMING config.
+ *
+ * For immediate notifications (triggerDelaySec=0), calls notifyUser directly
+ * and only schedules the reminder if configured.
+ *
+ * Cancels any existing pending notifications of the same type for the same user
+ * (prevents duplicates if events fire multiple times).
+ */
+export async function scheduleNotification(
+  supabase: { from: (table: string) => any; },
+  supabaseUrl: string,
+  serviceKey: string,
+  params: {
+    user_id: string;
+    notification_type: NotificationType;
+    template_vars?: Record<string, string>;
+    related_entity_type?: string;
+    related_entity_id?: string;
+  },
+): Promise<void> {
+  const timing = NOTIFICATION_TIMING[params.notification_type];
+  if (!timing) {
+    // No timing config — send immediately (legacy behavior)
+    await notifyUser(supabaseUrl, serviceKey, params).catch((e) =>
+      console.warn(`[schedule] Direct send failed for ${params.notification_type}:`, e)
+    );
+    return;
+  }
+
+  const now = new Date();
+
+  // Cancel any existing pending notifications for this user + type
+  await supabase
+    .from("notification_schedule")
+    .update({ status: "cancelled", skip_reason: "superseded" })
+    .eq("user_id", params.user_id)
+    .eq("notification_type", params.notification_type)
+    .eq("status", "pending")
+    .catch(() => {});
+
+  if (timing.triggerDelaySec === 0) {
+    // Immediate: send now
+    await notifyUser(supabaseUrl, serviceKey, params).catch((e) =>
+      console.warn(`[schedule] Immediate send failed for ${params.notification_type}:`, e)
+    );
+
+    // Schedule reminder if configured
+    if (timing.reminderDelaySec) {
+      const reminderAt = new Date(now.getTime() + timing.reminderDelaySec * 1000);
+      await supabase.from("notification_schedule").insert({
+        user_id: params.user_id,
+        notification_type: params.notification_type,
+        send_type: "reminder",
+        scheduled_for: reminderAt.toISOString(),
+        template_vars: params.template_vars ?? {},
+        related_entity_type: params.related_entity_type,
+        related_entity_id: params.related_entity_id,
+      }).catch((e: Error) => console.warn("[schedule] Failed to insert reminder:", e));
+    }
+  } else {
+    // Delayed: schedule both first send and reminder
+    const firstAt = new Date(now.getTime() + timing.triggerDelaySec * 1000);
+    const rows: any[] = [
+      {
+        user_id: params.user_id,
+        notification_type: params.notification_type,
+        send_type: "first",
+        scheduled_for: firstAt.toISOString(),
+        template_vars: params.template_vars ?? {},
+        related_entity_type: params.related_entity_type,
+        related_entity_id: params.related_entity_id,
+      },
+    ];
+
+    if (timing.reminderDelaySec) {
+      const reminderAt = new Date(now.getTime() + timing.reminderDelaySec * 1000);
+      rows.push({
+        user_id: params.user_id,
+        notification_type: params.notification_type,
+        send_type: "reminder",
+        scheduled_for: reminderAt.toISOString(),
+        template_vars: params.template_vars ?? {},
+        related_entity_type: params.related_entity_type,
+        related_entity_id: params.related_entity_id,
+      });
+    }
+
+    await supabase.from("notification_schedule").insert(rows)
+      .catch((e: Error) => console.warn("[schedule] Failed to insert schedule:", e));
+  }
+}
+
+// ==============================================
 // SMS
 // ==============================================
 
@@ -379,6 +477,7 @@ export async function sendPushNotification(
 
 import {
   WHATSAPP_TEMPLATE_MAP,
+  NOTIFICATION_TIMING,
   type NotificationType,
 } from "./notification-templates.ts";
 import { sanitizePhone, formatPhoneWithCountryCode } from "./validation.ts";

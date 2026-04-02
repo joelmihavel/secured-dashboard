@@ -17,7 +17,7 @@ import { handleCors, jsonResponse, errorResponse } from "../_shared/cors.ts";
 import { AppError, ValidationError, handleError } from "../_shared/errors.ts";
 import { validateSchema, isValidPhone } from "../_shared/validation.ts";
 import { AuditLogger, AuditActions } from "../_shared/audit.ts";
-import { sendEmail } from "../_shared/notifications.ts";
+import { sendEmail, scheduleNotification } from "../_shared/notifications.ts";
 import { generateSecureRandom } from "../_shared/crypto.ts";
 
 // ==============================================
@@ -26,6 +26,13 @@ import { generateSecureRandom } from "../_shared/crypto.ts";
 
 const INVITE_EXPIRY_HOURS = 72; // 3 days
 const LANDLORD_PORTAL_URL = "https://flent.in/secured/invite-landlord";
+
+function getSupabaseUrl(): string {
+  return Deno.env.get("SUPABASE_URL") || Deno.env.get("SB_URL") || "";
+}
+function getServiceKey(): string {
+  return Deno.env.get("SB_SECRET_KEY") || Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
+}
 
 // ==============================================
 // TYPES
@@ -364,6 +371,14 @@ serve(async (req: Request) => {
         sent_via: hasValidEmail ? "email" : "phone",
       }
     );
+
+    // Schedule landlord_pending notification to tenant (15 min + 6h reminder)
+    scheduleNotification(supabase, getSupabaseUrl(), getServiceKey(), {
+      user_id: userId,
+      notification_type: "landlord_pending",
+      related_entity_type: "tenancy",
+      related_entity_id: tenancy_id,
+    }).catch((e) => console.warn("[send-landlord-invite] Failed to schedule landlord_pending:", e));
 
     return jsonResponse({
       success: true,
