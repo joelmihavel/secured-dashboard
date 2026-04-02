@@ -340,7 +340,7 @@ async function extractWithVertexAIGemini(
       contents: [{ role: "user", parts: [{ text: prompt }] }],
       generationConfig: {
         temperature: 0.1,
-        maxOutputTokens: 8192,
+        maxOutputTokens: 65536,
         responseMimeType: "application/json",
       },
     }),
@@ -382,7 +382,7 @@ async function extractWithGeminiApiKey(
         contents: [{ role: "user", parts: [{ text: prompt }] }],
         generationConfig: {
           temperature: 0.1,
-          maxOutputTokens: 8192,
+          maxOutputTokens: 65536,
           responseMimeType: "application/json",
         },
       }),

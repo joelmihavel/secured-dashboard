@@ -142,7 +142,7 @@ serve(async (req) => {
             contents: [{ role: "user", parts: [{ text: prompt }] }],
             generationConfig: {
               temperature: 0.1,
-              maxOutputTokens: 8192,
+              maxOutputTokens: 65536,
               responseMimeType: "application/json",
             },
           }),
@@ -202,7 +202,7 @@ serve(async (req) => {
               contents: [{ role: "user", parts: [{ text: prompt }] }],
               generationConfig: {
                 temperature: 0.1,
-                maxOutputTokens: 8192,
+                maxOutputTokens: 65536,
                 responseMimeType: "application/json",
               },
             }),

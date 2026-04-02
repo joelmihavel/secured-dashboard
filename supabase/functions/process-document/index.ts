@@ -543,8 +543,12 @@ Deno.serve(async (req) => {
         gemini_raw_response: extractedData.raw_gemini_data || (extractedData as any).gemini_debug || null,
         // Raw data for debugging (slimmed to avoid statement timeouts on large docs)
         raw_extraction_data: slimDocAiData(extractedData.raw_doc_ai_data),
-        // Update extraction status — mark as extraction_failed if Gemini returned 0 fields
-        extraction_status: extractedData.fields_extracted > 0 ? "completed" : "extraction_failed",
+        // Update extraction status:
+        // - extraction_failed if Gemini returned 0 fields OR document is not a rental agreement
+        // - completed otherwise
+        extraction_status: (extractedData.fields_extracted > 0 && (extractedData as any).is_rental_agreement !== false)
+          ? "completed"
+          : "extraction_failed",
         // Persist evaluation results for client-side polling (useExtractionStatus)
         contract_status: evaluationResult.contract_status,
         needs_manual_review: evaluationResult.needs_manual_review,
@@ -579,7 +583,9 @@ Deno.serve(async (req) => {
       }
     }
 
-    const resolvedExtractionStatus = extractedData.fields_extracted > 0 ? "completed" : "extraction_failed";
+    const resolvedExtractionStatus = (extractedData.fields_extracted > 0 && (extractedData as any).is_rental_agreement !== false)
+      ? "completed"
+      : "extraction_failed";
 
     // Notify user if extraction failed (0 fields extracted, non-blocking)
     if (resolvedExtractionStatus === "extraction_failed") {
@@ -644,10 +650,15 @@ Deno.serve(async (req) => {
     const errorMessage = error instanceof Error ? error.message : String(error);
 
     // Update status to failed with error details for client-side display
+    // Persist debug data if the error carries it (attached by processWithDocumentAI)
+    const debugData = (error as any)?.debugData;
     if (extraction_id && !completedExtractionPersisted) {
       const { error: statusUpdateError } = await updateExtractionStatus(supabase, extraction_id, {
         extraction_status: "failed",
         extraction_error: errorMessage,
+        ...(debugData?.gemini_debug && { gemini_raw_response: debugData.gemini_debug }),
+        ...(debugData?.raw_doc_ai_data && { raw_extraction_data: debugData.raw_doc_ai_data }),
+        ...(debugData?.extraction_method && { extraction_method: debugData.extraction_method }),
       });
       if (statusUpdateError) {
         console.error(`[process-document] CRITICAL: Failed to persist failure status for extraction ${extraction_id}. Row may be stuck as 'processing'. DB error:`, statusUpdateError);
@@ -680,6 +691,27 @@ Deno.serve(async (req) => {
 // ============================================
 // GCP DOCUMENT AI + GEMINI PRO PROCESSING
 // ============================================
+
+/** Check if a Gemini error is transient and worth retrying */
+function isRetryableGeminiError(message?: string): boolean {
+  if (!message) return false;
+  const m = message.toLowerCase();
+  return m.includes("no json found")
+    || m.includes("empty response")
+    || m.includes("empty text content")
+    || m.includes("empty json")
+    || m.includes("malformed json")
+    || m.includes("resource_exhausted")
+    || m.includes("429")
+    || m.includes("500 ")
+    || m.includes("502 ")
+    || m.includes("503 ")
+    || m.includes("internal server error")
+    || m.includes("service unavailable")
+    || m.includes("max_tokens")
+    || m.includes("blocked by safety filter")
+    || m.includes("prompt blocked");
+}
 
 async function processWithDocumentAI(
   base64Content: string,
@@ -792,8 +824,8 @@ async function processWithDocumentAI(
       } catch (vertexError: any) {
         geminiDebug.vertex_ai_error = vertexError.message || String(vertexError);
         console.error("[process-document] Vertex AI Gemini failed:", vertexError.message || vertexError);
-        // Retry up to 2 times on "No JSON found" / empty response (safety filter flakiness on PII-heavy docs)
-        if (vertexError.message?.includes("No JSON found") || vertexError.message?.includes("empty response")) {
+        // Retry up to 2 times on transient / safety-filter errors
+        if (isRetryableGeminiError(vertexError.message)) {
           const maxRetries = 2;
           for (let attempt = 1; attempt <= maxRetries; attempt++) {
             console.log(`[process-document] Retrying Vertex AI (attempt ${attempt}/${maxRetries}) after 3s (possible safety filter flake)...`);
@@ -838,8 +870,8 @@ async function processWithDocumentAI(
       } catch (apiKeyError: any) {
         geminiDebug.api_key_error = apiKeyError.message || String(apiKeyError);
         console.error("[process-document] API key Gemini failed:", apiKeyError.message || apiKeyError);
-        // Retry up to 2 times on "No JSON found" / empty response (safety filter flakiness)
-        if (apiKeyError.message?.includes("No JSON found") || apiKeyError.message?.includes("empty response")) {
+        // Retry up to 2 times on transient / safety-filter errors
+        if (isRetryableGeminiError(apiKeyError.message)) {
           const maxRetries = 2;
           for (let attempt = 1; attempt <= maxRetries; attempt++) {
             console.log(`[process-document] Retrying API key Gemini (attempt ${attempt}/${maxRetries}) after 3s...`);
@@ -893,7 +925,14 @@ async function processWithDocumentAI(
       extractedData.extraction_method = 'gcp_doc_ai';
       // If Document AI also extracted 0 fields, the document is unprocessable
       if (extractedData.fields_extracted === 0) {
-        throw new Error("Both Gemini and Document AI failed to extract any fields from the document");
+        // Attach debug data before throwing so the outer catch can persist it
+        const err = new Error("Both Gemini and Document AI failed to extract any fields from the document");
+        (err as any).debugData = {
+          gemini_debug: geminiDebug,
+          raw_doc_ai_data: slimDocAiData(extractedData.raw_doc_ai_data),
+          extraction_method: extractedData.extraction_method || 'gcp_doc_ai',
+        };
+        throw err;
       }
     }
   }
@@ -1069,7 +1108,7 @@ IMPORTANT:
         contents: [{ role: "user", parts: [{ text: prompt }] }],
         generationConfig: {
           temperature: 0.1,
-          maxOutputTokens: 8192,
+          maxOutputTokens: 65536,
           responseMimeType: "application/json",
         },
         safetySettings: [
@@ -1097,6 +1136,14 @@ IMPORTANT:
   }
 
   const result = await response.json();
+
+  // Check prompt-level blocking (fires before generation — candidates may be absent)
+  const promptBlock = result.promptFeedback?.blockReason;
+  if (promptBlock) {
+    console.error(`[process-document] Vertex AI prompt blocked: ${promptBlock}`, JSON.stringify(result.promptFeedback));
+    throw new Error(`Vertex AI prompt blocked by safety filter: ${promptBlock}`);
+  }
+
   const finishReason = result.candidates?.[0]?.finishReason;
   const textContent = result.candidates?.[0]?.content?.parts?.[0]?.text || "";
 
@@ -1230,7 +1277,7 @@ IMPORTANT:
             contents: [{ parts: [{ text: prompt }] }],
             generationConfig: {
               temperature: 0.1,
-              maxOutputTokens: 8192,
+              maxOutputTokens: 65536,
               responseMimeType: "application/json",
             },
             safetySettings: [
@@ -1261,6 +1308,14 @@ IMPORTANT:
     }
 
     const result = await response.json();
+
+    // Check prompt-level blocking (fires before generation — candidates may be absent)
+    const promptBlock = result.promptFeedback?.blockReason;
+    if (promptBlock) {
+      console.error(`[process-document] Gemini API prompt blocked: ${promptBlock}`, JSON.stringify(result.promptFeedback));
+      throw new Error(`Gemini API prompt blocked by safety filter: ${promptBlock}`);
+    }
+
     const finishReason = result.candidates?.[0]?.finishReason;
     console.log("[process-document] Gemini API raw response:", JSON.stringify(result).substring(0, 1000));
     const textContent = result.candidates?.[0]?.content?.parts?.[0]?.text || "";
