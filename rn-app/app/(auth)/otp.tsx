@@ -151,6 +151,8 @@ const FIGMA_GAPS = {
 
 export default function OTPScreen() {
   const router = useRouter();
+  const routerRef = useRef(router);
+  routerRef.current = router;
   const {
     phoneNumber,
     error,
@@ -279,8 +281,8 @@ export default function OTPScreen() {
     if (isClosingRef.current || isNavigating) return;
     isClosingRef.current = true;
     setIsVisible(false);
-    router.back();
-  }, [router, isNavigating]);
+    routerRef.current.back();
+  }, [isNavigating]);
 
   // Handle back button - include handleClose in dependencies to prevent stale closure
   useEffect(() => {
@@ -294,9 +296,10 @@ export default function OTPScreen() {
   // Guard: redirect to sign-up if no phone number
   useEffect(() => {
     if (!phoneNumber) {
-      router.replace('/(auth)/sign-up');
+      routerRef.current.replace('/(auth)/sign-up');
     }
-  }, [phoneNumber, router]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phoneNumber]);
 
   // Navigate when auth store confirms authenticated.
   // IMPORTANT: Do NOT use a separate onAuthStateChange listener here — it races
@@ -313,7 +316,7 @@ export default function OTPScreen() {
 
       if (isReviewMode() || isJourneyMode()) {
         // Review/journey mode — index.tsx handles routing
-        setTimeout(() => router.replace('/' as never), 300);
+        setTimeout(() => routerRef.current.replace('/' as never), 300);
         return;
       }
 
@@ -324,17 +327,18 @@ export default function OTPScreen() {
           if (target === '/(main)' || target === '/(setup)/add-bank' || target === '/(waitlist)') {
             SecureStore.setItemAsync(LAST_ROUTE_KEY, target).catch(() => {});
           }
-          setTimeout(() => router.replace(target as never), 300);
+          setTimeout(() => routerRef.current.replace(target as never), 300);
         }).catch(() => {
           // Fallback — let the journey router handle it
-          setTimeout(() => router.replace('/' as never), 300);
+          setTimeout(() => routerRef.current.replace('/' as never), 300);
         });
       } else {
         // No userId yet — let journey router handle on next render
-        setTimeout(() => router.replace('/' as never), 300);
+        setTimeout(() => routerRef.current.replace('/' as never), 300);
       }
     }
-  }, [authStatus, authUserId, router, isNavigating]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [authStatus, authUserId, isNavigating]);
 
   const handleProceed = useCallback((otpValue?: string | any) => {
     // Ref-based guard: prevents double-fire even before React Query isPending updates.

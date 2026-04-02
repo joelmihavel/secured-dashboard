@@ -91,6 +91,8 @@ const FIGMA_LAYOUT = {
 
 export default function SignUpScreen() {
   const router = useRouter();
+  const routerRef = useRef(router);
+  routerRef.current = router;
   const nameInputRef = useRef<RNTextInput>(null);
   const { sendCode, error, isSendingOtp, clearError } = useAuth();
   const setUserName = useAuthStore((s) => s.setUserName);
@@ -186,9 +188,9 @@ export default function SignUpScreen() {
     setUserName(name.trim());
     setConsentForMobile360(consent);
     sendCode(formattedPhone, name.trim(), () => {
-      router.push('/(auth)/otp');
+      routerRef.current.push('/(auth)/otp');
     });
-  }, [isFormValid, phone, name, consent, countryCode, sendCode, setUserName, setConsentForMobile360, isSendingOtp, router]);
+  }, [isFormValid, phone, name, consent, countryCode, sendCode, setUserName, setConsentForMobile360, isSendingOtp]);
 
   const authStatus = useAuthStore((s) => s.status);
   const isAuthSuccess = authStatus === 'authenticated';

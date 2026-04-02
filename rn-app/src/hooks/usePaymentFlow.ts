@@ -59,6 +59,8 @@ interface UsePaymentFlowReturn {
 
 export function usePaymentFlow(): UsePaymentFlowReturn {
   const router = useRouter();
+  const routerRef = useRef(router);
+  routerRef.current = router;
   const queryClient = useQueryClient();
   const [isExecuting, setIsExecuting] = useState(false);
   // Ref mirrors state for synchronous guard checks inside the async callback
@@ -101,7 +103,7 @@ export function usePaymentFlow(): UsePaymentFlowReturn {
             setLastPayment(paymentId);
 
             // Navigate first — don't block on method save or cache invalidation
-            router.replace({
+            routerRef.current.replace({
               pathname: '/(payment)/status',
               params: {
                 paymentId,
@@ -173,7 +175,7 @@ export function usePaymentFlow(): UsePaymentFlowReturn {
             if (outcome.isTxnInitiated) {
               // Txn was initiated before cancel — must go to status for verification
               setLastPayment(paymentId);
-              router.replace({
+              routerRef.current.replace({
                 pathname: '/(payment)/status',
                 params: {
                   paymentId,
@@ -189,7 +191,7 @@ export function usePaymentFlow(): UsePaymentFlowReturn {
 
           case 'failure':
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-            router.replace({
+            routerRef.current.replace({
               pathname: '/(payment)/status',
               params: {
                 paymentId,
@@ -221,7 +223,7 @@ export function usePaymentFlow(): UsePaymentFlowReturn {
         setIsExecuting(false);
       }
     },
-    [router, setLastPayment, clearPayuSessionParams, queryClient],
+    [setLastPayment, clearPayuSessionParams, queryClient],
   );
 
   const executeCashfreePayment = useCallback(
@@ -267,7 +269,7 @@ export function usePaymentFlow(): UsePaymentFlowReturn {
                 cleanup();
                 Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
                 setLastPayment(paymentId);
-                router.replace({
+                routerRef.current.replace({
                   pathname: '/(payment)/status',
                   // Always 'pending' — onVerify means SDK completed, NOT payment confirmed.
                   // Status screen polls the backend; webhook confirms actual outcome.
@@ -288,7 +290,7 @@ export function usePaymentFlow(): UsePaymentFlowReturn {
 
                 cleanup();
                 setLastPayment(paymentId);
-                router.replace({
+                routerRef.current.replace({
                   pathname: '/(payment)/status',
                   params: { paymentId, method: methodParam, initialStatus: 'pending' },
                 } as never);
@@ -303,7 +305,7 @@ export function usePaymentFlow(): UsePaymentFlowReturn {
               console.warn('[Cashfree] SDK timeout — navigating to status');
               cleanup();
               setLastPayment(paymentId);
-              router.replace({
+              routerRef.current.replace({
                 pathname: '/(payment)/status',
                 params: { paymentId, method: methodParam, initialStatus: 'pending' },
               } as never);
@@ -323,7 +325,7 @@ export function usePaymentFlow(): UsePaymentFlowReturn {
         };
       }
     },
-    [router, setLastPayment, clearCashfreeSession, queryClient],
+    [setLastPayment, clearCashfreeSession, queryClient],
   );
 
   return {

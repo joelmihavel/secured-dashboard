@@ -31,20 +31,22 @@ import { s, sf, sv } from '@/src/theme/scale';
 
 export default function SplashScreen() {
   const router = useRouter();
+  const routerRef = useRef(router);
+  routerRef.current = router;
   const insets = useSafeAreaInsets();
   const navigating = useRef(false);
 
   const handleGetStarted = useCallback(() => {
     if (navigating.current) return;
     navigating.current = true;
-    router.replace('/(auth)/carousel');
+    routerRef.current.replace('/(auth)/carousel');
     setTimeout(() => { navigating.current = false; }, 1000);
-  }, [router]);
+  }, []);
 
   const handleLogin = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    router.push('/(auth)/sign-up');
-  }, [router]);
+    routerRef.current.push('/(auth)/sign-up');
+  }, []);
 
   // Figma frame height 852, content ends at y=818, bottom safe area = 34px
   const paddingBottom = Math.max(insets.bottom, 34);

@@ -8,7 +8,7 @@
  * Route: /(payment)/enter-rent
  */
 
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 
@@ -17,6 +17,8 @@ import { PaymentMethodModal } from '@/src/components/payment/PaymentMethodModal'
 
 export default function EnterRentScreen() {
   const router = useRouter();
+  const routerRef = useRef(router);
+  routerRef.current = router;
   const [showModal, setShowModal] = useState(false);
 
   const { tenancy, upcomingPayment } = useDashboard();
@@ -34,8 +36,8 @@ export default function EnterRentScreen() {
   const handleClose = useCallback(() => {
     setShowModal(false);
     // Small delay so the sheet dismiss animation completes before navigating
-    setTimeout(() => router.back(), 200);
-  }, [router]);
+    setTimeout(() => routerRef.current.back(), 200);
+  }, []);
 
   return (
     <View style={styles.container} testID="enter-rent-screen">

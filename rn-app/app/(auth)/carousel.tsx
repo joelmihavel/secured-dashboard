@@ -89,6 +89,8 @@ const slides: Slide[] = [
 
 export default function CarouselScreen() {
   const router = useRouter();
+  const routerRef = useRef(router);
+  routerRef.current = router;
   const { page } = useLocalSearchParams<{ page?: string }>();
 
   const initialPage = page ? Math.max(0, Math.min(parseInt(page, 10) - 1, slides.length - 1)) : 0;
@@ -113,8 +115,8 @@ export default function CarouselScreen() {
 
   const handleSkip = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    router.push('/(auth)/sign-up');
-  }, [router]);
+    routerRef.current.push('/(auth)/sign-up');
+  }, []);
 
   const onViewableItemsChanged = useCallback(
     ({ viewableItems }: { viewableItems: ViewToken[] }) => {

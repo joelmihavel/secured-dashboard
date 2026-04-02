@@ -6,7 +6,7 @@
  * Users must contact support to make changes.
  */
 
-import React, { useCallback } from 'react';
+import React, { useCallback, useRef } from 'react';
 import {
   View,
   StyleSheet,
@@ -32,13 +32,15 @@ const FIGMA_COLORS = {
 
 export default function EditBankDetailsScreen() {
   const router = useRouter();
+  const routerRef = useRef(router);
+  routerRef.current = router;
   const insets = useSafeAreaInsets();
   const { landlordBank } = useDashboard();
 
   const handleBack = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    router.back();
-  }, [router]);
+    routerRef.current.back();
+  }, []);
 
   const handleContactSupport = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);

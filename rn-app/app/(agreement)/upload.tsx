@@ -21,7 +21,7 @@
  * - All values are exact Figma pixels, no scaling
  */
 
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import {
   View,
   ScrollView,
@@ -585,6 +585,8 @@ function SweepingText({ text, style }: { text: string; style: any }) {
 
 export default function UploadScreen() {
   const router = useRouter();
+  const routerRef = useRef(router);
+  routerRef.current = router;
   const insets = useSafeAreaInsets();
   const { forceNew } = useLocalSearchParams<{
     forceNew?: string;
@@ -948,7 +950,7 @@ export default function UploadScreen() {
       // Brief pause at 100% before navigating
       await new Promise((resolve) => setTimeout(resolve, 300));
       advanceJourneyStage(); // agreement_upload → setup
-      router.replace('/(agreement)/add-bank-details' as never);
+      routerRef.current.replace('/(agreement)/add-bank-details' as never);
       return;
     }
 
@@ -999,7 +1001,7 @@ export default function UploadScreen() {
 
       // Upload is done; backend extraction continues asynchronously.
       // Route to bank details (user fills dead time while extraction runs).
-      router.replace('/(agreement)/add-bank-details' as never);
+      routerRef.current.replace('/(agreement)/add-bank-details' as never);
     } catch (error) {
       console.error('Upload error:', error);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
@@ -1074,7 +1076,7 @@ export default function UploadScreen() {
           break;
       }
     }
-  }, [document, agreement, router, isConnected, extractionStatus.hasActiveExtraction]);
+  }, [document, agreement, isConnected, extractionStatus.hasActiveExtraction]);
 
   const handleRetry = useCallback(async () => {
     // Abandon old extraction in DB so upload-document won't block with PROCESSING_IN_PROGRESS.
@@ -1093,8 +1095,8 @@ export default function UploadScreen() {
 
   const handleGetNotified = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    router.replace('/(waitlist)' as never);
-  }, [router]);
+    routerRef.current.replace('/(waitlist)' as never);
+  }, []);
 
   // Get current state config
   const config = STATE_CONFIG[uploadState];

@@ -93,6 +93,8 @@ const FIGMA = {
 
 export default function WaitlistRejectedScreen() {
   const router = useRouter();
+  const routerRef = useRef(router);
+  routerRef.current = router;
   const insets = useSafeAreaInsets();
 
   const {
@@ -106,9 +108,10 @@ export default function WaitlistRejectedScreen() {
   // Guard: if admin reverts rejection, redirect back to waitlist
   useEffect(() => {
     if (viewState && viewState !== 'rejected' && viewState !== 'loading') {
-      router.replace('/(waitlist)' as never);
+      routerRef.current.replace('/(waitlist)' as never);
     }
-  }, [viewState, router]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [viewState]);
 
   const submissionDate = status?.submissionDate ?? '';
   const reviewTime = status?.estimatedReviewTime ?? '';

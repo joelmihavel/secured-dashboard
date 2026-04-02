@@ -28,6 +28,9 @@ import {
 import { KeyboardAvoidingView, useKeyboardState } from 'react-native-keyboard-controller';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
+// CRITICAL: Expo Router's `router` is NOT referentially stable — changes on every
+// navigation state update. Using it in deps causes infinite re-render loops.
 import * as Haptics from 'expo-haptics';
 import Svg, { Path } from 'react-native-svg';
 import { AlertBanner, Text, TextInput, PrimaryButton, ScreenTitle, Logo } from '@/src/components';
@@ -191,6 +194,8 @@ export interface AddBankProps {
 
 export default function AddBankScreen({ preWaitlist = false }: AddBankProps) {
   const router = useRouter();
+  const routerRef = useRef(router);
+  routerRef.current = router;
   const insets = useSafeAreaInsets();
   const verifyBankMutation = useVerifyBank();
   const verifyUpiMutation = useVerifyUpiVpa();
@@ -228,9 +233,10 @@ export default function AddBankScreen({ preWaitlist = false }: AddBankProps) {
   const bankAlreadyVerified = !__DEV__ && (tenancy?.verification_status?.bank_verified || landlordBank?.verified);
   useEffect(() => {
     if (bankAlreadyVerified && screenState === 'form') {
-      router.replace('/(main)' as never);
+      routerRef.current.replace('/(main)' as never);
     }
-  }, [bankAlreadyVerified, screenState, router]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [bankAlreadyVerified, screenState]);
 
   const bankVerified = verificationResult?.verified === true;
   const panVerified = panResult?.panVerified === true;
@@ -433,18 +439,18 @@ export default function AddBankScreen({ preWaitlist = false }: AddBankProps) {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     if (preWaitlist) {
       completeBankStep();
-      router.replace('/(waitlist)' as never);
+      routerRef.current.replace('/(waitlist)' as never);
     } else {
-      router.replace('/(main)' as never);
+      routerRef.current.replace('/(main)' as never);
     }
-  }, [router, preWaitlist, completeBankStep]);
+  }, [preWaitlist, completeBankStep]);
 
   // Skip — pre-waitlist only
   const handleSkip = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     completeBankStep();
-    router.replace('/(waitlist)' as never);
-  }, [router, completeBankStep]);
+    routerRef.current.replace('/(waitlist)' as never);
+  }, [completeBankStep]);
 
   // "Try again" on failure screen — reset everything so fields are editable
   const handleRetry = useCallback(() => {

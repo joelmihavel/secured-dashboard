@@ -15,7 +15,7 @@
  * - Back guard navigates home (clears payment stack)
  */
 
-import React, { useEffect, useCallback, useState, memo } from 'react';
+import React, { useEffect, useCallback, useRef, useState, memo } from 'react';
 import {
   View,
   StyleSheet,
@@ -133,6 +133,8 @@ ReceiptRow.displayName = 'ReceiptRow';
 
 export default function PaymentSuccessScreen() {
   const router = useRouter();
+  const routerRef = useRef(router);
+  routerRef.current = router;
   const insets = useSafeAreaInsets();
 
   const params = useLocalSearchParams() as unknown as SuccessParams;
@@ -168,15 +170,16 @@ export default function PaymentSuccessScreen() {
   useEffect(() => {
     const onBackPress = () => {
       if (isReceiptView) {
-        router.back();
+        routerRef.current.back();
       } else {
-        router.replace('/(main)' as never);
+        routerRef.current.replace('/(main)' as never);
       }
       return true;
     };
     const sub = BackHandler.addEventListener('hardwareBackPress', onBackPress);
     return () => sub.remove();
-  }, [isReceiptView, router]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isReceiptView]);
 
   // ============================================
   // HANDLERS
@@ -184,11 +187,11 @@ export default function PaymentSuccessScreen() {
 
   const handleBack = useCallback(() => {
     if (isReceiptView) {
-      router.back();
+      routerRef.current.back();
     } else {
-      router.replace('/(main)' as never);
+      routerRef.current.replace('/(main)' as never);
     }
-  }, [isReceiptView, router]);
+  }, [isReceiptView]);
 
   const handleContactSupport = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);

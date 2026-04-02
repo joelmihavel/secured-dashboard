@@ -23,7 +23,7 @@
  *         - Inner (I41:8896;100:1564): row, pad=16, "Save Changes" 14px/20 Medium #FFFFFF
  */
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
 import {
   View,
   StyleSheet,
@@ -48,6 +48,8 @@ const FIGMA_COLORS = {
 
 export default function EditProfileScreen() {
   const router = useRouter();
+  const routerRef = useRef(router);
+  routerRef.current = router;
   const { user } = useDashboard();
   const updateProfile = useUpdateProfile();
 
@@ -61,8 +63,8 @@ export default function EditProfileScreen() {
 
   const handleBack = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    router.back();
-  }, [router]);
+    routerRef.current.back();
+  }, []);
 
   const handleSave = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -74,14 +76,14 @@ export default function EditProfileScreen() {
       {
         onSuccess: () => {
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-          router.back();
+          routerRef.current.back();
         },
         onError: () => {
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
         },
       }
     );
-  }, [updateProfile, name, router]);
+  }, [updateProfile, name]);
 
   return (
     <Screen testID="edit-profile-screen" padded={false}>

@@ -305,6 +305,8 @@ function ErrorFallback({ onRetry }: { onRetry: () => void }) {
 
 export default function PaymentStatusScreen() {
   const router = useRouter();
+  const routerRef = useRef(router);
+  routerRef.current = router;
   const insets = useSafeAreaInsets();
   const queryClient = useQueryClient();
   const { clearLastPayment } = usePaymentStore();
@@ -396,7 +398,7 @@ export default function PaymentStatusScreen() {
 
       if (newStatus === 'success') {
         // Navigate to dedicated success screen with receipt UI
-        router.replace({
+        routerRef.current.replace({
           pathname: '/(payment)/success',
           params: {
             paymentId,
@@ -413,7 +415,7 @@ export default function PaymentStatusScreen() {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       }
     },
-    [clearLastPayment, invalidateCaches, router, paymentId, amount, method, cashback, transactionId, params.landlordName, params.agreementId],
+    [clearLastPayment, invalidateCaches, paymentId, amount, method, cashback, transactionId, params.landlordName, params.agreementId],
   );
 
   // ============================================
@@ -608,7 +610,7 @@ export default function PaymentStatusScreen() {
 
   useEffect(() => {
     if (rawInitialStatus === 'success') {
-      router.replace({
+      routerRef.current.replace({
         pathname: '/(payment)/success',
         params: {
           paymentId,
@@ -644,7 +646,7 @@ export default function PaymentStatusScreen() {
               text: 'Leave',
               style: 'destructive',
               onPress: () => {
-                router.replace('/(main)' as never);
+                routerRef.current.replace('/(main)' as never);
               },
             },
           ],
@@ -653,13 +655,14 @@ export default function PaymentStatusScreen() {
       }
 
       // For terminal states, go home (clear payment stack)
-      router.replace('/(main)' as never);
+      routerRef.current.replace('/(main)' as never);
       return true;
     };
 
     const subscription = BackHandler.addEventListener('hardwareBackPress', onBackPress);
     return () => subscription.remove();
-  }, [state.status, router]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state.status]);
 
   // ============================================
   // HANDLERS
@@ -672,13 +675,13 @@ export default function PaymentStatusScreen() {
 
   const handleTryAgain = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    router.replace('/(payment)/enter-rent' as never);
-  }, [router]);
+    routerRef.current.replace('/(payment)/enter-rent' as never);
+  }, []);
 
   const handleGoHome = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    router.replace('/(main)' as never);
-  }, [router]);
+    routerRef.current.replace('/(main)' as never);
+  }, []);
 
   const handleBack = useCallback(() => {
     if (state.status === 'pending') {
@@ -691,7 +694,7 @@ export default function PaymentStatusScreen() {
             text: 'Leave',
             style: 'destructive',
             onPress: () => {
-              router.replace('/(main)' as never);
+              routerRef.current.replace('/(main)' as never);
             },
           },
         ],
@@ -699,7 +702,7 @@ export default function PaymentStatusScreen() {
       return;
     }
     handleGoHome();
-  }, [isReceiptView, state.status, router, handleGoHome]);
+  }, [isReceiptView, state.status, handleGoHome]);
 
   const handleDownloadReceipt = useCallback(async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);

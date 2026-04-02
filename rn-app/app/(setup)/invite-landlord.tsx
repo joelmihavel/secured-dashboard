@@ -28,7 +28,7 @@
  * Backend: send-landlord-invite edge function (POST, auth required)
  */
 
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   View,
   StyleSheet,
@@ -67,6 +67,8 @@ const FIGMA_COLORS = {
 
 export default function InviteLandlordScreen() {
   const router = useRouter();
+  const routerRef = useRef(router);
+  routerRef.current = router;
   const sendLandlordInvite = useSendLandlordInvite();
   const { tenancy } = useDashboard();
 
@@ -100,8 +102,8 @@ export default function InviteLandlordScreen() {
   });
 
   const handleBack = useCallback(() => {
-    router.back();
-  }, [router]);
+    routerRef.current.back();
+  }, []);
 
   const handlePhoneChange = useCallback((text: string) => {
     setPhoneNumber(text);
@@ -159,7 +161,7 @@ export default function InviteLandlordScreen() {
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
           setInviteSent(true);
           setTimeout(() => {
-            router.replace('/(main)' as never);
+            routerRef.current.replace('/(main)' as never);
           }, 1500);
         },
         onError: (error: SetupError) => {
@@ -168,12 +170,12 @@ export default function InviteLandlordScreen() {
         },
       }
     );
-  }, [validateForm, sendLandlordInvite, phoneNumber, countryCode, tenancy?.id, router]);
+  }, [validateForm, sendLandlordInvite, phoneNumber, countryCode, tenancy?.id]);
 
   const handleSkip = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    router.replace('/(main)' as never);
-  }, [router]);
+    routerRef.current.replace('/(main)' as never);
+  }, []);
 
   const handleLearnMore = useCallback(() => {
     Linking.openURL('https://flent.in/secured/how-it-works');

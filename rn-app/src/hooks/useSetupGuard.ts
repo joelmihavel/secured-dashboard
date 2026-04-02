@@ -10,7 +10,7 @@
  *   // If canAccess is false, redirect to shouldRedirectTo
  */
 
-import { useCallback, useMemo } from 'react';
+import { useCallback, useMemo, useRef } from 'react';
 import { useRouter } from 'expo-router';
 import { useVerificationStatus } from './useDashboard';
 import type { SetupStepId } from '../stores/setup';
@@ -65,6 +65,8 @@ export interface SetupGuardResult {
  */
 export function useSetupGuard(requestedStep?: SetupStepId): SetupGuardResult {
   const router = useRouter();
+  const routerRef = useRef(router);
+  routerRef.current = router;
   const {
     bankVerified,
     utilityVerified,
@@ -131,8 +133,8 @@ export function useSetupGuard(requestedStep?: SetupStepId): SetupGuardResult {
   // Navigate to the active step
   const navigateToActiveStep = useCallback(() => {
     const route = STEP_ROUTES[activeStep];
-    router.push(route as never);
-  }, [router, activeStep]);
+    routerRef.current.push(route as never);
+  }, [activeStep]);
 
   return {
     activeStep,

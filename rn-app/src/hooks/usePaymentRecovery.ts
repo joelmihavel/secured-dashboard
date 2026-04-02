@@ -16,6 +16,8 @@ const RECOVERY_WINDOW_MS = 30 * 60 * 1000; // 30 minutes
 
 export function usePaymentRecovery() {
   const router = useRouter();
+  const routerRef = useRef(router);
+  routerRef.current = router;
   const rootNavigationState = useRootNavigationState();
   const hasChecked = useRef(false);
 
@@ -56,7 +58,7 @@ export function usePaymentRecovery() {
           // Network error — fall through to recovery screen
         }
         // Still in progress — resume polling on status screen
-        router.replace({
+        routerRef.current.replace({
           pathname: '/(payment)/status',
           params: { paymentId: lastPaymentId, initialStatus: 'pending' },
         } as never);
@@ -71,5 +73,6 @@ export function usePaymentRecovery() {
       const unsub = usePaymentStore.persist.onFinishHydration(checkRecovery);
       return unsub;
     }
-  }, [router, rootNavigationState?.key]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rootNavigationState?.key]);
 }

@@ -26,7 +26,7 @@
  *         - Sign Out, divider, Delete Account
  */
 
-import React, { useCallback } from 'react';
+import React, { useCallback, useRef } from 'react';
 import {
   View,
   StyleSheet,
@@ -121,29 +121,31 @@ function CardDivider() {
 
 export default function ProfileScreen() {
   const router = useRouter();
+  const routerRef = useRef(router);
+  routerRef.current = router;
   const { user, tenancy } = useDashboard();
   const { signOut } = useAuth();
   const deleteAccount = useDeleteAccount();
 
   const handleBack = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    router.back();
-  }, [router]);
+    routerRef.current.back();
+  }, []);
 
   const handleViewAgreement = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    router.push('/(profile)/agreement' as never);
-  }, [router]);
+    routerRef.current.push('/(profile)/agreement' as never);
+  }, []);
 
   const handleUserProfile = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    router.push('/(profile)/edit' as never);
-  }, [router]);
+    routerRef.current.push('/(profile)/edit' as never);
+  }, []);
 
   const handleEditBankDetails = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    router.push('/(profile)/edit-bank-details' as never);
-  }, [router]);
+    routerRef.current.push('/(profile)/edit-bank-details' as never);
+  }, []);
 
   const handleContactSupport = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);

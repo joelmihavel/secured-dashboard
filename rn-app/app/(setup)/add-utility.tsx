@@ -71,6 +71,8 @@ const FIGMA_COLORS = {
 
 export default function AddUtilityScreen() {
   const router = useRouter();
+  const routerRef = useRef(router);
+  routerRef.current = router;
   const insets = useSafeAreaInsets();
   const verifyUtility = useVerifyUtility();
   const { tenancy } = useDashboard();
@@ -117,17 +119,17 @@ export default function AddUtilityScreen() {
   landlordApprovedRef.current = landlordApproved;
 
   const handleBack = useCallback(() => {
-    router.back();
-  }, [router]);
+    routerRef.current.back();
+  }, []);
 
   const handleSkip = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     if (landlordApproved) {
-      router.replace('/(main)' as never);
+      routerRef.current.replace('/(main)' as never);
     } else {
-      router.push('/(setup)/invite-landlord' as never);
+      routerRef.current.push('/(setup)/invite-landlord' as never);
     }
-  }, [router, landlordApproved]);
+  }, [landlordApproved]);
 
   const handleConsumerNumberChange = useCallback((text: string) => {
     setConsumerNumber(text.replace(/\D/g, ''));
@@ -179,9 +181,9 @@ export default function AddUtilityScreen() {
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
             setTimeout(() => {
               if (landlordApprovedRef.current) {
-                router.replace('/(main)' as never);
+                routerRef.current.replace('/(main)' as never);
               } else {
-                router.push('/(setup)/invite-landlord' as never);
+                routerRef.current.push('/(setup)/invite-landlord' as never);
               }
             }, 1200);
           } else {
@@ -200,7 +202,7 @@ export default function AddUtilityScreen() {
         },
       }
     );
-  }, [validateForm, verifyUtility, selectedOperator, consumerNumber, tenancy?.id, router]);
+  }, [validateForm, verifyUtility, selectedOperator, consumerNumber, tenancy?.id]);
 
   const isFormValid = !!selectedOperator && validateConsumerNumber(consumerNumber);
   const operatorDisplayName = selectedOperator?.operatorName ?? 'Select Operator';

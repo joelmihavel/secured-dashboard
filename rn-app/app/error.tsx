@@ -17,7 +17,7 @@
  *   - isLooping: "true" if 3+ errors in 30s (disables Try Again)
  */
 
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useRef, useState } from 'react';
 import { View, StyleSheet, Linking, Pressable } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import Svg, { Path } from 'react-native-svg';
@@ -41,6 +41,8 @@ const WarningIcon = () => (
 
 export default function ErrorScreen() {
   const router = useRouter();
+  const routerRef = useRef(router);
+  routerRef.current = router;
   const params = useLocalSearchParams<{
     title?: string;
     message?: string;
@@ -72,17 +74,17 @@ export default function ErrorScreen() {
     }
 
     if (action === 'back' || action === 'retry') {
-      if (router.canGoBack()) {
-        router.back();
+      if (routerRef.current.canGoBack()) {
+        routerRef.current.back();
       } else {
-        router.replace('/');
+        routerRef.current.replace('/');
       }
     } else if (action === 'home') {
-      router.replace('/' as never);
+      routerRef.current.replace('/' as never);
     } else {
-      router.replace(action as never);
+      routerRef.current.replace(action as never);
     }
-  }, [action, router, isLooping]);
+  }, [action, isLooping]);
 
   const handleContactSupport = useCallback(() => {
     const uri = buildSupportEmailUri({

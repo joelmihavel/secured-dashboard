@@ -88,6 +88,8 @@ export function PaymentMethodModal({
   const { executePayment, executeCashfreePayment } = usePaymentFlow();
 
   const router = useRouter();
+  const routerRef = useRef(router);
+  routerRef.current = router;
   const {
     setPayuSessionParams,
     clearPayuSessionParams,
@@ -172,7 +174,7 @@ export function PaymentMethodModal({
           setProcessing(data.paymentId);
           setLastPayment(data.paymentId);
 
-          router.replace({
+          routerRef.current.replace({
             pathname: '/(payment)/status',
             params: {
               paymentId: data.paymentId,
@@ -199,7 +201,7 @@ export function PaymentMethodModal({
           setLastPayment(data.paymentId);
           setPaymentId(data.paymentId);
           onClose?.();
-          router.replace({
+          routerRef.current.replace({
             pathname: '/(payment)/status',
             params: { paymentId: data.paymentId, amount: String(data.totalAmountPaise || 0) },
           });
@@ -223,7 +225,7 @@ export function PaymentMethodModal({
         return null;
       }
     },
-    [tenancyId, rentMonth, isConnected, router, setConfirming, setProcessing, setLastPayment, setPayuSessionParams, setCashfreeSession],
+    [tenancyId, rentMonth, isConnected, setConfirming, setProcessing, setLastPayment, setPayuSessionParams, setCashfreeSession],
   );
 
   // --- Ready for confirm: instrument details collected, transition to confirm ---
@@ -269,7 +271,7 @@ export function PaymentMethodModal({
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         pendingInstrumentRef.current = null;
         isDemoRef.current = false;
-        router.replace({
+        routerRef.current.replace({
           pathname: '/(payment)/status',
           params: {
             paymentId: currentPaymentId,

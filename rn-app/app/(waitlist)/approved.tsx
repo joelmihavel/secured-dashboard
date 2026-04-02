@@ -122,6 +122,8 @@ const FIGMA = {
 
 export default function WaitlistApprovedScreen() {
   const router = useRouter();
+  const routerRef = useRef(router);
+  routerRef.current = router;
   const insets = useSafeAreaInsets();
 
   const {
@@ -134,9 +136,10 @@ export default function WaitlistApprovedScreen() {
   // Guard: if admin reverts approval, redirect back to waitlist
   useEffect(() => {
     if (viewState && viewState !== 'approved' && viewState !== 'loading') {
-      router.replace('/(waitlist)' as never);
+      routerRef.current.replace('/(waitlist)' as never);
     }
-  }, [viewState, router]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [viewState]);
 
   const displayName = userName || 'there';
   const submissionDate = status?.submissionDate ?? '';
@@ -231,8 +234,8 @@ export default function WaitlistApprovedScreen() {
 
   // Stable navigation callback for runOnJS (Reanimated v4 requires standalone functions, not method refs)
   const navigateToSetup = useCallback(() => {
-    router.replace('/(setup)/add-bank' as never);
-  }, [router]);
+    routerRef.current.replace('/(setup)/add-bank' as never);
+  }, []);
 
   // Handle "Step Inside" button
   const handleStepInside = useCallback(() => {

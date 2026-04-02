@@ -250,6 +250,8 @@ const FIGMA = {
 
 export default function WaitlistScreen() {
   const router = useRouter();
+  const routerRef = useRef(router);
+  routerRef.current = router;
   const insets = useSafeAreaInsets();
   const queryClient = useQueryClient();
 
@@ -279,16 +281,16 @@ export default function WaitlistScreen() {
 
   // Stable navigation callbacks for runOnJS (Reanimated v4 requires standalone functions, not method refs)
   const navigateToApproved = React.useCallback(() => {
-    router.replace('/(waitlist)/approved');
-  }, [router]);
+    routerRef.current.replace('/(waitlist)/approved');
+  }, []);
 
   const navigateToAgreement = React.useCallback(() => {
-    router.replace('/(agreement)/upload' as never);
-  }, [router]);
+    routerRef.current.replace('/(agreement)/upload' as never);
+  }, []);
 
   const navigateToRejected = React.useCallback(() => {
-    router.replace('/(waitlist)/rejected');
-  }, [router]);
+    routerRef.current.replace('/(waitlist)/rejected');
+  }, []);
 
   // Redirect to approved screen when approved
   useEffect(() => {

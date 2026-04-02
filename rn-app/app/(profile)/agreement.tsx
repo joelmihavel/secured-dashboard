@@ -5,7 +5,7 @@
  * Read-only view of agreement details. Contact support to make changes.
  */
 
-import React, { useCallback, useMemo } from 'react';
+import React, { useCallback, useMemo, useRef } from 'react';
 import {
   View,
   StyleSheet,
@@ -82,12 +82,14 @@ const STACKED_LABELS = new Set(['Property Name', 'Tenant(s)', 'Landlord(s)']);
 
 export default function ProfileAgreementScreen() {
   const router = useRouter();
+  const routerRef = useRef(router);
+  routerRef.current = router;
   const { tenancy } = useDashboard();
 
   const handleBack = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    router.back();
-  }, [router]);
+    routerRef.current.back();
+  }, []);
 
   const handleContactSupport = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);

@@ -221,6 +221,8 @@ async function checkPendingExtraction(userId: string): Promise<boolean> {
 
 export default function Index() {
   const router = useRouter();
+  const routerRef = useRef(router);
+  routerRef.current = router;
   const rootNavigationState = useRootNavigationState();
   const { isAuthenticated, isLoading: authLoading, session: authSession } = useAuthContext();
   const updatePolicy = useUpdatePolicy();
@@ -590,7 +592,7 @@ export default function Index() {
     // effect can race with the force update check on the same render cycle.
     if (updatePolicy.isRequired) return;
     hasNavigatedRef.current = true;
-    router.replace(target as never);
+    routerRef.current.replace(target as never);
     // Cache the route scoped to the current user for instant navigation on next launch
     const currentUserId = authSession?.user?.id;
     if (currentUserId && VALID_CACHED_ROUTES.has(target)) {
@@ -611,7 +613,8 @@ export default function Index() {
     // after the app is visible (with native reload screen). This ensures users
     // are never blocked or delayed on app open.
     setTimeout(() => SplashScreen.hideAsync().catch(() => {}), 300);
-  }, [journeyResolved, target, router, rootNavigationState?.key, updatePolicy.isRequired]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [journeyResolved, target, rootNavigationState?.key, updatePolicy.isRequired]);
 
   // Critical update blocks ALL navigation — user must update (OTA or native)
   if (updatePolicy.isRequired) {
