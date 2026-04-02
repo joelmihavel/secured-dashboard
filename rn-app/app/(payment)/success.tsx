@@ -253,7 +253,12 @@ export default function PaymentSuccessScreen() {
 
     try {
       const html = buildReceiptHtml(htmlData);
-      const { uri } = await Print.printToFileAsync({ html, base64: false });
+      const { uri } = await Print.printToFileAsync({
+        html,
+        width: 390,
+        height: 680,
+        base64: false,
+      });
       await Sharing.shareAsync(uri, {
         mimeType: 'application/pdf',
         dialogTitle: 'Rent Receipt',

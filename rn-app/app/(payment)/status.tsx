@@ -38,6 +38,8 @@ import { PaymentReceiptCard } from '@/src/components/payment/PaymentReceiptCard'
 import { OfflineBanner } from '@/src/components/ui/Layout/OfflineBanner';
 import { useNetworkStatus } from '@/src/hooks/useNetworkStatus';
 import { useRealtimeQuery } from '@/src/hooks/useRealtimeQuery';
+import * as Print from 'expo-print';
+import * as Sharing from 'expo-sharing';
 import { checkPaymentStatus, generateReceipt } from '@/src/services/api/payments';
 import type { ReceiptData } from '@/src/services/api/payments';
 import { buildReceiptHtml, buildFallbackReceiptData } from '@/src/utils/receiptHtml';
@@ -762,7 +764,12 @@ export default function PaymentStatusScreen() {
 
     try {
       const html = buildReceiptHtml(htmlData);
-      const { uri } = await Print.printToFileAsync({ html, base64: false });
+      const { uri } = await Print.printToFileAsync({
+        html,
+        width: 390,
+        height: 680,
+        base64: false,
+      });
       await Sharing.shareAsync(uri, {
         mimeType: 'application/pdf',
         dialogTitle: 'Rent Receipt',

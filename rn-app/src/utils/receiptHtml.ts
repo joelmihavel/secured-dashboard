@@ -103,7 +103,8 @@ export function buildReceiptHtml(r: ReceiptHtmlData): string {
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 @page{size:390px 680px;margin:0}
-html,body{width:390px;height:680px;background:${T.bg};font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',sans-serif;color:${T.text1};-webkit-print-color-adjust:exact;print-color-adjust:exact}
+html{width:390px;height:680px;overflow:hidden}
+body{width:390px;height:680px;max-height:680px;overflow:hidden;background:${T.bg};font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',sans-serif;color:${T.text1};-webkit-print-color-adjust:exact;print-color-adjust:exact}
 .p{padding:28px 24px 20px;height:100%;display:flex;flex-direction:column}
 
 .top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:24px}
