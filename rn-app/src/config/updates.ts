@@ -348,12 +348,15 @@ export async function reloadApp(): Promise<boolean> {
     // Step 2: Wait for in-flight token refresh to complete and persist.
     // The Promise is created by beginTokenRefreshTracking() in AuthProvider
     // and resolved by endTokenRefreshTracking() on TOKEN_REFRESHED/SIGNED_OUT.
+    // Timeout 8s (was 3s): on Indian 4G/3G, token refresh round-trips can take
+    // 3-6s. If we reload before the SDK persists the new refresh token to
+    // SecureStore, the old (consumed) token is loaded on restart → SIGNED_OUT.
     if (_tokenRefreshPromise) {
       trackEvent('ota_reload_deferred_token_refresh');
       addBreadcrumb('OTA reload waiting for token refresh', 'updates');
       await Promise.race([
         _tokenRefreshPromise,
-        new Promise<void>(resolve => setTimeout(resolve, 3000)),
+        new Promise<void>(resolve => setTimeout(resolve, 8000)),
       ]);
     }
 

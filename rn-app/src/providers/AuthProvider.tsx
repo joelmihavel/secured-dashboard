@@ -11,7 +11,7 @@
 import React, { createContext, useContext, useEffect, useState, useRef, useMemo, useCallback } from 'react';
 import { useRouter } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
-import { supabase, updateCachedSession } from '@/src/services/supabase/client';
+import { supabase, updateCachedSession, SUPABASE_SESSION_STORAGE_KEY } from '@/src/services/supabase/client';
 import { clearAllStores } from '@/src/stores/resetAll';
 import { registerForPushNotifications } from '@/src/services/notifications';
 import { isReviewMode, deactivateReviewMode } from '@/src/review/reviewMode';
@@ -254,8 +254,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
                 SecureStore.deleteItemAsync(OTA_RELOAD_MARKER_KEY).catch(() => {});
                 const elapsed = Date.now() - parseInt(markerTs, 10);
                 if (elapsed < 15000) {
-                  debounceMs = 5000; // Post-OTA: 5s for recovery
-                  console.log('[AuthProvider] Post-OTA reload — extending SIGNED_OUT debounce to 5s');
+                  debounceMs = 8000; // Post-OTA: 8s for recovery (Indian 4G refresh can take 3-6s)
+                  console.log('[AuthProvider] Post-OTA reload — extending SIGNED_OUT debounce to 8s');
                 }
               }
             } catch {
@@ -271,19 +271,27 @@ export function AuthProvider({ children }: AuthProviderProps) {
               return;
             }
 
-            // Safety net: verify the session is truly gone by reading from SDK.
-            // This catches cases where TOKEN_REFRESHED fired but the ref wasn't
-            // updated (timing issue with async IIFE). One final check before
-            // destroying the user's session.
+            // Safety net: check if a session persists in SecureStore directly.
+            // NEVER use supabase.auth.getSession() here — in auth-js v2.65.1 it
+            // calls _callRefreshToken() when the JWT is expired. If the refresh
+            // token was consumed during OTA reload (rotation), this triggers
+            // _removeSession() → ANOTHER SIGNED_OUT → cascading logout.
+            // Direct SecureStore read is side-effect-free.
             try {
-              const { data: { session: verifySession } } = await supabase.auth.getSession();
-              if (verifySession?.access_token) {
-                console.warn('[AuthProvider] SIGNED_OUT ignored -- getSession() still has valid session');
-                updateSession(verifySession);
-                return;
+              const rawSession = await SecureStore.getItemAsync(SUPABASE_SESSION_STORAGE_KEY);
+              if (rawSession) {
+                const parsed = JSON.parse(rawSession);
+                const tokenData = parsed?.currentSession ?? parsed;
+                if (tokenData?.refresh_token) {
+                  // Session still in storage -- the SDK's internal state and SecureStore
+                  // are out of sync (common after OTA reload). Don't sign out; let the
+                  // SDK's auto-refresh recover on the next API call.
+                  console.warn('[AuthProvider] SIGNED_OUT ignored -- refresh token still in SecureStore, letting SDK recover');
+                  return;
+                }
               }
             } catch {
-              // getSession() failed — proceed with sign-out
+              // SecureStore read failed — proceed with sign-out
             }
 
             // No recovery -- genuine sign-out
