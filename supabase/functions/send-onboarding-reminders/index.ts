@@ -104,11 +104,13 @@ serve(async (req: Request) => {
           template_vars: { name: user.full_name || "there" },
         });
 
-        await supabase.from("notification_dedup").insert({
-          dedup_key: dedupKey,
-          user_id: user.id,
-          notification_type: "onboarding_dropoff",
-        }).catch(() => {});
+        try {
+          await supabase.from("notification_dedup").insert({
+            dedup_key: dedupKey,
+            user_id: user.id,
+            notification_type: "onboarding_dropoff",
+          });
+        } catch { /* ignore dedup insert errors */ }
 
         sent++;
       } catch (e) {

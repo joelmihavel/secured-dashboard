@@ -323,13 +323,14 @@ export async function scheduleNotification(
   const now = new Date();
 
   // Cancel any existing pending notifications for this user + type
-  await supabase
-    .from("notification_schedule")
-    .update({ status: "cancelled", skip_reason: "superseded" })
-    .eq("user_id", params.user_id)
-    .eq("notification_type", params.notification_type)
-    .eq("status", "pending")
-    .catch(() => {});
+  try {
+    await supabase
+      .from("notification_schedule")
+      .update({ status: "cancelled", skip_reason: "superseded" })
+      .eq("user_id", params.user_id)
+      .eq("notification_type", params.notification_type)
+      .eq("status", "pending");
+  } catch { /* ignore cancellation errors */ }
 
   if (timing.triggerDelaySec === 0) {
     // Immediate: send now
@@ -348,7 +349,7 @@ export async function scheduleNotification(
         template_vars: params.template_vars ?? {},
         related_entity_type: params.related_entity_type,
         related_entity_id: params.related_entity_id,
-      }).catch((e: Error) => console.warn("[schedule] Failed to insert reminder:", e));
+      }).then(null, (e: Error) => console.warn("[schedule] Failed to insert reminder:", e));
     }
   } else {
     // Delayed: schedule both first send and reminder
@@ -379,7 +380,7 @@ export async function scheduleNotification(
     }
 
     await supabase.from("notification_schedule").insert(rows)
-      .catch((e: Error) => console.warn("[schedule] Failed to insert schedule:", e));
+      .then(null, (e: Error) => console.warn("[schedule] Failed to insert schedule:", e));
   }
 }
 

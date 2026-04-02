@@ -232,11 +232,13 @@ serve(async (req: Request) => {
               related_entity_type: "tenancy",
               related_entity_id: tenancy.id,
             });
-            await supabase.from("notification_dedup").insert({
-              dedup_key: dedupKey,
-              user_id: tenancy.user_id,
-              notification_type: "rent_due",
-            }).catch(() => {});
+            try {
+              await supabase.from("notification_dedup").insert({
+                dedup_key: dedupKey,
+                user_id: tenancy.user_id,
+                notification_type: "rent_due",
+              });
+            } catch { /* ignore dedup insert errors */ }
             sent++;
           } catch {
             errors++;
@@ -248,12 +250,13 @@ serve(async (req: Request) => {
     // ========================================
     // 3. Cleanup old completed schedule entries (older than 7 days)
     // ========================================
-    await supabase
-      .from("notification_schedule")
-      .delete()
-      .in("status", ["sent", "skipped", "cancelled"])
-      .lt("created_at", new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString())
-      .catch(() => {});
+    try {
+      await supabase
+        .from("notification_schedule")
+        .delete()
+        .in("status", ["sent", "skipped", "cancelled"])
+        .lt("created_at", new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString());
+    } catch { /* ignore cleanup errors */ }
 
     console.log(`[process-schedule] Done: ${sent} sent, ${skipped} skipped, ${errors} errors`);
 

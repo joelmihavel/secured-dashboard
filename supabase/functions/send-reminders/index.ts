@@ -149,11 +149,13 @@ serve(async (req: Request) => {
           }
 
           // Mark as sent
-          await supabase.from("notification_dedup").insert({
-            dedup_key: dedupKey,
-            user_id: tenancy.user_id,
-            notification_type: notificationType,
-          }).catch(() => {}); // Best-effort dedup tracking
+          try {
+            await supabase.from("notification_dedup").insert({
+              dedup_key: dedupKey,
+              user_id: tenancy.user_id,
+              notification_type: notificationType,
+            });
+          } catch { /* best-effort dedup tracking */ }
 
           const existing_result = results.find(r => r.type === notificationType);
           if (existing_result) existing_result.sent++;
@@ -205,11 +207,13 @@ serve(async (req: Request) => {
                 user_id: tenancy.user_id,
                 notification_type: "reminder_utility",
               });
-              await supabase.from("notification_dedup").insert({
-                dedup_key: dedupKey,
-                user_id: tenancy.user_id,
-                notification_type: "reminder_utility",
-              }).catch(() => {});
+              try {
+                await supabase.from("notification_dedup").insert({
+                  dedup_key: dedupKey,
+                  user_id: tenancy.user_id,
+                  notification_type: "reminder_utility",
+                });
+              } catch { /* ignore */ }
               results.push({ type: "reminder_utility", sent: 1, skipped: 0, errors: 0 });
             } catch {
               results.push({ type: "reminder_utility", sent: 0, skipped: 0, errors: 1 });
@@ -233,11 +237,13 @@ serve(async (req: Request) => {
                 user_id: tenancy.user_id,
                 notification_type: "reminder_landlord_invite",
               });
-              await supabase.from("notification_dedup").insert({
-                dedup_key: dedupKey,
-                user_id: tenancy.user_id,
-                notification_type: "reminder_landlord_invite",
-              }).catch(() => {});
+              try {
+                await supabase.from("notification_dedup").insert({
+                  dedup_key: dedupKey,
+                  user_id: tenancy.user_id,
+                  notification_type: "reminder_landlord_invite",
+                });
+              } catch { /* ignore */ }
               results.push({ type: "reminder_landlord_invite", sent: 1, skipped: 0, errors: 0 });
             } catch {
               results.push({ type: "reminder_landlord_invite", sent: 0, skipped: 0, errors: 1 });
@@ -283,11 +289,13 @@ serve(async (req: Request) => {
               user_id: user.id,
               notification_type: "reminder_agreement",
             });
-            await supabase.from("notification_dedup").insert({
-              dedup_key: dedupKey,
-              user_id: user.id,
-              notification_type: "reminder_agreement",
-            }).catch(() => {});
+            try {
+              await supabase.from("notification_dedup").insert({
+                dedup_key: dedupKey,
+                user_id: user.id,
+                notification_type: "reminder_agreement",
+              });
+            } catch { /* ignore */ }
             results.push({ type: "reminder_agreement", sent: 1, skipped: 0, errors: 0 });
           } catch {
             results.push({ type: "reminder_agreement", sent: 0, skipped: 0, errors: 1 });
@@ -317,11 +325,12 @@ serve(async (req: Request) => {
     // ========================================
     // 8. CLEANUP old dedup entries (older than 7 days)
     // ========================================
-    await supabase
-      .from("notification_dedup")
-      .delete()
-      .lt("created_at", new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString())
-      .catch(() => {});
+    try {
+      await supabase
+        .from("notification_dedup")
+        .delete()
+        .lt("created_at", new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString());
+    } catch { /* ignore cleanup errors */ }
 
     // Aggregate results
     const totalSent = results.reduce((s, r) => s + r.sent, 0);
