@@ -218,7 +218,8 @@ export function MethodSelectorContent({
   const rentAmount = storedAmount || tenancy?.monthly_rent || 0;
 
   // Fee computed on post-cashback amount (matches backend + confirm screen)
-  const cashbackAmount = Math.round(rentAmount * (cashback?.discount_rate ?? 0.01));
+  const agreementRent = tenancy?.monthly_rent ?? rentAmount;
+  const cashbackAmount = Math.round(Math.min(rentAmount, agreementRent) * (cashback?.discount_rate ?? 0.01));
   const accumulatedBalanceRupees = Math.floor((user?.cashback_balance_paise ?? 0) / 100);
   const appliedCashback = Math.min(cashbackAmount + accumulatedBalanceRupees, rentAmount);
   const feeBaseAmount = rentAmount - appliedCashback;

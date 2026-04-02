@@ -127,8 +127,9 @@ export function ConfirmPaymentContent({
   const rentAmount = enteredAmount || tenancy?.monthly_rent || 0;
 
   const cashbackPct = cashback?.discount_rate ?? 0.01;
-  const cashbackAmount = Math.round(rentAmount * cashbackPct);
-  const annualSavings = cashbackAmount * 12;
+  const agreementRent = tenancy?.monthly_rent ?? rentAmount;
+  const cashbackAmount = Math.round(Math.min(rentAmount, agreementRent) * cashbackPct);
+  const annualSavings = Math.round(agreementRent * cashbackPct) * 12;
 
   // Accumulated balance from previous unverified payments (stored in paise)
   const accumulatedBalanceRupees = Math.floor((user?.cashback_balance_paise ?? 0) / 100);
