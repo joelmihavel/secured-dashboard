@@ -338,12 +338,7 @@ async function reconcileVendorSettlements(
     const oneHourAgo = new Date(Date.now() - 60 * 60_000).toISOString();
     const { data: stuckPayments } = await supabase
       .from("payments")
-      .select(`
-        id, rent_amount_paise, landlord_payout_paise, paid_at,
-        tenancy:tenancies!inner(
-          bank_accounts!inner(cf_beneficiary_id, party_type)
-        )
-      `)
+      .select("id, user_id, tenancy_id, rent_amount_paise, landlord_payout_paise, paid_at")
       .eq("status", "success")
       .eq("payment_gateway", "cashfree")
       .in("landlord_payout_status", ["processing", "retrying"])
@@ -355,12 +350,19 @@ async function reconcileVendorSettlements(
     result.checked = stuckPayments.length;
     console.log(`[vendor-recon] Found ${stuckPayments.length} stuck Cashfree payment(s) — checking vendor settlements`);
 
-    // Group by vendor to minimize API calls
+    // Look up vendor IDs via bank_accounts for each payment's user
     const vendorPayments = new Map<string, typeof stuckPayments>();
     for (const payment of stuckPayments) {
-      const tenancy = payment.tenancy as any;
-      const landlordBank = (tenancy?.bank_accounts ?? []).find((ba: any) => ba.party_type === "landlord");
-      const vendorId = landlordBank?.cf_beneficiary_id;
+      const { data: bankAcct } = await supabase
+        .from("bank_accounts")
+        .select("cf_beneficiary_id")
+        .eq("user_id", payment.user_id)
+        .eq("party_type", "landlord")
+        .eq("is_primary", true)
+        .not("cf_beneficiary_id", "is", null)
+        .maybeSingle();
+
+      const vendorId = bankAcct?.cf_beneficiary_id;
       if (!vendorId) continue;
 
       if (!vendorPayments.has(vendorId)) vendorPayments.set(vendorId, []);
