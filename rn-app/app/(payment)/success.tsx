@@ -269,7 +269,7 @@ export default function PaymentSuccessScreen() {
   const displayData = React.useMemo(() => {
     if (receiptData) {
       const { payment: rp, landlord } = receiptData;
-      const cbAmount = rp.cashback_applied ?? Number(cashback) || 0;
+      const cbAmount = rp.cashback_applied ?? (Number(cashback) || 0);
       return {
         amount: rp.amount.toLocaleString('en-IN'),
         cashbackApplied: cbAmount.toLocaleString('en-IN'),
