@@ -1,9 +1,9 @@
 /**
- * Setup Flow Index — Redirect
+ * Setup Flow Index — Redirect to Root
  *
- * The "Let's get you setup" carousel has been removed.
- * Users now go directly to the dashboard after approval.
- * This redirect exists as a safety net for any deep links to /(setup).
+ * Safety net for deep links to /(setup). Redirects to the root journey
+ * router which re-evaluates user status and routes correctly.
+ * NEVER redirect to /(main) directly — unapproved users could reach dashboard.
  */
 
 import { useEffect, useRef } from 'react';
@@ -15,7 +15,7 @@ export default function SetupIndex() {
   routerRef.current = router;
 
   useEffect(() => {
-    routerRef.current.replace('/(main)' as never);
+    routerRef.current.replace('/' as never);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

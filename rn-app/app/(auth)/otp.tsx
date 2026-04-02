@@ -85,8 +85,10 @@ async function resolvePostOtpTarget(userId: string): Promise<string> {
           .select('bank_verified')
           .eq('user_id', userId)
           .maybeSingle();
-        // No tenancy = broken state — route to waitlist as safety net
-        return !tenancyRow ? '/(waitlist)' : tenancyRow.bank_verified ? '/(main)' : '/(setup)/add-bank';
+        // No tenancy = broken state — route to waitlist as safety net.
+        // Always route approved users to setup — even if bank verified, they
+        // may still need utility/landlord steps. Aligned with index.tsx.
+        return !tenancyRow ? '/(waitlist)' : '/(setup)/add-bank';
       }
       case 'active':
         return '/(main)';
@@ -325,7 +327,10 @@ export default function OTPScreen() {
         resolvePostOtpTarget(authUserId).then((target) => {
           addBreadcrumb('OTP verified — navigating', 'navigation', { target });
           if (target === '/(main)' || target === '/(setup)/add-bank' || target === '/(waitlist)') {
-            SecureStore.setItemAsync(LAST_ROUTE_KEY, target).catch(() => {});
+            // Write cache in same "route|userId" format as index.tsx (M-3 fix).
+            // Without userId suffix, the cached route has no user scoping —
+            // a different user signing in on the same device would inherit it.
+            SecureStore.setItemAsync(LAST_ROUTE_KEY, `${target}|${authUserId}`).catch(() => {});
           }
           setTimeout(() => routerRef.current.replace(target as never), 300);
         }).catch(() => {

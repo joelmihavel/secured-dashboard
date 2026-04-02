@@ -202,6 +202,26 @@ export default function AddBankScreen({ preWaitlist = false }: AddBankProps) {
   const verifyPanMutation = useVerifyPan();
   const { tenancy, landlordBank } = useDashboard();
 
+  // Stable refs for mutation .mutate functions — React Query v5 returns a new
+  // mutation OBJECT every render (status/data/error change the wrapper), but
+  // the .mutate function itself is referentially stable. Using the object in
+  // useCallback deps caused firePanVerification + handleSubmit to be recreated
+  // every render, amplifying any re-render trigger into a cascade that hit
+  // React's 50-update limit ("Maximum update depth exceeded").
+  const verifyBankMutateRef = useRef(verifyBankMutation.mutate);
+  verifyBankMutateRef.current = verifyBankMutation.mutate;
+  const verifyUpiMutateRef = useRef(verifyUpiMutation.mutate);
+  verifyUpiMutateRef.current = verifyUpiMutation.mutate;
+  const verifyPanMutateRef = useRef(verifyPanMutation.mutate);
+  verifyPanMutateRef.current = verifyPanMutation.mutate;
+
+  // Stable ref for tenancy ID — useDashboard() returns a new object on every
+  // render (React Query wrapper), which would recreate firePanVerification +
+  // handleSubmit on every dashboard refetch (realtime events, focus, etc.).
+  // Using a ref breaks this cascade chain that was hitting React's 50-update limit.
+  const tenancyIdRef = useRef(tenancy?.id);
+  tenancyIdRef.current = tenancy?.id;
+
   // Payment method selector — default based on rent amount
   const rent = tenancy?.monthly_rent ?? 0;
   const [paymentMethod, setPaymentMethod] = useState<SetupPaymentMethodType>(
@@ -225,18 +245,32 @@ export default function AddBankScreen({ preWaitlist = false }: AddBankProps) {
   // Screen state
   const [screenState, setScreenState] = useState<ScreenState>('form');
 
-  // If bank already verified (pre-waitlist + deferred name match succeeded),
-  // redirect to dashboard. Also check landlord_bank.verified for the case where
-  // deferred matching hasn't updated tenancy.bank_verified yet but the bank_account
-  // record is already verified (pre-waitlist penny drop succeeded).
-  // Skip in dev mode — dev navigator needs direct access.
-  const bankAlreadyVerified = !__DEV__ && (tenancy?.verification_status?.bank_verified || landlordBank?.verified);
+  // Upload store — needed by redirect effect + handleConfirm + handleSkip
+  const completeBankStep = useUploadStore((s) => s.completeBankStep);
+
+  // If bank was ALREADY verified when this screen mounted (e.g., deferred name
+  // match succeeded in background), redirect away. Captures the initial value
+  // once — ignores changes from optimistic updates during the current session,
+  // which would otherwise redirect before the user sees the success state and
+  // taps "Confirm & continue".
+  // Pre-waitlist → waitlist (user isn't approved yet, dashboard would be empty).
+  // Post-approval → main dashboard.
+  const bankAlreadyVerifiedOnMount = useRef(
+    !__DEV__ && (tenancy?.verification_status?.bank_verified || landlordBank?.verified)
+  );
+  const hasRedirectedRef = useRef(false);
   useEffect(() => {
-    if (bankAlreadyVerified && screenState === 'form') {
-      routerRef.current.replace('/(main)' as never);
+    if (bankAlreadyVerifiedOnMount.current && !hasRedirectedRef.current) {
+      hasRedirectedRef.current = true;
+      if (preWaitlist) {
+        completeBankStep();
+        routerRef.current.replace('/(waitlist)' as never);
+      } else {
+        routerRef.current.replace('/(main)' as never);
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [bankAlreadyVerified, screenState]);
+  }, []);
 
   const bankVerified = verificationResult?.verified === true;
   const panVerified = panResult?.panVerified === true;
@@ -309,10 +343,17 @@ export default function AddBankScreen({ preWaitlist = false }: AddBankProps) {
   }, [paymentMethod, accountNumber, ifscCode, upiVpa, panCard]);
 
   // PAN verification (chained after bank success)
+  // Reads tenancyIdRef (not tenancy?.id) to avoid recreating this callback on
+  // every dashboard refetch. panCard is also read from a ref inside the closure
+  // since it only matters at invocation time, not at render time.
+  const panCardRef = useRef(panCard);
+  panCardRef.current = panCard;
   const firePanVerification = useCallback((bankAccountId: string) => {
-    if (!preWaitlist && !tenancy?.id) return;
-    verifyPanMutation.mutate(
-      { ...(tenancy?.id && { tenancyId: tenancy.id }), panNumber: panCard.toUpperCase(), bankAccountId },
+    const tid = tenancyIdRef.current;
+    const pan = panCardRef.current;
+    if (!preWaitlist && !tid) return;
+    verifyPanMutateRef.current(
+      { ...(tid && { tenancyId: tid }), panNumber: pan.toUpperCase(), bankAccountId },
       {
         onSuccess: (data) => {
           setPanResult(data);
@@ -336,15 +377,44 @@ export default function AddBankScreen({ preWaitlist = false }: AddBankProps) {
         },
       }
     );
-  }, [tenancy?.id, panCard, verifyPanMutation]);
+  }, [preWaitlist]); // Only preWaitlist (stable prop) — tenancyId + panCard read from refs
+
+  // ── Refs for handleSubmit ──
+  // handleSubmit is only invoked on user tap, so all rapidly-changing values
+  // (form fields, verification results, dashboard data) are read from refs
+  // at invocation time. This prevents the callback from being recreated on
+  // every re-render caused by useDashboard refetches, keystroke state changes,
+  // or verification result state updates — the cascade that was hitting
+  // React's 50-update limit ("Maximum update depth exceeded").
+  const paymentMethodRef = useRef(paymentMethod);
+  paymentMethodRef.current = paymentMethod;
+  const accountNumberRef = useRef(accountNumber);
+  accountNumberRef.current = accountNumber;
+  const ifscCodeRef = useRef(ifscCode);
+  ifscCodeRef.current = ifscCode;
+  const upiVpaRef = useRef(upiVpa);
+  upiVpaRef.current = upiVpa;
+  const verificationResultRef = useRef(verificationResult);
+  verificationResultRef.current = verificationResult;
+  const upiVerificationResultRef = useRef(upiVerificationResult);
+  upiVerificationResultRef.current = upiVerificationResult;
+  const bankVerifiedRef = useRef(bankVerified);
+  bankVerifiedRef.current = bankVerified;
+  const validateAllFieldsRef = useRef(validateAllFields);
+  validateAllFieldsRef.current = validateAllFields;
 
   // Submit handler — branches by payment method
+  // CRITICAL: Only preWaitlist (stable prop) and firePanVerification (stable
+  // callback) in deps. Everything else is read from refs at invocation time.
+  // This breaks the re-render cascade: useDashboard refetch -> tenancy changes ->
+  // firePanVerification recreated -> handleSubmit recreated -> 50+ renders.
   const handleSubmit = useCallback(() => {
-    if (!validateAllFields()) {
+    if (!validateAllFieldsRef.current()) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       return;
     }
-    if (!preWaitlist && !tenancy?.id) {
+    const tid = tenancyIdRef.current;
+    if (!preWaitlist && !tid) {
       setApiError('No active tenancy found.');
       return;
     }
@@ -353,20 +423,22 @@ export default function AddBankScreen({ preWaitlist = false }: AddBankProps) {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     setScreenState('loading');
 
-    if (paymentMethod === 'upi') {
+    const method = paymentMethodRef.current;
+    if (method === 'upi') {
       // ── UPI flow ──
-      const upiVerified = upiVerificationResult?.verified === true;
-      if (upiVerified && upiVerificationResult?.bankAccountId) {
+      const upiResult = upiVerificationResultRef.current;
+      const upiVerified = upiResult?.verified === true;
+      if (upiVerified && upiResult?.bankAccountId) {
         setPanResult(null);
-        firePanVerification(upiVerificationResult.bankAccountId);
+        firePanVerification(upiResult.bankAccountId);
         return;
       }
 
       setUpiVerificationResult(null);
       setPanResult(null);
 
-      verifyUpiMutation.mutate(
-        { ...(tenancy?.id && { tenancyId: tenancy.id }), upiVpa: upiVpa.toLowerCase().trim() },
+      verifyUpiMutateRef.current(
+        { ...(tid && { tenancyId: tid }), upiVpa: upiVpaRef.current.toLowerCase().trim() },
         {
           onSuccess: (data) => {
             setUpiVerificationResult(data);
@@ -394,20 +466,21 @@ export default function AddBankScreen({ preWaitlist = false }: AddBankProps) {
       );
     } else {
       // ── Bank flow (existing, unchanged) ──
-      if (bankVerified && verificationResult?.bankAccountId) {
+      const bankResult = verificationResultRef.current;
+      if (bankVerifiedRef.current && bankResult?.bankAccountId) {
         setPanResult(null);
-        firePanVerification(verificationResult.bankAccountId);
+        firePanVerification(bankResult.bankAccountId);
         return;
       }
 
       setVerificationResult(null);
       setPanResult(null);
 
-      verifyBankMutation.mutate(
+      verifyBankMutateRef.current(
         {
-          ...(tenancy?.id && { tenancyId: tenancy.id }),
-          accountNumber: accountNumber.replace(/\s/g, ''),
-          ifscCode: ifscCode.toUpperCase(),
+          ...(tid && { tenancyId: tid }),
+          accountNumber: accountNumberRef.current.replace(/\s/g, ''),
+          ifscCode: ifscCodeRef.current.toUpperCase(),
         },
         {
           onSuccess: (data) => {
@@ -431,10 +504,9 @@ export default function AddBankScreen({ preWaitlist = false }: AddBankProps) {
         }
       );
     }
-  }, [validateAllFields, tenancy?.id, paymentMethod, bankVerified, verificationResult?.bankAccountId, upiVerificationResult, firePanVerification, verifyBankMutation, verifyUpiMutation, accountNumber, ifscCode, upiVpa]);
+  }, [firePanVerification, preWaitlist]);
 
   // "Confirm and continue" → dashboard (post-approval) or waitlist (pre-waitlist)
-  const completeBankStep = useUploadStore((s) => s.completeBankStep);
   const handleConfirm = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     if (preWaitlist) {
@@ -483,8 +555,8 @@ export default function AddBankScreen({ preWaitlist = false }: AddBankProps) {
   const upiFieldSuccess = undefined;
   const panFieldSuccess = undefined;
 
-  // ── BANK ALREADY VERIFIED (pre-waitlist flow) — redirect to dashboard ──
-  if (bankAlreadyVerified) {
+  // ── BANK ALREADY VERIFIED on mount — show empty while effect redirects ──
+  if (bankAlreadyVerifiedOnMount.current && !hasRedirectedRef.current) {
     return <View style={styles.container} />;
   }
 

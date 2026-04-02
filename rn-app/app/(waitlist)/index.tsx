@@ -378,6 +378,15 @@ export default function WaitlistScreen() {
     }
   }, [error?.code, navigateToAgreement, isNavigating, transitionOpacity]);
 
+  // Handle NOT_AUTHENTICATED — session expired, redirect to root for re-auth.
+  // This can happen when the token expires during the bank verification flow
+  // and the SDK's auto-refresh hasn't completed by the time this screen loads.
+  useEffect(() => {
+    if (error?.code === 'NOT_AUTHENTICATED' && !isNavigating) {
+      setIsNavigating(true);
+      routerRef.current.replace('/' as never);
+    }
+  }, [error?.code, isNavigating]);
 
   const displayName = (userName ? userName.split(' ')[0] : '') || 'there';
   const submissionDate = status?.submissionDate ?? '';
