@@ -405,21 +405,10 @@ serve(async (req: Request) => {
           // "ready" would cause a duplicate adjustment on the next cron run.
           // The recon cron (poll-settlement-status) will reconcile these.
           const isTransient = statusCode >= 500 || statusCode === 0;
-          const isDuplicate = isCfError && (statusCode === 409 || errMsg.toLowerCase().includes("duplicate") || errMsg.toLowerCase().includes("already exists"));
 
-          console.error(`[settle-to-landlord] Cashfree adjustment failed for ${payment.id} (HTTP ${statusCode}, transient=${isTransient}, duplicate=${isDuplicate}):`, cfErr);
+          console.error(`[settle-to-landlord] Cashfree adjustment failed for ${payment.id} (HTTP ${statusCode}, transient=${isTransient}):`, cfErr);
 
-          if (isDuplicate) {
-            // Adjustment already exists at Cashfree — treat as success
-            await supabase.from("payments").update({
-              landlord_payout_status: "processing",
-              gateway_payout_status: "adjustment_credited (duplicate detected)",
-            }).eq("id", payment.id);
-            results.push({
-              payment_id: payment.id, status: "processing", amount_paise: payoutAmountPaise,
-              landlord_name: tenancy.landlord_name,
-            });
-          } else if (isTransient) {
+          if (isTransient) {
             // Keep as "processing" — do NOT revert to "ready" to prevent duplicate adjustments
             await supabase.from("payments").update({
               gateway_payout_status: `Cashfree adjustment pending (transient ${statusCode}): ${errMsg}`,
@@ -431,7 +420,7 @@ serve(async (req: Request) => {
           } else {
             await supabase.from("payments").update({
               landlord_payout_status: "failed",
-              gateway_payout_status: `Cashfree adjustment failed: ${errMsg}`,
+              gateway_payout_status: `Cashfree adjustment failed (${statusCode}): ${errMsg}`,
             }).eq("id", payment.id);
             results.push({
               payment_id: payment.id, status: "failed", amount_paise: payoutAmountPaise,
