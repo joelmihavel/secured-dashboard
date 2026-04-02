@@ -191,14 +191,29 @@ export function getEmergencyLaunchInfo(): EmergencyLaunchInfo {
 // ==============================================
 
 /**
- * Check if an update manifest contains a critical flag.
- * Set via: `eas update --metadata '{"critical": true}'`
+ * Check if an update is critical.
+ *
+ * Detection methods (any match → critical):
+ * 1. manifest.metadata.critical === true  (future-proof, if EAS CLI adds --metadata)
+ * 2. Update message starts with "CRITICAL:" (works TODAY via --message flag)
+ *
+ * Push a critical update:
+ *   eas update --branch production --message "CRITICAL: fix crash" --non-interactive
  */
 export function isCriticalUpdate(manifest: any): boolean {
   try {
+    // Method 1: metadata flag
     const metadata = manifest?.metadata;
-    if (!metadata) return false;
-    return metadata.critical === true || metadata.critical === 'true';
+    if (metadata?.critical === true || metadata?.critical === 'true') return true;
+
+    // Method 2: message prefix (EAS CLI --message flag works reliably)
+    const message: string | undefined =
+      manifest?.extra?.expoClient?.extra?.eas?.updateMessage ??
+      manifest?.message ??
+      metadata?.updateMessage;
+    if (typeof message === 'string' && message.toUpperCase().startsWith('CRITICAL:')) return true;
+
+    return false;
   } catch {
     return false;
   }
