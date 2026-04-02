@@ -9,16 +9,21 @@
  * Redirects to enter-rent which opens the PaymentMethodModal flow.
  */
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { View } from 'react-native';
 import { useRouter } from 'expo-router';
 
 export default function ConfirmPaymentScreen() {
   const router = useRouter();
+  const redirectedRef = useRef(false);
 
   useEffect(() => {
-    router.replace('/(payment)/enter-rent');
-  }, [router]);
+    if (!redirectedRef.current) {
+      redirectedRef.current = true;
+      router.replace('/(payment)/enter-rent');
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return <View style={{ flex: 1, backgroundColor: '#131313' }} />;
 }

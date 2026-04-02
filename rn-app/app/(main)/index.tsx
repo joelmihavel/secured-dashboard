@@ -101,6 +101,13 @@ import type { MappedCashbackModule } from '@/src/services/api/dashboard';
 
 export default function HomeScreen() {
   const router = useRouter();
+  // CRITICAL: Expo Router's `router` object is NOT referentially stable — it
+  // changes on every navigation state update. Using it directly in useCallback/
+  // useMemo deps causes cascading recalculations that can trigger React's
+  // "Maximum update depth exceeded" error. Keep a ref and read from it inside
+  // callbacks instead. (Same pattern as AuthProvider.)
+  const routerRef = useRef(router);
+  routerRef.current = router;
   const insets = useSafeAreaInsets();
 
   const dashboardResult = useDashboard();
@@ -125,11 +132,11 @@ export default function HomeScreen() {
   useEffect(() => {
     if (__DEV__) return;
     if (!isLoading && dashboardState === 'no_tenancy') {
-      // Clear cached route so journey router re-evaluates from scratch
       SecureStore.deleteItemAsync('flent_last_journey_target').catch(() => {});
-      router.replace('/' as never);
+      routerRef.current.replace('/' as never);
     }
-  }, [isLoading, dashboardState, router]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isLoading, dashboardState]);
   const user = resolvedData?.user ?? null;
   const tenancy = resolvedData?.tenancy ?? null;
   const upcomingPayment = resolvedData?.upcoming_payment ?? null;
@@ -182,10 +189,13 @@ export default function HomeScreen() {
   const [showStatusSheet, setShowStatusSheet] = useState(false);
 
   // Clear the URL param after consumption to prevent re-triggering on re-render
+  const clearedShowSheetRef = useRef(false);
   useEffect(() => {
-    if (showSheet) {
-      router.setParams({ showSheet: undefined });
+    if (showSheet && !clearedShowSheetRef.current) {
+      clearedShowSheetRef.current = true;
+      routerRef.current.setParams({ showSheet: undefined });
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [showSheet]);
 
 
@@ -300,9 +310,9 @@ export default function HomeScreen() {
     if (!isSetupComplete) {
       setShowVerificationSheet(true);
     } else {
-      router.push('/(payment)/enter-rent' as never);
+      routerRef.current.push('/(payment)/enter-rent' as never);
     }
-  }, [isSetupComplete, router]);
+  }, [isSetupComplete]);
 
   // Generate carousel items based on state
   const carouselItems = useMemo((): CarouselCardItem[] => {
@@ -366,7 +376,7 @@ export default function HomeScreen() {
             cashbackEarned: cashbackAmount,
             status: paidStatus,
             onViewReceipt: paidPayment ? () => {
-              router.push({
+              routerRef.current.push({
                 pathname: '/(payment)/status',
                 params: {
                   paymentId: paidPayment.id,
@@ -460,7 +470,7 @@ export default function HomeScreen() {
             cashbackEarned: historicalCashback,
             status: cardStatus,
             onViewReceipt: hasPayment ? () => {
-              router.push({
+              routerRef.current.push({
                 pathname: '/(payment)/status',
                 params: {
                   paymentId: stamp.payment_id!,
@@ -520,7 +530,7 @@ export default function HomeScreen() {
     yearlyStamps,
     formatMonth,
     mapStampStatus,
-    router,
+    // router deliberately excluded — uses routerRef to avoid infinite re-renders
   ]);
 
   // Determine empty state variant based on dashboard state
@@ -570,34 +580,32 @@ export default function HomeScreen() {
 
         const handleVerificationFinishSetup = useCallback(() => {
           setShowVerificationSheet(false);
-          // Route to first incomplete step (bank is always done at this point)
           if (!verificationStatus?.utility_verified) {
-            router.push('/(setup)/add-utility' as never);
+            routerRef.current.push('/(setup)/add-utility' as never);
           } else if (!verificationStatus?.landlord_approved) {
-            router.push('/(setup)/invite-landlord' as never);
+            routerRef.current.push('/(setup)/invite-landlord' as never);
           } else {
-            router.replace('/(main)' as never);
+            routerRef.current.replace('/(main)' as never);
           }
-        }, [router, verificationStatus]);
+        }, [verificationStatus]);
 
         const handleVerificationSkip = useCallback(() => {
           setShowVerificationSheet(false);
-          router.push('/(payment)/enter-rent' as never);
-        }, [router]);
+          routerRef.current.push('/(payment)/enter-rent' as never);
+        }, []);
 
         const handleFinishSetup = useCallback(() => {
           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-          // Route to first incomplete setup step
           if (!verificationStatus?.bank_verified) {
-            router.push('/(setup)/add-bank' as never);
+            routerRef.current.push('/(setup)/add-bank' as never);
           } else if (!verificationStatus?.utility_verified) {
-            router.push('/(setup)/add-utility' as never);
+            routerRef.current.push('/(setup)/add-utility' as never);
           } else if (!verificationStatus?.landlord_approved) {
-            router.push('/(setup)/invite-landlord' as never);
+            routerRef.current.push('/(setup)/invite-landlord' as never);
           } else {
-            router.replace('/(main)' as never);
+            routerRef.current.replace('/(main)' as never);
           }
-        }, [router, verificationStatus]);
+        }, [verificationStatus]);
 
         const handleHowItWorks = useCallback(async () => {
           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -611,7 +619,6 @@ export default function HomeScreen() {
         const handlePayNow = useCallback(() => {
           console.log('[PAY] handlePayNow fired, isSetupComplete:', isSetupComplete);
           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-          // Reset verification-skipped flag each time user starts a new payment attempt
           setVerificationSkippedStore(false);
           if (!isSetupComplete) {
             console.log('[PAY] Setup incomplete — showing verification sheet');
@@ -619,18 +626,18 @@ export default function HomeScreen() {
           } else {
             console.log('[PAY] Navigating to /(payment)/enter-rent');
             try {
-              router.push('/(payment)/enter-rent' as never);
+              routerRef.current.push('/(payment)/enter-rent' as never);
               console.log('[PAY] router.push succeeded');
             } catch (e) {
               console.error('[PAY] router.push FAILED:', e);
             }
           }
-        }, [isSetupComplete, router, setVerificationSkippedStore]);
+        }, [isSetupComplete, setVerificationSkippedStore]);
 
   const handleAddAgreement = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    router.push('/(agreement)/upload' as never);
-  }, [router]);
+    routerRef.current.push('/(agreement)/upload' as never);
+  }, []);
 
   const handleSendReminder = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -644,19 +651,19 @@ export default function HomeScreen() {
 
   const handlePaymentMethodPress = useCallback((method: PaymentMethod) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    router.push({
+    routerRef.current.push({
       pathname: '/(payment)/enter-rent' as never,
       params: { methodType: method.type, methodAccount: method.accountMasked },
     });
-  }, [router]);
+  }, []);
 
   const handlePaymentMethodEdit = useCallback((method: PaymentMethod) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    router.push({
+    routerRef.current.push({
       pathname: '/(profile)' as never,
       params: { editMethod: method.type, editMethodAccount: method.accountMasked },
     });
-  }, [router]);
+  }, []);
 
   const handlePaymentPress = useCallback((payment: MappedRecentPayment) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -666,9 +673,8 @@ export default function HomeScreen() {
       failed: 'failed',
       processing: 'pending',
     };
-    // Look up raw payment data for additional fields
     const rawPayment = resolvedData?.recent_payments?.find((p: RawRecentPayment) => p.id === payment.id);
-    router.push({
+    routerRef.current.push({
       pathname: '/(payment)/status' as never,
       params: {
         paymentId: payment.id,
@@ -682,13 +688,13 @@ export default function HomeScreen() {
         agreementId: tenancy?.agreement_cert_id ?? '',
       },
     });
-  }, [router, resolvedData?.recent_payments, tenancy]);
+  }, [resolvedData?.recent_payments, tenancy]);
 
   // Transaction card action handlers (new card UI — Figma 4109-67659)
   const handleViewReceipt = useCallback((tx: MappedTransaction) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     const rawPayment = resolvedData?.recent_payments?.find((p: RawRecentPayment) => p.id === tx.id);
-    router.push({
+    routerRef.current.push({
       pathname: '/(payment)/status' as never,
       params: {
         paymentId: tx.id,
@@ -702,7 +708,7 @@ export default function HomeScreen() {
         agreementId: tenancy?.agreement_cert_id ?? '',
       },
     });
-  }, [router, resolvedData?.recent_payments, tenancy]);
+  }, [resolvedData?.recent_payments, tenancy]);
 
   const handleNeedHelp = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -713,13 +719,13 @@ export default function HomeScreen() {
 
   const handleTryAgain = useCallback((tx: MappedTransaction) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    router.push({
+    routerRef.current.push({
       pathname: '/(payment)/enter-rent' as never,
       params: {
         prefillAmount: String(tx.amount),
       },
     });
-  }, [router]);
+  }, []);
 
   const handleCashbackEntryPress = useCallback((entry: CashbackEarningsEntry) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -728,20 +734,20 @@ export default function HomeScreen() {
     const rawPayment = resolvedData?.recent_payments?.find((p: RawRecentPayment) => p.id === rawId);
     if (!rawPayment) return;
 
-    router.push({
+    routerRef.current.push({
       pathname: '/(payment)/status',
       params: {
         paymentId: rawId,
         amount: String(rawPayment.amount ?? 0),
         method: rawPayment.payment_method ?? '',
-        initialStatus: 'success', // All cashback entries come from successful payments
+        initialStatus: 'success',
         cashback: String(rawPayment.cashback_applied ?? rawPayment.cashback_earned ?? 0),
         source: 'receipt_view',
         landlordName: tenancy?.landlord_name ?? '',
         agreementId: tenancy?.agreement_cert_id ?? '',
       },
     } as never);
-  }, [router, resolvedData?.recent_payments, tenancy]);
+  }, [resolvedData?.recent_payments, tenancy]);
 
   const handleCopyInviteLink = useCallback(async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -765,8 +771,8 @@ export default function HomeScreen() {
       landlord: '/(setup)/invite-landlord',
     };
     const route = routeMap[step.id];
-    if (route) router.push(route as never);
-  }, [router]);
+    if (route) routerRef.current.push(route as never);
+  }, []);
 
   const handleLearnMore = useCallback(async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
