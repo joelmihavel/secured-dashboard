@@ -124,6 +124,190 @@ const MINIMUM_REQUIRED_FIELDS = [
   'certificate_no',     // Certificate No.
 ] as const;
 
+// ============================================
+// RESPONSE SCHEMA — enforces structured Gemini output
+// ============================================
+// Using responseSchema guarantees the model returns exactly this structure.
+// Eliminates JSON parsing failures and missing-field issues.
+
+const EXTRACTION_RESPONSE_SCHEMA = {
+  type: "object",
+  properties: {
+    is_rental_agreement: {
+      type: "boolean",
+      description: "true ONLY for rental/lease/tenancy/leave-and-license agreements. false for sale deeds, bank statements, invoices, etc.",
+    },
+    document_type_detected: {
+      type: "string",
+      description: "What type of document this is (e.g., Rental Agreement, Leave and License, Sale Deed, Bank Statement, Invoice, Unknown)",
+      nullable: true,
+    },
+    rejection_reason: {
+      type: "string",
+      description: "If is_rental_agreement is false, explain why. null if is_rental_agreement is true",
+      nullable: true,
+    },
+    property_name: {
+      type: "string",
+      description: "SHORT display name: Flat/House#, Society/Complex, Locality, Pincode, City. Example: Flat 301, Panchavati Apts, Indiranagar, 560008, Bangalore. MUST NOT repeat segments.",
+      nullable: true,
+    },
+    property_address: {
+      type: "string",
+      description: "FULL verbose legal address as written in the agreement — all lines, landmarks, etc.",
+      nullable: true,
+    },
+    property_city: {
+      type: "string",
+      description: "City name (e.g., Bangalore, Bengaluru, Mumbai, Delhi)",
+      nullable: true,
+    },
+    property_state: {
+      type: "string",
+      description: "State name — infer from city if not explicit (Bangalore→Karnataka, Mumbai→Maharashtra, Delhi→Delhi NCR)",
+      nullable: true,
+    },
+    property_pincode: {
+      type: "string",
+      description: "6-digit Indian pincode",
+      nullable: true,
+    },
+    micromarket: {
+      type: "string",
+      description: "Locality/area name (e.g., Whitefield, Koramangala, HSR Layout, Richmond Town)",
+      nullable: true,
+    },
+    monthly_rent: {
+      type: "number",
+      description: "Monthly rent in rupees — numeric value only (e.g., 60000 not Rs. 60,000)",
+      nullable: true,
+    },
+    security_deposit: {
+      type: "number",
+      description: "Security deposit in rupees — numeric value only",
+      nullable: true,
+    },
+    rent_escalation_percent: {
+      type: "number",
+      description: "Annual rent escalation percentage as number (e.g., 5 for 5%)",
+      nullable: true,
+    },
+    contract_start_date: {
+      type: "string",
+      description: "Lease/contract start date in YYYY-MM-DD format",
+      nullable: true,
+    },
+    contract_end_date: {
+      type: "string",
+      description: "Lease/contract end date in YYYY-MM-DD format",
+      nullable: true,
+    },
+    contract_length_months: {
+      type: "integer",
+      description: "Contract duration in months as integer",
+      nullable: true,
+    },
+    rent_due_day: {
+      type: "integer",
+      description: "Day of month when rent is due (1-28). Look for 'rent payable on Nth of every month'.",
+      nullable: true,
+    },
+    tenant_names: {
+      type: "array",
+      items: { type: "string" },
+      description: "Array of tenant/lessee names. Each person MUST be a SEPARATE element — split joint names: 'RAMESH AND SEEMA JOSHI' → ['RAMESH JOSHI', 'SEEMA JOSHI']",
+    },
+    landlord_names: {
+      type: "array",
+      items: { type: "string" },
+      description: "Array of landlord/lessor/owner names. Each person MUST be a SEPARATE element.",
+    },
+    certificate_no: {
+      type: "string",
+      description: "E-stamp certificate number. MUMBAI/MAHARASHTRA: use GRN or Transaction ID as certificate_no.",
+      nullable: true,
+    },
+    certificate_issued_date: {
+      type: "string",
+      description: "E-stamp certificate issue date in YYYY-MM-DD format",
+      nullable: true,
+    },
+    account_reference: {
+      type: "string",
+      description: "Account reference number from e-stamp",
+      nullable: true,
+    },
+    purchased_by: {
+      type: "string",
+      description: "Person who purchased the stamp paper",
+      nullable: true,
+    },
+    description_of_document: {
+      type: "string",
+      description: "Document type as stated on stamp (e.g., Rental Agreement, Lease Deed, Leave and License)",
+      nullable: true,
+    },
+    first_party: {
+      type: "string",
+      description: "First party on stamp paper (usually lessor/landlord)",
+      nullable: true,
+    },
+    second_party: {
+      type: "string",
+      description: "Second party on stamp paper (usually lessee/tenant)",
+      nullable: true,
+    },
+    stamp_duty_paid_by: {
+      type: "string",
+      description: "Who paid stamp duty (tenant/landlord/both)",
+      nullable: true,
+    },
+    consideration_price: {
+      type: "number",
+      description: "Consideration amount in rupees — numeric value only",
+      nullable: true,
+    },
+    stamp_duty_amount: {
+      type: "number",
+      description: "Stamp duty amount in rupees — numeric value only",
+      nullable: true,
+    },
+    rooms_in_agreement: {
+      type: "integer",
+      description: "Number of rooms/bedrooms covered by this agreement. For partial rent (one room in 3BHK), count only rented rooms. null if not determinable.",
+      nullable: true,
+    },
+    property_bhk_type: {
+      type: "string",
+      description: "BHK type of the FULL property (e.g., 1BHK, 2BHK, 3BHK, Studio, Independent House). null if not mentioned.",
+      nullable: true,
+    },
+    confidence: {
+      type: "integer",
+      description: "Extraction confidence score 0-100",
+    },
+  },
+  required: ["is_rental_agreement", "tenant_names", "landlord_names", "confidence"],
+};
+
+// Multimodal extraction prompt — used when OCR returns insufficient text
+// and we send the PDF directly to Gemini as inlineData
+const MULTIMODAL_EXTRACTION_PROMPT = `You are analyzing the attached PDF document. Determine if it is an Indian rental/lease agreement, then extract ALL available information.
+
+INSTRUCTIONS:
+- Set is_rental_agreement to true ONLY for rental agreements, lease deeds, leave and license agreements, or tenancy agreements. false for anything else.
+- If not a rental agreement, set all extraction fields to null.
+- For amounts: extract numeric values in rupees ONLY (60000 not "Rs. 60,000"). Strip commas.
+- For dates: convert to YYYY-MM-DD format.
+- For names: each person MUST be a SEPARATE array element. "RAMESH AND SEEMA JOSHI" → ["RAMESH JOSHI", "SEEMA JOSHI"]. Never combine multiple people into one string.
+- For property_name: SHORT display name — Flat/House#, Society, Locality, Pincode, City. No full address, no repeated segments.
+- For property_address: FULL verbose address as written in the agreement.
+- For property_state: infer from city if not explicit (Bangalore→Karnataka, Mumbai→Maharashtra, Delhi→Delhi NCR).
+- MUMBAI/MAHARASHTRA: GRN or Transaction ID IS the Stamp Certificate ID — use as certificate_no.
+- For rooms_in_agreement: if tenant rents a portion, count only rented rooms.
+- For e-stamp fields: look in the stamp/e-stamp section (usually at top or bottom of document).
+- Use null for any field you cannot find.`;
+
 /**
  * Check if all minimum required fields are present in extracted data
  * Returns { isComplete: boolean, missingFields: string[] }
@@ -752,7 +936,14 @@ async function processWithDocumentAI(
           // Cap at first 30 pages to avoid timeout on very large docs
           processOptions: {
             ocrConfig: {
+              // Extract embedded text from digital PDFs — dramatically improves
+              // text quality for non-scanned agreements (most agreements are digital)
+              enableNativePdfParsing: true,
               premiumFeatures: { computeStyleInfo: false },
+              // Language hints for Indian rental agreements (English + major Indian languages)
+              hints: {
+                languageHints: ["en", "hi", "mr", "kn", "ta", "te", "bn"],
+              },
             },
             fromStart: 30,
           },
@@ -935,6 +1126,203 @@ async function processWithDocumentAI(
         throw err;
       }
     }
+  } else {
+    // ================================================================
+    // MULTIMODAL PDF FALLBACK — OCR returned < 100 chars of text
+    // Send the raw PDF directly to Gemini as inlineData (vision-based extraction).
+    // Gemini 3 Flash natively processes PDFs up to 3000 pages.
+    // ================================================================
+    geminiDebug.gemini_attempted = true;
+    geminiDebug.mode = "multimodal_pdf";
+    console.log(`[process-document] OCR text too short (${documentText.length} chars), trying multimodal PDF extraction...`);
+
+    // 7MB inline limit for Gemini API (base64 inflates by ~33%)
+    const pdfSizeBytes = Math.ceil(base64Content.length * 3 / 4);
+    const MAX_INLINE_SIZE = 7 * 1024 * 1024;
+
+    if (pdfSizeBytes > MAX_INLINE_SIZE) {
+      console.warn(`[process-document] PDF too large for multimodal (${Math.round(pdfSizeBytes / 1024 / 1024)}MB > 7MB limit), skipping`);
+      geminiDebug.multimodal_skipped = "pdf_too_large";
+    } else {
+      let geminiResult: any = null;
+
+      // Try Vertex AI multimodal first
+      if (vertexAiCredentials && vertexAiProjectId) {
+        try {
+          geminiDebug.vertex_ai_attempted = true;
+          console.log(`[process-document] Attempting Vertex AI multimodal PDF extraction...`);
+          const vertexCredentialsJson = JSON.parse(vertexAiCredentials);
+          const vertexAccessToken = await getGCPAccessToken(vertexCredentialsJson);
+
+          const MULTIMODAL_TIMEOUT_MS = 300_000;
+          const mmController = new AbortController();
+          const mmTimeout = setTimeout(() => mmController.abort(), MULTIMODAL_TIMEOUT_MS);
+
+          const mmEndpoint = `https://aiplatform.googleapis.com/v1/projects/${vertexAiProjectId}/locations/global/publishers/google/models/gemini-3-flash-preview:generateContent`;
+
+          let mmResponse: Response;
+          try {
+            mmResponse = await fetch(mmEndpoint, {
+              method: "POST",
+              headers: {
+                Authorization: `Bearer ${vertexAccessToken}`,
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                contents: [{
+                  role: "user",
+                  parts: [
+                    { inlineData: { mimeType: "application/pdf", data: base64Content } },
+                    { text: MULTIMODAL_EXTRACTION_PROMPT },
+                  ],
+                }],
+                generationConfig: {
+                  temperature: 0.1,
+                  maxOutputTokens: 65536,
+                  responseMimeType: "application/json",
+                  responseSchema: EXTRACTION_RESPONSE_SCHEMA,
+                  // HIGH resolution for better fine-text reading in scanned docs
+                  mediaResolution: "MEDIA_RESOLUTION_HIGH",
+                },
+                safetySettings: [
+                  { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_NONE" },
+                  { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_NONE" },
+                  { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_NONE" },
+                  { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_NONE" },
+                ],
+              }),
+              signal: mmController.signal,
+            });
+          } catch (fetchErr: unknown) {
+            clearTimeout(mmTimeout);
+            if (fetchErr instanceof DOMException && (fetchErr as DOMException).name === "AbortError") {
+              throw new Error(`Multimodal Vertex AI timed out after ${MULTIMODAL_TIMEOUT_MS / 1000}s`);
+            }
+            throw fetchErr;
+          }
+          clearTimeout(mmTimeout);
+
+          if (mmResponse.ok) {
+            const mmResult = await mmResponse.json();
+            const mmText = mmResult.candidates?.[0]?.content?.parts?.[0]?.text || "";
+            if (mmText && mmText !== "{}") {
+              const parsed = extractBalancedJson(mmText);
+              geminiResult = parsed ? JSON.parse(parsed) : JSON.parse(mmText);
+              geminiDebug.vertex_ai_success = true;
+              geminiDebug.final_result_keys = Object.keys(geminiResult).length;
+              console.log(`[process-document] Multimodal Vertex AI: ${Object.keys(geminiResult).length} keys extracted`);
+            }
+          } else {
+            const errText = await mmResponse.text();
+            geminiDebug.vertex_ai_error = `${mmResponse.status}: ${errText.substring(0, 300)}`;
+            console.error(`[process-document] Multimodal Vertex AI failed: ${mmResponse.status}`);
+          }
+        } catch (vertexErr: any) {
+          geminiDebug.vertex_ai_error = vertexErr.message;
+          console.error("[process-document] Multimodal Vertex AI error:", vertexErr.message);
+        }
+      }
+
+      // Fallback to API key multimodal
+      if (!geminiResult && geminiApiKey) {
+        try {
+          geminiDebug.api_key_attempted = true;
+          console.log(`[process-document] Attempting API key multimodal PDF extraction...`);
+
+          const FALLBACK_TIMEOUT_MS = 300_000;
+          const fbController = new AbortController();
+          const fbTimeout = setTimeout(() => fbController.abort(), FALLBACK_TIMEOUT_MS);
+
+          let fbResponse: Response;
+          try {
+            fbResponse = await fetch(
+              `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${geminiApiKey}`,
+              {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  contents: [{
+                    parts: [
+                      { inlineData: { mimeType: "application/pdf", data: base64Content } },
+                      { text: MULTIMODAL_EXTRACTION_PROMPT },
+                    ],
+                  }],
+                  generationConfig: {
+                    temperature: 0.1,
+                    maxOutputTokens: 65536,
+                    responseMimeType: "application/json",
+                    responseSchema: EXTRACTION_RESPONSE_SCHEMA,
+                    mediaResolution: "MEDIA_RESOLUTION_HIGH",
+                  },
+                  safetySettings: [
+                    { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_NONE" },
+                    { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_NONE" },
+                    { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_NONE" },
+                    { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_NONE" },
+                  ],
+                }),
+                signal: fbController.signal,
+              }
+            );
+          } catch (fetchErr: unknown) {
+            clearTimeout(fbTimeout);
+            if (fetchErr instanceof DOMException && (fetchErr as DOMException).name === "AbortError") {
+              throw new Error(`Multimodal API key timed out after ${FALLBACK_TIMEOUT_MS / 1000}s`);
+            }
+            throw fetchErr;
+          }
+          clearTimeout(fbTimeout);
+
+          if (fbResponse.ok) {
+            const fbResult = await fbResponse.json();
+            const fbText = fbResult.candidates?.[0]?.content?.parts?.[0]?.text || "";
+            if (fbText && fbText !== "{}") {
+              const parsed = extractBalancedJson(fbText);
+              geminiResult = parsed ? JSON.parse(parsed) : JSON.parse(fbText);
+              geminiDebug.api_key_success = true;
+              geminiDebug.final_result_keys = Object.keys(geminiResult).length;
+              console.log(`[process-document] Multimodal API key: ${Object.keys(geminiResult).length} keys extracted`);
+            }
+          } else {
+            const errText = await fbResponse.text();
+            geminiDebug.api_key_error = `${fbResponse.status}: ${errText.substring(0, 300)}`;
+            console.error(`[process-document] Multimodal API key failed: ${fbResponse.status}`);
+          }
+        } catch (apiErr: any) {
+          geminiDebug.api_key_error = apiErr.message;
+          console.error("[process-document] Multimodal API key error:", apiErr.message);
+        }
+      }
+
+      // Process multimodal result (same logic as text-based extraction)
+      if (geminiResult && Object.keys(geminiResult).length > 0) {
+        if (geminiResult.is_rental_agreement === false) {
+          const detectedType = geminiResult.document_type_detected || 'unknown';
+          const reason = geminiResult.rejection_reason || `Not a rental agreement (detected: ${detectedType}).`;
+          console.log(`[process-document] Multimodal: document rejected — ${detectedType}`);
+          (extractedData as any).is_rental_agreement = false;
+          (extractedData as any).document_type_detected = detectedType;
+          (extractedData as any).rejection_reason = reason;
+          (extractedData as any).gemini_debug = geminiDebug;
+          return extractedData;
+        }
+
+        extractedData = mergeGeminiResults(extractedData, geminiResult);
+        extractedData.extraction_method = 'combined';
+        console.log(`[process-document] Multimodal extraction: ${extractedData.fields_extracted} fields extracted`);
+      } else {
+        console.warn("[process-document] Multimodal PDF extraction returned no results");
+        if (extractedData.fields_extracted === 0) {
+          const err = new Error("OCR returned insufficient text and multimodal PDF extraction also failed");
+          (err as any).debugData = {
+            gemini_debug: geminiDebug,
+            raw_doc_ai_data: slimDocAiData(extractedData.raw_doc_ai_data),
+            extraction_method: 'gcp_doc_ai',
+          };
+          throw err;
+        }
+      }
+    }
   }
 
   // Store gemini debug in extractedData for debugging
@@ -1110,12 +1498,13 @@ IMPORTANT:
           temperature: 0.1,
           maxOutputTokens: 65536,
           responseMimeType: "application/json",
+          responseSchema: EXTRACTION_RESPONSE_SCHEMA,
         },
         safetySettings: [
-          { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_ONLY_HIGH" },
-          { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_ONLY_HIGH" },
-          { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_ONLY_HIGH" },
-          { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_ONLY_HIGH" },
+          { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_NONE" },
+          { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_NONE" },
+          { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_NONE" },
+          { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_NONE" },
         ],
       }),
       signal: geminiController.signal,
@@ -1196,13 +1585,16 @@ async function verifyWithGemini(
   apiKey: string
 ): Promise<object> {
   // Only include relevant extracted fields, NOT raw_doc_ai_data or raw_gemini_data
+  // IMPORTANT: Convert paise back to rupees before passing to Gemini — the prompt
+  // and schema describe amounts in rupees. Passing paise would cause Gemini to echo
+  // the value, which then gets multiplied by 100 again in mergeGeminiResults (double-conversion).
   const extractedFields = {
     property_name: initialExtraction.property_name,
     property_address: initialExtraction.property_address,
     property_city: initialExtraction.property_city,
     property_pincode: initialExtraction.property_pincode,
-    monthly_rent: initialExtraction.monthly_rent_paise,
-    security_deposit: initialExtraction.security_deposit_paise,
+    monthly_rent: initialExtraction.monthly_rent_paise ? initialExtraction.monthly_rent_paise / 100 : null,
+    security_deposit: initialExtraction.security_deposit_paise ? initialExtraction.security_deposit_paise / 100 : null,
     tenant_names: initialExtraction.tenant_names,
     landlord_names: initialExtraction.landlord_names,
   };
@@ -1279,12 +1671,13 @@ IMPORTANT:
               temperature: 0.1,
               maxOutputTokens: 65536,
               responseMimeType: "application/json",
+              responseSchema: EXTRACTION_RESPONSE_SCHEMA,
             },
             safetySettings: [
-              { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_ONLY_HIGH" },
-              { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_ONLY_HIGH" },
-              { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_ONLY_HIGH" },
-              { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_ONLY_HIGH" },
+              { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_NONE" },
+              { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_NONE" },
+              { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_NONE" },
+              { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_NONE" },
             ],
           }),
           signal: fallbackController.signal,
@@ -1389,13 +1782,13 @@ function mergeGeminiResults(docAI: ExtractedData, gemini: any): ExtractedData {
       .toString().replace(/\D/g, '').substring(0, 6) || undefined,
     micromarket: gemini.micromarket || docAI.micromarket,
     area_name: gemini.micromarket || docAI.area_name,
-    // FIX: Convert Gemini rupees to paise (multiply by 100) to match column semantics
-    // Strip commas (Indian format: 2,00,000) and guard against NaN
+    // Convert Gemini rupees to paise (×100). Use parseFloat + Math.round to preserve
+    // fractional rupee amounts (parseInt truncates decimals).
     monthly_rent_paise: gemini.monthly_rent
-      ? (isNaN(parseInt(String(gemini.monthly_rent).replace(/,/g, ''))) ? docAI.monthly_rent_paise : parseInt(String(gemini.monthly_rent).replace(/,/g, '')) * 100)
+      ? (isNaN(parseFloat(String(gemini.monthly_rent).replace(/,/g, ''))) ? docAI.monthly_rent_paise : Math.round(parseFloat(String(gemini.monthly_rent).replace(/,/g, '')) * 100))
       : docAI.monthly_rent_paise,
     security_deposit_paise: gemini.security_deposit
-      ? (isNaN(parseInt(String(gemini.security_deposit).replace(/,/g, ''))) ? docAI.security_deposit_paise : parseInt(String(gemini.security_deposit).replace(/,/g, '')) * 100)
+      ? (isNaN(parseFloat(String(gemini.security_deposit).replace(/,/g, ''))) ? docAI.security_deposit_paise : Math.round(parseFloat(String(gemini.security_deposit).replace(/,/g, '')) * 100))
       : docAI.security_deposit_paise,
     rent_escalation_percent: gemini.rent_escalation_percent != null
       ? Number(gemini.rent_escalation_percent)
@@ -1427,13 +1820,11 @@ function mergeGeminiResults(docAI: ExtractedData, gemini: any): ExtractedData {
     first_party: gemini.first_party || docAI.first_party,
     second_party: gemini.second_party || docAI.second_party,
     stamp_duty_paid_by: gemini.stamp_duty_paid_by || docAI.stamp_duty_paid_by,
-    // FIX: Convert Gemini rupees to paise (multiply by 100) to match column semantics
-    // Strip commas and guard against NaN
     consideration_price_paise: gemini.consideration_price
-      ? (isNaN(parseInt(String(gemini.consideration_price).replace(/,/g, ''))) ? docAI.consideration_price_paise : parseInt(String(gemini.consideration_price).replace(/,/g, '')) * 100)
+      ? (isNaN(parseFloat(String(gemini.consideration_price).replace(/,/g, ''))) ? docAI.consideration_price_paise : Math.round(parseFloat(String(gemini.consideration_price).replace(/,/g, '')) * 100))
       : docAI.consideration_price_paise,
     stamp_duty_amount_paise: gemini.stamp_duty_amount
-      ? (isNaN(parseInt(String(gemini.stamp_duty_amount).replace(/,/g, ''))) ? docAI.stamp_duty_amount_paise : parseInt(String(gemini.stamp_duty_amount).replace(/,/g, '')) * 100)
+      ? (isNaN(parseFloat(String(gemini.stamp_duty_amount).replace(/,/g, ''))) ? docAI.stamp_duty_amount_paise : Math.round(parseFloat(String(gemini.stamp_duty_amount).replace(/,/g, '')) * 100))
       : docAI.stamp_duty_amount_paise,
     // Room/BHK fields
     rooms_in_agreement: gemini.rooms_in_agreement != null ? Number(gemini.rooms_in_agreement) : (docAI as any).rooms_in_agreement || null,
@@ -1715,6 +2106,10 @@ function parseAmount(value: string): number {
 
 function parseDate(value: string): string | undefined {
   try {
+    // Strip ordinal suffixes (1st, 2nd, 3rd, 4th, etc.) — common in Indian agreements
+    // "1st January 2025" → "1 January 2025", "15th March 2025" → "15 March 2025"
+    const cleaned = value.replace(/(\d+)(?:st|nd|rd|th)\b/gi, '$1');
+
     // Handle various Indian date formats
     const formats = [
       /(\d{1,2})[\/-](\d{1,2})[\/-](\d{4})/, // DD/MM/YYYY or DD-MM-YYYY
@@ -1722,7 +2117,7 @@ function parseDate(value: string): string | undefined {
     ];
 
     for (const format of formats) {
-      const match = value.match(format);
+      const match = cleaned.match(format);
       if (match) {
         if (match[3].length === 4) {
           // DD/MM/YYYY
@@ -1734,7 +2129,8 @@ function parseDate(value: string): string | undefined {
       }
     }
 
-    const date = new Date(value);
+    // Try natural language parsing (handles "1 January 2025", "January 1, 2025", etc.)
+    const date = new Date(cleaned);
     if (!isNaN(date.getTime())) {
       return date.toISOString().split("T")[0];
     }
