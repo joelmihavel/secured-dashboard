@@ -14,7 +14,13 @@ CREATE TABLE IF NOT EXISTS whatsapp_broadcast_log (
 -- Service role only
 ALTER TABLE whatsapp_broadcast_log ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY whatsapp_broadcast_log_service_role
-  ON whatsapp_broadcast_log
-  FOR ALL TO service_role
-  USING (true) WITH CHECK (true);
+DO $$ BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies WHERE policyname = 'whatsapp_broadcast_log_service_role'
+  ) THEN
+    CREATE POLICY whatsapp_broadcast_log_service_role
+      ON whatsapp_broadcast_log
+      FOR ALL TO service_role
+      USING (true) WITH CHECK (true);
+  END IF;
+END $$;
