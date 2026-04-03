@@ -35,6 +35,9 @@ export const dashboardKeys = {
   notifications: () => [...dashboardKeys.all, 'notifications'] as const,
 };
 
+// Tracks when in-flight payment polling started (module-level, reset on resolution)
+let _pollingStartedAt: number | null = null;
+
 // ==============================================
 // DASHBOARD QUERY
 // ==============================================
@@ -57,7 +60,23 @@ export function useDashboard(options: UseDashboardOptions = {}) {
       return data;
     },
     enabled,
-    refetchInterval,
+    // Poll every 5s when a payment is processing/initiated in the data.
+    // Stops automatically when the payment resolves to success/failed,
+    // or after 10 minutes to prevent indefinite polling on stuck payments.
+    // Caller-provided refetchInterval takes priority if set.
+    refetchInterval: refetchInterval ?? ((data) => {
+      const hasInFlight = data?.recent_payments?.some(
+        (p) => p.status === 'processing' || p.status === 'initiated'
+      );
+      if (!hasInFlight) {
+        _pollingStartedAt = null;
+        return false;
+      }
+      if (!_pollingStartedAt) _pollingStartedAt = Date.now();
+      const elapsed = Date.now() - _pollingStartedAt;
+      if (elapsed > 2 * 60 * 1000) return false; // 2 min cutoff
+      return 5000;
+    }),
     staleTime: 1000 * 60 * 2, // 2 minutes
     // Re-fetch when app comes back to foreground (e.g., after PayU checkout or bank app)
     refetchOnWindowFocus: true,
@@ -126,7 +145,7 @@ export function useDashboard(options: UseDashboardOptions = {}) {
     }
 
     return null;
-  }, [query.data?.tenancy, query.data?.upcoming_payment]);
+  }, [query.data?.tenancy, query.data?.upcoming_payment, query.data?.cashback?.verification_complete]);
 
   // Realtime subscriptions via centralized RealtimeManager
   const tenancyId = query.data?.tenancy?.id;
@@ -190,35 +209,39 @@ export function useDashboard(options: UseDashboardOptions = {}) {
     return unsubscribe;
   }, [userId]);
 
-  // When the query is in error state, return null values instead of stale cached data
-  // to prevent the UI from showing outdated information after a failed refresh.
-  const hasError = query.isError;
+  // Error handling: only null out data when there is NO cached data at all.
+  // A background refetch failure (e.g., network blip, ISP block) should NOT
+  // wipe previously loaded dashboard data — the cached data is still valid.
+  // This prevents setup screens from showing "No active tenancy found" when
+  // a transient refetch fails while the user is mid-form.
+  const hasData = query.data != null;
+  const isFatalError = query.isError && !hasData;
 
   return {
     ...query,
-    dashboardState: hasError ? ('error' as DashboardState) : dashboardState,
+    dashboardState: isFatalError ? ('error' as DashboardState) : dashboardState,
 
-    // Raw data accessors (edge function shape) — nulled on error to avoid stale display
-    user: hasError ? null : (query.data?.user ?? null),
-    tenancy: hasError ? null : (query.data?.tenancy ?? null),
-    upcomingPayment: hasError ? null : (query.data?.upcoming_payment ?? null),
-    cashback: hasError ? null : (query.data?.cashback ?? null),
-    rawRecentPayments: hasError ? [] : (query.data?.recent_payments ?? []),
-    notifications: hasError ? [] : (query.data?.notifications ?? []),
-    unreadCount: hasError ? 0 : (query.data?.unread_notification_count ?? 0),
+    // Raw data accessors — only nulled when no cached data exists
+    user: isFatalError ? null : (query.data?.user ?? null),
+    tenancy: isFatalError ? null : (query.data?.tenancy ?? null),
+    upcomingPayment: isFatalError ? null : (query.data?.upcoming_payment ?? null),
+    cashback: isFatalError ? null : (query.data?.cashback ?? null),
+    rawRecentPayments: isFatalError ? [] : (query.data?.recent_payments ?? []),
+    notifications: isFatalError ? [] : (query.data?.notifications ?? []),
+    unreadCount: isFatalError ? 0 : (query.data?.unread_notification_count ?? 0),
 
     // Landlord bank account (for edit bank details)
-    landlordBank: hasError ? null : (query.data?.landlord_bank ?? null),
+    landlordBank: isFatalError ? null : (query.data?.landlord_bank ?? null),
 
     // Payment stamps
-    paymentStamps: hasError ? null : (query.data?.payment_stamps ?? null),
+    paymentStamps: isFatalError ? null : (query.data?.payment_stamps ?? null),
 
     // Status notification (derived from tenancy + payment state)
-    statusNotification: hasError ? null : statusNotification,
+    statusNotification: isFatalError ? null : statusNotification,
 
     // UI-mapped data for home screen components
-    recentPayments: hasError ? [] : mappedRecentPayments,
-    cashbackEntries: hasError ? [] : mappedCashbackEntries,
+    recentPayments: isFatalError ? [] : mappedRecentPayments,
+    cashbackEntries: isFatalError ? [] : mappedCashbackEntries,
   };
 }
 

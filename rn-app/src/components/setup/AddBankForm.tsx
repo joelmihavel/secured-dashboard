@@ -219,8 +219,13 @@ export default function AddBankScreen({ preWaitlist = false }: AddBankProps) {
   // render (React Query wrapper), which would recreate firePanVerification +
   // handleSubmit on every dashboard refetch (realtime events, focus, etc.).
   // Using a ref breaks this cascade chain that was hitting React's 50-update limit.
+  // IMPORTANT: Only update when a valid ID is present. A transient dashboard
+  // refetch failure should NOT erase a previously fetched tenancy ID — the
+  // server validates it independently on each mutation call.
   const tenancyIdRef = useRef(tenancy?.id);
-  tenancyIdRef.current = tenancy?.id;
+  if (tenancy?.id) {
+    tenancyIdRef.current = tenancy.id;
+  }
 
   // Payment method selector — default based on rent amount
   const rent = tenancy?.monthly_rent ?? 0;

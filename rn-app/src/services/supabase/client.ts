@@ -240,16 +240,42 @@ export function updateCachedSession(session: { access_token: string } | null) {
 }
 
 /**
+ * Check if a JWT's exp claim is within `marginMs` of expiring (or already expired).
+ * Returns true if the token should NOT be used and needs a refresh.
+ */
+function isTokenExpiringSoon(token: string, marginMs: number = 30_000): boolean {
+  try {
+    const payload = token.split('.')[1];
+    if (!payload) return true;
+    const json = atob(payload.replace(/-/g, '+').replace(/_/g, '/'));
+    const { exp } = JSON.parse(json);
+    if (typeof exp !== 'number') return false; // Can't check — let server decide
+    return Date.now() > (exp * 1000) - marginMs;
+  } catch {
+    return false; // Parse failure — let server validate
+  }
+}
+
+/**
  * Get the current access token without triggering SDK refresh.
- * Falls back to getSessionSafe() only on cold start (cache empty).
+ * Falls back to getSessionSafe() only on cold start (cache empty)
+ * or when the cached token is about to expire.
+ *
+ * IMPORTANT: Checks token expiry before returning the cached value.
+ * Without this check, concurrent edge function calls after token expiry
+ * (e.g., dashboard refetch + PAN verification both firing after bank
+ * success) would all hit the getSessionSafe() fallback simultaneously,
+ * causing a refresh token rotation race → GoTrue kills the session.
  */
 export async function getAccessTokenSafe(): Promise<string | null> {
-  // Cache hit — token was set by onAuthStateChange
-  if (_cachedAccessToken) return _cachedAccessToken;
+  // Cache hit — return immediately if token is still fresh
+  if (_cachedAccessToken && !isTokenExpiringSoon(_cachedAccessToken)) {
+    return _cachedAccessToken;
+  }
 
-  // Cold start fallback — cache not yet populated by AuthProvider.
-  // This single getSession() call is acceptable on cold start because
-  // autoRefreshToken hasn't started competing yet.
+  // Token expired/expiring or cold start — single getSession() call.
+  // getSessionSafe() is deduped (in-flight guard), so concurrent callers
+  // share one request instead of racing multiple refresh attempts.
   const { data: { session } } = await getSessionSafe();
   if (session?.access_token) {
     _cachedAccessToken = session.access_token;
