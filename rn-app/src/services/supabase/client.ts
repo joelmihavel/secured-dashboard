@@ -173,10 +173,35 @@ const ExpoSecureStoreAdapter = {
 };
 
 /**
+ * In-memory exclusive lock for Supabase Auth.
+ *
+ * React Native (Hermes) has no navigator.locks API, so the SDK falls back to
+ * lockNoOp which provides ZERO serialization. This causes concurrent
+ * _callRefreshToken() calls (from getSession() + autoRefreshToken timer) that
+ * reuse the same refresh token → GoTrue's rotation detection kills the session.
+ *
+ * This lock serializes all auth operations (getSession, refreshToken, signIn,
+ * signOut) so only one runs at a time, preventing the double-refresh race.
+ */
+const _locks: Map<string, Promise<unknown>> = new Map();
+async function rnLock<R>(name: string, _acquireTimeout: number, fn: () => Promise<R>): Promise<R> {
+  const prev = _locks.get(name) ?? Promise.resolve();
+  const current = prev.catch(() => {}).then(fn);
+  _locks.set(name, current);
+  try {
+    return await current;
+  } finally {
+    // Only clean up if we're still the latest in the chain
+    if (_locks.get(name) === current) _locks.delete(name);
+  }
+}
+
+/**
  * Configured Supabase client for the mobile app
  */
 export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
   auth: {
+    lock: rnLock,
     storage: ExpoSecureStoreAdapter,
     autoRefreshToken: true,
     persistSession: true,
