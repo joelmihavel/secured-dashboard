@@ -77,6 +77,28 @@ serve(async (req: Request) => {
       throw new ValidationError("Invalid landlord phone number for the selected country");
     }
 
+    // Rate limit: max 3 WhatsApp messages per day per tenancy
+    const MAX_INVITES_PER_DAY = 3;
+    const isPhoneChanged = bodyPhone && bodyPhone.replace(/\D/g, "") !== tenancy.landlord_phone?.replace(/\D/g, "");
+
+    if (!isPhoneChanged && tenancy.landlord_invite_count) {
+      // Check how many invites were sent today
+      const { count: todayCount } = await supabaseAdmin
+        .from("audit_logs")
+        .select("id", { count: "exact", head: true })
+        .eq("entity_id", tenancy_id)
+        .eq("action", "LANDLORD_INVITE_SENT")
+        .gte("created_at", new Date(new Date().setHours(0, 0, 0, 0)).toISOString());
+
+      if ((todayCount ?? 0) >= MAX_INVITES_PER_DAY) {
+        throw new AppError(
+          `You can send a maximum of ${MAX_INVITES_PER_DAY} reminders per day. Please try again tomorrow.`,
+          "RATE_LIMITED",
+          429,
+        );
+      }
+    }
+
     // If phone came from body, save it on tenancy before sending
     if (bodyPhone) {
       const { error: phoneUpdateError } = await supabaseAdmin

@@ -18,6 +18,7 @@ import { AppError, handleError, NotFoundError } from "../_shared/errors.ts";
 import { AuditLogger, AuditActions } from "../_shared/audit.ts";
 import { notifyUser } from "../_shared/notifications.ts";
 import { getSupabaseUrl } from "../_shared/supabase.ts";
+import { checkAndUpgradeLandlordStatus } from "../_shared/landlord-m360-check.ts";
 
 serve(async (req: Request) => {
   const corsResponse = handleCors(req);
@@ -98,14 +99,15 @@ serve(async (req: Request) => {
       throw new NotFoundError("No tenancy found for this phone number");
     }
 
-    // Update tenancy as verified (status is set to active on waitlist approval, not here)
+    // Update tenancy as otp_confirmed (NOT verified).
+    // landlord_approved stays false until M360 name matches landlord name.
     const { error: updateError } = await supabaseAdmin
       .from("tenancies")
       .update({
-        landlord_approved: true,
+        landlord_approved: false,
         landlord_approved_at: new Date().toISOString(),
         landlord_response: "approved",
-        landlord_status: "verified",
+        landlord_status: "otp_confirmed",
         landlord_user_id: landlordUserId,
         landlord_otp_verified: true,
       })
@@ -129,8 +131,12 @@ serve(async (req: Request) => {
 
     const backgroundWork = (async () => {
       try {
-        // Notification to tenant is handled by landlord-confirm/index.ts
-        // to prevent duplicate push notifications (M8 fix)
+        // Fire-and-forget: check M360 name match and upgrade to 'verified' if matched
+        checkAndUpgradeLandlordStatus(tenancy.id, tenancy.landlord_phone, supabaseAdmin)
+          .then(({ upgraded, result }) => {
+            console.log(`[notify-landlord] M360 upgrade ${upgraded ? "SUCCESS" : "SKIPPED"}: ${result.detail}`);
+          })
+          .catch((err) => console.error("[notify-landlord] M360 upgrade failed (cron will retry):", err));
 
         await audit!.logSuccess(
           AuditActions.LANDLORD_OTP_VERIFIED,
@@ -159,7 +165,8 @@ serve(async (req: Request) => {
       data: {
         tenancy_id: tenancy.id,
         tenant_name: tenant?.full_name ?? null,
-        landlord_verified: true,
+        landlord_verified: false,
+        landlord_status: "otp_confirmed",
       },
     });
   } catch (error) {

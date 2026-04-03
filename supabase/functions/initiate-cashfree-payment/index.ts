@@ -194,7 +194,7 @@ serve(async (req: Request) => {
     // Validate tenancy
     const { data: tenancy, error: tenancyError } = await supabase
       .from("tenancies")
-      .select("id, monthly_rent_paise, user_id, bank_verified, utility_verified, landlord_approved, rent_due_day, cashback_cutoff_day")
+      .select("id, monthly_rent_paise, user_id, bank_verified, utility_verified, landlord_approved, landlord_phone, rent_due_day, cashback_cutoff_day")
       .eq("id", tenancy_id)
       .single();
 
@@ -217,6 +217,18 @@ serve(async (req: Request) => {
 
     if (!landlordBank?.cf_beneficiary_id || landlordBank.cf_beneficiary_status !== "ACTIVE") {
       console.warn(`[initiate-cashfree-payment] Landlord vendor not active: ${landlordBank?.cf_beneficiary_id ?? "none"}, status=${landlordBank?.cf_beneficiary_status ?? "none"}`);
+    }
+
+    // Credit card gate: landlord M360 identity verification required
+    const isCreditCard = (payment_method === "card" && card_type === "credit")
+      || rawPaymentMethod === "credit_card";
+
+    if (isCreditCard && !(tenancy.landlord_approved && tenancy.utility_verified)) {
+      console.warn(`[initiate-cashfree-payment] Credit card BLOCKED: landlord_approved=${tenancy.landlord_approved}, utility_verified=${tenancy.utility_verified}, tenancy=${tenancy_id}`);
+      throw new PaymentError(
+        "Credit card payments require landlord identity verification. Please use UPI, debit card, or net banking.",
+        "CREDIT_CARD_NOT_ALLOWED",
+      );
     }
 
     // Amount guardrail

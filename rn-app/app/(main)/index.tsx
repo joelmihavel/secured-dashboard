@@ -65,10 +65,8 @@ import {
   BottomFooter,
   VerificationCheckSheet,
     EmptyPaymentsState,
-  SetupProgressCard,
   // Import types from home components
   PaymentMethod,
-  EmptyStateVariant,
   NotificationType,
   CashbackModuleState,
   VerificationStatusSheet,
@@ -533,38 +531,6 @@ export default function HomeScreen() {
     // router deliberately excluded — uses routerRef to avoid infinite re-renders
   ]);
 
-  // Determine empty state variant based on dashboard state
-  const emptyStateVariant: EmptyStateVariant = useMemo(() => {
-    // No payment methods at all — base empty state
-    if (paymentMethods.length === 0) {
-      // If setup is in progress (tenancy exists but no payment methods)
-      if (tenancy && !verificationStatus?.bank_verified) {
-        return 'setup_payment';
-      }
-      return 'empty_base';
-    }
-
-    // Map backend landlord_status to specific UI states
-    if (tenancy?.verification_status && !tenancy.verification_status.landlord_approved) {
-      const ls = tenancy.verification_status.landlord_status;
-      if (ls === 'declined') {
-        return 'invitation_declined';
-      }
-      return 'invitation_sent';
-    }
-
-    // Landlord approved, check remaining verification steps
-    if (!verificationStatus?.bank_verified || !verificationStatus?.utility_verified) {
-      // Cashback setup available when payment methods exist but verification incomplete
-      if (cashback && cashback.total_savings === 0 && !cashback.verification_complete) {
-        return 'setup_cashback';
-      }
-      return 'empty_with_upi';
-    }
-
-    return 'empty_with_upi_payments';
-  }, [paymentMethods.length, tenancy, cashback]);
-
   // ==============================================
   // HANDLERS
   // ==============================================
@@ -880,7 +846,7 @@ export default function HomeScreen() {
             transactions,
             cashbackEntries,
             cashbackModule,
-            emptyStateVariant,
+
             carouselItems,
             daysUntilDue,
             daysUntilNextDue,
@@ -963,7 +929,6 @@ interface ContentProps {
   transactions: MappedTransaction[];
   cashbackEntries: MappedCashbackEntry[];
   cashbackModule: MappedCashbackModule;
-  emptyStateVariant: EmptyStateVariant;
   carouselItems: CarouselCardItem[];
   daysUntilDue: number | null;
   daysUntilNextDue: number | null;
@@ -1013,7 +978,6 @@ function renderDashboardContent(state: DashboardState, props: ContentProps) {
     transactions,
     cashbackEntries,
     cashbackModule,
-    emptyStateVariant,
     carouselItems,
     daysUntilDue,
     daysUntilNextDue,

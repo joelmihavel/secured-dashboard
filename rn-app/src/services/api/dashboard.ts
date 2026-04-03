@@ -28,7 +28,7 @@ export interface DashboardUser {
   created_at?: string;
 }
 
-export type LandlordStatusValue = 'none' | 'invite_pending' | 'invited' | 'verified' | 'declined' | 'approved';
+export type LandlordStatusValue = 'none' | 'invite_pending' | 'invited' | 'otp_confirmed' | 'verified' | 'declined' | 'approved';
 
 export interface TenancyVerificationStatus {
   bank_verified: boolean;
@@ -36,6 +36,8 @@ export interface TenancyVerificationStatus {
   landlord_approved: boolean;
   landlord_response?: 'approved' | 'disputed' | 'pending' | null;
   landlord_status?: LandlordStatusValue;
+  credit_card_enabled?: boolean;
+  credit_card_disabled_reason?: string | null;
 }
 
 export interface DashboardTenancy {
@@ -687,16 +689,25 @@ export function mapCashbackModule(
   // ── Setup steps (4-state: not_started → active → in_progress → completed) ──
   const bankDone = vs?.bank_verified ?? false;
   const utilityDone = vs?.utility_verified ?? false;
-  const landlordDone = vs?.landlord_approved ?? false;
-  const landlordPending = vs?.landlord_response === 'pending' || vs?.landlord_response === null;
+  const landlordInviteSent = vs?.landlord_status === 'invited' || vs?.landlord_status === 'otp_confirmed';
+  const landlordFullyVerified = vs?.landlord_status === 'verified' || (vs?.landlord_approved ?? false);
+  // For setup guard: treat invite sent as step done (don't route back to invite screen)
+  const landlordDone = landlordInviteSent || landlordFullyVerified;
 
   function stepStatus(done: boolean, index: number): SetupStepStatus {
     if (done) return 'completed';
-    // Landlord step is "in_progress" when invite sent + awaiting response
-    if (index === 2 && bankDone && utilityDone && landlordPending) return 'in_progress';
     // First incomplete step is "active" (the one user should act on)
     const firstIncompleteIndex = [bankDone, utilityDone, landlordDone].findIndex(v => !v);
     if (index === firstIncompleteIndex) return 'active';
+    return 'not_started';
+  }
+
+  // Landlord step has its own status logic: invite sent = in_progress, not completed
+  function landlordStepStatus(): SetupStepStatus {
+    if (landlordFullyVerified) return 'completed';
+    if (landlordInviteSent) return 'in_progress';
+    const firstIncompleteIndex = [bankDone, utilityDone, false].findIndex(v => !v);
+    if (firstIncompleteIndex === 2) return 'active';
     return 'not_started';
   }
 
@@ -715,12 +726,13 @@ export function mapCashbackModule(
     },
     {
       id: 'landlord',
-      // "Invite your landlord" until invite sent, then "Awaiting landlord's approval"
-      label: (bankDone && utilityDone && landlordPending)
+      label: landlordInviteSent
         ? "Awaiting landlord's approval"
-        : 'Invite your landlord',
-      completed: landlordDone,
-      status: stepStatus(landlordDone, 2),
+        : landlordFullyVerified
+          ? 'Landlord verified'
+          : 'Invite your landlord',
+      completed: landlordFullyVerified,
+      status: landlordStepStatus(),
     },
   ];
 

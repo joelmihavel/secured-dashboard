@@ -177,7 +177,7 @@ const PaymentMethodRow = memo(({
         {/* Right: Fee text or disabled pill */}
         <View style={styles.methodRowRight}>
           {isDisabled ? (
-            <RNText style={styles.disabledPillText}>Unavailable now</RNText>
+            <RNText style={styles.disabledPillText}>Unavailable</RNText>
           ) : (
             <RNText style={[styles.feeText, { color: FIGMA.feeText }]}>
               {method.fee}
@@ -210,9 +210,12 @@ export function MethodSelectorContent({
   const storedAmount = usePaymentStore((state) => state.amount);
   const { data: dynamicRates } = useFeeRates();
 
-  // Credit card disabled logic — unlocked for all users
-  const creditCardDisabled = false;
-  const creditCardDisabledReason = undefined;
+  // Credit card gated behind landlord M360 identity verification
+  const verificationStatus = tenancy?.verification_status;
+  const creditCardDisabled = !(verificationStatus?.credit_card_enabled ?? true);
+  const creditCardDisabledReason = creditCardDisabled
+    ? (verificationStatus?.credit_card_disabled_reason ?? 'Landlord verification pending')
+    : undefined;
 
   const [selectedMethod, setSelectedMethod] = useState<string>('upi-1');
   const rentAmount = storedAmount || tenancy?.monthly_rent || 0;
@@ -256,7 +259,6 @@ export function MethodSelectorContent({
         fee: formatFeeLabel(rates.credit_card, feeBaseAmount),
         feeAmount: computeFee(rates.credit_card, feeBaseAmount),
         isDisabled: creditCardDisabled,
-        disabledReason: creditCardDisabledReason,
       },
     ];
   }, [feeBaseAmount, dynamicRates, creditCardDisabled, creditCardDisabledReason]);
@@ -314,7 +316,11 @@ export function MethodSelectorContent({
       {/* Cashback pill — below payment methods, center aligned */}
       <View style={styles.cashbackPillContainer}>
         <View style={styles.cashbackPill}>
-          <RNText style={styles.cashbackPillText}>You'll pay 1% less</RNText>
+          <RNText style={styles.cashbackPillText}>
+            {verificationStatus?.landlord_approved && verificationStatus?.utility_verified
+              ? "You'll pay 1% less"
+              : 'Get verified to pay via credit cards'}
+          </RNText>
         </View>
       </View>
 

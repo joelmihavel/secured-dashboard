@@ -130,8 +130,11 @@ export function EnterAmountContent({
     if (parsedAmount < monthlyRent && monthlyRent > 0) {
       return { severity: 'warning', message: 'Cashback will apply on reduced rent' };
     }
+    if (parsedAmount > monthlyRent && monthlyRent > 0) {
+      return { severity: 'info', message: '1% discount capped at agreement rent' };
+    }
     if (parsedAmount === monthlyRent) {
-      return { severity: 'info', message: '1% cashback will be applied' };
+      return { severity: 'info', message: "You'll pay 1% less" };
     }
     return null;
   }, [alreadyPaid, parsedAmount, monthlyRent]);
@@ -213,7 +216,7 @@ export function EnterAmountContent({
               style={styles.pill}
             >
               <Text style={styles.pillTextDefault}>
-                1% cashback will be applied
+                You'll pay 1% less
               </Text>
             </Animated.View>
           ) : null}

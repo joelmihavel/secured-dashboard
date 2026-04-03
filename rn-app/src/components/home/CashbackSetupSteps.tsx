@@ -56,7 +56,7 @@ function StepIcon({ status }: { status: SetupStepStatus }) {
         <Svg width={16} height={16} viewBox="0 0 16 16" fill="none">
           <Path
             d="M14 8C14 11.314 11.314 14 8 14C4.686 14 2 11.314 2 8C2 4.686 4.686 2 8 2C11.314 2 14 4.686 14 8Z"
-            stroke={colors.black[400]}
+            stroke={colors.brand[500]}
             strokeWidth={1}
           />
         </Svg>

@@ -15,7 +15,6 @@ import {
 } from 'react-native';
 
 import { PaymentFlipCard, PaymentMonthData } from './PaymentFlipCard';
-import { SetupProgressCard, SetupProgressCardProps } from './SetupProgressCard';
 import { LandlordStatusCard, LandlordStatusCardProps } from './LandlordStatusCard';
 
 import { BgLine } from '@/src/components/ui/BgLine';
@@ -29,9 +28,8 @@ const CARD_GAP = s(16);
 const CONTENT_PADDING_LEFT = s(64);
 const CONTENT_PADDING_RIGHT = s(32);
 
-export type CarouselCardItem = 
+export type CarouselCardItem =
   | { type: 'payment', id: string, data: PaymentMonthData }
-  | { type: 'setup_progress', id: string, data: SetupProgressCardProps }
   | { type: 'landlord_status', id: string, data: LandlordStatusCardProps }
 ;
 
@@ -59,14 +57,6 @@ function RentStatusCarouselComponent({
         return (
           <View style={styles.cardWrapper}>
             <PaymentFlipCard data={item.data} />
-          </View>
-        );
-      case 'setup_progress':
-        return (
-          <View style={styles.cardWrapper}>
-            <View style={styles.fixedCardWidth}>
-              <SetupProgressCard {...item.data} />
-            </View>
           </View>
         );
       case 'landlord_status':

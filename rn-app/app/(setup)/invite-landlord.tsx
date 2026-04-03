@@ -73,6 +73,7 @@ export default function InviteLandlordScreen() {
   const { tenancy } = useDashboard();
 
   const [phoneNumber, setPhoneNumber] = useState('');
+  const [originalPhone, setOriginalPhone] = useState('');
   const [countryCode, setCountryCode] = useState('+91');
   const [maxDigits, setMaxDigits] = useState(10);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -85,8 +86,17 @@ export default function InviteLandlordScreen() {
       const raw = tenancy.landlord_phone.replace(/\D/g, '');
       const digits = raw.length > 10 ? raw.slice(-10) : raw;
       setPhoneNumber(digits);
+      setOriginalPhone(digits);
     }
   }, [tenancy?.landlord_phone]);
+
+  // Determine if this is a reminder (same number) or new invite (number changed)
+  const hasInviteBeenSent = tenancy?.verification_status?.landlord_status === 'invited'
+    || tenancy?.verification_status?.landlord_status === 'otp_confirmed'
+    || tenancy?.verification_status?.landlord_status === 'verified';
+  const cleaned = phoneNumber.replace(/\D/g, '');
+  const isNumberChanged = originalPhone.length > 0 && cleaned !== originalPhone;
+  const isReminder = hasInviteBeenSent && !isNumberChanged;
 
   // Animated progress bar
   const progress = useSharedValue(66.67);
@@ -149,28 +159,28 @@ export default function InviteLandlordScreen() {
     setApiError(null);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
-    const cleaned = phoneNumber.replace(/\D/g, '');
+    const mutateParams = isReminder
+      ? { tenancyId: tenancy.id }
+      : { tenancyId: tenancy.id, landlordPhone: cleaned, countryCode };
+
     sendLandlordInvite.mutate(
-      {
-        tenancyId: tenancy.id,
-        landlordPhone: cleaned,
-        countryCode: countryCode,
-      },
+      mutateParams,
       {
         onSuccess: () => {
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
           setInviteSent(true);
+          if (!isReminder) setOriginalPhone(cleaned);
           setTimeout(() => {
             routerRef.current.replace('/(main)' as never);
           }, 1500);
         },
         onError: (error: SetupError) => {
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-          setApiError(error.message || 'Failed to send invite. Please try again.');
+          setApiError(error.message || (isReminder ? 'Failed to send reminder. Please try again.' : 'Failed to send invite. Please try again.'));
         },
       }
     );
-  }, [validateForm, sendLandlordInvite, phoneNumber, countryCode, tenancy?.id]);
+  }, [validateForm, sendLandlordInvite, cleaned, countryCode, tenancy?.id, isReminder]);
 
   const handleSkip = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -181,7 +191,6 @@ export default function InviteLandlordScreen() {
     Linking.openURL('https://flent.in/secured/how-it-works');
   }, []);
 
-  const cleaned = phoneNumber.replace(/\D/g, '');
   const isFormValid = cleaned.length >= maxDigits;
 
   return (
@@ -215,7 +224,7 @@ export default function InviteLandlordScreen() {
 
             {/* Subtitle: 12/20, #A9A9A9, PlusJakartaSans-Regular */}
             <Text style={styles.subtitleText}>
-              Invite your landlord to Secured to activate your cashback.
+              Once confirmed, your landlord gets rent protection up to ₹1.5 lakh
             </Text>
           </View>
 
@@ -230,12 +239,12 @@ export default function InviteLandlordScreen() {
           {apiError && <AlertBanner type="error" message={apiError} />}
 
           {/* Invite Sent Success Banner */}
-          {inviteSent && <AlertBanner type="success" message="Invite sent successfully" />}
+          {inviteSent && <AlertBanner type="success" message={isReminder ? "Reminder sent successfully" : "Invite sent successfully"} />}
 
           {/* Phone Input -- Figma: label + phone input with country dropdown */}
           <View style={styles.inputSection}>
             <PhoneInput
-              label="Confirm your tenancy by inviting your landlord"
+              label="Your landlord will receive a confirmation message on WhatsApp"
               value={phoneNumber}
               onChangeText={handlePhoneChange}
               countryCode={countryCode}
@@ -255,7 +264,7 @@ export default function InviteLandlordScreen() {
           {/* Button section -- Figma 1:34233: column, gap 16 */}
           <View style={styles.buttonSection}>
             <PrimaryButton
-              title="Save & invite"
+              title={isReminder ? "Send reminder" : "Save & invite"}
               onPress={handleSubmit}
               disabled={!isFormValid}
               loading={sendLandlordInvite.isPending}

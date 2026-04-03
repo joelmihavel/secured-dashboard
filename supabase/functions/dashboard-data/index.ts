@@ -67,6 +67,8 @@ interface DashboardData {
       landlord_approved: boolean;
       landlord_response: string | null;
       landlord_status: string;
+      credit_card_enabled: boolean;
+      credit_card_disabled_reason: string | null;
     };
   } | null;
   upcoming_payment: {
@@ -518,6 +520,10 @@ serve(async (req: Request) => {
               landlord_approved: tenancy.landlord_approved,
               landlord_response: tenancy.landlord_response ?? null,
               landlord_status: tenancy.landlord_status ?? 'none',
+              credit_card_enabled: tenancy.landlord_approved === true && tenancy.utility_verified === true,
+              credit_card_disabled_reason: !(tenancy.landlord_approved === true && tenancy.utility_verified === true)
+                ? 'Complete verification to unlock credit cards'
+                : null,
             },
           }
         : null,

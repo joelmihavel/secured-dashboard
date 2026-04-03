@@ -21,6 +21,7 @@ import { handleCors, jsonResponse, errorResponse, getCorsHeaders } from "../_sha
 import { AppError, NotFoundError, ValidationError, handleError } from "../_shared/errors.ts";
 import { AuditLogger, AuditActions } from "../_shared/audit.ts";
 import { notifyUser, sendWhatsApp } from "../_shared/notifications.ts";
+import { checkAndUpgradeLandlordStatus } from "../_shared/landlord-m360-check.ts";
 
 serve(async (req: Request) => {
   const corsResponse = handleCors(req);
@@ -222,14 +223,17 @@ async function handleConfirm(
     throw new NotFoundError("No pending tenancy found for your phone number");
   }
 
-  // Confirm tenancy (status is set to active on waitlist approval, not here)
+  // Confirm tenancy — set otp_confirmed (NOT verified).
+  // landlord_approved stays false until M360 name matches landlord name.
+  // The fire-and-forget check below (or the upgrade-landlord-status cron)
+  // will upgrade to 'verified' + landlord_approved=true once confirmed.
   const { error: updateError } = await supabase
     .from("tenancies")
     .update({
-      landlord_approved: true,
+      landlord_approved: false,
       landlord_approved_at: new Date().toISOString(),
       landlord_response: "approved",
-      landlord_status: "verified",
+      landlord_status: "otp_confirmed",
       landlord_user_id: landlordUserId,
       landlord_otp_verified: true,
     })
@@ -272,6 +276,13 @@ async function handleConfirm(
       template: "HXcbf7e476ac60af8a9cc548028ef914ea",
     }),
   ]).catch((err) => console.error("[landlord-confirm] Notification error:", err));
+
+  // Fire-and-forget: check M360 name match and upgrade to 'verified' if matched
+  checkAndUpgradeLandlordStatus(tenancy.id, tenancy.landlord_phone, supabase)
+    .then(({ upgraded, result }) => {
+      console.log(`[landlord-confirm] M360 upgrade ${upgraded ? "SUCCESS" : "SKIPPED"}: ${result.detail}`);
+    })
+    .catch((err) => console.error("[landlord-confirm] M360 upgrade failed (cron will retry):", err));
 
   await audit.logSuccess(AuditActions.LANDLORD_APPROVED, "landlord", "tenancy", tenancy.id, {
     landlord_user_id: landlordUserId,

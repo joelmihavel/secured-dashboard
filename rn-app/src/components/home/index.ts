@@ -54,14 +54,7 @@ export type { StatusNotificationBannerProps, NotificationType } from './StatusNo
 export { BottomFooter } from './BottomFooter';
 export type { BottomFooterProps } from './BottomFooter';
 
-// Setup components
-export { SetupProgressCard } from './SetupProgressCard';
-
-export { SetupChecklist } from './SetupChecklist';
-export type { SetupChecklistProps } from './SetupChecklist';
-
-export { FinishSetupSection } from './FinishSetupSection';
-export type { FinishSetupSectionProps } from './FinishSetupSection';
+// Setup components (SetupProgressCard, SetupChecklist, FinishSetupSection removed — stale PayU-era code)
 
 // Badge / stamp
 export { PaymentBadge } from './PaymentBadge';
@@ -75,5 +68,4 @@ export type { LandlordStatusCardProps, LandlordStatus } from './LandlordStatusCa
 export { EmptyPaymentsState } from './EmptyPaymentsState';
 export type { EmptyPaymentsStateProps } from './EmptyPaymentsState';
 
-export type { EmptyStateVariant } from './HomeEmptyState';
-
+// HomeEmptyState removed — stale PayU-era code

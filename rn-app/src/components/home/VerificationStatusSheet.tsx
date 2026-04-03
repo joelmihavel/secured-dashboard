@@ -201,9 +201,9 @@ export function VerificationStatusSheet({
                 <View style={styles.cardBody}>
                   <Text style={styles.cardTitle}>You're almost there</Text>
                   <Text style={styles.cardDescription}>
-                    Complete electricity bill verification and landlord invitation
-                    to become a verified member. Cashback benefits will stop after
-                    90 days if verification is not completed.
+                    Complete address and landlord verification to get verified.
+                    Unverified members cannot pay rent via credit cards.
+                    After 90 days, your 1% cashback will pause until you get verified.
                   </Text>
                 </View>
               </View>

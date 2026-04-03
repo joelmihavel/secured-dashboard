@@ -262,21 +262,27 @@ export function useVerificationStatus() {
     };
   }
 
-  const { bank_verified, utility_verified, landlord_approved } =
+  const { bank_verified, utility_verified, landlord_approved, landlord_status } =
     tenancy.verification_status;
+
+  // Landlord step is done for setup purposes once invite is sent
+  const landlordStepDone = landlord_approved
+    || landlord_status === 'invited'
+    || landlord_status === 'otp_confirmed'
+    || landlord_status === 'verified';
 
   const pendingSteps: string[] = [];
   if (!bank_verified) pendingSteps.push('bank');
   if (!utility_verified) pendingSteps.push('utility');
-  if (!landlord_approved) pendingSteps.push('landlord');
+  if (!landlordStepDone) pendingSteps.push('landlord');
 
   return {
     isLoading,
     error,
     bankVerified: bank_verified,
     utilityVerified: utility_verified,
-    landlordApproved: landlord_approved,
-    allVerified: cashback?.verification_complete ?? (bank_verified && utility_verified && landlord_approved),
+    landlordApproved: landlordStepDone,
+    allVerified: cashback?.verification_complete ?? (bank_verified && utility_verified && landlordStepDone),
     pendingSteps,
   };
 }
