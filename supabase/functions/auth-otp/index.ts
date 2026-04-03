@@ -274,11 +274,11 @@ async function handleRouteOtp(
     console.log("[auth-otp] route_otp - phone:", `XXXXXX${sanitizedPhone.slice(-4)}`);
   }
 
-  // Fast user existence check (~5ms)
+  // Fast user existence check (~5ms) — dual-format to handle +91/91 variants
   const { data: existingUser } = await supabase
     .from("users")
     .select("id")
-    .eq("phone", phoneWithCountryCode)
+    .or(`phone.eq.${phoneWithCountryCode},phone.eq.${sanitizedPhone}`)
     .maybeSingle();
 
   // Existing user → trigger Supabase Auth OTP server-side (saves client round-trip)
