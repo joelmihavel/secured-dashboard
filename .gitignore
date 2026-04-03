@@ -52,3 +52,4 @@ skills-lock.json
 docs/superpowers/
 scripts/score-plan.sh
 admin-app/node_modules/
+admin-app/.next/
