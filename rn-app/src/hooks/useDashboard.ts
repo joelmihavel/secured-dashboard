@@ -64,7 +64,8 @@ export function useDashboard(options: UseDashboardOptions = {}) {
     // Stops automatically when the payment resolves to success/failed,
     // or after 10 minutes to prevent indefinite polling on stuck payments.
     // Caller-provided refetchInterval takes priority if set.
-    refetchInterval: refetchInterval ?? ((data) => {
+    refetchInterval: refetchInterval ?? ((query) => {
+      const data = query.state.data;
       const hasInFlight = data?.recent_payments?.some(
         (p) => p.status === 'processing' || p.status === 'initiated'
       );

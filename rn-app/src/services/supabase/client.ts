@@ -249,10 +249,10 @@ function isTokenExpiringSoon(token: string, marginMs: number = 30_000): boolean 
     if (!payload) return true;
     const json = atob(payload.replace(/-/g, '+').replace(/_/g, '/'));
     const { exp } = JSON.parse(json);
-    if (typeof exp !== 'number') return false; // Can't check — let server decide
+    if (typeof exp !== 'number') return true; // Malformed — refresh to be safe
     return Date.now() > (exp * 1000) - marginMs;
   } catch {
-    return false; // Parse failure — let server validate
+    return true; // Parse failure — refresh to be safe
   }
 }
 
