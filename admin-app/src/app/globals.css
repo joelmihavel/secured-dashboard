@@ -1,0 +1,55 @@
+@import "tailwindcss";
+
+@theme inline {
+  --color-background: #0A0A0A;
+  --color-foreground: #E8E8E8;
+  --color-card: #141414;
+  --color-card-foreground: #E8E8E8;
+  --color-muted: #1A1A1A;
+  --color-muted-foreground: #A3A3A3;
+  --color-popover: #141414;
+  --color-popover-foreground: #E8E8E8;
+  --color-primary: #FF9A6D;
+  --color-primary-foreground: #0A0A0A;
+  --color-secondary: #262626;
+  --color-secondary-foreground: #E8E8E8;
+  --color-accent: #1A1A1A;
+  --color-accent-foreground: #E8E8E8;
+  --color-destructive: #EF4444;
+  --color-destructive-foreground: #FFFFFF;
+  --color-success: #22C55E;
+  --color-success-foreground: #0A0A0A;
+  --color-warning: #F59E0B;
+  --color-warning-foreground: #0A0A0A;
+  --color-border: #1F1F1F;
+  --color-input: #1F1F1F;
+  --color-ring: #FF9A6D;
+
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 10px;
+  --radius-xl: 12px;
+
+  --font-sans: "Plus Jakarta Sans", "Inter", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+
+  --color-sidebar: #0A0A0A;
+  --color-sidebar-foreground: #A3A3A3;
+  --color-sidebar-accent: #1A1A1A;
+  --color-sidebar-accent-foreground: #E8E8E8;
+  --color-sidebar-border: #1F1F1F;
+}
+
+html {
+  color-scheme: dark;
+}
+
+body {
+  background: var(--color-background);
+  color: var(--color-foreground);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
