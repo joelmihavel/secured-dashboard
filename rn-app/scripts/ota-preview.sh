@@ -9,6 +9,14 @@ cd "$APP_DIR"
 
 MESSAGE="${1:-v2.2.0 preview update}"
 
+# ── Safety check: preview OTA should go from dev branch ──
+CURRENT_BRANCH=$(git -C "$APP_DIR/.." branch --show-current 2>/dev/null || echo "unknown")
+if [ "$CURRENT_BRANCH" != "dev" ]; then
+  echo "❌ ERROR: Must be on 'dev' branch to push preview OTA (currently on '$CURRENT_BRANCH')"
+  exit 1
+fi
+
+echo ">>> Branch: $CURRENT_BRANCH | Commit: $(git -C "$APP_DIR/.." rev-parse --short HEAD)"
 echo ">>> Killing Metro..."
 pkill -f metro 2>/dev/null || true
 sleep 1

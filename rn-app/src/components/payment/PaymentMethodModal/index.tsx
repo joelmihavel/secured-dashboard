@@ -33,7 +33,7 @@ import * as Haptics from 'expo-haptics';
 import { usePaymentStore } from '@/src/stores';
 import { useDashboard } from '@/src/hooks';
 import { initiatePayment, buildSessionParams, getPaymentGateway } from '@/src/services/payment';
-import { sanitizeErrorForUI } from '@/src/services/api/payments';
+import { sanitizeErrorForUI, abandonPayment } from '@/src/services/api/payments';
 import { useNetworkStatus } from '@/src/hooks/useNetworkStatus';
 import { BottomSheet } from '@/src/components/ui';
 
@@ -156,13 +156,35 @@ export function PaymentMethodModal({
       const amountPaise = storeEnteredAmount > 0 ? Math.round(storeEnteredAmount * 100) : undefined;
 
       try {
-        const { data, error } = await initiatePayment({
+        const { data, error, stuckPaymentId } = await initiatePayment({
           tenancyId,
           paymentMethod: methodType,
           cardType: (methodType === 'card' || methodType === 'debit_card') ? resolvedCardType : undefined,
           rentMonth,
           amountPaise,
         });
+
+        // Handle stuck payment: offer to abandon and retry
+        if (stuckPaymentId && !data) {
+          Alert.alert(
+            'Pending Payment',
+            'You have a payment still being processed. Cancel it and try again?',
+            [
+              { text: 'Wait', style: 'cancel' },
+              {
+                text: 'Cancel & Retry',
+                onPress: async () => {
+                  try {
+                    await abandonPayment(stuckPaymentId);
+                  } catch { /* proceed anyway */ }
+                  // Retry after abandoning
+                  handleInitiateForChild(methodType);
+                },
+              },
+            ],
+          );
+          return null;
+        }
 
         if (error || !data) {
           throw new Error(error ?? 'Failed to initiate payment');
@@ -408,13 +430,34 @@ export function PaymentMethodModal({
           const storeEnteredAmount = usePaymentStore.getState().enteredAmount;
           const amountPaise = storeEnteredAmount > 0 ? Math.round(storeEnteredAmount * 100) : undefined;
 
-          const { data, error } = await initiatePayment({
+          const { data, error, stuckPaymentId } = await initiatePayment({
             tenancyId,
             paymentMethod: methodType,
             cardType: (methodType === 'card' || methodType === 'debit_card') ? resolvedCardType : undefined,
             rentMonth,
             amountPaise,
           });
+
+          // Handle stuck payment: offer to abandon and retry
+          if (stuckPaymentId && !data) {
+            Alert.alert(
+              'Pending Payment',
+              'You have a payment still being processed. Cancel it and try again?',
+              [
+                { text: 'Wait', style: 'cancel' },
+                {
+                  text: 'Cancel & Retry',
+                  onPress: async () => {
+                    try {
+                      await abandonPayment(stuckPaymentId);
+                    } catch { /* proceed anyway */ }
+                    handleProceed(methodType);
+                  },
+                },
+              ],
+            );
+            return;
+          }
 
           if (error || !data) {
             throw new Error(error ?? 'Failed to initiate payment');

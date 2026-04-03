@@ -40,7 +40,7 @@ import { useNetworkStatus } from '@/src/hooks/useNetworkStatus';
 import { useRealtimeQuery } from '@/src/hooks/useRealtimeQuery';
 import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
-import { checkPaymentStatus, generateReceipt } from '@/src/services/api/payments';
+import { checkPaymentStatus, generateReceipt, abandonPayment } from '@/src/services/api/payments';
 import type { ReceiptData } from '@/src/services/api/payments';
 import { buildReceiptHtml, buildFallbackReceiptData } from '@/src/utils/receiptHtml';
 import { usePaymentStore } from '@/src/stores';
@@ -648,6 +648,11 @@ export default function PaymentStatusScreen() {
               text: 'Leave',
               style: 'destructive',
               onPress: () => {
+                // Abandon the stuck payment in background so it doesn't block retries
+                if (paymentId) {
+                  abandonPayment(paymentId).catch(() => {});
+                }
+                clearLastPayment();
                 routerRef.current.replace('/(main)' as never);
               },
             },
@@ -664,7 +669,7 @@ export default function PaymentStatusScreen() {
     const subscription = BackHandler.addEventListener('hardwareBackPress', onBackPress);
     return () => subscription.remove();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [state.status]);
+  }, [state.status, paymentId]);
 
   // ============================================
   // HANDLERS
@@ -675,10 +680,32 @@ export default function PaymentStatusScreen() {
     Linking.openURL('mailto:support@flentsecured.com');
   }, []);
 
-  const handleTryAgain = useCallback(() => {
+  const handleTryAgain = useCallback(async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    // Abandon the stuck payment before retrying — unblocks initiation
+    if (paymentId) {
+      try {
+        const { data } = await abandonPayment(paymentId);
+        if (data?.status === 'success') {
+          // Gateway confirmed it actually succeeded — show success instead
+          resolveStatus('success');
+          return;
+        }
+        if (!data?.abandoned && data?.status === 'processing') {
+          // Payment is genuinely processing at the gateway — don't allow retry
+          Alert.alert(
+            'Payment Processing',
+            'Your payment is still being processed by the bank. Please wait a few more minutes.',
+          );
+          return;
+        }
+      } catch {
+        // Non-blocking — proceed to retry even if abandon fails
+      }
+    }
+    clearLastPayment();
     routerRef.current.replace('/(payment)/enter-rent' as never);
-  }, []);
+  }, [paymentId, resolveStatus, clearLastPayment]);
 
   const handleGoHome = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -696,6 +723,10 @@ export default function PaymentStatusScreen() {
             text: 'Leave',
             style: 'destructive',
             onPress: () => {
+              if (paymentId) {
+                abandonPayment(paymentId).catch(() => {});
+              }
+              clearLastPayment();
               routerRef.current.replace('/(main)' as never);
             },
           },
@@ -704,7 +735,7 @@ export default function PaymentStatusScreen() {
       return;
     }
     handleGoHome();
-  }, [isReceiptView, state.status, handleGoHome]);
+  }, [state.status, paymentId, handleGoHome, clearLastPayment]);
 
   const handleDownloadReceipt = useCallback(async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -767,7 +798,7 @@ export default function PaymentStatusScreen() {
       const { uri } = await Print.printToFileAsync({
         html,
         width: 390,
-        height: 680,
+        height: 520,
         base64: false,
       });
       await Sharing.shareAsync(uri, {
@@ -874,17 +905,23 @@ export default function PaymentStatusScreen() {
         return (
           <>
             <PrimaryButton
+              title="Try Again"
+              onPress={handleTryAgain}
+              showDivider={true}
+              testID="try-again-button"
+            />
+            <PrimaryButton
               title="Check back later"
               onPress={handleGoHome}
               showDivider={true}
               testID="check-back-later-button"
             />
-            <PrimaryButton
-              title="Contact support"
+            <TouchableOpacity
               onPress={handleContactSupport}
-              showDivider={true}
-              testID="contact-support-button"
-            />
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            >
+              <Text style={styles.contactSupportText}>Contact Support</Text>
+            </TouchableOpacity>
           </>
         );
 

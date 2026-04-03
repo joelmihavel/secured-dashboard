@@ -189,7 +189,7 @@ export async function initiatePayment(params: {
   amountPaise?: number;
   /** UPI VPA for S2S collect flow — when provided, backend sends collect request directly */
   upiVpa?: string;
-}): Promise<{ data: UnifiedInitiateResult | null; error: string | null }> {
+}): Promise<{ data: UnifiedInitiateResult | null; error: string | null; stuckPaymentId?: string }> {
   const gateway = getPaymentGateway();
   const functionName = gateway === 'cashfree' ? 'initiate-cashfree-payment' : 'initiate-payment';
 
@@ -237,7 +237,7 @@ export async function initiatePayment(params: {
         case 'PAYMENT_ALREADY_COMPLETED':
           return { data: null, error: 'Payment already completed for this month' };
         case 'PAYMENT_IN_PROGRESS':
-          return { data: null, error: 'A payment is already being processed' };
+          return { data: null, error: 'A payment is already being processed', stuckPaymentId: errorBody?.stuck_payment_id as string | undefined };
         case 'BANK_NOT_VERIFIED':
           return { data: null, error: 'Landlord bank account not verified yet' };
         case 'AUTH_ERROR':

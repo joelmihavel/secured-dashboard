@@ -34,6 +34,7 @@ import {
   validateAgreementType,
 } from '../services/payment/storageService';
 import { useUploadStore } from '../stores/upload';
+import { useAuthStore } from '../stores/auth';
 import { isJourneyMode } from '../review/journeyMode';
 import { getJourneyExtractedData } from '../review/journeyData';
 
@@ -111,18 +112,18 @@ export function useUploadAgreement(options: UploadAndProcessOptions = {}) {
         } as AgreementError;
       }
 
-      // Validate file size (50MB max per edge function)
-      if (!validateFileSize(fileSize, 50)) {
+      // Validate file size (15MB max — Gemini multimodal URL limit)
+      if (!validateFileSize(fileSize, 15)) {
         throw {
           code: 'FILE_TOO_LARGE',
-          message: 'File is too large. Maximum size is 50MB.',
+          message: 'File is too large. Maximum size is 15MB.',
         } as AgreementError;
       }
 
       // Step 1: Request signed upload URL
       setUploadProgress(5);
       onUploadProgress?.(5);
-      useUploadStore.getState().startUpload(fileName);
+      useUploadStore.getState().startUpload(fileName, useAuthStore.getState().userId ?? undefined);
 
       const uploadUrlResult = await requestUploadUrl(fileName, mimeType, fileSize);
       if (uploadUrlResult.error) {
@@ -204,16 +205,23 @@ export function useUploadAgreement(options: UploadAndProcessOptions = {}) {
       onUploadProgress?.(75);
       useUploadStore.getState().setPhase('server_processing');
 
-      // Fire processing request — don't await.
-      // If the request itself fails (network drop, edge function 500),
-      // the DB row stays at 'pending' and polling would spin forever.
-      // Surface the error immediately so the UI can show retry.
-      processDocument(extractionId, documentPath).catch((err) => {
-        if (__DEV__) console.log('[useAgreement] processDocument fire-and-forget error:', err);
-        const agreementErr = err as unknown as AgreementError;
+      // Fire processing request — don't await the full 10-min processing.
+      // But DO check the return value: processDocument returns { error } on
+      // failure (e.g. auth expired) instead of throwing, so .catch() alone
+      // would silently swallow the error.
+      processDocument(extractionId, documentPath).then((result) => {
+        if (result.error) {
+          if (__DEV__) console.log('[useAgreement] processDocument returned error:', result.error);
+          useUploadStore.getState().setError(
+            result.error.code ?? 'PROCESSING_TRIGGER_FAILED',
+            result.error.message ?? 'Failed to start document processing. Please try again.'
+          );
+        }
+      }).catch((err) => {
+        if (__DEV__) console.log('[useAgreement] processDocument threw:', err);
         useUploadStore.getState().setError(
-          agreementErr?.code ?? 'PROCESSING_TRIGGER_FAILED',
-          agreementErr?.message ?? 'Failed to start document processing. Please try again.'
+          'PROCESSING_TRIGGER_FAILED',
+          err?.message ?? 'Failed to start document processing. Please try again.'
         );
       });
 

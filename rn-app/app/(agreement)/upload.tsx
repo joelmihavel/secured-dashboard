@@ -981,7 +981,7 @@ export default function UploadScreen() {
       return;
     }
 
-    if (!validateFileSize(document.size, 50)) {
+    if (!validateFileSize(document.size, 15)) {
       setUploadState('error_size');
       return;
     }
@@ -1018,7 +1018,7 @@ export default function UploadScreen() {
           // Show actual file size vs limit if available
           if (document.size) {
             const fileMB = (document.size / (1024 * 1024)).toFixed(1);
-            setErrorOverrideMessage(`Your file is ${fileMB}MB. Maximum allowed is 50MB.`);
+            setErrorOverrideMessage(`Your file is ${fileMB}MB. Maximum allowed is 15MB.`);
           }
           break;
 

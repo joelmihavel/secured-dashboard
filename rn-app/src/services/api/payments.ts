@@ -1208,6 +1208,21 @@ export async function checkPaymentStatus(
   return { data: data?.data ?? null, error: null };
 }
 
+/**
+ * Abandon a stuck payment. Verifies with the gateway first — if the payment
+ * actually succeeded, it reconciles to success instead of marking failed.
+ */
+export async function abandonPayment(
+  paymentId: string
+): Promise<{ data: { payment_id: string; status: string; abandoned: boolean; gateway_verified: boolean } | null; error: string | null }> {
+  const { data, error, errorBody } = await callEdgeFunction<{
+    data: { payment_id: string; status: string; abandoned: boolean; gateway_verified: boolean };
+  }>('abandon-payment', { payment_id: paymentId }, true);
+
+  if (error) return { data: null, error: mapPaymentError(error, errorBody).message };
+  return { data: data?.data ?? null, error: null };
+}
+
 // ==============================================
 // ERROR SANITIZATION
 // ==============================================

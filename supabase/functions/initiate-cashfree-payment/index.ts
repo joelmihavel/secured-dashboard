@@ -240,7 +240,7 @@ serve(async (req: Request) => {
     // Check for in-progress payments
     const rentMonthDate = `${rent_month}-01`;
 
-    // Expire stale Cashfree initiated payments
+    // Expire stale Cashfree initiated payments that never got an order ID
     await supabase
       .from("payments")
       .update({ status: "failed" })
@@ -249,6 +249,19 @@ serve(async (req: Request) => {
       .eq("status", "initiated")
       .eq("payment_gateway", "cashfree")
       .is("cf_order_id", null);
+
+    // Time-based cleanup: expire any initiated payment older than 5 minutes,
+    // even with cf_order_id set. Catches the gap where a user got a Cashfree
+    // session but abandoned mid-flow. Safe because webhook retry logic
+    // re-fetches status before updating, so late success webhooks reconcile.
+    const staleCutoff = new Date(Date.now() - 5 * 60 * 1000).toISOString();
+    await supabase
+      .from("payments")
+      .update({ status: "failed" })
+      .eq("tenancy_id", tenancy_id)
+      .eq("payment_month", rentMonthDate)
+      .eq("status", "initiated")
+      .lt("created_at", staleCutoff);
 
     const { data: inProgressPayment } = await supabase
       .from("payments")
@@ -259,7 +272,12 @@ serve(async (req: Request) => {
       .maybeSingle();
 
     if (inProgressPayment) {
-      throw new PaymentError("Payment already in progress for this month", "PAYMENT_IN_PROGRESS");
+      return jsonResponse({
+        error: true,
+        code: "PAYMENT_IN_PROGRESS",
+        message: "Payment already in progress for this month",
+        stuck_payment_id: inProgressPayment.id,
+      }, 409);
     }
 
     // Check cashback already applied

@@ -146,7 +146,7 @@ export default function PaymentSuccessScreen() {
   const isReceiptView = params.source === 'receipt_view';
 
   const [receiptData, setReceiptData] = useState<ReceiptData | null>(null);
-  // cashback always displayed as discount — no verification branching needed
+  const [generatingPdf, setGeneratingPdf] = useState(false);
 
   // Haptic on mount
   useEffect(() => {
@@ -199,64 +199,66 @@ export default function PaymentSuccessScreen() {
   }, []);
 
   const handleDownloadReceipt = useCallback(async () => {
+    if (generatingPdf) return;
+    setGeneratingPdf(true);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
-    let receipt = receiptData;
-    if (!receipt && paymentId) {
-      try {
-        const { data } = await generateReceipt(paymentId);
-        receipt = data;
-      } catch (err) {
-        if (__DEV__) console.warn('Receipt fetch failed:', err);
-      }
-    }
-
-    let htmlData;
-    if (receipt) {
-      htmlData = {
-        receiptNumber: receipt.receiptNumber,
-        payment: {
-          amount: receipt.payment.amount,
-          pgFee: receipt.payment.pgFee,
-          paymentMethod: receipt.payment.paymentMethod,
-          paidAt: receipt.payment.paidAt,
-          rentMonthDisplay: receipt.payment.rentMonthDisplay,
-          utr: receipt.payment.utr ?? null,
-          timeliness: receipt.payment.timeliness ?? null,
-          transactionId: receipt.payment.transactionId,
-        },
-        tenant: {
-          name: receipt.tenant.name,
-          phone: receipt.tenant.phone,
-          email: receipt.tenant.email,
-          panMasked: receipt.tenant.panMasked ?? null,
-        },
-        property: receipt.property,
-        landlord: {
-          name: receipt.landlord.name,
-          panMasked: receipt.landlord.panMasked ?? null,
-        },
-        agreement: {
-          certId: receipt.agreement?.certId ?? null,
-        },
-      };
-    } else {
-      htmlData = buildFallbackReceiptData({
-        amount,
-        method,
-        transactionId,
-        landlordName: params.landlordName,
-        agreementId: params.agreementId,
-        paymentId,
-      });
-    }
-
     try {
+      let receipt = receiptData;
+      if (!receipt && paymentId) {
+        try {
+          const { data } = await generateReceipt(paymentId);
+          receipt = data;
+        } catch (err) {
+          if (__DEV__) console.warn('Receipt fetch failed:', err);
+        }
+      }
+
+      let htmlData;
+      if (receipt) {
+        htmlData = {
+          receiptNumber: receipt.receiptNumber,
+          payment: {
+            amount: receipt.payment.amount,
+            pgFee: receipt.payment.pgFee,
+            paymentMethod: receipt.payment.paymentMethod,
+            paidAt: receipt.payment.paidAt,
+            rentMonthDisplay: receipt.payment.rentMonthDisplay,
+            utr: receipt.payment.utr ?? null,
+            timeliness: receipt.payment.timeliness ?? null,
+            transactionId: receipt.payment.transactionId,
+          },
+          tenant: {
+            name: receipt.tenant.name,
+            phone: receipt.tenant.phone,
+            email: receipt.tenant.email,
+            panMasked: receipt.tenant.panMasked ?? null,
+          },
+          property: receipt.property,
+          landlord: {
+            name: receipt.landlord.name,
+            panMasked: receipt.landlord.panMasked ?? null,
+          },
+          agreement: {
+            certId: receipt.agreement?.certId ?? null,
+          },
+        };
+      } else {
+        htmlData = buildFallbackReceiptData({
+          amount,
+          method,
+          transactionId,
+          landlordName: params.landlordName,
+          agreementId: params.agreementId,
+          paymentId,
+        });
+      }
+
       const html = buildReceiptHtml(htmlData);
       const { uri } = await Print.printToFileAsync({
         html,
         width: 390,
-        height: 680,
+        height: 520,
         base64: false,
       });
       await Sharing.shareAsync(uri, {
@@ -267,8 +269,10 @@ export default function PaymentSuccessScreen() {
     } catch (err) {
       if (__DEV__) console.warn('PDF generation failed:', err);
       Alert.alert('Receipt Unavailable', 'Unable to generate the receipt PDF. Please try again later.');
+    } finally {
+      setGeneratingPdf(false);
     }
-  }, [receiptData, paymentId, amount, method, transactionId, params.landlordName, params.agreementId]);
+  }, [generatingPdf, receiptData, paymentId, amount, method, transactionId, params.landlordName, params.agreementId]);
 
   // ============================================
   // DISPLAY DATA
@@ -321,34 +325,43 @@ export default function PaymentSuccessScreen() {
           titleMarginBottom={sv(32)}
         >
           <View style={styles.receiptDetails}>
-            <ReceiptRow label="Rent paid" value={`\u20B9  ${displayData.amount}`} />
-            <DashedDivider color={FIGMA_COLORS.dividerColor} style={styles.divider} />
-            <ReceiptRow
-              label="Cashback"
-              value={`- \u20B9  ${displayData.cashbackApplied}`}
-              valueColor={PAYMENT_COLORS.successStamp}
-            />
-            <DashedDivider color={FIGMA_COLORS.dividerColor} style={styles.divider} />
-            <ReceiptRow label="Date" value={displayData.date} />
-            <DashedDivider color={FIGMA_COLORS.dividerColor} style={styles.divider} />
-            <ReceiptRow label="Method" value={displayData.method} />
-            <DashedDivider color={FIGMA_COLORS.dividerColor} style={styles.divider} />
-            <ReceiptRow label="Landlord" value={displayData.landlordName} />
-            <DashedDivider color={FIGMA_COLORS.dividerColor} style={styles.divider} />
-            <ReceiptRow label="UTR" value={displayData.utr} />
-            <View style={styles.settlementInfoBox}>
-              <Text style={styles.settlementInfoText}>
-                {'\u2139\uFE0F Settlement will be processed within 24 hrs'}
-              </Text>
-            </View>
+            {!receiptData && paymentId ? (
+              <View style={styles.loadingContainer}>
+                <Text style={styles.loadingText}>Loading receipt...</Text>
+              </View>
+            ) : (
+              <>
+                <ReceiptRow label="Rent paid" value={`\u20B9  ${displayData.amount}`} />
+                <DashedDivider color={FIGMA_COLORS.dividerColor} style={styles.divider} />
+                <ReceiptRow
+                  label="Cashback"
+                  value={`- \u20B9  ${displayData.cashbackApplied}`}
+                  valueColor={PAYMENT_COLORS.successStamp}
+                />
+                <DashedDivider color={FIGMA_COLORS.dividerColor} style={styles.divider} />
+                <ReceiptRow label="Date" value={displayData.date} />
+                <DashedDivider color={FIGMA_COLORS.dividerColor} style={styles.divider} />
+                <ReceiptRow label="Method" value={displayData.method} />
+                <DashedDivider color={FIGMA_COLORS.dividerColor} style={styles.divider} />
+                <ReceiptRow label="Landlord" value={displayData.landlordName} />
+                <DashedDivider color={FIGMA_COLORS.dividerColor} style={styles.divider} />
+                <ReceiptRow label="UTR" value={displayData.utr} />
+                <View style={styles.settlementInfoBox}>
+                  <Text style={styles.settlementInfoText}>
+                    {'\u2139\uFE0F Settlement will be processed within 24 hrs'}
+                  </Text>
+                </View>
+              </>
+            )}
           </View>
         </PaymentReceiptCard>
 
         <View style={styles.buttonContainer}>
           <PrimaryButton
-            title="Download receipt"
+            title={generatingPdf ? 'Generating receipt...' : 'Download receipt'}
             onPress={handleDownloadReceipt}
             showDivider={true}
+            loading={generatingPdf}
             testID="download-receipt-button"
           />
           <TouchableOpacity
@@ -429,6 +442,15 @@ const styles = StyleSheet.create({
   divider: {
     width: FIGMA_CARD_INNER_WIDTH,
     marginVertical: 0,
+  },
+  loadingContainer: {
+    paddingVertical: sv(32),
+    alignItems: 'center' as const,
+  },
+  loadingText: {
+    fontFamily: 'PlusJakartaSans-Regular',
+    fontSize: sf(12),
+    color: FIGMA_COLORS.labelText,
   },
   settlementInfoBox: {
     marginTop: sv(7), // Figma: 23px group gap = parent gap(16) + this(7)
