@@ -71,7 +71,7 @@ export const NOTIFICATION_TEMPLATES: Record<
   },
   settlement_complete: {
     title: "Your landlord got paid",
-    body: "₹{amount} settled to {landlord_name}'s account. One less thing to worry about.",
+    body: "₹{amount} settled to your landlord's account. UTR: {utr}.",
   },
   settlement_failed: {
     title: "Landlord payout didn't go through",
@@ -289,6 +289,7 @@ export const WHATSAPP_TEMPLATE_MAP: Partial<Record<NotificationType, WhatsAppTem
   payment_processing:      { contentSidEnvVar: "WA_TPL_PAYMENT_PROCESSING", variableKeys: [] },
   payment_refunded:        { contentSidEnvVar: "WA_TPL_PAYMENT_REFUNDED",    variableKeys: [] },
   milestone_streak:        { contentSidEnvVar: "WA_TPL_MILESTONE_STREAK",    variableKeys: ["streak_months", "total_cashback"] },
+  reminder_agreement:      { contentSidEnvVar: "WA_TPL_REMINDER_AGREEMENT", variableKeys: [] },
 };
 
 // ==============================================

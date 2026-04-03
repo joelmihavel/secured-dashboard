@@ -192,9 +192,10 @@ serve(async (req: Request) => {
         const createdAt = new Date(tenancy.created_at);
         const daysSinceCreated = Math.floor((today.getTime() - createdAt.getTime()) / (1000 * 60 * 60 * 24));
 
-        // reminder_utility: 2 days after setup, bank done, utility not done
-        if (vs.bank_verified && !vs.utility_verified && daysSinceCreated >= 2) {
-          const dedupKey = `${tenancy.user_id}:reminder_utility:${today.toISOString().slice(0, 10)}`;
+        // reminder_utility: 2-3 days after setup, bank done, utility not done
+        // Closed window: only fires once in the 2-3 day range, then user ages out
+        if (vs.bank_verified && !vs.utility_verified && daysSinceCreated >= 2 && daysSinceCreated <= 3) {
+          const dedupKey = `${tenancy.user_id}:reminder_utility:2d`;
           const { data: existing } = await supabase
             .from("notification_dedup")
             .select("id")
@@ -221,10 +222,11 @@ serve(async (req: Request) => {
           }
         }
 
-        // reminder_landlord_invite: 3 days after setup, utility done, landlord not invited
+        // reminder_landlord_invite: 3-4 days after setup, utility done, landlord not invited
+        // Closed window: only fires once in the 3-4 day range, then user ages out
         if (vs.bank_verified && vs.utility_verified && !vs.landlord_approved &&
-            vs.landlord_response === null && daysSinceCreated >= 3) {
-          const dedupKey = `${tenancy.user_id}:reminder_landlord_invite:${today.toISOString().slice(0, 10)}`;
+            vs.landlord_response === null && daysSinceCreated >= 3 && daysSinceCreated <= 4) {
+          const dedupKey = `${tenancy.user_id}:reminder_landlord_invite:3d`;
           const { data: existing } = await supabase
             .from("notification_dedup")
             .select("id")
@@ -254,14 +256,16 @@ serve(async (req: Request) => {
     }
 
     // ========================================
-    // 3. AGREEMENT REMINDER (signed_up users, no waitlist entry after 2 days)
+    // 3. AGREEMENT REMINDER (signed_up users, no waitlist entry after 2-3 days)
+    // Closed window: only fires once in the 2-3 day range, then user ages out
     // ========================================
 
     const { data: staleSignups } = await supabase
       .from("users")
       .select("id, created_at")
       .eq("user_status", "signed_up")
-      .lt("created_at", new Date(today.getTime() - 2 * 24 * 60 * 60 * 1000).toISOString());
+      .lt("created_at", new Date(today.getTime() - 2 * 24 * 60 * 60 * 1000).toISOString())
+      .gt("created_at", new Date(today.getTime() - 3 * 24 * 60 * 60 * 1000).toISOString());
 
     if (staleSignups && staleSignups.length > 0) {
       // Check which ones already have waitlist entries (meaning they uploaded)
@@ -276,7 +280,7 @@ serve(async (req: Request) => {
       for (const user of staleSignups) {
         if (hasEntry.has(user.id)) continue; // Already uploaded
 
-        const dedupKey = `${user.id}:reminder_agreement:${today.toISOString().slice(0, 10)}`;
+        const dedupKey = `${user.id}:reminder_agreement:2d`;
         const { data: existing } = await supabase
           .from("notification_dedup")
           .select("id")

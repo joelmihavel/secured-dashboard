@@ -343,10 +343,26 @@ serve(async (req) => {
     }
 
     // Notify user: agreement under review (non-blocking)
-    scheduleNotification(adminClient, getSupabaseUrl(), getServiceKey(), {
-      user_id: user.id,
-      notification_type: "under_review",
-    }).catch((e) => console.warn("[upload-document] Failed to send under_review notification:", e));
+    // Dedup: 2-minute window to prevent race conditions (double-tap, parallel requests).
+    // Genuine re-uploads (after extraction failure) are minutes/hours apart and SHOULD
+    // send a fresh confirmation — so the window is intentionally short.
+    const twoMinAgo = new Date(Date.now() - 2 * 60 * 1000).toISOString();
+    const { data: recentUnderReview } = await adminClient
+      .from("notifications")
+      .select("id")
+      .eq("user_id", user.id)
+      .eq("notification_type", "under_review")
+      .gte("created_at", twoMinAgo)
+      .limit(1);
+
+    if (!recentUnderReview?.length) {
+      scheduleNotification(adminClient, getSupabaseUrl(), getServiceKey(), {
+        user_id: user.id,
+        notification_type: "under_review",
+      }).catch((e) => console.warn("[upload-document] Failed to send under_review notification:", e));
+    } else {
+      console.log("[upload-document] Skipping under_review notification — already sent within 2min (race condition guard)");
+    }
 
     await adminClient.from("waitlist_entries").update(
       {

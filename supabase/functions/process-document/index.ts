@@ -426,7 +426,6 @@ Deno.serve(async (req) => {
 
   let extraction_id: string | undefined;
   let userId: string | undefined;
-  let completedExtractionPersisted = false;
 
   try {
     // Validate auth header (required by Supabase Edge Functions)
@@ -435,21 +434,33 @@ Deno.serve(async (req) => {
       return jsonResponse({ success: false, error: "Missing authorization header" }, 401);
     }
 
-    // Verify user JWT
-    const userClient = createClient(supabaseUrl, supabaseAnonKey, {
-      global: { headers: { Authorization: authHeader } },
-    });
-
-    const { data: { user }, error: authError } = await userClient.auth.getUser();
-    if (authError || !user) {
-      console.error("[process-document] Auth error:", authError);
-      return jsonResponse({ success: false, error: "Unauthorized" }, 401);
-    }
-
-    userId = user.id;
-    console.log(`[process-document] Authenticated user: ${user.id}`);
-
+    // Allow service role to call process-document for recovery/reprocessing.
+    // Service role passes user_id in the request body instead of JWT.
+    const isServiceRole = authHeader === `Bearer ${supabaseServiceKey}`;
+    // Parse body early so both paths can use it
     const body = await req.json();
+
+    if (isServiceRole) {
+      if (!body.user_id) {
+        return jsonResponse({ success: false, error: "Service role requires user_id in body" }, 400);
+      }
+      userId = body.user_id;
+      console.log(`[process-document] Service role call for user: ${userId}`);
+    } else {
+      // Verify user JWT
+      const userClient = createClient(supabaseUrl, supabaseAnonKey, {
+        global: { headers: { Authorization: authHeader } },
+      });
+
+      const { data: { user }, error: authError } = await userClient.auth.getUser();
+      if (authError || !user) {
+        console.error("[process-document] Auth error:", authError);
+        return jsonResponse({ success: false, error: "Unauthorized" }, 401);
+      }
+
+      userId = user.id;
+      console.log(`[process-document] Authenticated user: ${user.id}`);
+    }
 
     // V2: Accept extraction_id (from iOS app) OR V1: waitlist_entry_id + document_path
     extraction_id = body.extraction_id || body.waitlist_entry_id;
@@ -477,7 +488,8 @@ Deno.serve(async (req) => {
     }
 
     // Idempotency guard: skip if already completed, in-progress, or abandoned
-    if (extractionRecord.extraction_status === "completed") {
+    // Service role bypasses these guards (used for reprocessing stuck records)
+    if (extractionRecord.extraction_status === "completed" && !isServiceRole) {
       console.log(`[process-document] Extraction ${extraction_id} already completed — skipping re-processing`);
       return jsonResponse({
         success: true,
@@ -486,7 +498,7 @@ Deno.serve(async (req) => {
         extraction_status: "completed",
       }, 200);
     }
-    if (extractionRecord.extraction_status === "processing") {
+    if (extractionRecord.extraction_status === "processing" && !isServiceRole) {
       console.log(`[process-document] Extraction ${extraction_id} already processing — skipping duplicate request`);
       return jsonResponse({
         success: false,
@@ -495,7 +507,7 @@ Deno.serve(async (req) => {
         extraction_status: "processing",
       }, 409);
     }
-    if (extractionRecord.user_verified) {
+    if (extractionRecord.user_verified && !isServiceRole) {
       console.log(`[process-document] Extraction ${extraction_id} was abandoned (user_verified=true) — skipping`);
       return jsonResponse({
         success: false,
@@ -513,21 +525,15 @@ Deno.serve(async (req) => {
       return jsonResponse({ error: "No document path found for this extraction" }, 400);
     }
 
-    // Update status to processing
-    await updateExtractionStatus(supabase, extraction_id, {
-      extraction_status: "processing",
-    });
-
-    // Validate PDF-only (critical requirement)
+    // Validate PDF-only BEFORE starting background work
     if (!document_path.toLowerCase().endsWith('.pdf')) {
       await updateExtractionStatus(supabase, extraction_id, {
         extraction_status: "failed",
         extraction_error: "Only PDF documents are allowed",
       });
 
-      // Notify user of upload failure (non-blocking)
       scheduleNotification(supabase, getSupabaseUrl(), getServiceKey(), {
-        user_id: user.id,
+        user_id: userId,
         notification_type: "agreement_upload_failed",
       }).catch((e) => console.warn("[process-document] Failed to send agreement_upload_failed notification:", e));
 
@@ -537,6 +543,104 @@ Deno.serve(async (req) => {
         error_code: "INVALID_FILE_TYPE",
       }, 400);
     }
+
+    // Set status to processing
+    await updateExtractionStatus(supabase, extraction_id, {
+      extraction_status: "processing",
+      gemini_raw_response: { step: "starting", started_at: new Date().toISOString() },
+    });
+
+    // ================================================================
+    // BACKGROUND PROCESSING — return response immediately, continue
+    // extraction in background via EdgeRuntime.waitUntil().
+    //
+    // The client polls useExtractionStatus for completion — it does NOT
+    // need the extraction result in this HTTP response.
+    //
+    // This gives us the full 400s wall-clock budget instead of the 150s
+    // response timeout, which is critical for Document AI + Gemini on
+    // large rental agreements.
+    // ================================================================
+
+    // Capture variables needed by background task
+    const bgExtractionId = extraction_id;
+    const bgUserId = userId!;
+    const bgDocumentPath = document_path;
+
+    // deno-lint-ignore no-explicit-any
+    (globalThis as any).EdgeRuntime.waitUntil(
+      (async () => {
+        let bgCompletedExtractionPersisted = false;
+        try {
+          await processExtractionBackground(
+            supabase, bgExtractionId, bgUserId, bgDocumentPath,
+          );
+          bgCompletedExtractionPersisted = true;
+        } catch (bgError) {
+          console.error("[process-document] Background processing error:", bgError);
+          const errorMessage = bgError instanceof Error ? bgError.message : String(bgError);
+          if (!bgCompletedExtractionPersisted) {
+            const debugData = (bgError as any)?.debugData;
+            await updateExtractionStatus(supabase, bgExtractionId, {
+              extraction_status: "failed",
+              extraction_error: errorMessage,
+              ...(debugData?.gemini_debug && { gemini_raw_response: debugData.gemini_debug }),
+              ...(debugData?.raw_doc_ai_data && { raw_extraction_data: debugData.raw_doc_ai_data }),
+              ...(debugData?.extraction_method && { extraction_method: debugData.extraction_method }),
+            }).catch((e: any) => console.error("[process-document] CRITICAL: Failed to persist failure:", e));
+          }
+
+          // Notify user of failure
+          if (bgUserId) {
+            scheduleNotification(supabase, getSupabaseUrl(), getServiceKey(), {
+              user_id: bgUserId,
+              notification_type: "agreement_upload_failed",
+            }).catch(() => {});
+          }
+        }
+      })()
+    );
+
+    // Return immediately — client polls for status
+    return jsonResponse({
+      success: true,
+      extracted_rental_info_id: extraction_id,
+      extraction_status: "processing",
+      message: "Document processing started. Poll extraction status for updates.",
+    });
+
+  } catch (error) {
+    // This catch handles ONLY pre-background errors (auth, validation, DB)
+    console.error("[process-document] Pre-processing error:", error);
+    const errorMessage = error instanceof Error ? error.message : String(error);
+
+    if (extraction_id) {
+      await updateExtractionStatus(supabase, extraction_id, {
+        extraction_status: "failed",
+        extraction_error: errorMessage,
+      }).catch(() => {});
+    }
+
+    return jsonResponse({ success: false, error: errorMessage }, 500);
+  }
+});
+
+// ================================================================
+// BACKGROUND EXTRACTION — runs via EdgeRuntime.waitUntil()
+// Has the full 400s wall-clock budget.
+// ================================================================
+async function processExtractionBackground(
+  supabase: any,
+  extraction_id: string,
+  userId: string,
+  document_path: string,
+): Promise<void> {
+    let completedExtractionPersisted = false;
+
+    // Checkpoint: downloading
+    await updateExtractionStatus(supabase, extraction_id, {
+      gemini_raw_response: { step: "downloading", started_at: new Date().toISOString() },
+    });
 
     // Download document from storage
     const { data: fileData, error: downloadError } = await supabase.storage
@@ -584,6 +688,11 @@ Deno.serve(async (req) => {
     // This allows large documents to use the full budget for each step independently.
 
     if (gcpCredentials && gcpProcessorId) {
+      // Checkpoint: starting AI pipeline
+      await updateExtractionStatus(supabase, extraction_id, {
+        gemini_raw_response: { step: "doc_ai_and_gemini", started_at: new Date().toISOString() },
+      });
+
       // Production: Use GCP Document AI + Vertex AI Gemini
       extractedData = await processWithDocumentAI(
         base64Content,
@@ -594,7 +703,13 @@ Deno.serve(async (req) => {
         gcpLocation,
         vertexAiCredentials,
         vertexAiProjectId,
-        geminiApiKey
+        geminiApiKey,
+        async (step: string) => {
+          await updateExtractionStatus(supabase, extraction_id, {
+            gemini_raw_response: { step, started_at: new Date().toISOString() },
+          });
+        },
+        extraction_id
       );
     } else if (!gcpCredentials) {
       await updateExtractionStatus(supabase, extraction_id, {
@@ -602,33 +717,24 @@ Deno.serve(async (req) => {
         extraction_error: "Document processing service not configured",
       });
 
-      // Notify user of upload failure (non-blocking)
       scheduleNotification(supabase, getSupabaseUrl(), getServiceKey(), {
-        user_id: user.id,
+        user_id: userId,
         notification_type: "agreement_upload_failed",
       }).catch((e) => console.warn("[process-document] Failed to send agreement_upload_failed notification:", e));
 
-      return jsonResponse(
-        { error: "Document processing not configured", code: "SERVICE_UNAVAILABLE" },
-        503
-      );
+      throw new Error("Document processing not configured");
     } else {
-      // Has GCP credentials but no processor ID
       await updateExtractionStatus(supabase, extraction_id, {
         extraction_status: "extraction_failed",
         extraction_error: "Document processing service not configured",
       });
 
-      // Notify user of upload failure (non-blocking)
       scheduleNotification(supabase, getSupabaseUrl(), getServiceKey(), {
-        user_id: user.id,
+        user_id: userId,
         notification_type: "agreement_upload_failed",
       }).catch((e) => console.warn("[process-document] Failed to send agreement_upload_failed notification:", e));
 
-      return jsonResponse(
-        { error: "Document processor not configured", code: "SERVICE_UNAVAILABLE" },
-        503
-      );
+      throw new Error("Document processor not configured");
     }
 
     // Check if city is supported
@@ -774,7 +880,7 @@ Deno.serve(async (req) => {
     // Notify user if extraction failed (0 fields extracted, non-blocking)
     if (resolvedExtractionStatus === "extraction_failed") {
       scheduleNotification(supabase, getSupabaseUrl(), getServiceKey(), {
-        user_id: user.id,
+        user_id: userId,
         notification_type: "agreement_upload_failed",
       }).catch((e) => console.warn("[process-document] Failed to send agreement_upload_failed notification:", e));
     }
@@ -803,74 +909,13 @@ Deno.serve(async (req) => {
       });
     }
 
-    const result: ProcessingResult = {
-      success: true,
-      extracted_rental_info_id: extraction_id,
-      confidence_score: extractedData.confidence_score,
-      needs_manual_review: evaluationResult.needs_manual_review,
-      review_reason: evaluationResult.review_reason,
-      contract_status: evaluationResult.contract_status,
-      is_city_supported: isCitySupported,
-      // Fields expected by iOS app (matching CodingKeys)
-      extraction_status: resolvedExtractionStatus,
-      requires_manual_review: evaluationResult.needs_manual_review,
-      manual_review_reason: evaluationResult.review_reason,
+    console.log("[process-document] Background extraction completed successfully:", {
+      extraction_id,
       fields_extracted: extractedData.fields_extracted,
-      // total_fields omitted — column doesn't exist in DB, value is constant (24)
-      // Debug fields
-      _debug: {
-        extraction_method: extractedData.extraction_method,
-        property_city: extractedData.property_city,
-        monthly_rent_paise: extractedData.monthly_rent_paise,
-        document_text_length: (extractedData.raw_doc_ai_data as any)?.document?.text?.length || 0,
-        gemini: (extractedData as any).gemini_debug || { note: "gemini_debug not found" },
-      }
-    };
-
-    return jsonResponse(result);
-
-  } catch (error) {
-    console.error("[process-document] Error:", error);
-    const errorMessage = error instanceof Error ? error.message : String(error);
-
-    // Update status to failed with error details for client-side display
-    // Persist debug data if the error carries it (attached by processWithDocumentAI)
-    const debugData = (error as any)?.debugData;
-    if (extraction_id && !completedExtractionPersisted) {
-      const { error: statusUpdateError } = await updateExtractionStatus(supabase, extraction_id, {
-        extraction_status: "failed",
-        extraction_error: errorMessage,
-        ...(debugData?.gemini_debug && { gemini_raw_response: debugData.gemini_debug }),
-        ...(debugData?.raw_doc_ai_data && { raw_extraction_data: debugData.raw_doc_ai_data }),
-        ...(debugData?.extraction_method && { extraction_method: debugData.extraction_method }),
-      });
-      if (statusUpdateError) {
-        console.error(`[process-document] CRITICAL: Failed to persist failure status for extraction ${extraction_id}. Row may be stuck as 'processing'. DB error:`, statusUpdateError);
-      }
-
-      // Notify user of upload failure (non-blocking)
-      if (userId) {
-        scheduleNotification(supabase, getSupabaseUrl(), getServiceKey(), {
-          user_id: userId,
-          notification_type: "agreement_upload_failed",
-        }).catch((e) => console.warn("[process-document] Failed to send agreement_upload_failed notification:", e));
-      }
-    } else if (extraction_id && completedExtractionPersisted) {
-      const { error: statusUpdateError } = await updateExtractionStatus(supabase, extraction_id, {
-        extraction_error: errorMessage,
-      });
-      if (statusUpdateError) {
-        console.error(`[process-document] CRITICAL: Failed to persist extraction_error for extraction ${extraction_id}. DB error:`, statusUpdateError);
-      }
-    }
-
-    return jsonResponse({
-      success: false,
-      error: errorMessage,
-      error_code: categorizeError(errorMessage),
-    }, 500);
-  }
-});
+      contract_status: evaluationResult.contract_status,
+      extraction_method: extractedData.extraction_method,
+    });
+}
 
 // ============================================
 // GCP DOCUMENT AI + GEMINI PRO PROCESSING
@@ -906,7 +951,9 @@ async function processWithDocumentAI(
   location: string,
   vertexAiCredentials?: string,
   vertexAiProjectId?: string,
-  geminiApiKey?: string
+  geminiApiKey?: string,
+  onStep?: (step: string) => Promise<void>,
+  extractionId?: string
 ): Promise<ExtractedData> {
   const credentialsJson = JSON.parse(credentials);
 
@@ -914,6 +961,7 @@ async function processWithDocumentAI(
   const accessToken = await getGCPAccessToken(credentialsJson);
 
   // Step 1: Call Document AI for OCR — 300s independent timeout
+  await onStep?.("doc_ai");
   console.log("[process-document] Calling GCP Document AI...");
   const DOC_AI_TIMEOUT_MS = 300_000;
   const docAIController = new AbortController();
@@ -971,6 +1019,24 @@ async function processWithDocumentAI(
   // Parse initial extraction from entities (may be empty for OCR-only processors)
   let extractedData = parseDocumentAIResponse(docAIResult);
 
+  // Persist OCR text immediately so the fallback function can reuse it.
+  // Without this, if the function is killed during Gemini, the OCR text is lost
+  // and large PDFs (>7MB) can't be recovered via multimodal fallback.
+  // Persist OCR text immediately so the fallback function can reuse it.
+  // Uses the service client passed from the caller (no dynamic import needed).
+  if (extractionId && documentText.length > 0) {
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const serviceKey = (Deno.env.get("SB_SECRET_KEY") || Deno.env.get("SUPABASE_SERVICE_ROLE_KEY"))!;
+    const svc = createClient(supabaseUrl, serviceKey);
+    await svc
+      .from("extracted_rental_info")
+      .update({
+        raw_extraction_data: slimDocAiData(docAIResult),
+        gemini_raw_response: { step: "doc_ai_complete", ocr_chars: documentText.length, started_at: new Date().toISOString() },
+      })
+      .eq("id", extractionId);
+  }
+
   // Debug tracking for Gemini flow
   const geminiDebug: any = {
     text_length: documentText.length,
@@ -998,6 +1064,7 @@ async function processWithDocumentAI(
     if (vertexAiCredentials && vertexAiProjectId) {
       try {
         geminiDebug.vertex_ai_attempted = true;
+        await onStep?.("gemini_vertex_ai");
         console.log(`[process-document] Attempting Vertex AI Gemini GLOBAL (project: ${vertexAiProjectId})...`);
 
         // Get separate access token for Vertex AI service account
@@ -1044,52 +1111,43 @@ async function processWithDocumentAI(
       console.log("[process-document] Vertex AI credentials not configured, skipping...");
     }
 
-    // Fall back to API key if Vertex AI failed or not configured
-    if (!geminiResult && geminiApiKey) {
-      geminiDebug.api_key_attempted = true;
-      console.log("[process-document] Falling back to Gemini API key...");
-      console.log(`[process-document] API key prefix: ${geminiApiKey.substring(0, 10)}...`);
-      try {
-        geminiResult = await verifyWithGemini(
-          documentText,
-          extractedData,
-          geminiApiKey
-        );
-        geminiDebug.api_key_success = true;
-        geminiDebug.final_result_keys = geminiResult ? Object.keys(geminiResult).length : 0;
-        console.log("[process-document] API key Gemini result:", JSON.stringify(geminiResult).substring(0, 500));
-      } catch (apiKeyError: any) {
-        geminiDebug.api_key_error = apiKeyError.message || String(apiKeyError);
-        console.error("[process-document] API key Gemini failed:", apiKeyError.message || apiKeyError);
-        // Retry up to 2 times on transient / safety-filter errors
-        if (isRetryableGeminiError(apiKeyError.message)) {
-          const maxRetries = 2;
-          for (let attempt = 1; attempt <= maxRetries; attempt++) {
-            console.log(`[process-document] Retrying API key Gemini (attempt ${attempt}/${maxRetries}) after 3s...`);
-            await new Promise(r => setTimeout(r, 3000));
-            try {
-              geminiResult = await verifyWithGemini(documentText, extractedData, geminiApiKey);
-              geminiDebug.api_key_success = true;
-              geminiDebug.api_key_retried = true;
-              geminiDebug.api_key_retry_attempt = attempt;
-              geminiDebug.final_result_keys = geminiResult ? Object.keys(geminiResult).length : 0;
-              break; // Success — exit retry loop
-            } catch (retryError: any) {
-              geminiDebug.api_key_retry_error = retryError.message || String(retryError);
-              console.error(`[process-document] API key retry attempt ${attempt} failed:`, retryError.message);
-              if (attempt === maxRetries) {
-                console.error("[process-document] API key Gemini exhausted all retry attempts");
-              }
-            }
-          }
-        }
-      }
-    } else if (!geminiResult) {
-      geminiDebug.api_key_error = "No GEMINI_API_KEY_SECURED set";
-      console.warn("[process-document] No Gemini fallback available. Entity extraction limited.");
+    // If Vertex AI failed, delegate to process-document-fallback (separate container,
+    // uses API key endpoint generativelanguage.googleapis.com — different network route).
+    // Fire-and-forget: the fallback function writes results to DB; polling picks them up.
+    if (!geminiResult) {
+      geminiDebug.fallback_delegated = true;
+      console.warn("[process-document] Vertex AI failed — delegating to process-document-fallback (API key endpoint)");
+      console.log("[process-document] Gemini debug:", JSON.stringify(geminiDebug));
+
+      // Save OCR text to raw_extraction_data so fallback can reuse it (skip Document AI)
+      await onStep?.("delegating_to_fallback");
+      const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+      const serviceKey = (Deno.env.get("SB_SECRET_KEY") || Deno.env.get("SUPABASE_SERVICE_ROLE_KEY"))!;
+
+      // Persist raw OCR text for the fallback to reuse
+      const slimData = slimDocAiData(extractedData.raw_doc_ai_data);
+      await onStep?.("fallback_invoked");
+
+      fetch(`${supabaseUrl}/functions/v1/process-document-fallback`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${serviceKey}`,
+        },
+        body: JSON.stringify({ extraction_id: extractionId }),
+      }).catch((e) => console.error("[process-document] Failed to invoke fallback:", e));
+
+      // Return Document AI-only data so the response is immediate.
+      // The fallback will overwrite with Gemini data when it completes.
+      extractedData.extraction_method = 'gcp_doc_ai';
+      (extractedData as any).gemini_debug = geminiDebug;
+
+      // Don't throw — let the caller persist partial DocAI data.
+      // The fallback function will complete the extraction asynchronously.
+      return extractedData;
     }
 
-    console.log("[process-document] Final geminiResult:", geminiResult ? Object.keys(geminiResult).length + " keys" : "null");
+    console.log("[process-document] Final geminiResult:", Object.keys(geminiResult).length + " keys");
     console.log("[process-document] Gemini debug:", JSON.stringify(geminiDebug));
 
     if (geminiResult && Object.keys(geminiResult).length > 0) {
@@ -1150,6 +1208,7 @@ async function processWithDocumentAI(
       if (vertexAiCredentials && vertexAiProjectId) {
         try {
           geminiDebug.vertex_ai_attempted = true;
+          await onStep?.("gemini_vertex_ai_multimodal");
           console.log(`[process-document] Attempting Vertex AI multimodal PDF extraction...`);
           const vertexCredentialsJson = JSON.parse(vertexAiCredentials);
           const vertexAccessToken = await getGCPAccessToken(vertexCredentialsJson);
@@ -1223,75 +1282,28 @@ async function processWithDocumentAI(
         }
       }
 
-      // Fallback to API key multimodal
-      if (!geminiResult && geminiApiKey) {
-        try {
-          geminiDebug.api_key_attempted = true;
-          console.log(`[process-document] Attempting API key multimodal PDF extraction...`);
+      // If Vertex AI multimodal failed, delegate to fallback function (API key endpoint)
+      if (!geminiResult) {
+        geminiDebug.fallback_delegated = true;
+        console.warn("[process-document] Multimodal Vertex AI failed — delegating to process-document-fallback");
 
-          const FALLBACK_TIMEOUT_MS = 300_000;
-          const fbController = new AbortController();
-          const fbTimeout = setTimeout(() => fbController.abort(), FALLBACK_TIMEOUT_MS);
+        await onStep?.("delegating_to_fallback");
+        const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+        const serviceKey = (Deno.env.get("SB_SECRET_KEY") || Deno.env.get("SUPABASE_SERVICE_ROLE_KEY"))!;
 
-          let fbResponse: Response;
-          try {
-            fbResponse = await fetch(
-              `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${geminiApiKey}`,
-              {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                  contents: [{
-                    parts: [
-                      { inlineData: { mimeType: "application/pdf", data: base64Content } },
-                      { text: MULTIMODAL_EXTRACTION_PROMPT },
-                    ],
-                  }],
-                  generationConfig: {
-                    temperature: 0.1,
-                    maxOutputTokens: 65536,
-                    responseMimeType: "application/json",
-                    responseSchema: EXTRACTION_RESPONSE_SCHEMA,
-                    mediaResolution: "MEDIA_RESOLUTION_HIGH",
-                  },
-                  safetySettings: [
-                    { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_NONE" },
-                    { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_NONE" },
-                    { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_NONE" },
-                    { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_NONE" },
-                  ],
-                }),
-                signal: fbController.signal,
-              }
-            );
-          } catch (fetchErr: unknown) {
-            clearTimeout(fbTimeout);
-            if (fetchErr instanceof DOMException && (fetchErr as DOMException).name === "AbortError") {
-              throw new Error(`Multimodal API key timed out after ${FALLBACK_TIMEOUT_MS / 1000}s`);
-            }
-            throw fetchErr;
-          }
-          clearTimeout(fbTimeout);
+        fetch(`${supabaseUrl}/functions/v1/process-document-fallback`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${serviceKey}`,
+          },
+          body: JSON.stringify({ extraction_id: extractionId }),
+        }).catch((e) => console.error("[process-document] Failed to invoke fallback:", e));
 
-          if (fbResponse.ok) {
-            const fbResult = await fbResponse.json();
-            const fbText = fbResult.candidates?.[0]?.content?.parts?.[0]?.text || "";
-            if (fbText && fbText !== "{}") {
-              const parsed = extractBalancedJson(fbText);
-              geminiResult = parsed ? JSON.parse(parsed) : JSON.parse(fbText);
-              geminiDebug.api_key_success = true;
-              geminiDebug.final_result_keys = Object.keys(geminiResult).length;
-              console.log(`[process-document] Multimodal API key: ${Object.keys(geminiResult).length} keys extracted`);
-            }
-          } else {
-            const errText = await fbResponse.text();
-            geminiDebug.api_key_error = `${fbResponse.status}: ${errText.substring(0, 300)}`;
-            console.error(`[process-document] Multimodal API key failed: ${fbResponse.status}`);
-          }
-        } catch (apiErr: any) {
-          geminiDebug.api_key_error = apiErr.message;
-          console.error("[process-document] Multimodal API key error:", apiErr.message);
-        }
+        // Return empty extractedData — fallback will complete asynchronously
+        extractedData.extraction_method = 'gcp_doc_ai';
+        (extractedData as any).gemini_debug = geminiDebug;
+        return extractedData;
       }
 
       // Process multimodal result (same logic as text-based extraction)

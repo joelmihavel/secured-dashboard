@@ -148,18 +148,20 @@ serve(async (req: Request) => {
     const processingCutoff = new Date(Date.now() - PROCESSING_TIMEOUT_MINUTES * 60 * 1000).toISOString();
     const { data: staleExtractions, error: staleError } = await supabase
       .from("extracted_rental_info")
-      .select("id, user_id, created_at, updated_at")
+      .select("id, user_id, created_at, updated_at, gemini_raw_response")
       .in("user_id", userIds)
       .eq("extraction_status", "processing")
       .lt("updated_at", processingCutoff);
 
     if (!staleError && staleExtractions && staleExtractions.length > 0) {
       for (const stale of staleExtractions) {
+        // Include the last processing checkpoint (if any) in the error message
+        const checkpoint = stale.gemini_raw_response?.step ?? "unknown";
         const { error: markError } = await supabase
           .from("extracted_rental_info")
           .update({
             extraction_status: "failed",
-            extraction_error: "Processing timed out — extraction hung",
+            extraction_error: `Processing timed out — extraction hung at step: ${checkpoint}`,
           })
           .eq("id", stale.id)
           .eq("extraction_status", "processing"); // optimistic lock: only update if still processing
@@ -167,11 +169,76 @@ serve(async (req: Request) => {
         if (markError) {
           console.error(`[extraction-recovery] Failed to mark stale extraction ${stale.id} as failed:`, markError.message);
         } else {
-          console.warn(`[extraction-recovery] Marked extraction ${stale.id} (user ${stale.user_id}) as failed — stuck in processing since ${stale.updated_at}`);
+          console.warn(`[extraction-recovery] Marked extraction ${stale.id} (user ${stale.user_id}) as failed — stuck at step '${checkpoint}' since ${stale.updated_at}`);
         }
       }
     } else if (staleError) {
       console.error("[extraction-recovery] Failed to query stale processing extractions:", staleError.message);
+    }
+
+    // ============================================================
+    // STEP 1.6: Mark stale "pending" extractions as failed
+    // Catches the case where upload-document succeeded (file in storage)
+    // but process-document was never called (app backgrounded, auth died,
+    // network dropped between upload and process trigger).
+    // ============================================================
+    const PENDING_TIMEOUT_MINUTES = 5;
+    const pendingCutoff = new Date(Date.now() - PENDING_TIMEOUT_MINUTES * 60 * 1000).toISOString();
+    const { data: stalePending, error: stalePendingError } = await supabase
+      .from("extracted_rental_info")
+      .select("id, user_id, document_storage_path")
+      .in("user_id", userIds)
+      .eq("extraction_status", "pending")
+      .not("document_storage_path", "is", null) // file was uploaded
+      .lt("updated_at", pendingCutoff);
+
+    const pendingToReprocess: string[] = [];
+    if (!stalePendingError && stalePending && stalePending.length > 0) {
+      for (const stale of stalePending) {
+        const { error: markError } = await supabase
+          .from("extracted_rental_info")
+          .update({
+            extraction_status: "failed",
+            extraction_error: "Processing never triggered — auto-recovery will reprocess",
+          })
+          .eq("id", stale.id)
+          .eq("extraction_status", "pending"); // optimistic lock
+
+        if (!markError) {
+          pendingToReprocess.push(stale.id);
+          console.warn(`[extraction-recovery] Marked pending extraction ${stale.id} (user ${stale.user_id}) as failed — document uploaded but processing never started`);
+        } else {
+          console.error(`[extraction-recovery] Failed to mark pending extraction ${stale.id}:`, markError.message);
+        }
+      }
+
+      // Auto-reprocess rescued extractions via process-document-fallback (API key endpoint).
+      // Uses the fallback function instead of reprocess-extractions because:
+      // 1. Separate container = different network route (avoids Vertex AI connectivity issues)
+      // 2. Uses generativelanguage.googleapis.com, not aiplatform.googleapis.com
+      if (pendingToReprocess.length > 0) {
+        const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+        const serviceKey = (Deno.env.get("SB_SECRET_KEY") || Deno.env.get("SUPABASE_SERVICE_ROLE_KEY"))!;
+        console.log(`[extraction-recovery] Triggering fallback for ${pendingToReprocess.length} rescued pending extractions...`);
+        for (const eid of pendingToReprocess) {
+          try {
+            const resp = await fetch(`${supabaseUrl}/functions/v1/process-document-fallback`, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${serviceKey}`,
+              },
+              body: JSON.stringify({ extraction_id: eid }),
+            });
+            const result = await resp.json();
+            console.log(`[extraction-recovery] Fallback result for ${eid}:`, JSON.stringify(result).substring(0, 300));
+          } catch (err) {
+            console.error(`[extraction-recovery] Fallback failed for ${eid}:`, err);
+          }
+        }
+      }
+    } else if (stalePendingError) {
+      console.error("[extraction-recovery] Failed to query stale pending extractions:", stalePendingError.message);
     }
 
     // ============================================================
