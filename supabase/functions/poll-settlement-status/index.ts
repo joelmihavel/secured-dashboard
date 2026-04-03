@@ -321,8 +321,16 @@ async function reconcileStuckPayments(
 
 /**
  * Polls Cashfree Vendor Recon API for payments stuck in 'processing'
- * where the split webhook was missed. Matches by vendor_id + amount
- * and updates gateway_payout_utr + landlord_payout_status.
+ * where the split webhook was missed or didn't match.
+ *
+ * Matching strategy (in priority order):
+ *   1. entity_id → cf_adjustment_id (precise, if Cashfree returns our adjustment_id)
+ *   2. Vendor-level: if vendor has only ONE stuck payment, that's the match
+ *   3. Amount-based: match by payout amount within ₹1 tolerance (fallback)
+ *
+ * Cashfree recommends waiting 15+ min after settlement webhook before calling
+ * the recon API. This function only runs on payments stuck for >1 hour, so
+ * the timing constraint is always satisfied.
  *
  * Only checks payments that have been in 'processing' for >1 hour
  * (gives the webhook time to arrive first).
@@ -338,7 +346,7 @@ async function reconcileVendorSettlements(
     const oneHourAgo = new Date(Date.now() - 60 * 60_000).toISOString();
     const { data: stuckPayments } = await supabase
       .from("payments")
-      .select("id, user_id, tenancy_id, rent_amount_paise, landlord_payout_paise, paid_at")
+      .select("id, user_id, tenancy_id, rent_amount_paise, landlord_payout_paise, cf_adjustment_id, paid_at")
       .eq("status", "success")
       .eq("payment_gateway", "cashfree")
       .in("landlord_payout_status", ["processing", "retrying"])
@@ -385,42 +393,68 @@ async function reconcileVendorSettlements(
 
         // Filter to settled entries with UTR
         const settledEntries = recon.data.filter(e => e.settled && e.settlement_utr);
+        if (!settledEntries.length) continue;
 
-        for (const payment of payments) {
-          const payoutAmountRupees = ((payment.landlord_payout_paise ?? payment.rent_amount_paise) / 100);
+        // Build a set of unmatched payments for this vendor
+        const unmatchedPayments = [...payments];
 
-          // Match by vendor + amount (within ₹1 tolerance for rounding)
-          const match = settledEntries.find(e =>
-            Math.abs(e.amount - payoutAmountRupees) < 1
-          );
+        for (let i = unmatchedPayments.length - 1; i >= 0; i--) {
+          const payment = unmatchedPayments[i];
+          let matchedEntry: typeof settledEntries[0] | null = null;
 
-          if (match) {
+          // Strategy 1: Match by entity_id → cf_adjustment_id (precise)
+          if (payment.cf_adjustment_id) {
+            const adjIdStr = String(payment.cf_adjustment_id);
+            matchedEntry = settledEntries.find(e =>
+              e.entity_id != null && String(e.entity_id) === adjIdStr
+            ) ?? null;
+          }
+
+          // Strategy 2: If only one stuck payment for this vendor, take any settled entry
+          if (!matchedEntry && unmatchedPayments.length === 1 && settledEntries.length > 0) {
+            matchedEntry = settledEntries[0];
+          }
+
+          // Strategy 3: Match by amount (within ₹1 tolerance)
+          if (!matchedEntry) {
+            const payoutAmountRupees = ((payment.landlord_payout_paise ?? payment.rent_amount_paise) / 100);
+            matchedEntry = settledEntries.find(e =>
+              Math.abs(e.amount - payoutAmountRupees) < 1
+            ) ?? null;
+          }
+
+          if (matchedEntry) {
             const { error: updateErr } = await supabase
               .from("payments")
               .update({
                 landlord_payout_status: "settled",
                 settlement_status: "settled",
                 gateway_settlement_status: "settled",
-                gateway_payout_utr: match.settlement_utr,
+                gateway_payout_utr: matchedEntry.settlement_utr,
                 gateway_payout_status: "settlement_success",
-                gateway_settled_at: match.settlement_time,
+                gateway_payout_id: String(matchedEntry.settlement_id),
+                gateway_settled_at: matchedEntry.settlement_time,
               })
               .eq("id", payment.id)
               .in("landlord_payout_status", ["processing", "retrying"]);
 
             if (!updateErr) {
               result.updated++;
-              console.log(`[vendor-recon] Payment ${payment.id} → settled (UTR: ${match.settlement_utr})`);
+              console.log(`[vendor-recon] Payment ${payment.id} → settled (UTR: ${matchedEntry.settlement_utr})`);
 
               // Remove matched entry to prevent double-matching
-              const idx = settledEntries.indexOf(match);
+              const idx = settledEntries.indexOf(matchedEntry);
               if (idx >= 0) settledEntries.splice(idx, 1);
+              unmatchedPayments.splice(i, 1);
 
               await audit.logSuccess("VENDOR_RECON_SETTLED", "payment", "payment", payment.id, {
                 vendor_id: vendorId,
-                utr: match.settlement_utr,
-                settlement_id: match.settlement_id,
-                amount: payoutAmountRupees,
+                utr: matchedEntry.settlement_utr,
+                settlement_id: matchedEntry.settlement_id,
+                entity_id: matchedEntry.entity_id,
+                match_strategy: payment.cf_adjustment_id && String(matchedEntry.entity_id) === String(payment.cf_adjustment_id)
+                  ? "entity_id"
+                  : unmatchedPayments.length === 0 ? "single_payment" : "amount",
               });
             } else {
               result.errors++;
@@ -499,8 +533,12 @@ async function monitorPendingPayouts(
 // ==============================================
 
 /**
- * Payments in 'retrying' where paid_at + 36h < now are deterministically
- * moved to 'failed' and a Cashfree PG refund is initiated.
+ * Payments stuck in 'retrying' OR 'processing' where paid_at + 36h < now
+ * are deterministically moved to 'failed' and a Cashfree PG refund is initiated.
+ *
+ * 'retrying' = Cashfree sent VENDOR_SETTLEMENT_FAILED/REVERSED webhook
+ * 'processing' = settle-to-landlord created adjustment, but no settlement
+ *                webhook ever arrived (missed webhook + recon API also failed)
  *
  * Two-step refund: Cashfree Create Refund API with refund_splits debits
  * the vendor balance and refunds the customer in one atomic call.
@@ -524,7 +562,7 @@ async function checkRefundEligibility(
         tenancy:tenancies(landlord_user_id)
       `)
       .eq("status", "success")
-      .eq("landlord_payout_status", "retrying")
+      .in("landlord_payout_status", ["retrying", "processing"])
       .eq("payment_gateway", "cashfree")
       .lt("paid_at", refundThreshold)
       .order("paid_at", { ascending: true })
@@ -571,7 +609,7 @@ async function checkRefundEligibility(
             gateway_payout_status: `Settlement failed after ${REFUND_THRESHOLD_HOURS}h — refund initiated`,
           })
           .eq("id", payment.id)
-          .eq("landlord_payout_status", "retrying")
+          .in("landlord_payout_status", ["retrying", "processing"])
           .select("id")
           .maybeSingle();
 

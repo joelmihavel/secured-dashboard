@@ -98,6 +98,9 @@ verify_jwt = false
 [functions.process-document]
 verify_jwt = false
 
+[functions.process-document-fallback]
+verify_jwt = false
+
 [functions.confirm-extraction]
 verify_jwt = false
 

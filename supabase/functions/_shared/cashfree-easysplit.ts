@@ -531,19 +531,24 @@ export async function getVendorRecon(params: {
   vendorId: string;
   startDate: string;
   endDate: string;
+  settlementId?: number | string;
   cursor?: string | null;
   limit?: number;
 }): Promise<VendorReconResult> {
+  const filters: Record<string, unknown> = {
+    merchant_vendor_id: params.vendorId,
+    start_date: params.startDate,
+    end_date: params.endDate,
+  };
+  if (params.settlementId != null) {
+    filters.settlement_id = Number(params.settlementId);
+  }
   const body = {
     pagination: {
       limit: params.limit ?? 100,
       ...(params.cursor ? { cursor: params.cursor } : {}),
     },
-    filters: {
-      merchant_vendor_id: params.vendorId,
-      start_date: params.startDate,
-      end_date: params.endDate,
-    },
+    filters,
   };
 
   const result = await cfFetch(

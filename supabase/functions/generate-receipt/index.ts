@@ -19,6 +19,7 @@ import {
 } from "../_shared/supabase.ts";
 import { handleCors, jsonResponse, errorResponse } from "../_shared/cors.ts";
 import { AppError, handleError } from "../_shared/errors.ts";
+import { getVendorRecon, CashfreeError } from "../_shared/cashfree-easysplit.ts";
 // ==============================================
 // TYPES
 // ==============================================
@@ -153,19 +154,18 @@ serve(async (req: Request) => {
       const result = await supabase
         .from("payments")
         .select(`
-          id, payu_txn_id, payu_mihpayid, payu_bank_ref_num, settlement_utr, gateway_payout_utr, landlord_payout_utr, gateway_settlement_utr,
-          payment_gateway, gateway_payment_id, cf_order_id, payment_method_details,
+          id, user_id, payu_txn_id, payu_mihpayid, payu_bank_ref_num, settlement_utr, gateway_payout_utr, landlord_payout_utr, gateway_settlement_utr,
+          payment_gateway, gateway_payment_id, cf_order_id, cf_adjustment_id, payment_method_details,
+          landlord_payout_status, landlord_payout_at, landlord_payout_paise,
           rent_amount_paise, pg_fee_paise, convenience_fee_paise, fee_billing_model,
           cashback_applied_paise, cashback_earned_paise,
           payment_method, status, payment_month, paid_at, created_at, due_date,
           tenancies (
             id, property_address, property_city, property_state, property_pincode,
             landlord_name, landlord_pan_masked, agreement_cert_id, rent_due_day,
+            landlord_user_id,
             users!tenancies_user_id_fkey (
               first_name, last_name, phone, pan_number
-            ),
-            bank_accounts (
-              account_number_masked, account_holder_name, party_type
             )
           )
         `)
@@ -194,6 +194,83 @@ serve(async (req: Request) => {
       );
     }
 
+    // ── INLINE SETTLEMENT CHECK ──────────────────────────────────────
+    // If gateway_payout_utr is missing and the payment has been in processing/retrying
+    // for >15 min (Cashfree's recommended wait), try the Vendor Recon API to backfill.
+    // This covers cases where the split webhook was missed or delayed.
+    // NOTE: Does NOT check "settled" payments — those should have been backfilled
+    // by the one-time migration. Keeping this lean to avoid recon API calls on every receipt.
+    const RECON_MIN_AGE_MS = 15 * 60_000; // 15 minutes — per Cashfree docs
+    const hasNoUtr = !resolveUtr(payment);
+    const isSettlementPending = ["processing", "retrying"].includes(payment.landlord_payout_status);
+    const payoutAge = payment.landlord_payout_at
+      ? Date.now() - new Date(payment.landlord_payout_at).getTime()
+      : Infinity;
+    const isCashfreePayment = payment.payment_gateway === "cashfree";
+
+    if (hasNoUtr && isSettlementPending && payoutAge > RECON_MIN_AGE_MS && isCashfreePayment) {
+      try {
+        // Look up vendor_id for this payment's landlord
+        const { data: bankAcct } = await supabase
+          .from("bank_accounts")
+          .select("cf_beneficiary_id")
+          .eq("user_id", payment.user_id)
+          .eq("party_type", "landlord")
+          .eq("is_primary", true)
+          .not("cf_beneficiary_id", "is", null)
+          .maybeSingle();
+
+        if (bankAcct?.cf_beneficiary_id) {
+          const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60_000).toISOString();
+          const now = new Date().toISOString();
+          const recon = await getVendorRecon({
+            vendorId: bankAcct.cf_beneficiary_id,
+            startDate: sevenDaysAgo,
+            endDate: now,
+          });
+
+          const settledEntries = (recon.data ?? []).filter(e => e.settled && e.settlement_utr);
+
+          if (settledEntries.length > 0) {
+            // Try entity_id match first (precise), then single-entry, then amount
+            let matched = payment.cf_adjustment_id
+              ? settledEntries.find(e => e.entity_id != null && String(e.entity_id) === String(payment.cf_adjustment_id))
+              : null;
+
+            if (!matched && settledEntries.length === 1) {
+              matched = settledEntries[0];
+            }
+
+            if (!matched) {
+              const payoutRupees = (payment.landlord_payout_paise ?? payment.rent_amount_paise) / 100;
+              matched = settledEntries.find(e => Math.abs(e.amount - payoutRupees) < 1) ?? null;
+            }
+
+            if (matched) {
+              // Backfill UTR into the database so future reads are instant
+              await supabase.from("payments").update({
+                gateway_payout_utr: matched.settlement_utr,
+                gateway_payout_id: String(matched.settlement_id),
+                gateway_payout_status: "settlement_success",
+                gateway_settlement_status: "settled",
+                landlord_payout_status: "settled",
+                gateway_settled_at: matched.settlement_time,
+              }).eq("id", payment.id).in("landlord_payout_status", ["processing", "retrying"]);
+
+              // Update local object so this receipt includes the UTR
+              payment.gateway_payout_utr = matched.settlement_utr;
+              console.log(`[generate-receipt] Backfilled UTR ${matched.settlement_utr} for payment ${payment.id} via vendor recon`);
+            }
+          }
+        }
+      } catch (reconErr) {
+        // Non-fatal — receipt still generates with "Pending" UTR
+        console.warn("[generate-receipt] Vendor recon check failed:", reconErr instanceof CashfreeError
+          ? `HTTP ${reconErr.statusCode}: ${reconErr.message}`
+          : reconErr);
+      }
+    }
+
     // Get user email from auth
     const { data: authUser } = await supabase.auth.admin.getUserById(userId);
 
@@ -207,17 +284,23 @@ serve(async (req: Request) => {
     // Generate receipt number
     const receiptNumber = generateReceiptNumber(payment.id, payment.paid_at);
 
-    // Get landlord bank account (masked)
+    // Get landlord bank account (masked) — fetched separately since bank_accounts
+    // has FK to users, not tenancies (PostgREST can't join through tenancies)
     const tenancy = payment.tenancies as any;
-    const landlordBankAccounts = (tenancy?.bank_accounts ?? []).filter(
-      (ba: any) => ba.party_type === "landlord"
-    );
-    const landlordBankMasked = landlordBankAccounts.length > 0
-      ? landlordBankAccounts[0].account_number_masked
-      : null;
-    const landlordBankHolderName = landlordBankAccounts.length > 0
-      ? landlordBankAccounts[0].account_holder_name
-      : null;
+    const landlordUserId = tenancy?.landlord_user_id ?? null;
+    let landlordBankMasked: string | null = null;
+    let landlordBankHolderName: string | null = null;
+    if (landlordUserId) {
+      const { data: landlordBank } = await supabase
+        .from("bank_accounts")
+        .select("account_number_masked, account_holder_name")
+        .eq("user_id", landlordUserId)
+        .eq("party_type", "landlord")
+        .eq("is_primary", true)
+        .maybeSingle();
+      landlordBankMasked = landlordBank?.account_number_masked ?? null;
+      landlordBankHolderName = landlordBank?.account_holder_name ?? null;
+    }
 
     // Calculate tax breakdown
     const pgFeePaise = payment.pg_fee_paise ?? 0;
@@ -261,7 +344,7 @@ serve(async (req: Request) => {
         rent_month: payment.payment_month,
         rent_month_display: rentMonthDisplay,
         paid_at: payment.paid_at,
-        utr: resolveUtr(payment),
+        utr: (() => { const utr = resolveUtr(payment); console.log(`[generate-receipt] payment=${payment.id} resolveUtr=${utr} gateway_payout_utr=${payment.gateway_payout_utr} landlord_payout_utr=${payment.landlord_payout_utr} status=${payment.landlord_payout_status}`); return utr; })(),
         timeliness: computeTimeliness(payment.paid_at, payment.due_date, tenancy?.rent_due_day, payment.payment_month),
       },
 
@@ -412,14 +495,19 @@ function maskPan(pan: string | null | undefined): string | null {
 /** Resolves UTR (Unique Transaction Reference) — real bank UTRs only.
  *  Internal IDs (cf_order_id, payu_mihpayid, gateway_payment_id) are NOT bank UTRs
  *  and must never be shown on external-facing receipts.
+ *  PAYOUT- prefixed values are internal tracking refs from settle-to-landlord (legacy),
+ *  not real bank UTRs — filter them out.
  *  Returns null if settlement hasn't completed yet → UI shows "Pending". */
 function resolveUtr(payment: any): string | null {
-  return payment.gateway_payout_utr
-    || payment.landlord_payout_utr
-    || payment.gateway_settlement_utr
-    || payment.settlement_utr
-    || payment.payu_bank_ref_num
-    || null;
+  const isRealUtr = (v: unknown): v is string =>
+    typeof v === 'string' && v.length > 0 && !v.startsWith('PAYOUT-');
+
+  if (isRealUtr(payment.gateway_payout_utr)) return payment.gateway_payout_utr;
+  if (isRealUtr(payment.landlord_payout_utr)) return payment.landlord_payout_utr;
+  if (isRealUtr(payment.gateway_settlement_utr)) return payment.gateway_settlement_utr;
+  if (isRealUtr(payment.settlement_utr)) return payment.settlement_utr;
+  if (isRealUtr(payment.payu_bank_ref_num)) return payment.payu_bank_ref_num;
+  return null;
 }
 
 /**

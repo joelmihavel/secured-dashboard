@@ -22,3 +22,32 @@ test-*.js
 
 # IDE / tool configs
 .serena/
+.agents/
+.codebuddy/
+.commandcode/
+.continue/
+.crush/
+.factory/
+.goose/
+.junie/
+.kilocode/
+.kiro/
+.kode/
+.mcpjam/
+.mux/
+.neovate/
+.openhands/
+.pi/
+.pochi/
+.qoder/
+.qwen/
+.roo/
+.trae/
+.windsurf/
+.zencoder/
+
+# Superpowers skills (local tooling)
+skills/
+skills-lock.json
+docs/superpowers/
+scripts/score-plan.sh

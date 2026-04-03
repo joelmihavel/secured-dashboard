@@ -2,7 +2,8 @@
  * Flent Secured v2 - Check Payment Status Edge Function
  *
  * Checks the current status of a payment. If the payment is stuck in
- * initiated/processing state for > 2 minutes, verifies with PayU directly.
+ * initiated/processing state for > 2 minutes, verifies with the gateway directly.
+ * Supports both PayU and Cashfree gateways.
  *
  * Endpoint: GET /functions/v1/check-payment-status?payment_id=xxx
  * Auth: Required (JWT)
@@ -28,6 +29,7 @@ import {
   PAYU_INFO_URL,
   fetchWithTimeout,
 } from "../_shared/payu-config.ts";
+import { getOrderPaymentStatus, CashfreeError } from "../_shared/cashfree-easysplit.ts";
 
 // How old a payment must be (in ms) before we check PayU directly
 const STALE_THRESHOLD_MS = 2 * 60 * 1000; // 2 minutes
@@ -97,7 +99,8 @@ serve(async (req: Request) => {
         landlord_payout_status, payu_txn_id, payu_mihpayid,
         payu_status, payu_settlement_status, payu_settlement_utr,
         payment_gateway, gateway_order_id, gateway_payment_id, gateway_status,
-        gateway_settlement_status, gateway_settlement_utr,
+        gateway_settlement_status, gateway_settlement_utr, gateway_payout_utr,
+        cf_order_id,
         payment_method, payment_month, created_at, paid_at,
         tenancy:tenancies(user_id)
       `)
@@ -115,7 +118,7 @@ serve(async (req: Request) => {
     }
 
     // Check if payment is stuck and needs gateway verification
-    let payuVerified = false;
+    let gatewayVerified = false;
     let payuVerifyResult: Record<string, unknown> | null = null;
 
     const isStuck = ["initiated", "processing"].includes(payment.status);
@@ -125,11 +128,127 @@ serve(async (req: Request) => {
 
     const isDemoPayment = payment.payment_gateway === "demo";
 
-    if (isStuck && isStale && payment.payu_txn_id && !isDemoPayment) {
+    // ── Cashfree verification path ──
+    const isCashfree = payment.payment_gateway === "cashfree";
+    const cfOrderId = payment.cf_order_id ?? payment.gateway_order_id;
+
+    if (isStuck && isStale && isCashfree && cfOrderId && !isDemoPayment) {
       try {
-        // PayU verification path
+        const orderStatus = await getOrderPaymentStatus(cfOrderId);
+        gatewayVerified = true;
+
+        let newStatus: string | null = null;
+        if (orderStatus.order_status === "PAID") {
+          newStatus = "success";
+        } else if (["EXPIRED", "TERMINATED", "TERMINATION_REQUESTED"].includes(orderStatus.order_status)) {
+          newStatus = "failed";
+        }
+
+        if (newStatus && newStatus !== payment.status) {
+          const updateData: Record<string, unknown> = { status: newStatus };
+          if (newStatus === "success") {
+            updateData.paid_at = new Date().toISOString();
+            updateData.landlord_payout_status = "ready";
+            updateData.landlord_payout_paise = payment.rent_amount_paise;
+          }
+
+          const { data: lockResult } = await supabase
+            .from("payments")
+            .update(updateData)
+            .eq("id", payment.id)
+            .eq("status", payment.status)
+            .select("id")
+            .maybeSingle();
+
+          if (lockResult && newStatus === "success") {
+            // Cashback handling (same as PayU reconciliation below)
+            if (payment.cashback_applied_paise > 0) {
+              try {
+                await supabase.from("cashback_ledger").insert({
+                  user_id: userId,
+                  transaction_type: "discount",
+                  amount_paise: payment.cashback_applied_paise,
+                  balance_after_paise: 0,
+                  payment_id: payment.id,
+                  tenancy_id: payment.tenancy_id,
+                  reference_type: "payment",
+                  reference_id: payment.id,
+                  description: "1% instant discount on rent payment (reconciliation)",
+                });
+                const accumulatedUsed = payment.accumulated_redeemed_paise ?? 0;
+                if (accumulatedUsed > 0) {
+                  await supabase.from("cashback_ledger").insert({
+                    user_id: userId,
+                    transaction_type: "applied",
+                    amount_paise: accumulatedUsed,
+                    balance_after_paise: 0,
+                    payment_id: payment.id,
+                    tenancy_id: payment.tenancy_id,
+                    reference_type: "payment",
+                    reference_id: payment.id,
+                    description: "Accumulated cashback redeemed (reconciliation)",
+                  });
+                  await supabase.rpc("decrement_cashback_balance", {
+                    p_user_id: userId,
+                    p_amount: accumulatedUsed,
+                  });
+                }
+              } catch (e) {
+                console.error("Failed to log cashback discount on Cashfree reconciliation:", e);
+              }
+            }
+
+            if (payment.cashback_earned_paise > 0) {
+              try {
+                await supabase.from("cashback_ledger").insert({
+                  user_id: userId,
+                  transaction_type: "earned",
+                  amount_paise: payment.cashback_earned_paise,
+                  balance_after_paise: 0,
+                  payment_id: payment.id,
+                  tenancy_id: payment.tenancy_id,
+                  reference_type: "payment",
+                  reference_id: payment.id,
+                  description: "1% cashback earned (reconciliation)",
+                });
+              } catch (e) {
+                console.error("Failed to credit earned cashback on Cashfree reconciliation:", e);
+              }
+            }
+          }
+
+          // Update local payment object for response
+          payment.status = newStatus;
+          if (newStatus === "success") {
+            payment.landlord_payout_status = "ready";
+          }
+
+          await audit.logSuccess(
+            "PAYMENT_STATUS_RECONCILED",
+            "payment",
+            "payment",
+            payment.id,
+            {
+              old_status: "initiated/processing",
+              new_status: newStatus,
+              source: "cashfree_verify",
+              cf_order_id: cfOrderId,
+            }
+          );
+        }
+      } catch (verifyError) {
+        console.error("Cashfree verify failed:", verifyError instanceof CashfreeError
+          ? `HTTP ${verifyError.statusCode}: ${verifyError.message}`
+          : verifyError);
+        // Non-fatal — return DB status
+      }
+    }
+
+    // ── PayU verification path ──
+    if (isStuck && isStale && payment.payu_txn_id && !isCashfree && !isDemoPayment) {
+      try {
         payuVerifyResult = await verifyWithPayU(payment.payu_txn_id);
-        payuVerified = true;
+        gatewayVerified = true;
 
         if (payuVerifyResult && payuVerifyResult.status) {
           const payuStatus = String(payuVerifyResult.status).toLowerCase();
@@ -262,13 +381,13 @@ serve(async (req: Request) => {
         landlord_payout_paise: payment.landlord_payout_paise,
         landlord_payout_status: payment.landlord_payout_status ?? null,
         settlement_status: payment.gateway_settlement_status ?? payment.payu_settlement_status ?? null,
-        settlement_utr: payment.gateway_settlement_utr ?? payment.payu_settlement_utr ?? null,
+        settlement_utr: payment.gateway_payout_utr ?? payment.gateway_settlement_utr ?? payment.payu_settlement_utr ?? null,
         payment_method: payment.payment_method,
         payment_month: payment.payment_month,
         created_at: payment.created_at,
         paid_at: payment.paid_at,
-        gateway_verified: payuVerified,
-        payu_verified: payuVerified, // backward compat
+        gateway_verified: gatewayVerified,
+        payu_verified: gatewayVerified, // backward compat
       },
     });
   } catch (error) {

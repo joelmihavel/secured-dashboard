@@ -264,11 +264,12 @@ serve(async (req: Request) => {
       const payoutRef = `PAYOUT-${payment.id.slice(0, 8)}-${Date.now().toString(36)}`;
 
       // Optimistic lock: set to 'processing' first (prevents double-processing)
+      // NOTE: landlord_payout_utr is NOT set here — it must only contain real bank UTRs
+      // (set by cashfree-split-webhook or confirm-payout). payoutRef is for audit logs only.
       const { data: updatedRow, error: updateError } = await supabase
         .from("payments")
         .update({
           landlord_payout_status: "processing",
-          landlord_payout_utr: payoutRef,
           landlord_payout_at: new Date().toISOString(),
         })
         .eq("id", payment.id)

@@ -6,6 +6,13 @@
  *   VENDOR_SETTLEMENT_FAILED   → landlord_payout_status = retrying (36hr cron → failed + refund)
  *   VENDOR_SETTLEMENT_REVERSED → landlord_payout_status = retrying (36hr cron → failed + refund)
  *
+ * IMPORTANT: Vendor settlement webhooks are at the VENDOR level, not per-order.
+ * A single settlement (one bank UTR) covers ALL pending vendor balance, which may
+ * include multiple adjustments/payments. All matched payments get the same UTR.
+ *
+ * The webhook payload does NOT contain adjustment_id or order_id — matching is
+ * done by vendor_id → bank_accounts → tenancies → payments.
+ *
  * Endpoint: POST /functions/v1/cashfree-split-webhook
  * Auth: HMAC-SHA256 Base64 signature via x-webhook-signature header
  * Secret: CASHFREE_SPLIT_WEBHOOK_SECRET (set separately from PG secret)
@@ -106,6 +113,7 @@ serve(async (req: Request) => {
 
     console.log("[cashfree-split-webhook] Event:", eventType,
       "settlement_id:", settlementId, "vendor_id:", vendorId,
+      "utr:", settlement?.utr,
       "amount_settled:", settlement?.amount_settled,
       "settled_orders_count:", settlement?.settled_orders_count);
 
@@ -133,36 +141,24 @@ serve(async (req: Request) => {
       requestId: req.headers.get("x-request-id") ?? crypto.randomUUID(),
     });
 
-    // Find payment(s) — match by cf_adjustment_id first (precise), then vendor FIFO (fallback).
-    const paymentFields = "id, user_id, rent_amount_paise, landlord_payout_status, tenancy_id, payment_month";
+    // ── MATCH PAYMENTS BY VENDOR ──────────────────────────────────────
+    // Vendor settlement webhooks are at the VENDOR level (not per-order/adjustment).
+    // A single settlement covers all pending vendor balance. Match ALL processing
+    // payments for this vendor — they all share the same bank UTR.
+    const paymentFields = "id, user_id, rent_amount_paise, landlord_payout_paise, landlord_payout_status, landlord_payout_at, tenancy_id, payment_month";
     let payments: Array<{
       id: string;
       user_id: string;
       rent_amount_paise: number;
+      landlord_payout_paise: number | null;
       landlord_payout_status: string;
+      landlord_payout_at: string | null;
       tenancy_id: string;
       payment_month: string;
     }> = [];
 
-    // Primary: match by cf_adjustment_id (stored when settle-to-landlord calls createAdjustment)
-    // Cashfree settlement webhooks include adjustment_id in the payload
-    const webhookAdjustmentId = (payload as Record<string, unknown>).data?.adjustment_id
-      ?? (payload as Record<string, unknown>).data?.settlement?.adjustment_id;
-    if (webhookAdjustmentId) {
-      const { data } = await supabase
-        .from("payments")
-        .select(paymentFields)
-        .eq("cf_adjustment_id", Number(webhookAdjustmentId))
-        .in("landlord_payout_status", ["processing", "retrying"])
-        .limit(1);
-      if (data?.length) {
-        payments = data;
-        console.log(`[cashfree-split-webhook] Matched payment ${data[0].id} by cf_adjustment_id=${webhookAdjustmentId}`);
-      }
-    }
-
-    // Fallback: vendor_id → bank_accounts → tenancies → payments (FIFO)
-    if (!payments.length && vendorId) {
+    if (vendorId) {
+      // vendor_id → bank_accounts → tenancies → ALL processing payments
       const { data: bankAcct } = await supabase
         .from("bank_accounts")
         .select("user_id")
@@ -184,21 +180,19 @@ serve(async (req: Request) => {
             .in("tenancy_id", tenancyIds)
             .eq("payment_gateway", "cashfree")
             .in("landlord_payout_status", ["processing", "retrying"])
-            .order("paid_at", { ascending: true })
-            .limit(1);
+            .order("paid_at", { ascending: true });
           if (data?.length) payments = data;
         }
       }
     }
 
-    // Legacy fallback: settlement_id match
+    // Legacy fallback: settlement_id match (for payments that have gateway_payout_id stored)
     if (!payments.length && settlementId) {
       const { data } = await supabase
         .from("payments")
         .select(paymentFields)
         .eq("gateway_payout_id", settlementId)
-        .in("landlord_payout_status", ["pending", "ready", "processing", "retrying"])
-        .limit(1);
+        .in("landlord_payout_status", ["pending", "ready", "processing", "retrying"]);
       if (data?.length) payments = data;
     }
 
@@ -210,16 +204,12 @@ serve(async (req: Request) => {
       return jsonResponse({ status: "ignored", reason: "no eligible payment" });
     }
 
-    // Settlement webhooks are vendor-level: one settlement may cover multiple payments.
-    // Process all matched payments in the batch.
     const paymentIds = payments.map((p) => p.id);
     const payment = payments[0]; // primary for logging/notification
 
     console.log(`[cashfree-split-webhook] Matched ${payments.length} payment(s): ${paymentIds.join(", ")}`);
 
     // ── VENDOR_SETTLEMENT_INITIATED ──────────────────────────────────
-    // Largely redundant: settle-to-landlord already sets 'processing'.
-    // Kept as a safety net for any race conditions.
     if (eventType === "VENDOR_SETTLEMENT_INITIATED" || eventType === "VENDOR_SETTLEMENT_CREATED") {
       for (const p of payments) {
         await supabase
@@ -244,18 +234,64 @@ serve(async (req: Request) => {
       const amountSettled = settlement?.amount_settled ?? 0;
       const serviceCharge = settlement?.service_charge ?? 0;
       const settledOn = settlement?.settled_on ?? new Date().toISOString();
+      // The real bank UTR from Cashfree — this is the bank transfer reference
+      const bankUtr = settlement?.utr ?? null;
 
-      // Mark ALL processing payments for this vendor as settled
-      for (const p of payments) {
+      // Amount guard: with 15-min settlement cycles, a newer adjustment could be
+      // in "processing" but NOT included in this bank transfer. Use amount_settled
+      // from the webhook to determine which payments are in this batch.
+      // Sort by landlord_payout_at ascending (FIFO — oldest adjustments settle first),
+      // accumulate payout amounts, and stop when we'd exceed amount_settled.
+      const amountSettledPaise = Math.round(amountSettled * 100);
+      let paymentsToSettle = payments;
+      let skippedPayments: typeof payments = [];
+
+      if (amountSettledPaise > 0 && payments.length > 1) {
+        // Sort FIFO: oldest adjustment first (by landlord_payout_at, then paid_at proxy via payment_month)
+        const sorted = [...payments].sort((a, b) =>
+          (a.landlord_payout_at ?? "").localeCompare(b.landlord_payout_at ?? "")
+        );
+
+        let runningTotal = 0;
+        const included: typeof payments = [];
+        const excluded: typeof payments = [];
+
+        for (const p of sorted) {
+          const payoutPaise = p.landlord_payout_paise ?? p.rent_amount_paise;
+          if (runningTotal + payoutPaise <= amountSettledPaise) {
+            runningTotal += payoutPaise;
+            included.push(p);
+          } else {
+            excluded.push(p);
+          }
+        }
+
+        // Only apply the guard if the included total approximately matches amount_settled.
+        // Tolerance: ₹1 (100 paise) to account for Cashfree service charge rounding.
+        if (included.length > 0 && Math.abs(runningTotal - amountSettledPaise) < 100) {
+          paymentsToSettle = included;
+          skippedPayments = excluded;
+        } else {
+          // Amounts don't reconcile — log warning and settle all (safer than dropping payments)
+          console.warn(`[cashfree-split-webhook] Amount guard inconclusive: matched ${sorted.length} payments totaling ₹${(runningTotal / 100).toFixed(2)}, webhook says ₹${amountSettled}. Settling all.`);
+        }
+      }
+
+      if (skippedPayments.length > 0) {
+        console.log(`[cashfree-split-webhook] Skipped ${skippedPayments.length} payment(s) not in this settlement batch: ${skippedPayments.map(p => p.id).join(", ")}`);
+      }
+
+      for (const p of paymentsToSettle) {
         await supabase
           .from("payments")
           .update({
             landlord_payout_status: "settled",
             landlord_payout_at: settledOn,
-            gateway_payout_utr: settlement?.utr ?? null,
+            gateway_payout_utr: bankUtr,
             gateway_settlement_status: "settled",
             settlement_status: "settled",
             gateway_payout_status: "settlement_success",
+            gateway_payout_id: settlementId || null,
             gateway_settled_at: settledOn,
           })
           .eq("id", p.id)
@@ -269,27 +305,28 @@ serve(async (req: Request) => {
         payment.id,
         {
           vendor_id: vendorId,
-          utr: settlement?.utr,
+          utr: bankUtr,
           amount_settled: amountSettled,
           service_charge: serviceCharge,
-          payment_count: payments.length,
+          payment_count: paymentsToSettle.length,
+          skipped_count: skippedPayments.length,
           settlement_id: settlementId,
         },
       );
 
-      console.log(`[cashfree-split-webhook] Settled ${payments.length} payment(s), UTR: ${settlement?.utr}`);
+      console.log(`[cashfree-split-webhook] Settled ${paymentsToSettle.length} payment(s), UTR: ${bankUtr}`);
 
       // Notify each affected tenant
       const supabaseUrl = getSupabaseUrl();
       const serviceKey = Deno.env.get("SB_SECRET_KEY") || Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-      for (const p of payments) {
+      for (const p of paymentsToSettle) {
         if (p.user_id) {
           notifyUser(supabaseUrl, serviceKey, {
             user_id: p.user_id,
             notification_type: "settlement_complete",
             template_vars: {
               amount: ((p.rent_amount_paise as number) / 100).toLocaleString("en-IN"),
-              utr: settlement?.utr ?? "N/A",
+              utr: bankUtr ?? "N/A",
             },
             related_entity_type: "payment",
             related_entity_id: p.id,
