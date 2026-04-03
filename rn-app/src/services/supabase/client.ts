@@ -173,10 +173,35 @@ const ExpoSecureStoreAdapter = {
 };
 
 /**
+ * In-memory exclusive lock for Supabase Auth.
+ *
+ * React Native (Hermes) has no navigator.locks API, so the SDK falls back to
+ * lockNoOp which provides ZERO serialization. This causes concurrent
+ * _callRefreshToken() calls (from getSession() + autoRefreshToken timer) that
+ * reuse the same refresh token → GoTrue's rotation detection kills the session.
+ *
+ * This lock serializes all auth operations (getSession, refreshToken, signIn,
+ * signOut) so only one runs at a time, preventing the double-refresh race.
+ */
+const _locks: Map<string, Promise<unknown>> = new Map();
+async function rnLock<R>(name: string, _acquireTimeout: number, fn: () => Promise<R>): Promise<R> {
+  const prev = _locks.get(name) ?? Promise.resolve();
+  const current = prev.catch(() => {}).then(fn);
+  _locks.set(name, current);
+  try {
+    return await current;
+  } finally {
+    // Only clean up if we're still the latest in the chain
+    if (_locks.get(name) === current) _locks.delete(name);
+  }
+}
+
+/**
  * Configured Supabase client for the mobile app
  */
 export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
   auth: {
+    lock: rnLock,
     storage: ExpoSecureStoreAdapter,
     autoRefreshToken: true,
     persistSession: true,
@@ -240,16 +265,65 @@ export function updateCachedSession(session: { access_token: string } | null) {
 }
 
 /**
+ * Check if a JWT is truly expired (exp claim is in the past).
+ * Returns true ONLY when the token MUST NOT be sent to the server.
+ *
+ * IMPORTANT: This intentionally uses a 0ms margin. The previous 30s margin
+ * caused getAccessTokenSafe() to call getSessionSafe() -> getSession() ->
+ * _callRefreshToken(), racing with the SDK's autoRefreshToken timer. When
+ * both consumed the same refresh token, GoTrue's rotation killed the session.
+ *
+ * The SDK's autoRefreshToken refreshes at 90s before expiry — we trust it.
+ * Edge functions have their own JWT validation (no client-side margin needed).
+ */
+function isTokenActuallyExpired(token: string): boolean {
+  try {
+    const payload = token.split('.')[1];
+    if (!payload) return true;
+    const json = atob(payload.replace(/-/g, '+').replace(/_/g, '/'));
+    const { exp } = JSON.parse(json);
+    if (typeof exp !== 'number') return true; // Malformed — treat as expired
+    return Date.now() > exp * 1000;
+  } catch {
+    return true; // Parse failure — treat as expired
+  }
+}
+
+/**
  * Get the current access token without triggering SDK refresh.
- * Falls back to getSessionSafe() only on cold start (cache empty).
+ * Falls back to getSessionSafe() ONLY on true cold start (cache empty).
+ *
+ * CRITICAL FIX: Previously used a 30s expiry margin that forced getSessionSafe()
+ * calls when the token was "expiring soon". This triggered the SDK's
+ * _callRefreshToken() which raced with autoRefreshToken — both consumed
+ * the same refresh token via GoTrue's rotation, killing the session.
+ *
+ * The SDK's autoRefreshToken (90s margin, 30s tick) handles renewal.
+ * We trust the cached token as long as it's not actually expired.
+ * If the token IS expired (missed refresh), we fall back to getSessionSafe()
+ * as a last resort — but this should be rare since the SDK refreshes proactively.
+ *
+ * The cascade that caused the bug:
+ * 1. Bank verification succeeds → check_and_advance_to_active updates users table
+ * 2. Realtime subscriptions fire → 2-3 dashboard refetches start
+ * 3. Bank onSuccess → firePanVerification also starts
+ * 4. All 3-4 calls hit getAccessTokenSafe() concurrently
+ * 5. Old code: 30s margin → all fall through to getSessionSafe() → SDK refresh
+ *    races with autoRefreshToken → double refresh token consumption → session dies
+ * 6. New code: return cached token immediately → no SDK interaction → no race
  */
 export async function getAccessTokenSafe(): Promise<string | null> {
-  // Cache hit — token was set by onAuthStateChange
-  if (_cachedAccessToken) return _cachedAccessToken;
+  // Cache hit — return if token exists and isn't truly expired.
+  // The SDK's autoRefreshToken renews at 90s before expiry, so the cache
+  // should always have a fresh token. We only reject actually-expired tokens.
+  if (_cachedAccessToken && !isTokenActuallyExpired(_cachedAccessToken)) {
+    return _cachedAccessToken;
+  }
 
-  // Cold start fallback — cache not yet populated by AuthProvider.
-  // This single getSession() call is acceptable on cold start because
-  // autoRefreshToken hasn't started competing yet.
+  // Cache miss (cold start) or token actually expired (missed auto-refresh).
+  // Fall back to getSessionSafe() which may trigger the SDK's refresh.
+  // This is safe because it only happens once (cold start) or on genuine expiry
+  // (not the 30s pre-expiry window that caused the race).
   const { data: { session } } = await getSessionSafe();
   if (session?.access_token) {
     _cachedAccessToken = session.access_token;

@@ -173,8 +173,15 @@ export function subscribe(
         const currentEntry = channels.get(key);
         if (!currentEntry) return;
 
-        // Coalesced dispatch — debounce per callback to prevent thundering herd
+        // Coalesced dispatch — debounce per callback to prevent thundering herd.
+        // Filter by event type: callbackId is `${event}:${random}`, so we check
+        // if the callback's event matches the payload's eventType. Without this,
+        // a DELETE callback sharing a channel with an UPDATE subscription would
+        // fire on UPDATE events — causing spurious signOut on user_status changes.
+        const incomingEvent = (payload as any).eventType as string | undefined;
         for (const [cbId, cbSet] of currentEntry.callbacks) {
+          const cbEvent = cbId.split(':')[0]; // Extract event from "UPDATE:abc123"
+          if (incomingEvent && cbEvent !== '*' && cbEvent !== incomingEvent) continue;
           for (const cb of cbSet) {
             const timerKey = `${cbId}:${cb.toString().slice(0, 20)}`;
             const existingTimer = currentEntry.debounceTimers.get(timerKey);

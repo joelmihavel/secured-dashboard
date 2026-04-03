@@ -133,17 +133,39 @@ serve(async (req: Request) => {
     });
 
     if (!idempotencyResult.isNew && idempotencyResult.cachedResponse) {
-      console.log("[verify-pan] Returning cached response for idempotency key");
-      return new Response(
-        JSON.stringify(idempotencyResult.cachedResponse.body),
-        {
-          status: idempotencyResult.cachedResponse.status,
-          headers: {
-            "Content-Type": "application/json",
-            "X-Idempotency-Cached": "true",
-          },
+      // Validate the referenced bank account still exists before returning cached response
+      const cachedBody = idempotencyResult.cachedResponse.body as Record<string, unknown>;
+      const cachedData = cachedBody?.data as Record<string, unknown> | undefined;
+      const cachedBankAccountId = cachedData?.bank_account_id ?? bank_account_id;
+
+      let cacheValid = true;
+      if (cachedBankAccountId) {
+        const { data: bankExists } = await supabase
+          .from("bank_accounts")
+          .select("id")
+          .eq("id", cachedBankAccountId as string)
+          .maybeSingle();
+        if (!bankExists) {
+          console.warn(`[verify-pan] Cached bank_account_id ${cachedBankAccountId} no longer exists, invalidating cache`);
+          cacheValid = false;
+          await idempotency.fail(idempotencyKey!, "Cached bank account deleted");
         }
-      );
+      }
+
+      if (cacheValid) {
+        console.log("[verify-pan] Returning cached response for idempotency key");
+        return new Response(
+          JSON.stringify(idempotencyResult.cachedResponse.body),
+          {
+            status: idempotencyResult.cachedResponse.status,
+            headers: {
+              "Content-Type": "application/json",
+              "X-Idempotency-Cached": "true",
+            },
+          }
+        );
+      }
+      // Cache invalid — fall through to fresh verification
     }
 
     // Log verification initiation

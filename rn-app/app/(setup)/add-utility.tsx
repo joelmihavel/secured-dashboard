@@ -107,7 +107,8 @@ export default function AddUtilityScreen() {
       const defaultOp = operators.find(op =>
         name(op.operatorName).includes('BESCOM') ||
         name(op.operatorName).includes('BESSCOM') ||
-        name(op.operatorName).includes('BANGALORE ELECTRICITY')
+        name(op.operatorName).includes('BANGALORE ELECTRICITY') ||
+        op.operatorCode === 'BESC'
       );
       if (defaultOp) {
         setSelectedOperator(defaultOp);
@@ -248,8 +249,8 @@ export default function AddUtilityScreen() {
             </View>
           </View>
 
-          {/* API Error Banner */}
-          {apiError && <AlertBanner type="error" message={apiError} />}
+          {/* API Error Banner — constrained to content width */}
+          {apiError && <View style={{ width: '100%' }}><AlertBanner type="error" message={apiError} /></View>}
 
           {/* Form - Figma: gap 16 */}
           <View style={styles.formContainer}>

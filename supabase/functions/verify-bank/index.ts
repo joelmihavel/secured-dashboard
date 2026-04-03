@@ -173,19 +173,43 @@ serve(async (req: Request) => {
       ttlHours: 1, // Short TTL — only prevents rapid duplicate submissions
     });
 
-    // If we have a cached response, return it
+    // If we have a cached response, validate the referenced bank account still exists.
+    // Without this check, a deleted/recreated bank account would return a stale
+    // bank_account_id from the cache, causing downstream PAN verification to fail
+    // with "Bank account not found".
     if (!idempotencyResult.isNew && idempotencyResult.cachedResponse) {
-      console.log(`[verify-bank] Returning cached response for idempotency key`);
-      return new Response(
-        JSON.stringify(idempotencyResult.cachedResponse.body),
-        {
-          status: idempotencyResult.cachedResponse.status,
-          headers: {
-            "Content-Type": "application/json",
-            "X-Idempotency-Cached": "true",
-          },
+      const cachedBody = idempotencyResult.cachedResponse.body as Record<string, unknown>;
+      const cachedData = cachedBody?.data as Record<string, unknown> | undefined;
+      const cachedBankAccountId = cachedData?.bank_account_id as string | undefined;
+
+      let cacheValid = true;
+      if (cachedBankAccountId) {
+        const { data: bankExists } = await supabase
+          .from("bank_accounts")
+          .select("id")
+          .eq("id", cachedBankAccountId)
+          .maybeSingle();
+        if (!bankExists) {
+          console.warn(`[verify-bank] Cached bank_account_id ${cachedBankAccountId} no longer exists, invalidating cache`);
+          cacheValid = false;
+          await idempotency.fail(idempotencyKey!, "Cached bank account deleted");
         }
-      );
+      }
+
+      if (cacheValid) {
+        console.log(`[verify-bank] Returning cached response for idempotency key`);
+        return new Response(
+          JSON.stringify(idempotencyResult.cachedResponse.body),
+          {
+            status: idempotencyResult.cachedResponse.status,
+            headers: {
+              "Content-Type": "application/json",
+              "X-Idempotency-Cached": "true",
+            },
+          }
+        );
+      }
+      // Cache invalid — fall through to fresh verification
     }
 
     // Log verification initiation

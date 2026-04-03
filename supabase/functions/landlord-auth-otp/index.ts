@@ -431,7 +431,7 @@ async function handleVerifyOtp(
     const { data: existingUser } = await supabase
       .from("users")
       .select("id")
-      .eq("phone", phoneWithCountryCode)
+      .or(`phone.eq.${phoneWithCountryCode},phone.eq.${sanitizedPhone}`)
       .maybeSingle();
 
     if (existingUser) {
@@ -493,7 +493,7 @@ async function handleVerifyOtp(
     const { data: existingUser } = await supabase
       .from("users")
       .select("id")
-      .eq("phone", phoneWithCountryCode)
+      .or(`phone.eq.${phoneWithCountryCode},phone.eq.${sanitizedPhone}`)
       .maybeSingle();
 
     if (existingUser) {
@@ -615,7 +615,7 @@ async function recoverVerifiedSession(
   const { data: user } = await supabase
     .from("users")
     .select("id, full_name")
-    .eq("phone", phoneWithCountryCode)
+    .or(`phone.eq.${phoneWithCountryCode},phone.eq.${sanitizedPhone}`)
     .maybeSingle();
 
   if (!user) {
@@ -756,7 +756,7 @@ async function createOrFindLandlordUser(
   const { data: existingUser } = await supabase
     .from("users")
     .select("id, name_source")
-    .eq("phone", phoneWithCountryCode)
+    .or(`phone.eq.${phoneWithCountryCode},phone.eq.${sanitizedPhone}`)
     .maybeSingle();
 
   if (existingUser) {

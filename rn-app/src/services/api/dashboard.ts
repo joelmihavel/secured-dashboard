@@ -32,6 +32,7 @@ export type LandlordStatusValue = 'none' | 'invite_pending' | 'invited' | 'otp_c
 
 export interface TenancyVerificationStatus {
   bank_verified: boolean;
+  pan_verified?: boolean;
   utility_verified: boolean;
   landlord_approved: boolean;
   landlord_response?: 'approved' | 'disputed' | 'pending' | null;
@@ -756,7 +757,7 @@ export function mapCashbackModule(
     if (response === 'disputed') {
       // Landlord rejected/disputed
       landlordInviteState = 'not_approved';
-    } else if (bankDone && utilityDone && landlordPending) {
+    } else if (bankDone && utilityDone && (landlordInviteSent && !landlordFullyVerified)) {
       // Invite sent, awaiting response
       landlordInviteState = 'invited';
     } else {
