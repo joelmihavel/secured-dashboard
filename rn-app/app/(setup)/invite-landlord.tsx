@@ -235,11 +235,9 @@ export default function InviteLandlordScreen() {
             </View>
           </View>
 
-          {/* API Error Banner */}
-          {apiError && <AlertBanner type="error" message={apiError} />}
-
-          {/* Invite Sent Success Banner */}
-          {inviteSent && <AlertBanner type="success" message={isReminder ? "Reminder sent successfully" : "Invite sent successfully"} />}
+          {/* API Error / Success Banners — constrained to content width */}
+          {apiError && <View style={styles.bannerContainer}><AlertBanner type="error" message={apiError} /></View>}
+          {inviteSent && <View style={styles.bannerContainer}><AlertBanner type="success" message={isReminder ? "Reminder sent successfully" : "Invite sent successfully"} /></View>}
 
           {/* Phone Input -- Figma: label + phone input with country dropdown */}
           <View style={styles.inputSection}>
@@ -332,6 +330,9 @@ const styles = StyleSheet.create({
     backgroundColor: FIGMA_COLORS.progressFill,
   },
   // Input section
+  bannerContainer: {
+    width: '100%',
+  },
   inputSection: {
     width: '100%',
     gap: 24,
