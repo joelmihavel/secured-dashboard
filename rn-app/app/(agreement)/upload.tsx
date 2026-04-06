@@ -812,6 +812,18 @@ export default function UploadScreen() {
 
         // Only truly invalid documents (not rental agreements) redirect back to upload
         if (status.contractStatus === 'invalid_document') {
+          // BUG FIX: Update the persisted store so a cold restart doesn't
+          // resume tracking this failed extraction. Without this, the store
+          // persists extractionId=A with uploadPhase='server_processing',
+          // and useMountDiscovery re-tracks A on next mount — showing the
+          // old error even if a newer successful extraction (B) exists.
+          useUploadStore.getState().prepareForReupload({
+            extractionId: eid,
+            errorCode: 'INVALID_DOCUMENT',
+            errorMessage:
+              status.extractionError ??
+              'This doesn\'t appear to be a rental agreement. Please upload a valid one.',
+          });
           setUploadState('error_expired');
           setErrorOverrideMessage(
             status.extractionError ??
@@ -834,14 +846,23 @@ export default function UploadScreen() {
       }
       case 'failed': {
         // Map extraction_error to user-friendly messages
+        let failedMsg: string;
         const errorMsg = status.extractionError;
         if (errorMsg?.includes('OCR') || errorMsg?.includes('read')) {
-          setErrorOverrideMessage('We couldn\'t read the document. Please upload a clearer PDF.');
+          failedMsg = 'We couldn\'t read the document. Please upload a clearer PDF.';
         } else if (errorMsg?.includes('invalid') || errorMsg?.includes('not a rental')) {
-          setErrorOverrideMessage('This doesn\'t appear to be a rental agreement. Please upload your rental agreement.');
+          failedMsg = 'This doesn\'t appear to be a rental agreement. Please upload your rental agreement.';
         } else {
-          setErrorOverrideMessage(errorMsg ?? 'Document processing failed. Please try uploading again.');
+          failedMsg = errorMsg ?? 'Document processing failed. Please try uploading again.';
         }
+        // BUG FIX: Persist the failed state so cold restart doesn't
+        // resume tracking this extraction (same fix as invalid_document above).
+        useUploadStore.getState().prepareForReupload({
+          extractionId: status.extractionId,
+          errorCode: 'EXTRACTION_FAILED',
+          errorMessage: failedMsg,
+        });
+        setErrorOverrideMessage(failedMsg);
         setUploadState('error_expired');
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
         break;

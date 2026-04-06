@@ -247,7 +247,8 @@ function useMountDiscovery(enabled: boolean) {
       if (
         store.uploadPhase === 'processing' ||
         store.uploadPhase === 'server_processing' ||
-        store.uploadPhase === 'completed'
+        store.uploadPhase === 'completed' ||
+        store.uploadPhase === 'failed'
       ) {
         // Server-side phases — verify the record still exists before resuming
         (async () => {
@@ -265,10 +266,68 @@ function useMountDiscovery(enabled: boolean) {
               return;
             }
 
+            // BUG FIX: If the stored extraction is in a terminal error state
+            // (invalid_document or failed), check the DB for a NEWER extraction
+            // that supersedes it. This handles the re-upload scenario where:
+            // 1. User uploaded doc A → invalid_document
+            // 2. User re-uploaded doc B → succeeded (completed/user_review)
+            // 3. App was killed/restarted with store still pointing to A
+            // Without this check, useMountDiscovery resumes tracking A and
+            // the status effect shows the old error, ignoring B entirely.
+            const isTerminalError =
+              status.extractionStatus === 'failed' ||
+              status.contractStatus === 'invalid_document';
+
+            if (isTerminalError) {
+              const userId = useAuthStore.getState().userId;
+              if (userId) {
+                const { data: newerRow } = await supabase
+                  .from('extracted_rental_info')
+                  .select('id, extraction_status, updated_at, user_verified')
+                  .eq('user_id', userId)
+                  .in('extraction_status', ['processing', 'completed'])
+                  .eq('user_verified', false)
+                  .order('created_at', { ascending: false })
+                  .limit(1)
+                  .maybeSingle();
+
+                if (newerRow) {
+                  const newerRowId = (newerRow as unknown as Record<string, unknown>).id as string;
+                  // Only switch if the newer row is genuinely different from the stored one
+                  if (newerRowId !== store.extractionId) {
+                    // Set extractionId + phase atomically to avoid phase-transition
+                    // validation issues (e.g., server_processing → server_processing
+                    // is rejected by isValidPhaseTransition).
+                    useUploadStore.setState({
+                      extractionId: newerRowId,
+                      uploadPhase: 'server_processing',
+                      lastUpdatedAt: Date.now(),
+                      errorCode: null,
+                      errorMessage: null,
+                    });
+                    return;
+                  }
+                }
+              }
+              // No newer extraction found — resume tracking the failed one
+              // so the status effect can show the appropriate error UI.
+            }
+
             // Record exists and is active — resume tracking
             // (manual_review / unsupported city no longer blocks user — admin handles in background)
             if (currentStore.uploadPhase !== 'completed') {
-              currentStore.setPhase('server_processing');
+              // Use setState for 'failed' phase since setPhase rejects
+              // transitions from 'failed' (not in PHASE_ORDER).
+              if (currentStore.uploadPhase === 'failed') {
+                useUploadStore.setState({
+                  uploadPhase: 'server_processing',
+                  lastUpdatedAt: Date.now(),
+                  errorCode: null,
+                  errorMessage: null,
+                });
+              } else {
+                currentStore.setPhase('server_processing');
+              }
             }
           } catch {
             // Network error — keep store as-is, the query will retry
