@@ -253,7 +253,7 @@ export const PaymentFlipCard = memo(function PaymentFlipCard({ data }: PaymentFl
             </Pressable>
           ) : (
             <Text style={styles.upcomingPaymentText}>
-              {data.status === 'missed' ? 'Missed Payment' : 'Upcoming Payment'}
+              {data.status === 'missed' ? 'Missed Payment' : data.status === 'late' ? 'Overdue Payment' : 'Upcoming Payment'}
             </Text>
           )}
         </View>

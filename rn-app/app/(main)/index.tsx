@@ -59,6 +59,7 @@ import {
   StatusNotificationBanner,
   RentStatusCarousel,
   CarouselCardItem,
+  PaymentStatusType,
   TabSwitcher,
   RecentPaymentsList,
   CashbacksList,
@@ -417,7 +418,9 @@ export default function HomeScreen() {
           }
         }
 
-        const unpaidStatus: 'upcoming' | 'missed' = (pastCutoff && !isGracePeriod) ? 'missed' : 'upcoming';
+        const unpaidStatus: PaymentStatusType = (pastCutoff && !isGracePeriod)
+          ? ((isMissed || isMultipleOverdue) ? 'missed' : 'late')
+          : 'upcoming';
 
         items.push({
           type: 'payment',

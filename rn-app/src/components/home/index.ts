@@ -22,6 +22,8 @@ export type { PaymentMethodCardProps, PaymentMethod, HomePaymentMethodType } fro
 export { RentStatusCarousel } from './RentStatusCarousel';
 export type { RentStatusCarouselProps, CarouselCardItem } from './RentStatusCarousel';
 
+export type { PaymentStatusType } from './PaymentFlipCard';
+
 // Tab and list components
 export { TabSwitcher } from './TabSwitcher';
 export type { TabSwitcherProps, Tab } from './TabSwitcher';

@@ -69,6 +69,7 @@ export function EnterAmountContent({
   const daysUntilDue = upcomingPayment?.days_until_due ?? 0;
   const alreadyPaid = upcomingPayment?.already_paid ?? false;
   const isOverdue = daysUntilDue < 0 && !alreadyPaid;
+  const pastCutoff = upcomingPayment?.past_cutoff ?? false;
   const rentMonth = upcomingPayment?.rent_month ?? '';
   // Auto-populate on mount
   useEffect(() => {
@@ -127,6 +128,7 @@ export function EnterAmountContent({
     if (parsedAmount > MAX_AMOUNT) {
       return { severity: 'error', message: `Amount cannot exceed ₹${MAX_AMOUNT.toLocaleString('en-IN')}` };
     }
+    if (pastCutoff) return null; // No cashback messages when past cutoff
     if (parsedAmount < monthlyRent && monthlyRent > 0) {
       return { severity: 'warning', message: 'Cashback will apply on reduced rent' };
     }
@@ -137,7 +139,7 @@ export function EnterAmountContent({
       return { severity: 'info', message: "You'll pay 1% less" };
     }
     return null;
-  }, [alreadyPaid, parsedAmount, monthlyRent]);
+  }, [alreadyPaid, parsedAmount, monthlyRent, pastCutoff]);
 
   // Can proceed? Block if already paid or amount exceeds gateway limits
   const MAX_AMOUNT = 10_00_000; // Rs 10 lakh — PayU gateway limit
@@ -215,8 +217,8 @@ export function EnterAmountContent({
               exiting={FadeOut.duration(200)}
               style={styles.pill}
             >
-              <Text style={styles.pillTextDefault}>
-                You'll pay 1% less
+              <Text style={pastCutoff ? styles.pillTextLate : styles.pillTextDefault}>
+                {pastCutoff ? "Cashbacks aren't applied on late payments" : "You'll pay 1% less"}
               </Text>
             </Animated.View>
           ) : null}
@@ -336,6 +338,13 @@ const styles = StyleSheet.create({
     fontSize: 12,
     lineHeight: 20,
     color: colors.brand[500], // #FF9A6D
+    textAlign: 'center',
+  },
+  pillTextLate: {
+    fontFamily: 'PlusJakartaSans-Regular',
+    fontSize: 12,
+    lineHeight: 20,
+    color: '#878787',
     textAlign: 'center',
   },
 

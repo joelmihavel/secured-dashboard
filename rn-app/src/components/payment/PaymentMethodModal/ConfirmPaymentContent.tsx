@@ -125,17 +125,18 @@ export function ConfirmPaymentContent({
   // ── Payment Data ───────────────────────────────────────────────────────────
 
   const rentAmount = enteredAmount || tenancy?.monthly_rent || 0;
+  const pastCutoff = upcomingPayment?.past_cutoff ?? false;
 
   const cashbackPct = cashback?.discount_rate ?? 0.01;
   const agreementRent = tenancy?.monthly_rent ?? rentAmount;
-  const cashbackAmount = Math.round(Math.min(rentAmount, agreementRent) * cashbackPct);
-  const annualSavings = Math.round(agreementRent * cashbackPct) * 12;
+  const cashbackAmount = pastCutoff ? 0 : Math.round(Math.min(rentAmount, agreementRent) * cashbackPct);
+  const annualSavings = pastCutoff ? 0 : Math.round(agreementRent * cashbackPct) * 12;
 
   // Accumulated balance from previous unverified payments (stored in paise)
-  const accumulatedBalanceRupees = Math.floor((user?.cashback_balance_paise ?? 0) / 100);
+  const accumulatedBalanceRupees = pastCutoff ? 0 : Math.floor((user?.cashback_balance_paise ?? 0) / 100);
 
   // Always apply cashback as instant discount (1% + any accumulated balance, capped at rent)
-  const appliedCashback = Math.min(cashbackAmount + accumulatedBalanceRupees, rentAmount);
+  const appliedCashback = pastCutoff ? 0 : Math.min(cashbackAmount + accumulatedBalanceRupees, rentAmount);
   const earnedCashback = 0;
 
   // Fee computed on net rent (AFTER cashback) — matches backend formula
@@ -193,15 +194,27 @@ export function ConfirmPaymentContent({
             <RNText style={s.rentDueText}>
               {dueLabel}
             </RNText>
-            <RNText style={s.cashbackInfoText}>
-              You'll earn {Math.round(cashbackPct * 100)}% cashback on this rent payment
-            </RNText>
-            <Pill
-              text={`You're saving \u20B9${fmt(annualSavings)} annually`}
-              variant="default"
-              backgroundColor="#1A1A1A"
-              style={s.cashbackPill}
-            />
+            {pastCutoff ? (
+              <Pill
+                text="Cashbacks aren't applied on late payments"
+                variant="default"
+                backgroundColor="#1A1A1A"
+                textColor="#878787"
+                style={s.cashbackPill}
+              />
+            ) : (
+              <>
+                <RNText style={s.cashbackInfoText}>
+                  You'll earn {Math.round(cashbackPct * 100)}% cashback on this rent payment
+                </RNText>
+                <Pill
+                  text={`You're saving \u20B9${fmt(annualSavings)} annually`}
+                  variant="default"
+                  backgroundColor="#1A1A1A"
+                  style={s.cashbackPill}
+                />
+              </>
+            )}
           </View>
 
           {/* Divider bar — Figma 799:3391 */}
@@ -229,14 +242,14 @@ export function ConfirmPaymentContent({
                 label="Convenience fees"
                 value={convenienceFee === 0 ? 'Free' : `\u20B9 ${fmt(convenienceFee)}`}
               />
-              {cashbackAmount > 0 && (
+              {!pastCutoff && cashbackAmount > 0 && (
                 <BreakdownRow
                   label="Cashback (1%)"
                   value={`-\u20B9 ${fmt(cashbackAmount)}`}
                   isCashback
                 />
               )}
-              {accumulatedBalanceRupees > 0 && (
+              {!pastCutoff && accumulatedBalanceRupees > 0 && (
                 <BreakdownRow
                   label="Cashback balance"
                   value={`-\u20B9 ${fmt(accumulatedBalanceRupees)}`}
