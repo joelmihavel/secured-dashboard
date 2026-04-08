@@ -622,8 +622,12 @@ async function recoverVerifiedSession(
     throw new AppError("Account not found. Please request a new OTP.", "USER_NOT_FOUND", 404);
   }
 
-  // Ensure role is set to landlord (may have been created without it)
-  await supabase.from("users").update({ role: "landlord" }).eq("id", user.id);
+  // Ensure role is set to landlord and synthetic email exists for session generation
+  const syntheticEmail = `${sanitizedPhone}@${SYNTHETIC_EMAIL_DOMAIN}`;
+  await Promise.all([
+    supabase.from("users").update({ role: "landlord" }).eq("id", user.id),
+    supabase.auth.admin.updateUserById(user.id, { email: syntheticEmail }),
+  ]);
 
   const session = await generateSession(sanitizedPhone, supabase);
 
@@ -802,15 +806,19 @@ async function createOrFindLandlordUser(
     }
 
     const extracted = m360Name ? extractFirstName(m360Name) : { first_name: null, last_name: null };
-    await supabase.from("users").upsert({
-      id: authUser.id,
-      phone: phoneWithCountryCode,
-      full_name: m360Name || null,
-      first_name: extracted.first_name,
-      last_name: extracted.last_name,
-      name_source: m360Name ? "m360" : null,
-      role: "landlord",
-    }, { onConflict: "id" });
+    const syntheticEmail = `${sanitizedPhone}@${SYNTHETIC_EMAIL_DOMAIN}`;
+    await Promise.all([
+      supabase.from("users").upsert({
+        id: authUser.id,
+        phone: phoneWithCountryCode,
+        full_name: m360Name || null,
+        first_name: extracted.first_name,
+        last_name: extracted.last_name,
+        name_source: m360Name ? "m360" : null,
+        role: "landlord",
+      }, { onConflict: "id" }),
+      supabase.auth.admin.updateUserById(authUser.id, { email: syntheticEmail }),
+    ]);
 
     return { userId: authUser.id, isNewUser: true };
   }
