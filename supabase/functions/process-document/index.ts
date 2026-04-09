@@ -53,6 +53,7 @@ interface ExtractedData {
   contract_length_months?: number;
   rent_escalation_percent?: number;
   rent_due_day?: number;
+  rent_grace_period_days?: number;
 
   // Parties
   tenant_names: string[];
@@ -106,8 +107,8 @@ interface ProcessingResult {
   _debug?: object;
 }
 
-// Total expected fields for extraction (including e-stamp fields + rent_due_day)
-const TOTAL_EXTRACTION_FIELDS = 24;
+// Total expected fields for extraction (including e-stamp fields + rent_due_day + rent_grace_period_days)
+const TOTAL_EXTRACTION_FIELDS = 25;
 
 // Minimum required fields for successful extraction (user_review status)
 // These are critical fields without which extraction is considered incomplete
@@ -210,6 +211,11 @@ const EXTRACTION_RESPONSE_SCHEMA = {
     rent_due_day: {
       type: "integer",
       description: "Day of month when rent is due (1-28). Look for 'rent payable on Nth of every month'.",
+      nullable: true,
+    },
+    rent_grace_period_days: {
+      type: "integer",
+      description: "Number of grace period days AFTER rent_due_day within which payment is still on-time (0-28). Look for 'grace period of N days', 'without penalty until Nth', 'no late fee before Nth'. If grace period end day is mentioned (e.g., 'grace period up to the 5th' with due day 1st), compute: grace_days = grace_end_day - rent_due_day. Return 0 if no grace period is mentioned.",
       nullable: true,
     },
     tenant_names: {
@@ -551,18 +557,48 @@ Deno.serve(async (req) => {
     });
 
     // ================================================================
-    // BACKGROUND PROCESSING — return response immediately, continue
-    // extraction in background via EdgeRuntime.waitUntil().
+    // ROUTING: Cloud Run vs Edge Function background processing
     //
-    // The client polls useExtractionStatus for completion — it does NOT
-    // need the extraction result in this HTTP response.
-    //
-    // This gives us the full 400s wall-clock budget instead of the 150s
-    // response timeout, which is critical for Document AI + Gemini on
-    // large rental agreements.
+    // USE_CLOUD_RUN=true → delegate to Cloud Run extraction-service
+    // CLOUD_RUN_PERCENTAGE=N → route N% of traffic to Cloud Run
+    // Otherwise → process in-function via EdgeRuntime.waitUntil()
     // ================================================================
 
-    // Capture variables needed by background task
+    const useCloudRun = Deno.env.get("USE_CLOUD_RUN") === "true";
+    const cloudRunPct = parseInt(Deno.env.get("CLOUD_RUN_PERCENTAGE") || "0", 10);
+    const shouldUseCloudRun = useCloudRun || (cloudRunPct > 0 && Math.random() * 100 < cloudRunPct);
+
+    if (shouldUseCloudRun) {
+      // ── Cloud Run path: fire-and-forget to extraction-service ──
+      const cloudRunUrl = Deno.env.get("EXTRACTION_SERVICE_URL");
+      const extractionSecret = Deno.env.get("EXTRACTION_SECRET");
+
+      if (!cloudRunUrl || !extractionSecret) {
+        console.error("[process-document] Cloud Run configured but EXTRACTION_SERVICE_URL or EXTRACTION_SECRET missing — falling back to edge function");
+      } else {
+        console.log(`[process-document] Delegating to Cloud Run: ${cloudRunUrl}/extract`);
+        fetch(`${cloudRunUrl}/extract`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-Extraction-Secret": extractionSecret,
+          },
+          body: JSON.stringify({ extraction_id, user_id: userId }),
+        }).catch((err) => {
+          console.error("[process-document] Cloud Run invocation failed:", err);
+          // extraction-recovery cron will catch stuck records
+        });
+
+        return jsonResponse({
+          success: true,
+          extracted_rental_info_id: extraction_id,
+          extraction_status: "processing",
+          message: "Document processing started (Cloud Run). Poll extraction status for updates.",
+        });
+      }
+    }
+
+    // ── Edge Function path: process in background via EdgeRuntime.waitUntil() ──
     const bgExtractionId = extraction_id;
     const bgUserId = userId!;
     const bgDocumentPath = document_path;
@@ -590,7 +626,6 @@ Deno.serve(async (req) => {
             }).catch((e: any) => console.error("[process-document] CRITICAL: Failed to persist failure:", e));
           }
 
-          // Notify user of failure
           if (bgUserId) {
             scheduleNotification(supabase, getSupabaseUrl(), getServiceKey(), {
               user_id: bgUserId,
@@ -801,6 +836,7 @@ async function processExtractionBackground(
         rent_duration_months: extractedData.contract_length_months,
         rent_escalation_percent: extractedData.rent_escalation_percent,
         rent_due_day: extractedData.rent_due_day,
+        rent_grace_period_days: extractedData.rent_grace_period_days ?? null,
         agreement_date: extractedData.agreement_date,
         registration_number: extractedData.registration_number,
         // E-stamp fields
@@ -1213,7 +1249,7 @@ async function processWithDocumentAI(
           const vertexCredentialsJson = JSON.parse(vertexAiCredentials);
           const vertexAccessToken = await getGCPAccessToken(vertexCredentialsJson);
 
-          const MULTIMODAL_TIMEOUT_MS = 300_000;
+          const MULTIMODAL_TIMEOUT_MS = 60_000;
           const mmController = new AbortController();
           const mmTimeout = setTimeout(() => mmController.abort(), MULTIMODAL_TIMEOUT_MS);
 
@@ -1455,6 +1491,7 @@ Extract and return a JSON object with these exact fields (use null for fields yo
   "contract_end_date": "YYYY-MM-DD format",
   "contract_length_months": "duration in months as number",
   "rent_due_day": "day of month when rent is due (e.g., 1, 5, 10) - look for phrases like 'rent payable on 5th of every month'",
+  "rent_grace_period_days": "number of grace days after rent_due_day (e.g., if due on 1st with grace until 5th, return 4). Look for 'grace period', 'without penalty until', 'no late fee before'. Return 0 if no grace period mentioned.",
   "tenant_names": ["array of tenant/lessee names"],
   "landlord_names": ["array of landlord/lessor/owner names"],
   "certificate_no": "certificate number from e-stamp or stamp paper. IMPORTANT: For Mumbai/Maharashtra agreements, the GRN (Government Receipt Number) or Transaction ID serves as the Stamp Certificate ID - if you see 'GRN', 'Transaction ID', or 'Transaction No.' in a Mumbai document, use that as certificate_no. For other states, look for 'Certificate No.' or 'Cert. No.'",
@@ -1491,8 +1528,10 @@ IMPORTANT:
     : `${location}-aiplatform.googleapis.com`;
   const endpoint = `https://${host}/v1/projects/${projectId}/locations/${location}/publishers/google/models/gemini-3-flash-preview:generateContent`;
 
-  // 300s timeout — large agreements can produce 50K+ chars of document text
-  const GEMINI_TIMEOUT_MS = 300_000;
+  // 60s timeout — if Vertex AI doesn't respond, fall through to API key fallback.
+  // Vertex AI intermittently hangs on large documents. 60s is enough for successful
+  // calls (typically 5-30s) while leaving ~300s of wall-clock for the fallback path.
+  const GEMINI_TIMEOUT_MS = 60_000;
   const geminiController = new AbortController();
   const geminiTimeout = setTimeout(() => geminiController.abort(), GEMINI_TIMEOUT_MS);
 
@@ -1813,6 +1852,9 @@ function mergeGeminiResults(docAI: ExtractedData, gemini: any): ExtractedData {
     rent_due_day: gemini.rent_due_day != null
       ? Number(gemini.rent_due_day)
       : docAI.rent_due_day,
+    rent_grace_period_days: gemini.rent_grace_period_days != null
+      ? Number(gemini.rent_grace_period_days)
+      : undefined,
     tenant_names: gemini.tenant_names?.length > 0
       ? splitJointNames(gemini.tenant_names) : docAI.tenant_names,
     landlord_names: gemini.landlord_names?.length > 0
@@ -1869,6 +1911,10 @@ function mergeGeminiResults(docAI: ExtractedData, gemini: any): ExtractedData {
   // Sanity-check rent_due_day (1-28)
   if (merged.rent_due_day != null && (merged.rent_due_day < 1 || merged.rent_due_day > 28)) {
     merged.rent_due_day = undefined;
+  }
+  // Sanity-check rent_grace_period_days (0-28)
+  if (merged.rent_grace_period_days != null && (merged.rent_grace_period_days < 0 || merged.rent_grace_period_days > 28)) {
+    merged.rent_grace_period_days = undefined;
   }
 
   // Recalculate fields extracted
@@ -2030,6 +2076,7 @@ function countExtractedFields(data: Partial<ExtractedData>): number {
   if (data.lease_start_date) count++;
   if (data.contract_length_months || data.lease_end_date) count++;
   if (data.rent_due_day) count++;
+  if (data.rent_grace_period_days != null) count++;
   // Parties
   if (data.tenant_names && data.tenant_names.length > 0) count++;
   if (data.landlord_names && data.landlord_names.length > 0) count++;
