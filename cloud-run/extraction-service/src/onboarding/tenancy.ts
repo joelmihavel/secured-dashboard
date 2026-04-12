@@ -101,6 +101,14 @@ export async function ensureTenancyForExtraction(
     if (!landlordName) missing.push("landlord_name");
     if (monthlyRentPaise <= 0) missing.push("monthly_rent_paise");
     if (!leaseStartDate) missing.push("lease_start_date");
+    console.warn(`[tenancy] Cannot create tenancy for user ${userId}: missing fields: ${missing.join(", ")}`, {
+      propertyAddress: !!propertyAddress,
+      landlordName,
+      monthlyRentPaise,
+      leaseStartDate,
+      extractionLandlordName: extraction.landlord_name,
+      extractionLandlordNames: extraction.landlord_names,
+    });
     return { tenancyId: undefined, missingFields: missing };
   }
 

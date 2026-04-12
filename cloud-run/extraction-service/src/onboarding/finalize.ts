@@ -207,12 +207,21 @@ export async function finalizeExtractionForOnboarding(
   }
 
   // 5. Create tenancy
-  const { tenancyId } = await ensureTenancyForExtraction({
+  const tenancyResult = await ensureTenancyForExtraction({
     supabase,
     userId,
     extraction: extraction as ExtractionRow,
     confirmedRole,
   });
+  const { tenancyId } = tenancyResult;
+
+  if (!tenancyId) {
+    console.warn(`[onboarding] No tenancy created for user ${userId} extraction ${extractionId}`, {
+      missingFields: tenancyResult.missingFields,
+    });
+  } else {
+    console.log(`[onboarding] Tenancy ${tenancyId} created for user ${userId}`);
+  }
 
   // 6. Deferred name matching for pre-waitlist bank verification
   if (tenancyId) {

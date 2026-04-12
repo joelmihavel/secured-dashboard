@@ -99,12 +99,18 @@ export async function runExtractionPipeline(
 
       try {
         const { finalizeExtractionForOnboarding } = await import('../onboarding/finalize.js');
-        await finalizeExtractionForOnboarding({
+        const finResult = await finalizeExtractionForOnboarding({
           supabase,
           userId,
           extractionId,
           confirmedRole: 'tenant',
           autoApproveDemo: true,
+        });
+        console.log('[pipeline] Finalization-only result:', {
+          tenancyId: finResult.tenancyId,
+          waitlistEntryId: finResult.waitlistEntryId,
+          finalUserStatus: finResult.finalUserStatus,
+          autoApprovedDemo: finResult.autoApprovedDemo,
         });
       } catch (finErr) {
         console.error('[pipeline] Finalization-only failed:', finErr);
