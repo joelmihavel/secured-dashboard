@@ -80,12 +80,48 @@ export async function runExtractionPipeline(
 
     const { data: extraction, error: fetchError } = await supabase
       .from('extracted_rental_info')
-      .select('id, user_id, document_storage_path, extraction_status')
+      .select('id, user_id, document_storage_path, extraction_status, extraction_method, contract_status, fields_extracted')
       .eq('id', extractionId)
       .single();
 
     if (fetchError || !extraction) {
       throw new Error(`Extraction not found: ${fetchError?.message ?? extractionId}`);
+    }
+
+    // ================================================================
+    // Fast path: if extraction is already completed, skip re-extraction
+    // and just run finalization (tenancy, waitlist, risk).
+    // This handles users whose extraction succeeded but finalization failed.
+    // ================================================================
+    if (extraction.extraction_status === 'completed') {
+      console.log(`[pipeline] Extraction ${extractionId} already completed — running finalization only`);
+      await heartbeat.updateStep('finalizing_only');
+
+      try {
+        const { finalizeExtractionForOnboarding } = await import('../onboarding/finalize.js');
+        await finalizeExtractionForOnboarding({
+          supabase,
+          userId,
+          extractionId,
+          confirmedRole: 'tenant',
+          autoApproveDemo: true,
+        });
+      } catch (finErr) {
+        console.error('[pipeline] Finalization-only failed:', finErr);
+      }
+
+      heartbeat.stop();
+      completedExtractionPersisted = true;
+      return {
+        success: true,
+        extractionId,
+        fieldsExtracted: extraction.fields_extracted ?? 0,
+        confidenceScore: 0,
+        contractStatus: extraction.contract_status ?? 'user_review',
+        extractionMethod: extraction.extraction_method ?? 'unknown',
+        needsManualReview: false,
+        isCitySupported: true,
+      };
     }
 
     const documentPath = extraction.document_storage_path;
