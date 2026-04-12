@@ -99,6 +99,51 @@ serve(async (req: Request) => {
     const results: Array<{ user_id: string; success: boolean; error?: string; warning?: string }> = [];
 
     if (body.action === "approve") {
+      // Guard: block approval if extraction is not completed
+      // Prevents tenancy gaps where user is approved but has no extracted data
+      const { data: incompleteExtractions } = await supabase
+        .from("extracted_rental_info")
+        .select("user_id, extraction_status")
+        .in("user_id", body.user_ids)
+        .neq("extraction_status", "completed");
+
+      // Build set of users whose LATEST extraction is not completed
+      const usersWithIncomplete = new Set<string>();
+      if (incompleteExtractions && incompleteExtractions.length > 0) {
+        // Check each user's latest extraction
+        for (const uid of body.user_ids) {
+          const { data: latest } = await supabase
+            .from("extracted_rental_info")
+            .select("extraction_status")
+            .eq("user_id", uid)
+            .order("created_at", { ascending: false })
+            .limit(1)
+            .maybeSingle();
+
+          if (!latest || latest.extraction_status !== "completed") {
+            usersWithIncomplete.add(uid);
+          }
+        }
+      }
+
+      if (usersWithIncomplete.size > 0 && !body.force) {
+        // Return error listing which users can't be approved
+        for (const uid of body.user_ids) {
+          if (usersWithIncomplete.has(uid)) {
+            results.push({
+              user_id: uid,
+              success: false,
+              error: "Cannot approve: agreement extraction not completed. Use force=true to override.",
+            });
+          }
+        }
+        // Filter out blocked users, continue with the rest
+        body.user_ids = body.user_ids.filter((uid: string) => !usersWithIncomplete.has(uid));
+        if (body.user_ids.length === 0) {
+          return jsonResponse({ success: false, results, message: "No users approved — all have incomplete extractions" });
+        }
+      }
+
       // Recompute risk for each user before approval — ensures admin sees freshest data
       for (const uid of body.user_ids) {
         try {
