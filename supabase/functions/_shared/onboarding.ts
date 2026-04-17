@@ -188,7 +188,9 @@ export async function ensureTenancyForExtraction(
       monthly_rent_paise: monthlyRentPaise,
       maintenance_paise: extraction.maintenance_paise ?? 0,
       rent_due_day: extraction.rent_due_day || 1,
-      cashback_cutoff_day: extraction.rent_due_day || null,
+      cashback_cutoff_day: extraction.rent_due_day
+        ? Math.min(extraction.rent_due_day + (extraction.rent_grace_period_days ?? 0), 28)
+        : null,
       lease_start_date: leaseStartDate,
       lease_end_date: extraction.lease_end_date ?? null,
       landlord_name: landlordName,

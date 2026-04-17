@@ -277,7 +277,7 @@ serve(async (req: Request) => {
                   monthly_rent_paise: extraction.monthly_rent_paise,
                   maintenance_paise: extraction.maintenance_paise ?? 0,
                   rent_due_day: rentDueDay,
-                  cashback_cutoff_day: rentDueDay,
+                  cashback_cutoff_day: Math.min(rentDueDay + (extraction.rent_grace_period_days ?? 0), 28),
                   lease_start_date: extraction.lease_start_date,
                   lease_end_date: extraction.lease_end_date,
                   landlord_name: landlordName,
