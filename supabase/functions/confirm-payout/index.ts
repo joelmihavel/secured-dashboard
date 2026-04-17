@@ -167,6 +167,7 @@ serve(async (req: Request) => {
             template_vars: {
               amount: amountRupees,
               landlord_name: tenancy?.landlord_name ?? "your landlord",
+              utr: body.utr ?? "N/A",
             },
             related_entity_type: "payment",
             related_entity_id: paymentId,

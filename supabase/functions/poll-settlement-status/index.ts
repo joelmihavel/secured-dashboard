@@ -456,6 +456,20 @@ async function reconcileVendorSettlements(
                   ? "entity_id"
                   : unmatchedPayments.length === 0 ? "single_payment" : "amount",
               });
+
+              // Send settlement notification (webhook was missed, so user hasn't been notified)
+              const supabaseUrl = getSupabaseUrl();
+              const serviceKey = Deno.env.get("SB_SECRET_KEY") || Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+              notifyUser(supabaseUrl, serviceKey, {
+                user_id: payment.user_id,
+                notification_type: "settlement_complete",
+                template_vars: {
+                  amount: ((payment.landlord_payout_paise ?? payment.rent_amount_paise) / 100).toLocaleString("en-IN"),
+                  utr: matchedEntry.settlement_utr ?? "N/A",
+                },
+                related_entity_type: "payment",
+                related_entity_id: payment.id,
+              }).catch((e) => console.error("[vendor-recon] Notify failed:", e));
             } else {
               result.errors++;
             }

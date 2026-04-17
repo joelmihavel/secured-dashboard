@@ -290,6 +290,7 @@ export const WHATSAPP_TEMPLATE_MAP: Partial<Record<NotificationType, WhatsAppTem
   payment_refunded:        { contentSidEnvVar: "WA_TPL_PAYMENT_REFUNDED",    variableKeys: [] },
   milestone_streak:        { contentSidEnvVar: "WA_TPL_MILESTONE_STREAK",    variableKeys: ["streak_months", "total_cashback"] },
   reminder_agreement:      { contentSidEnvVar: "WA_TPL_REMINDER_AGREEMENT", variableKeys: [] },
+  settlement_complete:     { contentSidEnvVar: "WA_TPL_SETTLEMENT_COMPLETE", variableKeys: ["utr"] },
 };
 
 // ==============================================
