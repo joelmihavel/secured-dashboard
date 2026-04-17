@@ -34,6 +34,16 @@ type Row = Record<string, any>;
 const MIN_AGE_MINUTES = 30;
 // If an extraction has been in "processing" for longer than this, it's hung
 const PROCESSING_TIMEOUT_MINUTES = 15;
+// PostgREST .in() silently truncates/fails with large arrays; chunk to stay safe
+const CHUNK_SIZE = 50;
+
+function chunkArray<T>(arr: T[], size: number): T[][] {
+  const chunks: T[][] = [];
+  for (let i = 0; i < arr.length; i += size) {
+    chunks.push(arr.slice(i, i + size));
+  }
+  return chunks;
+}
 
 function hasMinimumFields(extraction: Row): { valid: boolean; missing: string[] } {
   const missing: string[] = [];
@@ -101,367 +111,385 @@ serve(async (req: Request) => {
       }));
     }
 
-    const userIds = stuckUsers.map((u: Row) => u.id);
-
-    // Batch fetch extractions, tenancies, waitlist entries
-    const [extractionsRes, tenanciesRes, waitlistRes] = await Promise.all([
-      supabase
-        .from("extracted_rental_info")
-        .select("id, user_id, extraction_status, user_verified, needs_manual_review, contract_status, is_city_supported, tenant_name, tenant_names, landlord_name, landlord_names, property_address, property_city, property_state, property_pincode, monthly_rent_paise, maintenance_paise, lease_start_date, lease_end_date, rent_due_day, landlord_phone, landlord_email, tenancy_id, created_at")
-        .in("user_id", userIds)
-        .eq("extraction_status", "completed")
-        .order("created_at", { ascending: false }),
-      supabase
-        .from("tenancies")
-        .select("id, user_id, extracted_rental_info_id")
-        .in("user_id", userIds),
-      supabase
-        .from("waitlist_entries")
-        .select("user_id, admin_review")
-        .in("user_id", userIds),
-    ]);
-
-    // Index: latest extraction per user
-    const extractionMap = new Map<string, Row>();
-    for (const row of extractionsRes.data ?? []) {
-      if (!extractionMap.has(row.user_id)) extractionMap.set(row.user_id, row);
-    }
-
-    const tenancyMap = new Map<string, Row>();
-    // Key by "user_id:extracted_rental_info_id" for idempotent lookup per extraction
-    const tenancyByExtractionMap = new Map<string, Row>();
-    for (const row of tenanciesRes.data ?? []) {
-      tenancyMap.set(row.user_id, row);
-      if (row.extracted_rental_info_id) {
-        tenancyByExtractionMap.set(`${row.user_id}:${row.extracted_rental_info_id}`, row);
-      }
-    }
-
-    const waitlistSet = new Set<string>();
-    for (const row of waitlistRes.data ?? []) {
-      waitlistSet.add(row.user_id);
-    }
-
     // ============================================================
-    // STEP 1.5: Mark stale "processing" extractions as failed
+    // Process users in chunks to avoid PostgREST .in() size limits
     // ============================================================
+    const userChunks = chunkArray(stuckUsers, CHUNK_SIZE);
+    console.log(`[extraction-recovery] Processing ${stuckUsers.length} users in ${userChunks.length} chunk(s) of up to ${CHUNK_SIZE}`);
+
+    // Precompute cutoffs once (shared across all chunks)
     const processingCutoff = new Date(Date.now() - PROCESSING_TIMEOUT_MINUTES * 60 * 1000).toISOString();
-    const { data: staleExtractions, error: staleError } = await supabase
-      .from("extracted_rental_info")
-      .select("id, user_id, created_at, updated_at, gemini_raw_response")
-      .in("user_id", userIds)
-      .eq("extraction_status", "processing")
-      .lt("updated_at", processingCutoff);
-
-    if (!staleError && staleExtractions && staleExtractions.length > 0) {
-      for (const stale of staleExtractions) {
-        // Include the last processing checkpoint (if any) in the error message
-        const checkpoint = stale.gemini_raw_response?.step ?? "unknown";
-        const { error: markError } = await supabase
-          .from("extracted_rental_info")
-          .update({
-            extraction_status: "failed",
-            extraction_error: `Processing timed out — extraction hung at step: ${checkpoint}`,
-          })
-          .eq("id", stale.id)
-          .eq("extraction_status", "processing"); // optimistic lock: only update if still processing
-
-        if (markError) {
-          console.error(`[extraction-recovery] Failed to mark stale extraction ${stale.id} as failed:`, markError.message);
-        } else {
-          console.warn(`[extraction-recovery] Marked extraction ${stale.id} (user ${stale.user_id}) as failed — stuck at step '${checkpoint}' since ${stale.updated_at}`);
-        }
-      }
-    } else if (staleError) {
-      console.error("[extraction-recovery] Failed to query stale processing extractions:", staleError.message);
-    }
-
-    // ============================================================
-    // STEP 1.6: Mark stale "pending" extractions as failed
-    // Catches the case where upload-document succeeded (file in storage)
-    // but process-document was never called (app backgrounded, auth died,
-    // network dropped between upload and process trigger).
-    // ============================================================
     const PENDING_TIMEOUT_MINUTES = 5;
     const pendingCutoff = new Date(Date.now() - PENDING_TIMEOUT_MINUTES * 60 * 1000).toISOString();
-    const { data: stalePending, error: stalePendingError } = await supabase
-      .from("extracted_rental_info")
-      .select("id, user_id, document_storage_path")
-      .in("user_id", userIds)
-      .eq("extraction_status", "pending")
-      .not("document_storage_path", "is", null) // file was uploaded
-      .lt("updated_at", pendingCutoff);
 
-    const pendingToReprocess: string[] = [];
-    if (!stalePendingError && stalePending && stalePending.length > 0) {
-      for (const stale of stalePending) {
-        const { error: markError } = await supabase
+    // Accumulate pending extractions to reprocess across all chunks
+    const allPendingToReprocess: string[] = [];
+
+    for (let chunkIdx = 0; chunkIdx < userChunks.length; chunkIdx++) {
+      const chunk = userChunks[chunkIdx];
+      const chunkUserIds = chunk.map((u: Row) => u.id);
+      console.log(`[extraction-recovery] Chunk ${chunkIdx + 1}/${userChunks.length}: ${chunkUserIds.length} users`);
+
+      // Batch fetch extractions, tenancies, waitlist entries for this chunk
+      const [extractionsRes, tenanciesRes, waitlistRes] = await Promise.all([
+        supabase
           .from("extracted_rental_info")
-          .update({
-            extraction_status: "failed",
-            extraction_error: "Processing never triggered — auto-recovery will reprocess",
-          })
-          .eq("id", stale.id)
-          .eq("extraction_status", "pending"); // optimistic lock
+          .select("id, user_id, extraction_status, user_verified, needs_manual_review, contract_status, is_city_supported, tenant_name, tenant_names, landlord_name, landlord_names, property_address, property_city, property_state, property_pincode, monthly_rent_paise, maintenance_paise, lease_start_date, lease_end_date, rent_due_day, landlord_phone, landlord_email, tenancy_id, created_at")
+          .in("user_id", chunkUserIds)
+          .eq("extraction_status", "completed")
+          .order("created_at", { ascending: false }),
+        supabase
+          .from("tenancies")
+          .select("id, user_id, extracted_rental_info_id")
+          .in("user_id", chunkUserIds),
+        supabase
+          .from("waitlist_entries")
+          .select("user_id, admin_review")
+          .in("user_id", chunkUserIds),
+      ]);
 
-        if (!markError) {
-          pendingToReprocess.push(stale.id);
-          console.warn(`[extraction-recovery] Marked pending extraction ${stale.id} (user ${stale.user_id}) as failed — document uploaded but processing never started`);
-        } else {
-          console.error(`[extraction-recovery] Failed to mark pending extraction ${stale.id}:`, markError.message);
+      // Index: latest extraction per user
+      const extractionMap = new Map<string, Row>();
+      for (const row of extractionsRes.data ?? []) {
+        if (!extractionMap.has(row.user_id)) extractionMap.set(row.user_id, row);
+      }
+
+      const tenancyMap = new Map<string, Row>();
+      // Key by "user_id:extracted_rental_info_id" for idempotent lookup per extraction
+      const tenancyByExtractionMap = new Map<string, Row>();
+      for (const row of tenanciesRes.data ?? []) {
+        tenancyMap.set(row.user_id, row);
+        if (row.extracted_rental_info_id) {
+          tenancyByExtractionMap.set(`${row.user_id}:${row.extracted_rental_info_id}`, row);
         }
       }
 
-      // Auto-reprocess rescued extractions via process-document-fallback (API key endpoint).
-      // Uses the fallback function instead of reprocess-extractions because:
-      // 1. Separate container = different network route (avoids Vertex AI connectivity issues)
-      // 2. Uses generativelanguage.googleapis.com, not aiplatform.googleapis.com
-      if (pendingToReprocess.length > 0) {
-        const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-        const serviceKey = (Deno.env.get("SB_SECRET_KEY") || Deno.env.get("SUPABASE_SERVICE_ROLE_KEY"))!;
-        console.log(`[extraction-recovery] Triggering fallback for ${pendingToReprocess.length} rescued pending extractions...`);
-        for (const eid of pendingToReprocess) {
-          try {
-            const resp = await fetch(`${supabaseUrl}/functions/v1/process-document-fallback`, {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                "Authorization": `Bearer ${serviceKey}`,
-              },
-              body: JSON.stringify({ extraction_id: eid }),
-            });
-            const result = await resp.json();
-            console.log(`[extraction-recovery] Fallback result for ${eid}:`, JSON.stringify(result).substring(0, 300));
-          } catch (err) {
-            console.error(`[extraction-recovery] Fallback failed for ${eid}:`, err);
+      const waitlistSet = new Set<string>();
+      for (const row of waitlistRes.data ?? []) {
+        waitlistSet.add(row.user_id);
+      }
+
+      // ============================================================
+      // STEP 1.5: Mark stale "processing" extractions as failed
+      // ============================================================
+      const { data: staleExtractions, error: staleError } = await supabase
+        .from("extracted_rental_info")
+        .select("id, user_id, created_at, updated_at, gemini_raw_response")
+        .in("user_id", chunkUserIds)
+        .eq("extraction_status", "processing")
+        .lt("updated_at", processingCutoff);
+
+      if (!staleError && staleExtractions && staleExtractions.length > 0) {
+        for (const stale of staleExtractions) {
+          // Include the last processing checkpoint (if any) in the error message
+          const checkpoint = stale.gemini_raw_response?.step ?? "unknown";
+          const { error: markError } = await supabase
+            .from("extracted_rental_info")
+            .update({
+              extraction_status: "failed",
+              extraction_error: `Processing timed out — extraction hung at step: ${checkpoint}`,
+            })
+            .eq("id", stale.id)
+            .eq("extraction_status", "processing"); // optimistic lock: only update if still processing
+
+          if (markError) {
+            console.error(`[extraction-recovery] Failed to mark stale extraction ${stale.id} as failed:`, markError.message);
+          } else {
+            console.warn(`[extraction-recovery] Marked extraction ${stale.id} (user ${stale.user_id}) as failed — stuck at step '${checkpoint}' since ${stale.updated_at}`);
           }
         }
+      } else if (staleError) {
+        console.error("[extraction-recovery] Failed to query stale processing extractions:", staleError.message);
       }
-    } else if (stalePendingError) {
-      console.error("[extraction-recovery] Failed to query stale pending extractions:", stalePendingError.message);
-    }
 
-    // ============================================================
-    // STEP 2: Process each user
-    // ============================================================
+      // ============================================================
+      // STEP 1.6: Mark stale "pending" extractions as failed
+      // Catches the case where upload-document succeeded (file in storage)
+      // but process-document was never called (app backgrounded, auth died,
+      // network dropped between upload and process trigger).
+      // ============================================================
+      const { data: stalePending, error: stalePendingError } = await supabase
+        .from("extracted_rental_info")
+        .select("id, user_id, document_storage_path")
+        .in("user_id", chunkUserIds)
+        .eq("extraction_status", "pending")
+        .not("document_storage_path", "is", null) // file was uploaded
+        .lt("updated_at", pendingCutoff);
 
-    for (const user of stuckUsers) {
-      const userId = user.id;
-      const extraction = extractionMap.get(userId);
-      // Check for tenancy matching THIS extraction (idempotency), falling back to any user tenancy
-      const existingTenancyForExtraction = extraction
-        ? tenancyByExtractionMap.get(`${userId}:${extraction.id}`)
-        : undefined;
-      const existingTenancy = existingTenancyForExtraction ?? tenancyMap.get(userId);
-      const hasWaitlist = waitlistSet.has(userId);
-      const actions: string[] = [];
+      if (!stalePendingError && stalePending && stalePending.length > 0) {
+        for (const stale of stalePending) {
+          const { error: markError } = await supabase
+            .from("extracted_rental_info")
+            .update({
+              extraction_status: "failed",
+              extraction_error: "Processing never triggered — auto-recovery will reprocess",
+            })
+            .eq("id", stale.id)
+            .eq("extraction_status", "pending"); // optimistic lock
 
-      try {
-        // Skip: no completed extraction
-        if (!extraction) {
-          results.skipped.push({ user_id: userId, reason: "No completed extraction" });
-          continue;
+          if (!markError) {
+            allPendingToReprocess.push(stale.id);
+            console.warn(`[extraction-recovery] Marked pending extraction ${stale.id} (user ${stale.user_id}) as failed — document uploaded but processing never started`);
+          } else {
+            console.error(`[extraction-recovery] Failed to mark pending extraction ${stale.id}:`, markError.message);
+          }
         }
+      } else if (stalePendingError) {
+        console.error("[extraction-recovery] Failed to query stale pending extractions:", stalePendingError.message);
+      }
 
-        // Skip: extraction too recent (let normal flow handle it)
-        if (extraction.created_at > cutoff) {
-          results.skipped.push({ user_id: userId, reason: `Extraction too recent (< ${MIN_AGE_MINUTES}min)` });
-          continue;
-        }
+      // ============================================================
+      // STEP 2: Process each user in this chunk
+      // ============================================================
 
-        // Skip: already fully set up (waitlisted + has tenancy + has waitlist entry)
-        if (user.user_status === "waitlisted" && existingTenancy && hasWaitlist) {
-          results.skipped.push({ user_id: userId, reason: "Already fully set up" });
-          continue;
-        }
+      for (const user of chunk) {
+        const userId = user.id;
+        const extraction = extractionMap.get(userId);
+        // Check for tenancy matching THIS extraction (idempotency), falling back to any user tenancy
+        const existingTenancyForExtraction = extraction
+          ? tenancyByExtractionMap.get(`${userId}:${extraction.id}`)
+          : undefined;
+        const existingTenancy = existingTenancyForExtraction ?? tenancyMap.get(userId);
+        const hasWaitlist = waitlistSet.has(userId);
+        const actions: string[] = [];
 
-        // Skip: contract flagged by process-document (needs admin intervention)
-        // NOTE: "expired" removed — expired agreements proceed, risk engine flags them
-        if (["manual_review", "invalid_document"].includes(extraction.contract_status)) {
-          results.skipped.push({ user_id: userId, reason: `contract_status: ${extraction.contract_status}` });
-          continue;
-        }
+        try {
+          // Skip: no completed extraction
+          if (!extraction) {
+            results.skipped.push({ user_id: userId, reason: "No completed extraction" });
+            continue;
+          }
 
-        // Skip: needs manual review (and not overridden to confirmed)
-        if (extraction.needs_manual_review && extraction.contract_status !== "confirmed") {
-          results.skipped.push({ user_id: userId, reason: "needs_manual_review=true" });
-          continue;
-        }
+          // Skip: extraction too recent (let normal flow handle it)
+          if (extraction.created_at > cutoff) {
+            results.skipped.push({ user_id: userId, reason: `Extraction too recent (< ${MIN_AGE_MINUTES}min)` });
+            continue;
+          }
 
-        // Skip: unsupported city
-        if (extraction.is_city_supported === false) {
-          results.skipped.push({ user_id: userId, reason: "Unsupported city" });
-          continue;
-        }
+          // Skip: already fully set up (waitlisted + has tenancy + has waitlist entry)
+          if (user.user_status === "waitlisted" && existingTenancy && hasWaitlist) {
+            results.skipped.push({ user_id: userId, reason: "Already fully set up" });
+            continue;
+          }
 
-        if (dryRun) {
-          const wouldDo: string[] = [];
-          if (!extraction.user_verified) wouldDo.push("auto-confirm extraction");
-          if (!existingTenancy) wouldDo.push("create tenancy");
-          if (!hasWaitlist) wouldDo.push("create waitlist entry + compute risk");
-          if (user.user_status === "signed_up" || user.user_status === "agreement_confirmed") wouldDo.push(`advance from ${user.user_status} to waitlisted`);
+          // Skip: contract flagged by process-document (needs admin intervention)
+          // NOTE: "expired" removed — expired agreements proceed, risk engine flags them
+          if (["manual_review", "invalid_document"].includes(extraction.contract_status)) {
+            results.skipped.push({ user_id: userId, reason: `contract_status: ${extraction.contract_status}` });
+            continue;
+          }
+
+          // Skip: needs manual review (and not overridden to confirmed)
+          if (extraction.needs_manual_review && extraction.contract_status !== "confirmed") {
+            results.skipped.push({ user_id: userId, reason: "needs_manual_review=true" });
+            continue;
+          }
+
+          // Skip: unsupported city
+          if (extraction.is_city_supported === false) {
+            results.skipped.push({ user_id: userId, reason: "Unsupported city" });
+            continue;
+          }
+
+          if (dryRun) {
+            const wouldDo: string[] = [];
+            if (!extraction.user_verified) wouldDo.push("auto-confirm extraction");
+            if (!existingTenancy) wouldDo.push("create tenancy");
+            if (!hasWaitlist) wouldDo.push("create waitlist entry + compute risk");
+            if (user.user_status === "signed_up" || user.user_status === "agreement_confirmed") wouldDo.push(`advance from ${user.user_status} to waitlisted`);
+            results.recovered.push({
+              user_id: userId,
+              phone: user.phone,
+              name: user.full_name ?? ([user.first_name, user.last_name].filter(Boolean).join(" ") || null),
+              actions: wouldDo.map(a => "[DRY RUN] " + a),
+            });
+            continue;
+          }
+
+          // Validate minimum fields BEFORE auto-confirming extraction
+          // (prevents confirming garbage data that can't become a tenancy)
+          const fieldCheck = hasMinimumFields(extraction);
+          if (!fieldCheck.valid && !existingTenancy && !extraction.tenancy_id) {
+            const reason = `Missing critical fields: ${fieldCheck.missing.join(", ")}`;
+            console.warn(`[extraction-recovery] Skipping user ${userId} (phone: ${user.phone}): ${reason} [extraction_id=${extraction.id}]`);
+            results.skipped.push({ user_id: userId, reason });
+            continue;
+          }
+
+          // --- Action 1: Auto-confirm extraction if not verified ---
+          if (!extraction.user_verified) {
+            await supabase
+              .from("extracted_rental_info")
+              .update({
+                user_verified: true,
+                verified_at: new Date().toISOString(),
+                needs_manual_review: false,
+                contract_status: "confirmed",
+              })
+              .eq("id", extraction.id);
+            actions.push("auto-confirmed extraction");
+          }
+
+          // --- Action 2: Create tenancy if missing ---
+          let tenancyId = existingTenancy?.id ?? extraction.tenancy_id;
+
+          if (!existingTenancy && !extraction.tenancy_id) {
+            const landlordName = extraction.landlord_name
+              ?? (extraction.landlord_names?.length ? extraction.landlord_names.join(" & ") : null);
+
+            const { data: newTenancy, error: tenancyError } = await supabase
+              .from("tenancies")
+              .insert({
+                user_id: userId,
+                extracted_rental_info_id: extraction.id,
+                status: "pending_verification",
+                property_address: extraction.property_address,
+                property_city: extraction.property_city,
+                property_state: extraction.property_state,
+                property_pincode: extraction.property_pincode,
+                monthly_rent_paise: extraction.monthly_rent_paise,
+                maintenance_paise: extraction.maintenance_paise ?? 0,
+                rent_due_day: extraction.rent_due_day || 1,
+                cashback_cutoff_day: extraction.rent_due_day
+                  ? Math.min(extraction.rent_due_day + (extraction.rent_grace_period_days ?? 0), 28)
+                  : null,
+                lease_start_date: extraction.lease_start_date,
+                lease_end_date: extraction.lease_end_date,
+                landlord_name: landlordName,
+                landlord_names: extraction.landlord_names ?? (landlordName ? [landlordName] : null),
+                // landlord_phone/email omitted — tenant provides via invite-landlord flow
+              })
+              .select("id")
+              .single();
+
+            if (tenancyError?.code === "23505") {
+              // Tenancy already exists (confirm-extraction beat us) — fetch existing
+              const { data: existing } = await supabase
+                .from("tenancies").select("id")
+                .eq("user_id", userId).eq("extracted_rental_info_id", extraction.id).single();
+              tenancyId = existing?.id;
+              actions.push("tenancy already exists (race)");
+            } else if (tenancyError) {
+              results.errors.push({ user_id: userId, error: "Tenancy creation failed: " + tenancyError.message });
+              continue;
+            } else {
+              tenancyId = newTenancy.id;
+
+              // Link extraction to tenancy
+              await supabase
+                .from("extracted_rental_info")
+                .update({ tenancy_id: tenancyId })
+                .eq("id", extraction.id);
+
+              actions.push("created tenancy " + tenancyId);
+            }
+          } else if (existingTenancy) {
+            actions.push("tenancy already exists");
+          }
+
+          // --- Action 3: Create waitlist entry if missing ---
+          if (!hasWaitlist) {
+            const { error: waitlistError } = await supabase
+              .from("waitlist_entries")
+              .insert({
+                user_id: userId,
+                extraction_id: extraction.id,
+                admin_review: "due",
+                risk_level: "PENDING",
+              });
+
+            if (waitlistError) {
+              // Unique constraint = already exists, not an error
+              if (waitlistError.code === "23505") {
+                actions.push("waitlist entry already exists (race)");
+              } else {
+                results.errors.push({ user_id: userId, error: "Waitlist insert failed: " + waitlistError.message });
+                continue;
+              }
+            } else {
+              actions.push("created waitlist entry (admin_review: due)");
+              // Compute risk for the new waitlist entry
+              try {
+                await recomputeAndStoreRisk(userId, supabase);
+                actions.push("risk: recomputed");
+              } catch {
+                actions.push("risk computation failed (stays PENDING)");
+              }
+            }
+          } else {
+            actions.push("waitlist entry already exists");
+          }
+
+          // --- Action 4: Advance user_status to waitlisted ---
+          if (user.user_status === "signed_up" || user.user_status === "agreement_confirmed") {
+            // Set name from extraction if user has no name
+            const updatePayload: Row = {
+              user_status: "waitlisted",
+              status_updated_at: new Date().toISOString(),
+            };
+
+            if (!user.full_name && extraction.tenant_name) {
+              updatePayload.full_name = extraction.tenant_name;
+              const parts = extraction.tenant_name.split(" ");
+              updatePayload.first_name = parts[0] || null;
+              updatePayload.last_name = parts.slice(1).join(" ") || null;
+            }
+
+            // Optimistic lock: only advance signed_up or agreement_confirmed
+            const { data: updatedRows } = await supabase
+              .from("users")
+              .update(updatePayload)
+              .eq("id", userId)
+              .in("user_status", ["signed_up", "agreement_confirmed"])
+              .select("id");
+
+            if (!updatedRows?.length) {
+              actions.push("user_status already advanced (skipped)");
+            } else {
+              actions.push(`advanced from ${user.user_status} to waitlisted`);
+            }
+          }
+
           results.recovered.push({
             user_id: userId,
             phone: user.phone,
-            name: user.full_name ?? ([user.first_name, user.last_name].filter(Boolean).join(" ") || null),
-            actions: wouldDo.map(a => "[DRY RUN] " + a),
+            name: user.full_name ?? extraction.tenant_name ?? null,
+            actions,
           });
-          continue;
+        } catch (err) {
+          results.errors.push({
+            user_id: userId,
+            error: err instanceof Error ? err.message : String(err),
+          });
         }
+      }
+    } // end chunk loop
 
-        // Validate minimum fields BEFORE auto-confirming extraction
-        // (prevents confirming garbage data that can't become a tenancy)
-        const fieldCheck = hasMinimumFields(extraction);
-        if (!fieldCheck.valid && !existingTenancy && !extraction.tenancy_id) {
-          const reason = `Missing critical fields: ${fieldCheck.missing.join(", ")}`;
-          console.warn(`[extraction-recovery] Skipping user ${userId} (phone: ${user.phone}): ${reason} [extraction_id=${extraction.id}]`);
-          results.skipped.push({ user_id: userId, reason });
-          continue;
+    // ============================================================
+    // Auto-reprocess rescued pending extractions (accumulated across all chunks)
+    // ============================================================
+    // Uses process-document-fallback (API key endpoint) instead of reprocess-extractions because:
+    // 1. Separate container = different network route (avoids Vertex AI connectivity issues)
+    // 2. Uses generativelanguage.googleapis.com, not aiplatform.googleapis.com
+    if (allPendingToReprocess.length > 0) {
+      const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+      const serviceKey = (Deno.env.get("SB_SECRET_KEY") || Deno.env.get("SUPABASE_SERVICE_ROLE_KEY"))!;
+      console.log(`[extraction-recovery] Triggering fallback for ${allPendingToReprocess.length} rescued pending extractions...`);
+      for (const eid of allPendingToReprocess) {
+        try {
+          const resp = await fetch(`${supabaseUrl}/functions/v1/process-document-fallback`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${serviceKey}`,
+            },
+            body: JSON.stringify({ extraction_id: eid }),
+          });
+          const result = await resp.json();
+          console.log(`[extraction-recovery] Fallback result for ${eid}:`, JSON.stringify(result).substring(0, 300));
+        } catch (err) {
+          console.error(`[extraction-recovery] Fallback failed for ${eid}:`, err);
         }
-
-        // --- Action 1: Auto-confirm extraction if not verified ---
-        if (!extraction.user_verified) {
-          await supabase
-            .from("extracted_rental_info")
-            .update({
-              user_verified: true,
-              verified_at: new Date().toISOString(),
-              needs_manual_review: false,
-              contract_status: "confirmed",
-            })
-            .eq("id", extraction.id);
-          actions.push("auto-confirmed extraction");
-        }
-
-        // --- Action 2: Create tenancy if missing ---
-        let tenancyId = existingTenancy?.id ?? extraction.tenancy_id;
-
-        if (!existingTenancy && !extraction.tenancy_id) {
-          const landlordName = extraction.landlord_name
-            ?? (extraction.landlord_names?.length ? extraction.landlord_names.join(" & ") : null);
-
-          const { data: newTenancy, error: tenancyError } = await supabase
-            .from("tenancies")
-            .insert({
-              user_id: userId,
-              extracted_rental_info_id: extraction.id,
-              status: "pending_verification",
-              property_address: extraction.property_address,
-              property_city: extraction.property_city,
-              property_state: extraction.property_state,
-              property_pincode: extraction.property_pincode,
-              monthly_rent_paise: extraction.monthly_rent_paise,
-              maintenance_paise: extraction.maintenance_paise ?? 0,
-              rent_due_day: extraction.rent_due_day || 1,
-              cashback_cutoff_day: extraction.rent_due_day || null,
-              lease_start_date: extraction.lease_start_date,
-              lease_end_date: extraction.lease_end_date,
-              landlord_name: landlordName,
-              landlord_names: extraction.landlord_names ?? (landlordName ? [landlordName] : null),
-              // landlord_phone/email omitted — tenant provides via invite-landlord flow
-            })
-            .select("id")
-            .single();
-
-          if (tenancyError?.code === "23505") {
-            // Tenancy already exists (confirm-extraction beat us) — fetch existing
-            const { data: existing } = await supabase
-              .from("tenancies").select("id")
-              .eq("user_id", userId).eq("extracted_rental_info_id", extraction.id).single();
-            tenancyId = existing?.id;
-            actions.push("tenancy already exists (race)");
-          } else if (tenancyError) {
-            results.errors.push({ user_id: userId, error: "Tenancy creation failed: " + tenancyError.message });
-            continue;
-          } else {
-            tenancyId = newTenancy.id;
-
-            // Link extraction to tenancy
-            await supabase
-              .from("extracted_rental_info")
-              .update({ tenancy_id: tenancyId })
-              .eq("id", extraction.id);
-
-            actions.push("created tenancy " + tenancyId);
-          }
-        } else if (existingTenancy) {
-          actions.push("tenancy already exists");
-        }
-
-        // --- Action 3: Create waitlist entry if missing ---
-        if (!hasWaitlist) {
-          const { error: waitlistError } = await supabase
-            .from("waitlist_entries")
-            .insert({
-              user_id: userId,
-              extraction_id: extraction.id,
-              admin_review: "due",
-              risk_level: "PENDING",
-            });
-
-          if (waitlistError) {
-            // Unique constraint = already exists, not an error
-            if (waitlistError.code === "23505") {
-              actions.push("waitlist entry already exists (race)");
-            } else {
-              results.errors.push({ user_id: userId, error: "Waitlist insert failed: " + waitlistError.message });
-              continue;
-            }
-          } else {
-            actions.push("created waitlist entry (admin_review: due)");
-            // Compute risk for the new waitlist entry
-            try {
-              await recomputeAndStoreRisk(userId, supabase);
-              actions.push("risk: recomputed");
-            } catch {
-              actions.push("risk computation failed (stays PENDING)");
-            }
-          }
-        } else {
-          actions.push("waitlist entry already exists");
-        }
-
-        // --- Action 4: Advance user_status to waitlisted ---
-        if (user.user_status === "signed_up" || user.user_status === "agreement_confirmed") {
-          // Set name from extraction if user has no name
-          const updatePayload: Row = {
-            user_status: "waitlisted",
-            status_updated_at: new Date().toISOString(),
-          };
-
-          if (!user.full_name && extraction.tenant_name) {
-            updatePayload.full_name = extraction.tenant_name;
-            const parts = extraction.tenant_name.split(" ");
-            updatePayload.first_name = parts[0] || null;
-            updatePayload.last_name = parts.slice(1).join(" ") || null;
-          }
-
-          // Optimistic lock: only advance signed_up or agreement_confirmed
-          const { data: updatedRows } = await supabase
-            .from("users")
-            .update(updatePayload)
-            .eq("id", userId)
-            .in("user_status", ["signed_up", "agreement_confirmed"])
-            .select("id");
-
-          if (!updatedRows?.length) {
-            actions.push("user_status already advanced (skipped)");
-          } else {
-            actions.push(`advanced from ${user.user_status} to waitlisted`);
-          }
-        }
-
-        results.recovered.push({
-          user_id: userId,
-          phone: user.phone,
-          name: user.full_name ?? extraction.tenant_name ?? null,
-          actions,
-        });
-      } catch (err) {
-        results.errors.push({
-          user_id: userId,
-          error: err instanceof Error ? err.message : String(err),
-        });
       }
     }
 
