@@ -34,11 +34,12 @@ serve(async (req: Request) => {
 
   const supabase = createServiceClient();
 
-  const [userFunnel, m360, verifications, riskDetail] = await Promise.all([
+  const [userFunnel, m360, verifications, riskDetail, payments] = await Promise.all([
     supabase.from("v_user_funnel").select("*"),
     supabase.from("v_m360_detail").select("*"),
     supabase.from("v_verification_analysis").select("*"),
     supabase.from("v_risk_detail").select("*"),
+    supabase.from("v_payment_detail").select("*"),
   ]);
 
   if (userFunnel.error) {
@@ -53,6 +54,9 @@ serve(async (req: Request) => {
   if (riskDetail.error) {
     return errorResponse("v_risk_detail: " + riskDetail.error.message, 500);
   }
+  if (payments.error) {
+    return errorResponse("v_payment_detail: " + payments.error.message, 500);
+  }
 
   return new Response(
     JSON.stringify({
@@ -60,6 +64,7 @@ serve(async (req: Request) => {
       m360: m360.data,
       verifications: verifications.data,
       risk_detail: riskDetail.data,
+      payments: payments.data,
     }),
     {
       status: 200,
