@@ -80,7 +80,7 @@ export async function runExtractionPipeline(
 
     const { data: extraction, error: fetchError } = await supabase
       .from('extracted_rental_info')
-      .select('id, user_id, document_storage_path, extraction_status, extraction_method, contract_status, fields_extracted')
+      .select('id, user_id, document_storage_path, extraction_status, extraction_method, contract_status, fields_extracted, latitude, longitude, property_name, property_address, property_city, property_state, property_pincode')
       .eq('id', extractionId)
       .single();
 
@@ -96,6 +96,23 @@ export async function runExtractionPipeline(
     if (extraction.extraction_status === 'completed') {
       console.log(`[pipeline] Extraction ${extractionId} already completed — running finalization only`);
       await heartbeat.updateStep('finalizing_only');
+
+      // Backfill geocoding for extractions that completed before geocoding
+      // was configured (GOOGLE_MAPS_API_KEY was not set on earlier Cloud Run
+      // revisions, so these records have null lat/lng).
+      if (!extraction.latitude && extraction.property_address) {
+        try {
+          await geocodePropertyAddress(supabase, extractionId, {
+            property_name: extraction.property_name,
+            property_address: extraction.property_address,
+            property_city: extraction.property_city,
+            property_state: extraction.property_state,
+            property_pincode: extraction.property_pincode,
+          });
+        } catch (geocodeError) {
+          console.error('[pipeline] Fast-path geocoding failed (non-fatal):', geocodeError);
+        }
+      }
 
       try {
         const { finalizeExtractionForOnboarding } = await import('../onboarding/finalize.js');
