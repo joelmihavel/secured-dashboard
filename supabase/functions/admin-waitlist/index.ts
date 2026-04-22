@@ -332,7 +332,8 @@ serve(async (req: Request) => {
       }
 
     } else if (body.action === "reject") {
-      const cooldownHours = body.next_application_hours ?? 24;
+      // Default cooldown: 30 days. Admin can override via next_application_hours.
+      const cooldownHours = body.next_application_hours ?? 24 * 30;
       const nextApplicationAt = new Date(Date.now() + cooldownHours * 60 * 60 * 1000).toISOString();
 
       const { data, error } = await supabase
