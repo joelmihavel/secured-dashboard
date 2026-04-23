@@ -123,7 +123,7 @@ serve(async (req: Request) => {
     const pendingCutoff = new Date(Date.now() - PENDING_TIMEOUT_MINUTES * 60 * 1000).toISOString();
 
     // Accumulate pending extractions to reprocess across all chunks
-    const allPendingToReprocess: string[] = [];
+    const allPendingToReprocess: Array<{ id: string; user_id: string }> = [];
 
     for (let chunkIdx = 0; chunkIdx < userChunks.length; chunkIdx++) {
       const chunk = userChunks[chunkIdx];
@@ -228,7 +228,7 @@ serve(async (req: Request) => {
             .eq("extraction_status", "pending"); // optimistic lock
 
           if (!markError) {
-            allPendingToReprocess.push(stale.id);
+            allPendingToReprocess.push({ id: stale.id, user_id: stale.user_id });
             console.warn(`[extraction-recovery] Marked pending extraction ${stale.id} (user ${stale.user_id}) as failed — document uploaded but processing never started`);
           } else {
             console.error(`[extraction-recovery] Failed to mark pending extraction ${stale.id}:`, markError.message);
@@ -466,29 +466,53 @@ serve(async (req: Request) => {
     } // end chunk loop
 
     // ============================================================
-    // Auto-reprocess rescued pending extractions (accumulated across all chunks)
+    // Auto-reprocess rescued pending extractions via Cloud Run
     // ============================================================
-    // Uses process-document-fallback (API key endpoint) instead of reprocess-extractions because:
-    // 1. Separate container = different network route (avoids Vertex AI connectivity issues)
-    // 2. Uses generativelanguage.googleapis.com, not aiplatform.googleapis.com
+    // Cloud Run extraction-service has:
+    // - 15-min timeout (vs edge function's 150s wall clock)
+    // - Heartbeat mechanism so extractions don't falsely look stuck
+    // - Fast path for already-completed extractions (finalization only)
+    // - Independent network route (different from Supabase edge function pool)
     if (allPendingToReprocess.length > 0) {
-      const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-      const serviceKey = (Deno.env.get("SB_SECRET_KEY") || Deno.env.get("SUPABASE_SERVICE_ROLE_KEY"))!;
-      console.log(`[extraction-recovery] Triggering fallback for ${allPendingToReprocess.length} rescued pending extractions...`);
-      for (const eid of allPendingToReprocess) {
-        try {
-          const resp = await fetch(`${supabaseUrl}/functions/v1/process-document-fallback`, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "Authorization": `Bearer ${serviceKey}`,
-            },
-            body: JSON.stringify({ extraction_id: eid }),
-          });
-          const result = await resp.json();
-          console.log(`[extraction-recovery] Fallback result for ${eid}:`, JSON.stringify(result).substring(0, 300));
-        } catch (err) {
-          console.error(`[extraction-recovery] Fallback failed for ${eid}:`, err);
+      const cloudRunUrl = Deno.env.get("EXTRACTION_SERVICE_URL");
+      const extractionSecret = Deno.env.get("EXTRACTION_SECRET");
+
+      if (!cloudRunUrl || !extractionSecret) {
+        console.error("[extraction-recovery] Cloud Run not configured — cannot reprocess", {
+          hasUrl: !!cloudRunUrl,
+          hasSecret: !!extractionSecret,
+        });
+      } else {
+        console.log(`[extraction-recovery] Triggering Cloud Run for ${allPendingToReprocess.length} rescued pending extractions...`);
+        for (const entry of allPendingToReprocess) {
+          try {
+            // Fire-and-forget; Cloud Run processes in background with heartbeat.
+            // Short timeout here just ensures the POST lands; Cloud Run keeps
+            // running even if this response times out.
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 10_000);
+            try {
+              await fetch(`${cloudRunUrl}/extract`, {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  "X-Extraction-Secret": extractionSecret,
+                },
+                body: JSON.stringify({ extraction_id: entry.id, user_id: entry.user_id }),
+                signal: controller.signal,
+              });
+              console.log(`[extraction-recovery] Cloud Run triggered for ${entry.id}`);
+            } finally {
+              clearTimeout(timeoutId);
+            }
+          } catch (err) {
+            // AbortError on the 10s guard is expected and fine — Cloud Run
+            // keeps processing. Only log unexpected errors.
+            const msg = err instanceof Error ? err.message : String(err);
+            if (!msg.includes("aborted")) {
+              console.error(`[extraction-recovery] Cloud Run invocation failed for ${entry.id}:`, msg);
+            }
+          }
         }
       }
     }
