@@ -65,6 +65,11 @@ export async function callDocumentAI(
             content: base64Content,
             mimeType: 'application/pdf',
           },
+          // Imageless mode: skip image-byte generation in the response so
+          // DocAI accepts up to 30 pages per request instead of the default
+          // 15 page limit. We only use the OCR text, not page images, so
+          // this is safe and strictly better for long agreements.
+          imagelessMode: true,
           // Cap at first 30 pages to avoid timeout on very large docs
           processOptions: {
             ocrConfig: {

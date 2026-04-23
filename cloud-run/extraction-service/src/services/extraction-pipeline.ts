@@ -210,13 +210,29 @@ export async function runExtractionPipeline(
     // ================================================================
     await heartbeat.updateStep('doc_ai');
 
-    const docAIResult = await callDocumentAI(
-      base64Content,
-      gcpCredentials,
-      gcpProjectId,
-      gcpProcessorId,
-      gcpLocation
-    );
+    let docAIResult: Awaited<ReturnType<typeof callDocumentAI>>;
+    let docAIFailureMessage: string | null = null;
+    try {
+      docAIResult = await callDocumentAI(
+        base64Content,
+        gcpCredentials,
+        gcpProjectId,
+        gcpProcessorId,
+        gcpLocation
+      );
+    } catch (docAiErr: any) {
+      // DocAI may reject large PDFs (>15 pages) with the OCR processor's
+      // sync API page limit, or fail for other reasons. Don't abort the
+      // whole pipeline -- fall through to the Gemini multimodal PDF path,
+      // which handles up to hundreds of pages natively.
+      docAIFailureMessage = docAiErr?.message ?? String(docAiErr);
+      console.warn(`[pipeline] Document AI failed, falling back to Gemini multimodal PDF: ${docAIFailureMessage}`);
+      docAIResult = {
+        documentText: '',
+        extractedData: { fields_extracted: 0 } as any,
+        rawResponse: { doc_ai_error: docAIFailureMessage } as any,
+      };
+    }
 
     let extractedData = docAIResult.extractedData;
     const documentText = docAIResult.documentText;
