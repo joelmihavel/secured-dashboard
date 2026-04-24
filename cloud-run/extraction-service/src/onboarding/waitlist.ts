@@ -106,8 +106,30 @@ export async function ensureWaitlistState(
     }
   }
 
-  // 4. Compute risk for new waitlist entries
-  if (result.is_new) {
+  // 4. Compute risk for new waitlist entries, OR retry if risk was never
+  // successfully computed (PENDING / NULL). Without this retry, a transient
+  // failure during the first onboarding run leaves the user stuck on
+  // "Risk Score" missing forever.
+  let shouldComputeRisk = result.is_new;
+  if (!shouldComputeRisk) {
+    const { data: existingEntry } = await supabase
+      .from("waitlist_entries")
+      .select("risk_level, risk_computed_at")
+      .eq("id", result.entry_id)
+      .maybeSingle();
+    const entry = existingEntry as
+      | { risk_level: string | null; risk_computed_at: string | null }
+      | null;
+    if (
+      entry &&
+      (entry.risk_computed_at == null ||
+        entry.risk_level == null ||
+        entry.risk_level === "PENDING")
+    ) {
+      shouldComputeRisk = true;
+    }
+  }
+  if (shouldComputeRisk) {
     try {
       await recomputeAndStoreRisk(userId, supabase);
     } catch (riskError) {

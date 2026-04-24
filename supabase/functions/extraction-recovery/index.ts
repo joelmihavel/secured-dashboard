@@ -88,6 +88,43 @@ serve(async (req: Request) => {
   } = { recovered: [], skipped: [], errors: [] };
 
   try {
+    // Precompute cutoffs once (shared across all steps)
+    const processingCutoffGlobal = new Date(Date.now() - PROCESSING_TIMEOUT_MINUTES * 60 * 1000).toISOString();
+
+    // ============================================================
+    // STEP 0: Global stale-processing cleanup (all user_statuses)
+    // Prevents "processing" extractions from lingering forever for
+    // users who are not_eligible / approved / etc. (STEP 1.5 below
+    // only runs against users in signed_up / waitlisted buckets, so
+    // stale rows for rejected users never got cleaned up.)
+    // This step ONLY marks status -> failed; it does NOT re-trigger
+    // Cloud Run. Non-signed_up users shouldn't be re-extracted.
+    // ============================================================
+    {
+      const { data: globalStale, error: globalStaleErr } = await supabase
+        .from("extracted_rental_info")
+        .select("id, user_id, updated_at, gemini_raw_response")
+        .eq("extraction_status", "processing")
+        .lt("updated_at", processingCutoffGlobal);
+
+      if (!globalStaleErr && globalStale && globalStale.length > 0) {
+        for (const row of globalStale) {
+          const checkpoint = row.gemini_raw_response?.step ?? "unknown";
+          await supabase
+            .from("extracted_rental_info")
+            .update({
+              extraction_status: "failed",
+              extraction_error: `Processing timed out — extraction hung at step: ${checkpoint}`,
+            })
+            .eq("id", row.id)
+            .eq("extraction_status", "processing");
+          console.warn(`[extraction-recovery][global] Marked extraction ${row.id} (user ${row.user_id}) failed — stuck at '${checkpoint}'`);
+        }
+      } else if (globalStaleErr) {
+        console.error("[extraction-recovery][global] Failed to query global stale:", globalStaleErr.message);
+      }
+    }
+
     // ============================================================
     // STEP 1: Find users with completed extractions stuck at signed_up/agreement_confirmed
     // ============================================================

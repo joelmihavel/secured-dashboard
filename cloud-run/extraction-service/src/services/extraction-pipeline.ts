@@ -620,9 +620,19 @@ export async function runExtractionPipeline(
     // ================================================================
     await heartbeat.updateStep('finalizing');
 
-    // Notify user if extraction failed
-    if (resolvedExtractionStatus === 'extraction_failed') {
-      scheduleNotification(userId, 'agreement_upload_failed').catch((e) =>
+    // Notify user if extraction failed OR completed with an invalid document.
+    // Both cases require the user to re-upload a different PDF, so the UX is
+    // the same. scheduleNotification dedups by (user_id, related_entity_id)
+    // within a 24h window, so triggering here for every pipeline run is
+    // safe -- extraction-recovery retries won't cause spam.
+    const shouldNotifyReupload =
+      resolvedExtractionStatus === 'extraction_failed'
+      || evaluationResult.contract_status === 'invalid_document';
+    if (shouldNotifyReupload) {
+      scheduleNotification(userId, 'agreement_upload_failed', undefined, {
+        relatedEntityType: 'extraction',
+        relatedEntityId: extractionId,
+      }).catch((e) =>
         console.warn('[pipeline] Failed to send agreement_upload_failed notification:', e)
       );
     }

@@ -48,6 +48,38 @@ export async function ensureTenancyForExtraction(
     return { tenancyId: extraction.tenancy_id as string };
   }
 
+  // First: supersede any prior pending_verification tenancies this user
+  // had that point to OTHER (older) extractions. A re-upload produces a
+  // new extraction + a new tenancy; the old one was never activated and
+  // never carried payments (payments only flow post-approval), so it's
+  // safe to remove. Tenancies with status other than pending_verification
+  // (active / superseded / etc.) are left untouched — they carry business
+  // state.
+  //
+  // Done BEFORE the existence check so that re-runs for an already-
+  // processed extraction also get the chance to clean up stale siblings.
+  // NOTE: we use `.or(...)` with an IS NULL clause because `.neq()` against
+  // NULL returns UNKNOWN in SQL and would NOT match orphaned rows whose
+  // extracted_rental_info_id became NULL via ON DELETE SET NULL cascade.
+  const { data: supersededRows, error: supersedeErr } = await supabase
+    .from("tenancies")
+    .delete()
+    .eq("user_id", userId)
+    .eq("status", "pending_verification")
+    .or(`extracted_rental_info_id.is.null,extracted_rental_info_id.neq.${extraction.id}`)
+    .select("id");
+
+  if (supersedeErr) {
+    console.warn(
+      "[tenancy] Failed to supersede prior pending_verification tenancies (non-fatal):",
+      supersedeErr.message
+    );
+  } else if (supersededRows && supersededRows.length > 0) {
+    console.log(
+      `[tenancy] Superseded ${supersededRows.length} prior pending_verification tenanc${supersededRows.length === 1 ? "y" : "ies"} for user ${userId} (re-upload with new extraction)`
+    );
+  }
+
   // Check if tenancy already exists for this extraction (idempotency)
   const { data: existingTenancy } = await supabase
     .from("tenancies")

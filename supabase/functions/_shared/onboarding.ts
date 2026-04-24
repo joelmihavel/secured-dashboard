@@ -103,7 +103,27 @@ export async function ensureWaitlistState(
     }
   }
 
-  if (result.is_new) {
+  // Compute risk if the entry is new, OR if risk has never been computed
+  // successfully (PENDING / NULL). This retries transient risk failures
+  // on subsequent onboarding runs instead of leaving users stuck on
+  // "Risk Score" missing data forever.
+  let shouldComputeRisk = result.is_new;
+  if (!shouldComputeRisk) {
+    const { data: existingEntry } = await supabase
+      .from("waitlist_entries")
+      .select("risk_level, risk_computed_at")
+      .eq("id", result.entry_id)
+      .maybeSingle();
+    if (
+      existingEntry &&
+      (existingEntry.risk_computed_at == null ||
+        existingEntry.risk_level == null ||
+        existingEntry.risk_level === "PENDING")
+    ) {
+      shouldComputeRisk = true;
+    }
+  }
+  if (shouldComputeRisk) {
     try {
       await recomputeAndStoreRisk(userId, supabase);
     } catch (riskError) {
@@ -130,6 +150,34 @@ export async function ensureTenancyForExtraction(
 
   if (extraction.tenancy_id) {
     return { tenancyId: extraction.tenancy_id as string };
+  }
+
+  // First: supersede any prior pending_verification tenancies this user
+  // had that point to OTHER (older) extractions. A re-upload produces a
+  // new extraction + a new tenancy; the old one was never activated and
+  // never carried payments, so it's safe to remove. Done BEFORE the
+  // existence check so re-runs also clean stale siblings. We deliberately
+  // do NOT touch tenancies with any status other than pending_verification.
+  // NOTE: use .or(...) with IS NULL because .neq() against NULL returns
+  // UNKNOWN in SQL and would NOT match orphaned rows whose
+  // extracted_rental_info_id became NULL via ON DELETE SET NULL cascade.
+  const { data: supersededRows, error: supersedeErr } = await supabase
+    .from("tenancies")
+    .delete()
+    .eq("user_id", userId)
+    .eq("status", "pending_verification")
+    .or(`extracted_rental_info_id.is.null,extracted_rental_info_id.neq.${extraction.id}`)
+    .select("id");
+
+  if (supersedeErr) {
+    console.warn(
+      "[onboarding] Failed to clean up prior pending_verification tenancies (non-fatal):",
+      supersedeErr.message,
+    );
+  } else if (supersededRows && supersededRows.length > 0) {
+    console.log(
+      `[onboarding] Superseded ${supersededRows.length} prior pending_verification tenanc${supersededRows.length === 1 ? "y" : "ies"} for user ${userId} (re-upload with new extraction)`,
+    );
   }
 
   const { data: existingTenancy } = await supabase
