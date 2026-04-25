@@ -1,9 +1,62 @@
 # Flent Secured v2 -- Edge Functions Reference
 
-> **Last updated:** 2026-03-08
+> **Last reviewed:** 2026-04-25 (header refresh + auth pattern table per Phase 7c)
 > **Runtime:** Deno (Supabase Edge Functions)
-> **Base URL:** `https://devapi.flent.in/functions/v1/` (via Cloudflare Worker proxy)
-> **Direct URL:** `https://zqlowjveyqiagnbmfwsb.supabase.co/functions/v1/`
+> **Total functions:** 88 (after Phase 6 archival removed payu-hash-test, payu-post-inspector, test-gemini-extraction, debug-payment, twilio-debug)
+> **Base URL (prod):** `https://api-secured.flent.in/functions/v1/` (custom domain — Cloudflare-fronted)
+> **Base URL (dev):** `https://zqlowjveyqiagnbmfwsb.supabase.co/functions/v1/`
+
+> **Note on staleness:** the per-function detail sections below predate the
+> Cashfree migration and the Cloud Run extraction split. The Authentication
+> Patterns section + summary tables were rewritten 2026-04-25 to reflect
+> current production state. The per-function detail tables in categories 1–13
+> are partially stale and tracked for rewrite under the cleanup plan's
+> Phase 4. Cross-reference current behavior against:
+> - `docs/backend/cashfree-integration.md` for payment-related fns
+> - `docs/backend/stamp-verification.md` for stamp-related fns
+> - `docs/backend/cron-jobs.md` for cron-triggered fns
+> - source code under `supabase/functions/` for definitive truth
+
+---
+
+## Authentication patterns
+
+All edge functions deploy with `--no-verify-jwt` (Supabase issues ES256
+tokens, but the gateway only verifies HS256). Auth is enforced **inside**
+each function via one of these patterns:
+
+| Pattern | Used by | Where to find |
+|---|---|---|
+| **`createAuthenticatedClient(authHeader)`** — decodes JWT, checks `revoked_tokens`, returns scoped client | Most user-facing functions (dashboard, payment, profile, etc.) | `supabase/functions/_shared/supabase.ts` |
+| **HMAC signature verification** — verifies `x-webhook-signature` against a per-source secret | `payment-webhook`, `cashfree-split-webhook`, `cashfree-vendor-webhook` | `supabase/functions/_shared/crypto.ts#hmacSha256Base64` + `timingSafeCompare` |
+| **Service role key (`Authorization: Bearer <sb_secret>`)** | Cron-triggered fns invoked via `invoke_edge_function()`, also Cloud Run → Supabase calls | `_shared/supabase.ts#createServiceRoleClient` |
+| **OTP-pre-auth** — phone-number-only validation, rate-limited | `auth-otp`, `landlord-auth-otp` | Function code; no shared helper |
+| **Admin key (`x-admin-key` header)** — gates admin-only operations | `admin-waitlist`, `admin-encrypt`, `admin-fetch-views`, `admin-payment-data`, `admin-fix-vendors` | Function-specific check against `ADMIN_API_KEY` env |
+| **Fixed test gating** — phone matches `+91999990\d{4}` AND `ALLOW_DEMO_AUTH=true` | `seed-test-data`, `dev-seed` | Function-specific regex |
+
+### Per-function auth gate
+
+| Function | Auth gate | verify_jwt | Notes |
+|---|---|---|---|
+| `auth-otp` | OTP-pre-auth (rate-limited phone validation) | false | Public entry point |
+| `landlord-auth-otp` | same as auth-otp | false | Landlord variant |
+| `payment-webhook` | HMAC | false | Cashfree PG webhook |
+| `cashfree-split-webhook` | HMAC | false | Easy Split settlement webhook (Phase 7e: separate secret) |
+| `cashfree-vendor-webhook` | HMAC | false | Vendor status webhook (Phase 7e: separate secret) |
+| `admin-*` | admin key + service role | false | All admin-only functions |
+| `seed-test-data`, `dev-seed` | test phone + ALLOW_DEMO_AUTH | false | Dev/QA only |
+| All other user-facing functions | createAuthenticatedClient | false | Default pattern |
+
+### Why `verify_jwt=false` is correct
+
+If we flipped to `verify_jwt=true`:
+- Supabase gateway checks for HS256 signature
+- Real user JWTs are ES256 → all reject at gateway → 401 to every authed request
+- Defeats the entire app
+
+The internal `createAuthenticatedClient` pattern is the actual auth boundary
+and works correctly. Don't flip `verify_jwt` without first migrating the
+gateway's signature scheme (out of our control — Supabase platform).
 
 ---
 

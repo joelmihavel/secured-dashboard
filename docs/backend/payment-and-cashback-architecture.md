@@ -1,7 +1,30 @@
 # Payment & Cashback Architecture
 
-> Deep technical documentation of Flent Secured's payment processing, fee calculation, cashback logic, and PayU gateway integration.
+> ⚠️ **Last verified: 2026-03-08 — predates the Cashfree migration that
+> shipped to production in March 2026.** The PayU-centric content below
+> is partially stale. This banner stays until the doc is rewritten in a
+> dedicated Phase 4 doc sprint.
 >
+> **For the current as-shipped Cashfree integration**, see:
+> - [docs/backend/cashfree-integration.md](./cashfree-integration.md) — payment flow, webhooks, env vars, sandbox vs prod
+> - [docs/backend/cron-jobs.md](./cron-jobs.md) — the 6 payment-related cron jobs and what they do
+> - [docs/backend/edge-functions.md](./edge-functions.md) — auth patterns + per-function reference
+>
+> **Current state at a glance:**
+> - **Primary gateway:** Cashfree Payments (UPI, cards, netbanking, Easy Split settlement to landlord)
+> - **Identity:** Cashfree Mobile 360 (PAN + credit score + mobile intelligence)
+> - **PayU:** legacy fallback being phased out per the cleanup plan's PayU workstream (3-6 month soak before removal)
+> - **Resolution:** `EXPO_PUBLIC_PAYMENT_GATEWAY` env var picks gateway at build time; defaults to `cashfree`
+> - **Fee config:** `fee_config` table; rates updated in migrations `20260228200000` and later
+> - **Cashback:** 1% on timely payments, computed at payment success, expires per `expire-cashback` cron
+>
+> The sections below describe the PayU-era architecture for historical
+> reference. Cashfree's flow is similar in shape (initiate → checkout
+> WebView → webhook → settle) but differs on:
+> - Gateway init (Cashfree SDK + Web Checkout vs PayU Core SDK)
+> - Settlement (Cashfree Easy Split direct-to-landlord vs PayU manual settlement)
+> - Webhook payload schema (different event types + signature scheme)
+
 > Last verified: 2026-03-08 from source code inspection.
 
 ---
