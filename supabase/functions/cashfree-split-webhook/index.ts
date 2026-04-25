@@ -15,7 +15,17 @@
  *
  * Endpoint: POST /functions/v1/cashfree-split-webhook
  * Auth: HMAC-SHA256 Base64 signature via x-webhook-signature header
- * Secret: CASHFREE_SPLIT_WEBHOOK_SECRET (set separately from PG secret)
+ * Secret: CASHFREE_SPLIT_WEBHOOK_SECRET (preferred) — must be set separately
+ *         from CASHFREE_PG_APP_SECRET so a PG-secret leak can't forge
+ *         settlement webhooks.
+ *
+ *         If unset, falls back to CASHFREE_PG_APP_SECRET with a console
+ *         warning. The fallback exists ONLY to support a phased rollout:
+ *         (1) deploy this code (works with either secret)
+ *         (2) set CASHFREE_SPLIT_WEBHOOK_SECRET on the project
+ *         (3) update Cashfree merchant dashboard → Webhooks → Easy Split
+ *             → "Sign with this secret" to use the new value
+ *         (4) remove the fallback in a follow-up commit
  *
  * Register URL in Cashfree dashboard → Webhooks → Easy Split:
  *   https://{project-ref}.supabase.co/functions/v1/cashfree-split-webhook
@@ -33,7 +43,21 @@ import { notifyUser } from "../_shared/notifications.ts";
 // CONFIGURATION
 // ==============================================
 
-const CF_SPLIT_WEBHOOK_SECRET = Deno.env.get("CASHFREE_PG_APP_SECRET") ?? Deno.env.get("CASHFREE_PG_SECRET_KEY")!;
+// Resolve the signing secret with explicit precedence + warning on fallback.
+// See header docblock for the phased-rollout rationale.
+const SPLIT_SECRET = Deno.env.get("CASHFREE_SPLIT_WEBHOOK_SECRET");
+const PG_SECRET = Deno.env.get("CASHFREE_PG_APP_SECRET") ?? Deno.env.get("CASHFREE_PG_SECRET_KEY");
+const CF_SPLIT_WEBHOOK_SECRET = SPLIT_SECRET ?? PG_SECRET;
+if (!CF_SPLIT_WEBHOOK_SECRET) {
+  console.error(
+    "[cashfree-split-webhook] FATAL: neither CASHFREE_SPLIT_WEBHOOK_SECRET nor CASHFREE_PG_APP_SECRET is set",
+  );
+}
+if (!SPLIT_SECRET && PG_SECRET) {
+  console.warn(
+    "[cashfree-split-webhook] Using PG secret as fallback. Set CASHFREE_SPLIT_WEBHOOK_SECRET to a separate value and update Cashfree dashboard webhook config to remove this warning. See https://github.com/flent-homes/Secured-v2/blob/main/docs/backend/cashfree-integration.md#webhook-secrets",
+  );
+}
 
 // ==============================================
 // TYPES

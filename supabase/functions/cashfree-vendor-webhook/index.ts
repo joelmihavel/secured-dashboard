@@ -6,7 +6,11 @@
  * ACTIVE, BLOCKED, ACTION_REQUIRED, etc.
  *
  * Endpoint: POST /functions/v1/cashfree-vendor-webhook
- * Auth: Webhook signature verification via x-webhook-signature header
+ * Auth: HMAC-SHA256 Base64 signature via x-webhook-signature header
+ * Secret: CASHFREE_VENDOR_WEBHOOK_SECRET (preferred) — set separately from
+ *         CASHFREE_PG_APP_SECRET so a PG-secret leak can't forge vendor
+ *         status updates. See cashfree-split-webhook for the phased
+ *         rollout pattern; same applies here.
  *
  * Register URL in Cashfree dashboard → Webhooks → Easy Split → Vendor Status Change:
  *   https://{project-ref}.supabase.co/functions/v1/cashfree-vendor-webhook
@@ -19,7 +23,20 @@ import { handleError } from "../_shared/errors.ts";
 import { hmacSha256Base64, timingSafeCompare } from "../_shared/crypto.ts";
 import { AuditLogger } from "../_shared/audit.ts";
 
-const CF_WEBHOOK_SECRET = Deno.env.get("CASHFREE_PG_APP_SECRET") ?? Deno.env.get("CASHFREE_PG_SECRET_KEY")!;
+// Resolve the signing secret with explicit precedence + warning on fallback.
+const VENDOR_SECRET = Deno.env.get("CASHFREE_VENDOR_WEBHOOK_SECRET");
+const PG_SECRET = Deno.env.get("CASHFREE_PG_APP_SECRET") ?? Deno.env.get("CASHFREE_PG_SECRET_KEY");
+const CF_WEBHOOK_SECRET = VENDOR_SECRET ?? PG_SECRET;
+if (!CF_WEBHOOK_SECRET) {
+  console.error(
+    "[cashfree-vendor-webhook] FATAL: neither CASHFREE_VENDOR_WEBHOOK_SECRET nor CASHFREE_PG_APP_SECRET is set",
+  );
+}
+if (!VENDOR_SECRET && PG_SECRET) {
+  console.warn(
+    "[cashfree-vendor-webhook] Using PG secret as fallback. Set CASHFREE_VENDOR_WEBHOOK_SECRET to a separate value to remove this warning.",
+  );
+}
 
 interface VendorStatusPayload {
   type: string; // VENDOR_STATUS_UPDATE
