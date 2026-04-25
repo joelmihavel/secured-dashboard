@@ -8,25 +8,13 @@
 import { createClient } from '@supabase/supabase-js';
 import * as SecureStore from 'expo-secure-store';
 import { addBreadcrumb } from '@/src/config/sentry';
+import { env } from '@/src/config/env';
 import { interceptEdgeFunction } from '@/src/review/reviewInterceptor';
 
-// Environment configuration - fail fast if not set
-const SUPABASE_URL = process.env.EXPO_PUBLIC_SUPABASE_URL;
-const SUPABASE_ANON_KEY = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
-
-if (!SUPABASE_URL) {
-  throw new Error(
-    'EXPO_PUBLIC_SUPABASE_URL is not set. ' +
-    'Please add it to your .env file. See .env.example for reference'
-  );
-}
-
-if (!SUPABASE_ANON_KEY) {
-  throw new Error(
-    'EXPO_PUBLIC_SUPABASE_ANON_KEY is not set. ' +
-    'Please add it to your .env file. See .env.example for reference'
-  );
-}
+// Environment configuration — `env` validates required vars at module load,
+// so SUPABASE_URL and SUPABASE_ANON_KEY are guaranteed non-null/non-empty here.
+const SUPABASE_URL = env.supabaseUrl;
+const SUPABASE_ANON_KEY = env.supabaseAnonKey;
 
 /**
  * Custom storage adapter using expo-secure-store with atomic chunking.
@@ -382,7 +370,7 @@ export async function callEdgeFunction<T = unknown>(
 
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
-      'apikey': SUPABASE_ANON_KEY!,
+      'apikey': SUPABASE_ANON_KEY,
       'x-request-id': `rn-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
       'x-region': 'ap-south-1', // Pin to Mumbai — co-locate with DB for lowest latency
     };

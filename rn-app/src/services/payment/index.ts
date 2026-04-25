@@ -7,6 +7,7 @@
  */
 
 import { callEdgeFunction } from '../supabase';
+import { env as appEnv } from '@/src/config/env';
 
 import type { PayUSessionParams } from '@/src/stores/payment';
 
@@ -35,10 +36,8 @@ export type PaymentGateway = 'cashfree' | 'payu';
  * in the binary), so the Cashfree path will fail gracefully.
  */
 export function getPaymentGateway(): PaymentGateway {
-  const env = process.env.EXPO_PUBLIC_PAYMENT_GATEWAY?.toLowerCase();
-  if (env === 'cashfree') return 'cashfree';
-  if (env === 'payu') return 'payu';
-  return 'payu';
+  // appEnv.paymentGateway already lowercased + typed via env.ts
+  return appEnv.paymentGateway;
 }
 
 // ==============================================

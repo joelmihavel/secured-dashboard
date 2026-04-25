@@ -6,6 +6,8 @@
  * All card/bank data stays within Cashfree's hosted WebView — zero PCI scope.
  */
 
+import { env } from '@/src/config/env';
+
 let CFPaymentGatewayService: typeof import('react-native-cashfree-pg-sdk').CFPaymentGatewayService | null = null;
 let CFEnvironment: typeof import('cashfree-pg-api-contract').CFEnvironment | null = null;
 let CFSession: typeof import('cashfree-pg-api-contract').CFSession | null = null;
@@ -33,7 +35,7 @@ export function isCashfreeAvailable(): boolean {
 // ENVIRONMENT
 // ==============================================
 
-const IS_SANDBOX = process.env.EXPO_PUBLIC_CASHFREE_ENV?.toLowerCase() === 'sandbox';
+const IS_SANDBOX = env.cashfreeEnv === 'SANDBOX';
 const ENV = CFEnvironment ? (IS_SANDBOX ? CFEnvironment.SANDBOX : CFEnvironment.PRODUCTION) : null;
 
 // ==============================================

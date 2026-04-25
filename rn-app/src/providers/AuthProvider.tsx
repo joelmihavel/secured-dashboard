@@ -11,6 +11,7 @@
 import React, { createContext, useContext, useEffect, useState, useRef, useMemo, useCallback } from 'react';
 import { useRouter } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
+import { env } from '@/src/config/env';
 import { supabase, updateCachedSession, SUPABASE_SESSION_STORAGE_KEY } from '@/src/services/supabase/client';
 import { clearAllStores } from '@/src/stores/resetAll';
 import { registerForPushNotifications } from '@/src/services/notifications';
@@ -39,14 +40,11 @@ const CURRENT_DB_VERSION = 'main_v3'; // Only bump when Supabase project changes
  */
 async function isUserDeletedOnServer(accessToken: string): Promise<boolean> {
   try {
-    const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL;
-    if (!supabaseUrl) return false;
-
-    const response = await fetch(`${supabaseUrl}/auth/v1/user`, {
+    const response = await fetch(`${env.supabaseUrl}/auth/v1/user`, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${accessToken}`,
-        'apikey': process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? '',
+        'apikey': env.supabaseAnonKey,
       },
     });
 

@@ -19,6 +19,7 @@ import { useEffect, useRef } from 'react';
 import { AppState, AppStateStatus } from 'react-native';
 import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../services/supabase/client';
+import { env } from '../config/env';
 import { dashboardKeys } from './useDashboard';
 import type { Session } from '@supabase/supabase-js';
 
@@ -61,14 +62,11 @@ function logBreadcrumb(message: string, category: string, data?: Record<string, 
  */
 async function validateUserServerSide(accessToken: string): Promise<'valid' | 'deleted' | 'expired' | 'network_error'> {
   try {
-    const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL;
-    if (!supabaseUrl) return 'network_error';
-
-    const response = await fetch(`${supabaseUrl}/auth/v1/user`, {
+    const response = await fetch(`${env.supabaseUrl}/auth/v1/user`, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${accessToken}`,
-        'apikey': process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? '',
+        'apikey': env.supabaseAnonKey,
       },
     });
 
