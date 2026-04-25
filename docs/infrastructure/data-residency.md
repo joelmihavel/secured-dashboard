@@ -62,13 +62,30 @@ For multimodal PDF calls (which include the entire rent agreement as base64 inpu
 
 **Impact:** Same as Finding 1, but harder to reason about because the region is non-deterministic.
 
-**Remediation:**
-1. Pin Vertex AI calls to `asia-south1` by passing `location='asia-south1'` to `callGeminiVertex` everywhere it's called in `extraction-pipeline.ts`.
-2. Verify `gemini-3-flash-preview` (or whichever model is in use) is available in `asia-south1` — Vertex's model availability map varies by region.
-3. If the model isn't in `asia-south1`, fall back to `asia-southeast1` (Singapore) — still extra-territorial but closer + better legal stance than `us`.
-4. Provisioned throughput SKU may not be available regionally — accept the throughput trade-off in exchange for residency.
+**Remediation (partially done as of 2026-04-25 commit `c10facc7`):**
 
-**Owner action required:** code change to pin Vertex region + verify model availability. ~2 hours including testing.
+The `cloud-run/extraction-service` codebase now reads the Vertex location
+from `config.vertex.location` (env var `VERTEX_AI_LOCATION`), defaulting
+to `'global'` to preserve current behavior. To flip to `asia-south1`:
+
+```bash
+# Verify model availability in asia-south1 first:
+gcloud ai models list --region=asia-south1 --project=flent-ai-project-2 \
+  | grep -i gemini
+
+# If gemini-3-flash-preview is listed, flip the env var:
+gcloud run services update extraction-service-prod \
+  --region=asia-south1 --project=secured-by-flent \
+  --update-env-vars VERTEX_AI_LOCATION=asia-south1
+
+# Smoke test with a real rent agreement extraction
+# Verify in logs that '[gemini-vertex] using location=asia-south1'
+# Watch for MODEL_NOT_AVAILABLE errors over 24h before flipping prod
+```
+
+If the model isn't in `asia-south1`, fall back to `asia-southeast1` (Singapore) — still extra-territorial but closer + better legal stance than `us`. Provisioned throughput SKU may not be available regionally — accept the throughput trade-off in exchange for residency.
+
+**Owner action required:** verify model availability + flip env var. ~30 min.
 
 ### ⚠️ Finding 3 — Twilio messaging for OTP + WhatsApp
 
