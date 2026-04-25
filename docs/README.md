@@ -2,10 +2,11 @@
 
 Flent Secured is a mobile fintech application that enables tenants in India to pay rent digitally via UPI, credit/debit cards, and net banking -- and earn 1% cashback on timely payments. The app manages the full tenant lifecycle: identity verification, rent agreement extraction, landlord onboarding, payment processing, and cashback disbursement.
 
-**Current version:** 2.1.1
-**Platform:** iOS (React Native)
+**Current version:** v2.2.0+ (production deploys 2026-04-25 — see git tags)
+**Platform:** iOS (React Native + Expo SDK 52, expo-router v4)
 **Target market:** India (Mumbai initially, expanding to other cities)
 **Bundle ID:** `in.flent.secured`
+**Last reviewed:** 2026-04-25 (post Cashfree migration + Cloud Run extraction split + dev/prod parity)
 
 ---
 
@@ -37,7 +38,7 @@ Flent Secured solves the problem of informal, untracked rent payments in India. 
 
 - **Identity and Address Verification** -- Three-step verification: bank account verification (name matching against agreement), utility bill verification (address confirmation), and landlord invitation via WhatsApp.
 
-- **Payment Processing** -- Rent payments through PayU India gateway supporting UPI, credit cards, debit cards, and net banking. Payments are tracked end-to-end with webhook confirmation.
+- **Payment Processing** -- Rent payments through Cashfree Payments (UPI, credit cards, debit cards, net banking, plus Easy Split settlement to landlord). PayU is a legacy fallback being phased out — see PayU removal workstream in the implementation plan. All payments tracked end-to-end with webhook confirmation.
 
 - **Cashback Rewards** -- Tenants earn 1% cashback on timely rent payments (paid before the cutoff day each month). Cashback accumulates in a ledger with expiry management.
 
@@ -143,32 +144,46 @@ Indian ISPs (Jio, Airtel, and others) periodically block `*.supabase.co` domains
 
 | Layer | Technology | Purpose |
 |-------|-----------|---------|
-| Database | PostgreSQL 15 (Supabase) | Primary data store with RLS |
-| Functions | Supabase Edge Functions (Deno) | 78 serverless API endpoints |
-| Auth | Supabase Auth | Phone/OTP-based authentication via Twilio |
-| Storage | Supabase Storage | Rent agreement PDFs, avatars |
-| Realtime | Supabase Realtime | Live updates (extraction status, payment status) |
-| Cron | pg_cron | Scheduled jobs (cashback expiry, stale payment cleanup, settlement polling) |
+| Database | PostgreSQL 17 (Supabase) | Primary data store with RLS — 36 tables, 10 product views |
+| Functions | Supabase Edge Functions (Deno) | ~93 serverless API endpoints; all use `verify_jwt=false` + in-function auth via `_shared/supabase.ts#createAuthenticatedClient` |
+| Auth | Supabase Auth (GoTrue) | Phone/OTP via Twilio + dual-format phone storage (auth.users without `+`, public.users with `+`) |
+| Storage | Supabase Storage | Rent agreement PDFs (`rent-agreements`), avatars, WhatsApp assets |
+| Realtime | Supabase Realtime | Live updates for extraction status, payment status |
+| Cron | pg_cron | 19 scheduled jobs (notification queue, cashback expiry, stale payment cleanup, settlement polling, stamp verification sweep) |
+
+### Heavy-lift extraction (Cloud Run)
+
+| Layer | Technology | Purpose |
+|---|---|---|
+| extraction-service-{prod,dev} | Cloud Run + Express + Document AI + Vertex Gemini | Long-running PDF extraction (15-min timeout) — invoked by `process-document` edge function via toggle |
+| stamp-verification-service-{prod,dev} | Cloud Run + 2Captcha + ZenRows | SHCIL e-Stamp portal verification — called by extraction service |
 
 ### External Services
 
 | Service | Purpose |
 |---------|---------|
-| PayU India | Payment gateway (UPI, cards, net banking) |
-| Google Gemini 3 Flash | AI-powered rent agreement data extraction |
-| Twilio | WhatsApp messages and SMS for landlord invites, notifications, and OTP |
-| Resend | Transactional email delivery for landlord notifications |
-| Expo Push API | Push notification delivery to registered devices |
-| Expo EAS | Cloud builds, OTA updates, app submission |
+| Cashfree Payments | Primary payment gateway — UPI, cards, netbanking, Easy Split settlement to landlord |
+| Cashfree Mobile 360 (M360) | Identity verification — PAN, credit score, mobile intelligence |
+| PayU India | Legacy payment gateway, being phased out (see PayU removal workstream in cleanup plan) |
+| Google Document AI | OCR extraction (text-only path) |
+| Google Gemini (Vertex AI + API key fallback) | AI-powered rent agreement extraction with multimodal fallback |
+| Google Maps Geocoding | Property address → lat/lng |
+| SHCIL e-Stamp portal | Stamp certificate verification |
+| 2Captcha + ZenRows | SHCIL anti-bot bypass |
+| Twilio | WhatsApp + SMS + OTP delivery |
+| Expo Push API | Push notifications |
+| Expo EAS | Cloud builds, OTA updates, App Store submit |
 
 ### Infrastructure
 
 | Component | Technology | Purpose |
 |-----------|-----------|---------|
-| Proxy | Cloudflare Workers | Reverse proxy for ISP bypass (`devapi.flent.in`) |
+| Proxy | Cloudflare Workers | ISP bypass for `*.supabase.co` (devapi.flent.in) — prod uses custom domain `api-secured.flent.in` |
+| GCP Project | `secured-by-flent` (asia-south1) | Hosts all 4 Cloud Run services + Document AI processor + Secret Manager |
+| Vertex AI Project | `flent-ai-project-2` | Cross-project Vertex AI access |
 | Builds | EAS Build | iOS simulator, device, preview, and production builds |
 | Updates | EAS Update | Over-the-air JavaScript bundle updates |
-| Admin | Google Apps Script | Admin dashboard auto-sync with Google Sheets |
+| Admin | Next.js + Vercel (TBD) | Admin dashboard with dev/main env switcher |
 
 ### Design System
 
@@ -568,61 +583,115 @@ npx wrangler deploy
 
 ## Documentation Index
 
-Detailed documentation for each subsystem is available in the `docs/` directory:
+Detailed documentation for each subsystem is available in the `docs/` directory.
+
+> **Index status:** the docs structure is being reshaped during the 2026-04-25 cleanup (see `/Users/atrishabh/.claude/plans/okay-now-i-ticklish-castle.md` for the plan). Some docs below are accurate, some are partially stale, some are net-new TODOs. Each row tells you which.
+
+### Active reference docs
+
+| Document | Description | Status |
+|---|---|---|
+| [Environment Infrastructure](./ENVIRONMENT_INFRASTRUCTURE.md) | EAS profiles, Supabase projects, Cloud Run services (incl. dev/prod split), shared GCP resources, deployment commands | ✅ Fresh (2026-04-25) |
+| [Backend Edge Functions](./backend/edge-functions.md) | Reference for the ~93 Supabase edge functions, auth pattern (`verify_jwt=false` + in-function validation) | ⚠️ Counts stale; see "rewrite pending" below |
+| [Frontend Screens and Routing](./frontend/screens-and-routing.md) | Screen inventory, route groups, navigation flow | ✅ Mostly current |
+| [Components Library](./frontend/components.md) | UI component catalog | ✅ Mostly current |
+| [State Management](./frontend/state-management.md) | Zustand + React Query patterns | ✅ Mostly current |
+| [Screen-to-Backend Map](./screen-backend-map.md) | Maps screens to edge functions and data flow | ⚠️ Predates Cashfree migration |
+| [Payment and Cashback Architecture](./backend/payment-and-cashback-architecture.md) | Payment lifecycle, fee system, cashback system | ⚠️ Predates Cashfree+M360 migration |
+| [WhatsApp Notifications](./WHATSAPP_NOTIFICATIONS.md) | Twilio WhatsApp integration | ✅ Current |
+
+### Local development
 
 | Document | Description |
-|----------|-------------|
-| [Backend Edge Functions](./backend/edge-functions.md) | Complete reference for all 78 Supabase edge functions |
-| [Database Schema](./backend/database-schema.md) | PostgreSQL table definitions, RLS policies, triggers, and cron jobs |
-| [Frontend Screens and Routing](./frontend/screens-and-routing.md) | Screen inventory, route groups, navigation flow, and layout structure |
-| [Components Library](./frontend/components.md) | UI component catalog with props, usage examples, and design tokens |
-| [State Management](./frontend/state-management.md) | Zustand stores, React Query patterns, and data flow architecture |
-| [Payment and Cashback Architecture](./backend/payment-and-cashback-architecture.md) | Payment lifecycle, PayU integration, fee system, cashback system, receipts |
-| [Screen-to-Backend Map](./screen-backend-map.md) | Maps every screen to its backend edge functions, queries, and data flow |
-| [Infrastructure](./infrastructure/cloudflare-and-deployment.md) | Cloudflare Worker config, EAS build setup, OTA updates, and DNS |
+|---|---|
+| Repo root [README.md](../README.md) "Run Locally" | Two-path Quick Start: full local Supabase via `npm run dev:up`, or point at the dev branch |
+| [supabase/.env.local.example](../supabase/.env.local.example) | Template for local edge function secrets |
+| [rn-app/.env.local.example](../rn-app/.env.local.example) | Template for local rn-app env (auto-generated by `dev-up.sh`) |
+
+### Archives
+
+| Path | Why archived |
+|---|---|
+| [docs/audit/archive/](./audit/archive/) | Historical audit reports (DocAI, error handling, retry logic, gemini safety) — pre-Cashfree migration era |
+| [docs/Plans/archive/](./Plans/archive/) | Old implementation plans whose work has shipped |
+| [scripts/legacy/](../scripts/legacy/) | One-shot v1→v2 migration scripts kept for emergency rerun |
+
+### Rewrite pending (Phase 4 of cleanup plan, partially done)
+
+These docs need refresh to reflect what actually shipped:
+- `backend/edge-functions.md` — recount + per-function auth-pattern table
+- `backend/payment-and-cashback-architecture.md` — Cashfree PG, Easy Split, M360 identity
+- `screen-backend-map.md` — Cashfree screens, stamp screens
+- New: `backend/cashfree-integration.md`, `backend/stamp-verification.md`, `backend/cron-jobs.md`
+- New: `frontend/deep-linking.md`, `development/index.md` (DevNavigator + dev-seed), `testing/index.md` (Maestro)
+- New: `infrastructure/gcp-iam.md`, `infrastructure/data-residency.md`, `infrastructure/supabase-projects.md`
 
 ---
 
 ## Environment Variables
 
-### Mobile App (rn-app/.env)
+> **Where env lives — the four-surface model** (full detail in [ENVIRONMENT_INFRASTRUCTURE.md](./ENVIRONMENT_INFRASTRUCTURE.md)):
+>
+> 1. **EAS dashboard** — build-time `EXPO_PUBLIC_*` for the rn-app
+> 2. **Supabase function secrets** — `supabase secrets set <KEY>=<VAL> --project-ref <REF>`
+> 3. **Cloud Run env vars** — `gcloud run services update <svc> --update-env-vars KEY=VAL`
+> 4. **GCP Secret Manager** — referenced by name from Cloud Run via `--update-secrets`
+>
+> Rule: each value lives on **one** surface. Code reads via the central env modules: `rn-app/src/config/env.ts`, `admin-app/src/lib/env.ts`, `cloud-run/extraction-service/src/config.ts`. Direct `process.env.X` reads outside these modules are blocked by `npm run lint:env`.
+
+### Mobile App (rn-app)
+
+The rn-app reads `EXPO_PUBLIC_*` env vars through `rn-app/src/config/env.ts`. Three loading paths:
+
+| Path | When | Source |
+|---|---|---|
+| Local dev | `npx expo start` after `npm run dev:up` | `rn-app/.env.local` (auto-generated) |
+| EAS build | `eas build` for development/preview/production profiles | EAS dashboard → Project Settings → Environment Variables |
+| OTA update | `eas update --channel <ch>` | EAS dashboard (same as build) |
 
 | Variable | Required | Description |
-|----------|----------|-------------|
-| `EXPO_PUBLIC_SUPABASE_URL` | Yes | Supabase API URL (via CF Worker: `https://devapi.flent.in`) |
-| `EXPO_PUBLIC_SUPABASE_ANON_KEY` | Yes | Supabase anonymous/public key for client-side auth |
-| `EXPO_PUBLIC_PAYU_KEY` | Yes | PayU merchant key for payment gateway |
-
-### EAS Build Secrets
-
-These are configured in the EAS dashboard (not committed to source):
-
-| Variable | Description |
-|----------|-------------|
-| `EXPO_PUBLIC_SUPABASE_URL` | Supabase URL (set per build profile) |
-| `EXPO_PUBLIC_SUPABASE_ANON_KEY` | Supabase anon key |
-| `EXPO_PUBLIC_PAYU_KEY` | PayU merchant key |
+|---|---|---|
+| `EXPO_PUBLIC_SUPABASE_URL` | Yes | Supabase project URL — `127.0.0.1:54321` locally, `api-secured.flent.in` in prod, `zqlowjveyqiagnbmfwsb.supabase.co` for dev branch |
+| `EXPO_PUBLIC_SUPABASE_ANON_KEY` | Yes | Supabase anonymous/publishable key (safe to ship in JS bundle) |
+| `EXPO_PUBLIC_PAYMENT_GATEWAY` | No | `cashfree` (default) or `payu` (legacy fallback) |
+| `EXPO_PUBLIC_CASHFREE_ENV` | No | `SANDBOX` for development/preview, `PRODUCTION` for production |
+| `EXPO_PUBLIC_PAYU_KEY` | No | PayU merchant key (only used when `EXPO_PUBLIC_PAYMENT_GATEWAY=payu`) |
+| `EXPO_PUBLIC_USE_OTP_ROUTING` | No | `true` enables Twilio routing; `false` falls back to demo OTP |
+| `APP_ENV` | No | Set by EAS profiles: `development` / `preview` / `production` |
 
 ### Supabase Edge Function Secrets
 
-These are configured in the Supabase dashboard under Project Settings > Edge Functions:
+Set per project: `supabase secrets set KEY=VALUE --project-ref <ref>`. Auto-injected vars (`SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`) are branch-specific — do NOT set manually.
 
-| Variable | Description |
-|----------|-------------|
-| `SUPABASE_URL` | Internal Supabase URL (used for server-to-server calls) |
-| `SUPABASE_SERVICE_ROLE_KEY` | Service role key (full database access, bypasses RLS) |
-| `PAYU_MERCHANT_KEY` | PayU merchant key |
-| `PAYU_MERCHANT_SALT` | PayU merchant salt (for hash generation) |
-| `GEMINI_API_KEY` | Google Gemini API key (for agreement extraction) |
-| `TWILIO_ACCOUNT_SID` | Twilio account SID |
-| `TWILIO_AUTH_TOKEN` | Twilio auth token |
-| `TWILIO_MESSAGE_SERVICE_SID` | Twilio messaging service SID |
-| `TWILIO_WHATSAPP_NUMBER` | Twilio WhatsApp sender number |
-| `CASHFREE_APP_ID` | Cashfree M360 application ID |
-| `CASHFREE_SECRET_KEY` | Cashfree M360 secret key |
-| `RESEND_API_KEY` | Resend email API key |
-| `ENCRYPTION_KEY` | AES-256-GCM encryption key for bank details at rest |
-| `API_CLUB_KEY` | API Club key for utility bill fetching |
+| Variable | Required | Description |
+|---|---|---|
+| `CASHFREE_APP_ID` | Yes | Cashfree Verification API client ID |
+| `CASHFREE_SECRET_KEY` | Yes | Cashfree Verification API secret |
+| `CASHFREE_BASE_URL` | Yes | Cashfree verification base URL (`https://api.cashfree.com/verification` for prod) |
+| `CASHFREE_PUBLIC_KEY` | Yes | RSA public key for `x-cf-signature` |
+| `CASHFREE_PG_APP_ID` | Yes | Cashfree Payment Gateway client ID |
+| `CASHFREE_PG_APP_SECRET` | Yes | Cashfree PG secret + webhook HMAC key |
+| `CASHFREE_PG_BASE_URL` | Yes | Cashfree PG base URL (`https://api.cashfree.com/pg`) |
+| `CASHFREE_SPLIT_WEBHOOK_SECRET` | Yes | **Should be separate from PG secret** — see Phase 7e in cleanup plan; current code has a bug treating PG secret as fallback |
+| `PAYU_MERCHANT_KEY` | Optional (legacy) | PayU merchant key — only needed while PayU fallback is alive |
+| `PAYU_MERCHANT_SALT` | Optional (legacy) | PayU salt for hash generation |
+| `TWILIO_ACCOUNT_SID` | Yes | Twilio for SMS + WhatsApp |
+| `TWILIO_AUTH_TOKEN` | Yes | Twilio auth token |
+| `TWILIO_MESSAGE_SERVICE_SID` | Yes | Twilio messaging service SID |
+| `GEMINI_API_KEY` | Yes | Google Gemini API key (extraction fallback path) |
+| `ENCRYPTION_KEY` | Yes | AES-256-GCM key for bank account encryption at rest |
+| `ADMIN_API_KEY` | Yes | Gates admin-only edge functions (`admin-waitlist`, `admin-fetch-views`, etc.) |
+| `API_CLUB_KEY` | Yes | API Club for utility bill fetch (proxied via `api-club-proxy` Cloud Run for IP whitelist) |
+| `EXTRACTION_SERVICE_URL` | Optional | Cloud Run extraction-service URL (`-prod` or `-dev`). Unset = in-process extraction |
+| `EXTRACTION_SECRET` | Pair-with-URL | Shared secret for X-Extraction-Secret header |
+| `CLOUD_RUN_PERCENTAGE` | Optional | 0–100 traffic split to Cloud Run (only on `process-document` decision logic) |
+| `STAMP_VERIFICATION_SERVICE_URL` | Optional | Stamp verification Cloud Run URL (set on prod only currently) |
+| `STAMP_VERIFICATION_SECRET` | Pair-with-URL | Shared secret for stamp verification |
+| `ALLOW_DEMO_AUTH` | Local/dev only | Allows `seed-test-data` and `dev-seed` to seed journey state — must be `false` in prod |
+
+### Cloud Run services (managed via `gcloud run services update`)
+
+Per service: `extraction-service-prod`, `extraction-service-dev`, `stamp-verification-service-prod`, `stamp-verification-service-dev`. Env vars listed in `docs/ENVIRONMENT_INFRASTRUCTURE.md` § "Cloud Run Services".
 
 ### Cloudflare Worker
 
