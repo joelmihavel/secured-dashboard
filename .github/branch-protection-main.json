@@ -1,0 +1,28 @@
+{
+  "_comment": "Branch protection rule for `main`. Phase 7b of the cleanup plan. Apply via `gh api` or the GitHub UI; sync via `protection-sync.yml` workflow (Phase 5 Day 11+).",
+  "_apply_command": "gh api -X PUT repos/flent-homes/Secured-v2/branches/main/protection --input .github/branch-protection-main.json",
+  "_status_checks_status": "Day 1-13: workflows non-blocking. Day 8 the cleanup plan flips required_status_checks.strict=true. Until then, this JSON describes the TARGET state; running it via gh api will enforce it.",
+
+  "required_status_checks": {
+    "strict": true,
+    "contexts": [
+      "PR gates summary"
+    ]
+  },
+  "enforce_admins": false,
+  "required_pull_request_reviews": {
+    "required_approving_review_count": 0,
+    "dismiss_stale_reviews": true,
+    "require_code_owner_reviews": true,
+    "require_last_push_approval": false
+  },
+  "restrictions": null,
+  "required_linear_history": true,
+  "allow_force_pushes": false,
+  "allow_deletions": false,
+  "block_creations": false,
+  "required_conversation_resolution": true,
+  "lock_branch": false,
+  "allow_fork_syncing": false,
+  "required_signatures": false
+}

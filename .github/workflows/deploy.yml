@@ -1,0 +1,165 @@
+# Deploy — orchestrates Supabase + Cloud Run + EAS for one environment.
+#
+# Called by deploy-dev-trigger.yml (push to dev branch) and
+# deploy-prod-trigger.yml (push to main, with approval gates).
+# Single workflow keeps dev and prod from drifting apart.
+#
+# Per the cleanup plan (Phase 5 Day 5–7), this orchestrator runs the
+# building blocks: _reusable-supabase, _reusable-cloud-run, _reusable-eas-update.
+# Sequencing is important — migrations before functions before cloud-run
+# before EAS, so each layer sees the previous layer's state.
+
+name: deploy
+
+on:
+  workflow_call:
+    inputs:
+      environment:
+        description: "dev | prod"
+        required: true
+        type: string
+      project-ref:
+        description: "Supabase project ref"
+        required: true
+        type: string
+      cloud-run-service:
+        description: "Cloud Run service name"
+        required: true
+        type: string
+      eas-channel:
+        description: "EAS update channel"
+        required: true
+        type: string
+    secrets:
+      SUPABASE_ACCESS_TOKEN:
+        required: true
+      GCP_WIF_PROVIDER:
+        required: true
+      GCP_SA_EMAIL:
+        required: true
+      EXPO_TOKEN:
+        required: true
+      SLACK_DEPLOYS_WEBHOOK:
+        required: false
+
+jobs:
+  # ─── Detect what to deploy ───────────────────────────────────────────
+  changes:
+    name: Detect changes
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    outputs:
+      migrations: ${{ steps.filter.outputs.migrations }}
+      functions: ${{ steps.filter.outputs.functions }}
+      cloudrun: ${{ steps.filter.outputs.cloudrun }}
+      rn: ${{ steps.filter.outputs.rn }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: filter
+        uses: dorny/paths-filter@v3
+        with:
+          base: HEAD~1
+          filters: |
+            migrations:
+              - 'supabase/migrations/**'
+            functions:
+              - 'supabase/functions/**'
+            cloudrun:
+              - 'cloud-run/extraction-service/**'
+            rn:
+              - 'rn-app/src/**'
+              - 'rn-app/app/**'
+              - 'rn-app/app.json'
+
+  # ─── Migrations first (other layers depend on schema state) ─────────
+  migrations:
+    name: Migrations
+    needs: changes
+    if: needs.changes.outputs.migrations == 'true'
+    uses: ./.github/workflows/_reusable-supabase.yml
+    with:
+      mode: db-push
+      project-ref: ${{ inputs.project-ref }}
+      environment: ${{ inputs.environment }}
+    secrets:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+
+  # ─── Edge functions (after migrations) ───────────────────────────────
+  functions:
+    name: Edge functions
+    needs: [changes, migrations]
+    if: |
+      always() &&
+      needs.changes.outputs.functions == 'true' &&
+      (needs.migrations.result == 'success' || needs.migrations.result == 'skipped')
+    uses: ./.github/workflows/_reusable-supabase.yml
+    with:
+      mode: functions
+      project-ref: ${{ inputs.project-ref }}
+      environment: ${{ inputs.environment }}
+    secrets:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+
+  # ─── Cloud Run extraction service ────────────────────────────────────
+  cloud-run:
+    name: Cloud Run
+    needs: [changes, migrations, functions]
+    if: |
+      always() &&
+      needs.changes.outputs.cloudrun == 'true' &&
+      (needs.migrations.result == 'success' || needs.migrations.result == 'skipped') &&
+      (needs.functions.result == 'success' || needs.functions.result == 'skipped')
+    uses: ./.github/workflows/_reusable-cloud-run.yml
+    with:
+      service: ${{ inputs.cloud-run-service }}
+    secrets:
+      GCP_WIF_PROVIDER: ${{ secrets.GCP_WIF_PROVIDER }}
+      GCP_SA_EMAIL: ${{ secrets.GCP_SA_EMAIL }}
+
+  # ─── EAS update last (RN code change) ────────────────────────────────
+  eas-update:
+    name: EAS Update
+    needs: [changes, migrations, functions, cloud-run]
+    if: |
+      always() &&
+      needs.changes.outputs.rn == 'true' &&
+      (needs.migrations.result == 'success' || needs.migrations.result == 'skipped') &&
+      (needs.functions.result == 'success' || needs.functions.result == 'skipped') &&
+      (needs.cloud-run.result == 'success' || needs.cloud-run.result == 'skipped')
+    uses: ./.github/workflows/_reusable-eas-update.yml
+    with:
+      channel: ${{ inputs.eas-channel }}
+      message: ""  # auto from commit
+    secrets:
+      EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+
+  # ─── Notify ──────────────────────────────────────────────────────────
+  notify:
+    name: Notify
+    needs: [migrations, functions, cloud-run, eas-update]
+    if: always() && vars.SLACK_DEPLOYS_WEBHOOK_CONFIGURED == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Build deploy summary
+        id: summary
+        run: |
+          echo "msg<<EOF" >> $GITHUB_OUTPUT
+          echo "DEPLOY ${{ inputs.environment }} ${{ job.status }}" >> $GITHUB_OUTPUT
+          echo "sha: ${GITHUB_SHA:0:7} (${{ github.actor }})" >> $GITHUB_OUTPUT
+          echo "changed: migrations=${{ needs.migrations.result }} functions=${{ needs.functions.result }} cloudrun=${{ needs.cloud-run.result }} eas=${{ needs.eas-update.result }}" >> $GITHUB_OUTPUT
+          echo "logs: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" >> $GITHUB_OUTPUT
+          echo "rollback: gh workflow run rollback.yml -f surface=cloud-run -f revision_or_sha=$(git rev-parse HEAD~1) -f confirm=ROLLBACK" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Post to Slack
+        if: always()
+        env:
+          MSG: ${{ steps.summary.outputs.msg }}
+        run: |
+          if [ -n "${{ secrets.SLACK_DEPLOYS_WEBHOOK }}" ]; then
+            curl -fsS -X POST -H 'Content-Type: application/json' \
+              -d "$(jq -nR --arg t "$MSG" '{text: $t}')" \
+              "${{ secrets.SLACK_DEPLOYS_WEBHOOK }}"
+          else
+            echo "$MSG"
+          fi

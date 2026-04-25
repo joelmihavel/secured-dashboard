@@ -1,0 +1,79 @@
+# Maestro nightly regression run.
+#
+# Per the cleanup plan (Phase 5 Day 10), runs the full Maestro `nightly`
+# profile against dev once per day. Files an idempotent GitHub issue on
+# failure (won't spam — checks for an open issue with today's date first).
+
+name: maestro-nightly
+
+on:
+  schedule:
+    - cron: "0 19 * * *"   # 19:00 UTC = 00:30 IST — keep the dev DB quiet during the run
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  nightly:
+    name: Maestro nightly
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Maestro
+        run: curl -Ls "https://get.maestro.mobile.dev" | bash
+        # Note: this installs maestro CLI but for cloud runs we use mobile.dev's
+        # cloud API via run-cloud.sh
+
+      - name: Run Maestro Cloud nightly profile
+        env:
+          MAESTRO_CLOUD_API_KEY: ${{ secrets.MAESTRO_CLOUD_API_KEY }}
+        run: |
+          export PATH="$HOME/.maestro/bin:$PATH"
+          maestro cloud \
+            --config maestro/ci.yaml \
+            --profile nightly \
+            --async=false \
+            --include-tags=nightly
+
+  on-failure:
+    name: File issue on failure
+    needs: nightly
+    if: failure()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/github-script@v7
+        with:
+          script: |
+            const today = new Date().toISOString().split('T')[0];
+            const title = `Maestro nightly failure: ${today}`;
+
+            // Idempotency: only create if no open issue with this title exists
+            const existing = await github.rest.search.issuesAndPullRequests({
+              q: `repo:${context.repo.owner}/${context.repo.repo} is:issue is:open in:title "${title}"`,
+            });
+
+            if (existing.data.total_count > 0) {
+              console.log(`Issue already exists: ${existing.data.items[0].html_url}`);
+              return;
+            }
+
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title,
+              labels: ['maestro', 'nightly-failure'],
+              body: [
+                `Nightly Maestro run failed.`,
+                ``,
+                `**Run:** ${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`,
+                `**Date:** ${today}`,
+                `**Profile:** nightly`,
+                `**Target:** dev environment`,
+                ``,
+                `Check the run logs and screenshots, then close this issue once the underlying flow is fixed.`,
+              ].join('\n'),
+            });

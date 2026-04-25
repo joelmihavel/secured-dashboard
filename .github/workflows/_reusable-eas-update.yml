@@ -1,0 +1,82 @@
+# Reusable workflow — push an EAS Update to a channel.
+#
+# Per the cleanup plan (Phase 5 Day 6), this is the building block called
+# by deploy.yml for OTA updates. Replaces the ad-hoc rn-app/scripts/ota-*.sh
+# scripts that hardcode env values.
+
+name: deploy-eas-update
+
+on:
+  workflow_call:
+    inputs:
+      channel:
+        description: "EAS channel (development | preview | production)"
+        required: true
+        type: string
+      message:
+        description: "Update message (defaults to short SHA + commit subject)"
+        required: false
+        type: string
+        default: ""
+    secrets:
+      EXPO_TOKEN:
+        required: true
+
+jobs:
+  update:
+    name: EAS update → ${{ inputs.channel }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: rn-app
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: rn-app/package-lock.json
+
+      - name: Setup EAS
+        uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund
+
+      - name: Determine update message
+        id: message
+        run: |
+          if [ -n "${{ inputs.message }}" ]; then
+            MSG="${{ inputs.message }}"
+          else
+            SUBJECT=$(git log -1 --format=%s "${{ github.sha }}")
+            MSG="${GITHUB_SHA:0:7}: $SUBJECT"
+          fi
+          echo "msg<<EOF" >> $GITHUB_OUTPUT
+          echo "$MSG" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Publish update
+        run: |
+          eas update \
+            --branch ${{ inputs.channel }} \
+            --message "${{ steps.message.outputs.msg }}" \
+            --non-interactive \
+            --auto
+
+      - name: Summary
+        if: always()
+        run: |
+          echo "## EAS Update → ${{ inputs.channel }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- Channel: \`${{ inputs.channel }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- Message: ${{ steps.message.outputs.msg }}" >> $GITHUB_STEP_SUMMARY
+          echo "- SHA: \`${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY

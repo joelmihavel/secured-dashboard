@@ -1,0 +1,27 @@
+# Deploy on push to dev — calls the shared deploy.yml with dev-environment inputs.
+#
+# Per the cleanup plan (Phase 5 Day 4–6), this workflow goes live first
+# (before the prod trigger) so the dev environment soaks the deploy chain
+# for at least 5 days before main goes live.
+
+name: deploy-dev
+
+on:
+  push:
+    branches: [dev]
+  workflow_dispatch: {}
+
+# Prevent two deploys to dev colliding (e.g., back-to-back pushes)
+concurrency:
+  group: deploy-dev
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    uses: ./.github/workflows/deploy.yml
+    with:
+      environment: dev
+      project-ref: zqlowjveyqiagnbmfwsb
+      cloud-run-service: extraction-service-dev
+      eas-channel: development
+    secrets: inherit

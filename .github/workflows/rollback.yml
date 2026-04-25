@@ -1,0 +1,157 @@
+# Manual rollback — single-command per surface.
+#
+# Per the cleanup plan (Phase 5 Day 11), this is the on-call's break-glass:
+#   gh workflow run rollback.yml \
+#     -f surface=cloud-run \
+#     -f service=extraction-service-prod \
+#     -f revision_or_sha=extraction-service-prod-00014-8f7 \
+#     -f confirm=ROLLBACK
+#
+# Surfaces:
+#   cloud-run   — gcloud run services update-traffic --to-revisions=<rev>=100
+#   edge-fns    — git checkout <sha> -- supabase/functions/<name> + redeploy
+#   migrations  — print the -- rollback: block; require manual confirm
+#                 (no auto-apply for schema rollback — too dangerous)
+#   eas         — eas update --branch <ch> --republish --group <prev-group-id>
+
+name: rollback
+
+on:
+  workflow_dispatch:
+    inputs:
+      surface:
+        description: "What to rollback"
+        required: true
+        type: choice
+        options:
+          - cloud-run
+          - edge-fns
+          - migrations
+          - eas
+      service:
+        description: "Cloud Run service name OR edge function name OR EAS channel"
+        required: false
+        type: string
+      revision_or_sha:
+        description: "Cloud Run revision OR git SHA OR migration version OR EAS update group ID"
+        required: true
+        type: string
+      confirm:
+        description: 'Type ROLLBACK to confirm'
+        required: true
+        type: string
+
+permissions:
+  id-token: write
+  contents: write
+
+jobs:
+  validate:
+    name: Validate inputs
+    runs-on: ubuntu-latest
+    timeout-minutes: 1
+    steps:
+      - name: Check confirmation
+        run: |
+          if [ "${{ inputs.confirm }}" != "ROLLBACK" ]; then
+            echo "✗ Confirmation must be exactly 'ROLLBACK'. Got: '${{ inputs.confirm }}'"
+            exit 1
+          fi
+
+  cloud-run-rollback:
+    if: inputs.surface == 'cloud-run'
+    needs: validate
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WIF_PROVIDER }}
+          service_account: ${{ secrets.GCP_SA_EMAIL }}
+      - uses: google-github-actions/setup-gcloud@v2
+      - name: Roll traffic to old revision
+        run: |
+          SVC="${{ inputs.service }}"
+          REV="${{ inputs.revision_or_sha }}"
+          echo "Routing 100% of $SVC traffic to revision $REV..."
+          gcloud run services update-traffic "$SVC" \
+            --region=asia-south1 --project=secured-by-flent \
+            --to-revisions="$REV=100" \
+            --quiet
+          echo ""
+          echo "✓ Traffic rolled back. Verify with /health probe."
+
+  edge-fn-rollback:
+    if: inputs.surface == 'edge-fns'
+    needs: validate
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: supabase/setup-cli@v1
+      - name: Restore + redeploy function from previous SHA
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        run: |
+          FN="${{ inputs.service }}"
+          SHA="${{ inputs.revision_or_sha }}"
+          PROJECT_REF=uowjtrzmszuaiokqxgir
+          echo "Restoring supabase/functions/$FN from $SHA..."
+          git checkout "$SHA" -- "supabase/functions/$FN"
+          supabase functions deploy "$FN" \
+            --project-ref "$PROJECT_REF" \
+            --no-verify-jwt
+          echo "✓ Function restored. Smoke test required."
+
+  migrations-rollback:
+    if: inputs.surface == 'migrations'
+    needs: validate
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Print rollback block (manual apply required)
+        run: |
+          VERSION="${{ inputs.revision_or_sha }}"
+          FILE=$(ls supabase/migrations/${VERSION}_*.sql 2>/dev/null | head -1)
+          if [ -z "$FILE" ]; then
+            echo "✗ No migration file matching version $VERSION"
+            exit 1
+          fi
+          echo "Migration: $FILE"
+          echo ""
+          echo "=== -- rollback: block from migration file ==="
+          awk '/-- rollback:/,/^[^-]/' "$FILE"
+          echo ""
+          echo "=== INSTRUCTIONS ==="
+          echo "1. Review the rollback block above"
+          echo "2. Apply manually via Supabase Studio SQL editor or"
+          echo "   supabase db query against the linked project"
+          echo "3. Auto-apply is NOT supported for schema rollback — too risky"
+
+  eas-rollback:
+    if: inputs.surface == 'eas'
+    needs: validate
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: rn-app
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+      - run: npm ci --no-audit --no-fund
+      - name: Republish previous update
+        run: |
+          CHANNEL="${{ inputs.service }}"
+          GROUP="${{ inputs.revision_or_sha }}"
+          eas update --branch "$CHANNEL" --republish --group "$GROUP" --non-interactive

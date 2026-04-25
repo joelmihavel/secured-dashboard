@@ -1,0 +1,112 @@
+# Branch protection sync — daily cron.
+#
+# Per the cleanup plan (Phase 5 Day 11), this asserts the live branch
+# protection rule on `main` matches the JSON snapshot in
+# `.github/branch-protection-main.json`. If they drift, files an issue.
+#
+# Catches the "status check renamed in YAML, protection rule still
+# references old name" footgun.
+
+name: protection-sync
+
+on:
+  schedule:
+    - cron: "0 8 * * *"   # 08:00 UTC daily
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  check-main:
+    name: Verify main branch protection
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Compare live rule against committed JSON
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Pull live state
+          LIVE=$(gh api repos/${{ github.repository }}/branches/main/protection 2>/dev/null || echo '{}')
+          # Filter to fields we care about (the live response has read-only fields like url/etag)
+          LIVE_FILTERED=$(echo "$LIVE" | jq '{
+            required_status_checks: .required_status_checks | {strict, contexts},
+            enforce_admins: .enforce_admins.enabled,
+            required_pull_request_reviews: .required_pull_request_reviews | (
+              if . == null then null else
+              {
+                required_approving_review_count,
+                dismiss_stale_reviews,
+                require_code_owner_reviews,
+                require_last_push_approval
+              } end),
+            required_linear_history: .required_linear_history.enabled,
+            allow_force_pushes: .allow_force_pushes.enabled,
+            allow_deletions: .allow_deletions.enabled,
+            required_conversation_resolution: .required_conversation_resolution.enabled,
+            required_signatures: .required_signatures.enabled
+          }')
+          # Filter the committed file too (strip _comment fields)
+          EXPECTED=$(jq 'del(._comment, ._apply_command, ._status_checks_status, .restrictions, .block_creations, .lock_branch, .allow_fork_syncing) | {
+            required_status_checks,
+            enforce_admins,
+            required_pull_request_reviews,
+            required_linear_history,
+            allow_force_pushes,
+            allow_deletions,
+            required_conversation_resolution,
+            required_signatures
+          }' .github/branch-protection-main.json)
+
+          if [ "$(echo "$LIVE_FILTERED" | jq -S .)" != "$(echo "$EXPECTED" | jq -S .)" ]; then
+            echo "🟥 Branch protection drift detected"
+            echo ""
+            echo "=== EXPECTED ==="
+            echo "$EXPECTED" | jq -S .
+            echo ""
+            echo "=== LIVE ==="
+            echo "$LIVE_FILTERED" | jq -S .
+            exit 1
+          fi
+          echo "✓ main branch protection matches committed JSON"
+
+  on-drift:
+    needs: check-main
+    if: failure()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/github-script@v7
+        with:
+          script: |
+            const today = new Date().toISOString().split('T')[0];
+            const title = `Branch protection drift on main — ${today}`;
+
+            const existing = await github.rest.search.issuesAndPullRequests({
+              q: `repo:${context.repo.owner}/${context.repo.repo} is:issue is:open label:branch-protection`,
+            });
+
+            if (existing.data.total_count > 0) return;  // already flagged
+
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title,
+              labels: ['ops', 'branch-protection'],
+              body: [
+                `Live branch protection on \`main\` has drifted from \`.github/branch-protection-main.json\`.`,
+                ``,
+                `**Run:** ${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`,
+                ``,
+                `Reconcile by running:`,
+                '```',
+                `gh api -X PUT repos/${context.repo.owner}/${context.repo.repo}/branches/main/protection \\`,
+                `   --input .github/branch-protection-main.json`,
+                '```',
+                ``,
+                `Or update the committed JSON to match the new live state if the change was intentional.`,
+              ].join('\n'),
+            });

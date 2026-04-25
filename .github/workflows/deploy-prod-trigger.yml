@@ -1,0 +1,73 @@
+# Deploy on push to main — calls the shared deploy.yml with prod inputs.
+#
+# Per the cleanup plan (Phase 5 Day 9):
+#   - Each prod-mutating job is gated by GitHub Environments with required
+#     reviewers + 5-min wait timer (configured in repo settings, NOT here)
+#   - Sequencing: Day 9 — this workflow lands. Day 17 — flip required-checks
+#     gate for main branch. The 7-day window between is intentional.
+
+name: deploy-prod
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch: {}
+
+concurrency:
+  group: deploy-prod
+  cancel-in-progress: false
+
+jobs:
+  # GitHub Environment with required reviewer for migrations
+  approve-migrations:
+    name: Approve migrations
+    runs-on: ubuntu-latest
+    environment: production-migrations
+    timeout-minutes: 10080   # 7 days — pending approvals shouldn't block forever
+    steps:
+      - run: echo "Migrations approved by ${{ github.actor }} for ${{ github.sha }}"
+
+  # GitHub Environment with required reviewer for cloud-run
+  approve-cloud-run:
+    name: Approve cloud-run
+    runs-on: ubuntu-latest
+    environment: production-cloud-run
+    timeout-minutes: 10080
+    steps:
+      - run: echo "Cloud Run approved by ${{ github.actor }} for ${{ github.sha }}"
+
+  deploy:
+    needs: [approve-migrations, approve-cloud-run]
+    uses: ./.github/workflows/deploy.yml
+    with:
+      environment: prod
+      project-ref: uowjtrzmszuaiokqxgir
+      cloud-run-service: extraction-service-prod
+      eas-channel: production
+    secrets: inherit
+
+  tag-release:
+    name: Tag release
+    needs: deploy
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Compute next tag
+        id: tag
+        run: |
+          # Use rn-app/package.json version + commit count as tag
+          BASE=$(jq -r .version rn-app/package.json)
+          COUNT=$(git rev-list --count HEAD)
+          echo "tag=v${BASE}-r${COUNT}" >> $GITHUB_OUTPUT
+      - name: Create release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "${{ steps.tag.outputs.tag }}" \
+            --target ${{ github.sha }} \
+            --generate-notes \
+            --title "Release ${{ steps.tag.outputs.tag }}"

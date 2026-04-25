@@ -1,0 +1,114 @@
+# Mobile release — full Maestro regression + EAS build + EAS submit.
+#
+# Per the cleanup plan (Phase 5 Day 10), this is the pre-App-Store-submit
+# pipeline. Triggered manually via workflow_dispatch or by tag push (v*).
+# Requires the regression test suite to pass before any build runs.
+
+name: mobile-release
+
+on:
+  workflow_dispatch:
+    inputs:
+      profile:
+        description: "EAS profile (production | preview)"
+        required: true
+        default: production
+        type: choice
+        options: [production, preview]
+      submit:
+        description: "Also submit to TestFlight after build?"
+        required: false
+        default: false
+        type: boolean
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: read
+
+concurrency:
+  group: mobile-release-${{ inputs.profile || 'production' }}
+  cancel-in-progress: false
+
+jobs:
+  regression:
+    name: Maestro regression
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run Maestro regression on dev environment
+        env:
+          MAESTRO_CLOUD_API_KEY: ${{ secrets.MAESTRO_CLOUD_API_KEY }}
+        run: |
+          curl -Ls "https://get.maestro.mobile.dev" | bash
+          export PATH="$HOME/.maestro/bin:$PATH"
+          maestro cloud \
+            --config maestro/ci.yaml \
+            --profile regression \
+            --async=false
+
+  build:
+    name: EAS build (${{ github.event.inputs.profile || 'production' }})
+    needs: regression
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    defaults:
+      run:
+        working-directory: rn-app
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: rn-app/package-lock.json
+      - uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+      - run: npm ci --no-audit --no-fund
+      - name: Build
+        run: |
+          PROFILE="${{ github.event.inputs.profile || 'production' }}"
+          eas build \
+            --platform ios \
+            --profile "$PROFILE" \
+            --non-interactive \
+            --wait
+
+  submit:
+    name: EAS submit (TestFlight)
+    needs: build
+    if: github.event.inputs.submit == 'true' || startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: rn-app
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: rn-app/package-lock.json
+      - uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+      - name: Decode Apple API key
+        env:
+          B64: ${{ secrets.EXPO_APPLE_API_KEY_BASE64 }}
+        run: |
+          mkdir -p $RUNNER_TEMP/apple
+          echo "$B64" | base64 -d > $RUNNER_TEMP/apple/AuthKey.p8
+          echo "EXPO_APPLE_API_KEY_PATH=$RUNNER_TEMP/apple/AuthKey.p8" >> $GITHUB_ENV
+      - run: npm ci --no-audit --no-fund
+      - name: Submit to App Store Connect
+        run: |
+          eas submit \
+            --platform ios \
+            --profile production \
+            --non-interactive \
+            --latest

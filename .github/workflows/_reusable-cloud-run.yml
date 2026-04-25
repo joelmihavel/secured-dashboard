@@ -1,0 +1,139 @@
+# Reusable workflow — deploy Cloud Run service via Cloud Build (--source).
+#
+# Per the cleanup plan (Phase 5 Day 3), this is the building block called
+# by deploy.yml for cloud-run/extraction-service. Uses Workload Identity
+# Federation — no static JSON keys.
+#
+# CRITICAL: Never uses --set-env-vars. The plan explicitly forbids that
+# flag in CI because it wipes existing env vars. Env preservation is
+# verified via before/after sha256 of the env list.
+#
+# Traffic gating: deploy --no-traffic --tag candidate, health probe the
+# candidate URL, then promote with update-traffic --to-latest. If the
+# probe fails, the candidate revision sits at 0% traffic — old revision
+# continues serving.
+
+name: deploy-cloud-run
+
+on:
+  workflow_call:
+    inputs:
+      service:
+        description: "Cloud Run service name (extraction-service-prod | extraction-service-dev)"
+        required: true
+        type: string
+      region:
+        description: "GCP region"
+        required: false
+        type: string
+        default: "asia-south1"
+      project:
+        description: "GCP project"
+        required: false
+        type: string
+        default: "secured-by-flent"
+      source-path:
+        description: "Path to the Cloud Run service source (Dockerfile root)"
+        required: false
+        type: string
+        default: "cloud-run/extraction-service"
+    secrets:
+      GCP_WIF_PROVIDER:
+        required: true
+      GCP_SA_EMAIL:
+        required: true
+
+permissions:
+  id-token: write   # required for Workload Identity Federation
+  contents: read
+
+jobs:
+  deploy:
+    name: Deploy ${{ inputs.service }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Authenticate to GCP via WIF
+        id: auth
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WIF_PROVIDER }}
+          service_account: ${{ secrets.GCP_SA_EMAIL }}
+
+      - name: Setup gcloud
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Snapshot env BEFORE deploy
+        id: env-before
+        run: |
+          HASH=$(gcloud run services describe ${{ inputs.service }} \
+            --region=${{ inputs.region }} --project=${{ inputs.project }} \
+            --format='value(spec.template.spec.containers[0].env)' \
+            | sha256sum | cut -d' ' -f1)
+          echo "hash=$HASH" >> $GITHUB_OUTPUT
+          echo "Pre-deploy env hash: $HASH"
+
+      - name: Deploy --no-traffic --tag candidate
+        run: |
+          gcloud run deploy ${{ inputs.service }} \
+            --source ${{ inputs.source-path }} \
+            --region=${{ inputs.region }} \
+            --project=${{ inputs.project }} \
+            --no-traffic \
+            --tag=candidate \
+            --quiet
+
+      - name: Health probe candidate
+        id: probe
+        run: |
+          CANDIDATE_URL="https://candidate---${{ inputs.service }}-nbmslvmlcq-el.a.run.app"
+          ID_TOKEN=$(gcloud auth print-identity-token --audiences="$CANDIDATE_URL")
+          HTTP=$(curl -s -o /tmp/health.json -w "%{http_code}" \
+                 -H "Authorization: Bearer $ID_TOKEN" \
+                 "$CANDIDATE_URL/health")
+          echo "Health: HTTP $HTTP"
+          cat /tmp/health.json
+          echo ""
+          if [ "$HTTP" != "200" ]; then
+            echo "✗ Health check failed — candidate stays at 0% traffic, old revision continues serving"
+            exit 1
+          fi
+
+      - name: Promote candidate to 100%
+        if: steps.probe.conclusion == 'success'
+        run: |
+          gcloud run services update-traffic ${{ inputs.service }} \
+            --region=${{ inputs.region }} \
+            --project=${{ inputs.project }} \
+            --to-latest \
+            --quiet
+
+      - name: Verify env preservation (no drift)
+        run: |
+          HASH_AFTER=$(gcloud run services describe ${{ inputs.service }} \
+            --region=${{ inputs.region }} --project=${{ inputs.project }} \
+            --format='value(spec.template.spec.containers[0].env)' \
+            | sha256sum | cut -d' ' -f1)
+          HASH_BEFORE="${{ steps.env-before.outputs.hash }}"
+          echo "Pre-deploy:  $HASH_BEFORE"
+          echo "Post-deploy: $HASH_AFTER"
+          if [ "$HASH_BEFORE" != "$HASH_AFTER" ]; then
+            echo "🟥 ENV DRIFT detected — investigate immediately"
+            exit 2
+          fi
+          echo "✓ Env preserved across deploy"
+
+      - name: Summary
+        if: always()
+        run: |
+          echo "## Cloud Run deploy summary — ${{ inputs.service }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- Region: ${{ inputs.region }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Project: ${{ inputs.project }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Source: \`${{ inputs.source-path }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- SHA: \`${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- Author: ${{ github.actor }}" >> $GITHUB_STEP_SUMMARY
