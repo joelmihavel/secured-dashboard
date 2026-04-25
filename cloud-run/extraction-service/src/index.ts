@@ -9,17 +9,21 @@
  *   GET  /health     - Health check endpoint
  *
  * Auth: X-Extraction-Secret header on POST routes
- * Port: process.env.PORT || 8080 (Cloud Run standard)
+ * Port: PORT env var (defaults to 8080, Cloud Run standard)
+ *
+ * Env config: see ./config.ts for the single source of truth on env vars
+ * read by this service. Do NOT call process.env elsewhere.
  */
 
 import express from "express";
+import { config } from "./config.js";
 import { validateExtractionSecret } from "./middleware/auth.js";
 import { errorHandler } from "./middleware/error-handler.js";
 import { extractRouter } from "./routes/extract.js";
 import { reprocessRouter } from "./routes/reprocess.js";
 
 const app = express();
-const PORT = parseInt(process.env.PORT ?? "8080", 10);
+const PORT = config.port;
 
 // ==============================================
 // MIDDLEWARE
@@ -83,7 +87,7 @@ app.listen(PORT, () => {
       severity: "INFO",
       message: `Extraction service listening on port ${PORT}`,
       port: PORT,
-      node_env: process.env.NODE_ENV ?? "development",
+      node_env: config.nodeEnv,
       timestamp: new Date().toISOString(),
     })
   );

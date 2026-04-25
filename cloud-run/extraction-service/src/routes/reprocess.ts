@@ -11,6 +11,7 @@
 import { Router } from "express";
 import type { Request, Response, NextFunction } from "express";
 import { createClient } from "@supabase/supabase-js";
+import { config } from "../config.js";
 import { runExtractionPipeline } from "../services/extraction-pipeline.js";
 
 export const reprocessRouter = Router();
@@ -23,17 +24,8 @@ reprocessRouter.post(
         extraction_ids?: string[];
       };
 
-      const supabaseUrl = process.env.SUPABASE_URL;
-      const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-      if (!supabaseUrl || !supabaseServiceKey) {
-        res.status(500).json({
-          error: "Missing Supabase configuration",
-        });
-        return;
-      }
-
-      const supabase = createClient(supabaseUrl, supabaseServiceKey, {
+      // config.supabase.{url,serviceKey} are enforced at boot — non-null here.
+      const supabase = createClient(config.supabase.url, config.supabase.serviceKey, {
         auth: {
           autoRefreshToken: false,
           persistSession: false,

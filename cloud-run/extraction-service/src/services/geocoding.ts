@@ -11,6 +11,7 @@
  */
 
 import type { SupabaseClient } from '@supabase/supabase-js';
+import { config } from '../config.js';
 
 interface GeocodableData {
   property_name?: string;
@@ -33,7 +34,7 @@ export async function geocodePropertyAddress(
   extractedRentalInfoId: string,
   extractedData: GeocodableData
 ): Promise<void> {
-  const googleMapsApiKey = process.env.GOOGLE_MAPS_API_KEY;
+  const googleMapsApiKey = config.googleMapsApiKey;
 
   if (!googleMapsApiKey) {
     console.log('[geocoding] GOOGLE_MAPS_API_KEY not configured, skipping');

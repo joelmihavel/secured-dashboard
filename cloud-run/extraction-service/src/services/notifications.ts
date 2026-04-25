@@ -5,10 +5,12 @@
  * Ported from: supabase/functions/_shared/notifications.ts (notifyUser, scheduleNotification)
  *
  * Changes from Deno version:
- * - Uses `process.env` instead of `Deno.env.get()`
  * - Uses Node.js native fetch
+ * - Reads config via central `config` module instead of `Deno.env.get()`
  * - Simplified: only exposes scheduleNotification (the pipeline's entry point)
  */
+
+import { config } from '../config.js';
 
 /**
  * Options for scheduleNotification.
@@ -51,13 +53,9 @@ export async function scheduleNotification(
   templateVars?: Record<string, string>,
   options?: ScheduleNotificationOptions
 ): Promise<void> {
-  const supabaseUrl = process.env.SUPABASE_URL || process.env.SB_URL;
-  const serviceKey = process.env.SB_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-  if (!supabaseUrl || !serviceKey) {
-    console.warn('[notifications] Supabase URL or service key not configured, skipping notification');
-    return;
-  }
+  // config.supabase.{url,serviceKey} are required at boot; non-null here.
+  const supabaseUrl = config.supabase.url;
+  const serviceKey = config.supabase.serviceKey;
 
   const dedupEnabled = options?.dedup ?? !!options?.relatedEntityId;
   const dedupWindowHours = options?.dedupWindowHours ?? 24;

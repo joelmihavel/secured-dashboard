@@ -6,6 +6,7 @@
  */
 
 import type { Request, Response, NextFunction } from "express";
+import { config } from "../config.js";
 
 /**
  * Middleware that validates the X-Extraction-Secret header.
@@ -16,17 +17,9 @@ export function validateExtractionSecret(
   res: Response,
   next: NextFunction
 ): void {
-  const expectedSecret = process.env.EXTRACTION_SECRET;
-
-  if (!expectedSecret) {
-    console.error(
-      "[auth] EXTRACTION_SECRET environment variable is not set"
-    );
-    res.status(500).json({
-      error: "Server misconfiguration: extraction secret not set",
-    });
-    return;
-  }
+  // config.extractionSecret is enforced at boot — if missing, the process
+  // would have exited before reaching this middleware. So this is non-null.
+  const expectedSecret = config.extractionSecret;
 
   const providedSecret = req.headers["x-extraction-secret"] as
     | string

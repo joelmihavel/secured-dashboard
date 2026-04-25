@@ -27,6 +27,7 @@
  */
 
 import type { SupabaseClient } from '@supabase/supabase-js';
+import { config } from '../config.js';
 import type { ExtractedData, ExtractionResult, GeminiDebug } from '../types.js';
 
 // Services
@@ -172,16 +173,16 @@ export async function runExtractionPipeline(
     const base64Content = arrayBufferToBase64(arrayBuffer);
 
     // ================================================================
-    // Step 4: Get GCP credentials from environment
+    // Step 4: Get GCP credentials from central config
     // ================================================================
-    const gcpCredentials = process.env.GCP_DOCUMENT_AI_CREDENTIALS;
-    const gcpProjectId = process.env.GCP_PROJECT_ID || 'secured-by-flent';
-    const gcpProcessorId = process.env.GCP_PROCESSOR_ID;
-    const gcpLocation = process.env.GCP_LOCATION || 'us';
+    const gcpCredentials = config.gcp.docAiCredentials;
+    const gcpProjectId = config.gcp.projectId;
+    const gcpProcessorId = config.gcp.processorId;
+    const gcpLocation = config.gcp.location;
 
-    const vertexAiCredentials = process.env.VERTEX_AI_CREDENTIALS;
-    const vertexAiProjectId = process.env.VERTEX_AI_PROJECT_ID || 'flent-ai-project-2';
-    const geminiApiKey = process.env.GEMINI_API_KEY_SECURED || process.env.GEMINI_API_KEY;
+    const vertexAiCredentials = config.vertex.credentials;
+    const vertexAiProjectId = config.vertex.projectId;
+    const geminiApiKey = config.geminiApiKey;
 
     console.log('[pipeline] Config:', {
       hasGcpCredentials: !!gcpCredentials,

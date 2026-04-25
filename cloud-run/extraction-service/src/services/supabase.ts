@@ -7,6 +7,7 @@
  */
 
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { config } from '../config.js';
 
 let _serviceClient: SupabaseClient | null = null;
 
@@ -17,17 +18,7 @@ let _serviceClient: SupabaseClient | null = null;
 export function createServiceClient(): SupabaseClient {
   if (_serviceClient) return _serviceClient;
 
-  const supabaseUrl = process.env.SUPABASE_URL;
-  const serviceKey = process.env.SB_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-  if (!supabaseUrl) {
-    throw new Error('SUPABASE_URL environment variable is not set');
-  }
-  if (!serviceKey) {
-    throw new Error('SB_SECRET_KEY or SUPABASE_SERVICE_ROLE_KEY environment variable is not set');
-  }
-
-  _serviceClient = createClient(supabaseUrl, serviceKey, {
+  _serviceClient = createClient(config.supabase.url, config.supabase.serviceKey, {
     auth: {
       autoRefreshToken: false,
       persistSession: false,
@@ -38,15 +29,15 @@ export function createServiceClient(): SupabaseClient {
 }
 
 /**
- * Get the Supabase URL from environment.
+ * Get the Supabase URL.
  */
 export function getSupabaseUrl(): string {
-  return process.env.SUPABASE_URL || process.env.SB_URL || '';
+  return config.supabase.url;
 }
 
 /**
- * Get the service role key from environment.
+ * Get the service role key.
  */
 export function getServiceKey(): string {
-  return process.env.SB_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY || '';
+  return config.supabase.serviceKey;
 }
