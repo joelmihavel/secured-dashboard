@@ -1,0 +1,31 @@
+-- Drop send_payment_reminders() — orphaned SQL function.
+--
+-- History:
+--   - Defined in 20260121000012_create_pg_cron_jobs.sql
+--   - Patched in 20260221000002_fix_cron_column_name.sql
+--   - Originally invoked by a `payment-reminders` cron job (also defined
+--     in 20260121000012)
+--   - The `payment-reminders` cron was dropped from prod sometime in
+--     March/April 2026 and replaced by `retry-failed-notifications` +
+--     `process-notification-queue` + `send-onboarding-reminders`. Dev
+--     still had the legacy cron until 2026-04-25 when this session
+--     removed it.
+--
+-- Verification before drop (re-runnable):
+--   SELECT count(*) FROM cron.job WHERE command LIKE '%send_payment_reminders%';  -- expect 0
+--   SELECT count(*) FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace
+--     WHERE n.nspname='public' AND p.proname != 'send_payment_reminders'
+--     AND pg_get_functiondef(p.oid) LIKE '%send_payment_reminders%';  -- expect 0
+--
+-- @safe-destructive: orphan SQL function with zero callers (cron + nested fn);
+--   superseded by the notification queue architecture. See cleanup plan Phase 8b.
+
+DROP FUNCTION IF EXISTS public.send_payment_reminders();
+
+-- rollback:
+--   The function body lives in 20260121000012_create_pg_cron_jobs.sql
+--   (lines 73–149) and was patched in 20260221000002_fix_cron_column_name.sql.
+--   To restore, re-apply both migrations OR paste the CREATE OR REPLACE
+--   FUNCTION block from those files. Note: the original cron job
+--   `payment-reminders` is also gone — recreate it via cron.schedule
+--   if/when the function is needed again.
