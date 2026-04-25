@@ -25,7 +25,7 @@ Rent payment app for Indian tenants. Pay rent via UPI, cards, or netbanking with
 | Mobile | Expo SDK 52, React Native 0.81, expo-router v4 |
 | State | Zustand (client) + React Query (server) |
 | Backend | Supabase (Auth, PostgREST, Edge Functions, Realtime) |
-| Payments | PayU India (UPI, Cards, Netbanking) |
+| Payments | Cashfree Payments (UPI, Cards, Netbanking, Easy Split settlement) — PayU is legacy fallback being phased out |
 | Identity | Cashfree Mobile 360 (KYC via OTP consent) |
 | Document AI | Google Document AI (OCR) + Gemini 3 Flash (extraction) |
 | Proxy | Cloudflare Worker — bypasses ISP DNS blocks on `*.supabase.co` |
@@ -40,12 +40,61 @@ Sign Up → OTP → Agreement Upload → AI Extraction → Review → Waitlist
 
 ## Quick Start
 
+### Option A — local everything (isolated dev, recommended)
+
+Runs the full backend (Supabase + edge functions, optionally Cloud Run extraction) on your machine. No cloud project, no real money, real Indian users not visible.
+
+**Prereqs (one-time):**
+- Docker Desktop or [OrbStack](https://orbstack.dev)
+- Node.js 20+
+- `supabase` CLI (already global; or use `npx supabase ...`)
+
+```bash
+git clone https://github.com/flent-homes/Secured-v2.git && cd Secured-v2
+
+# 1. Fill in test creds (Cashfree sandbox, Twilio test, Gemini key, etc.)
+cp supabase/.env.local.example supabase/.env.local
+$EDITOR supabase/.env.local
+
+# 2. Boot local Supabase + edge functions (auto-writes rn-app/.env.local)
+npm run dev:up
+#   Or for physical-device testing on the same wifi:
+#   WITH_LAN_ACCESS=1 npm run dev:up
+
+# 3. In a separate terminal, start the mobile app
+cd rn-app && npm install && npx expo start
+```
+
+**What's NOT real locally:**
+- WhatsApp / SMS: Twilio test creds don't deliver. OTP appears in `auth-otp` function logs and in [Inbucket](http://127.0.0.1:54324) (catch-all email + SMS).
+- Cashfree: hits sandbox APIs (real test transactions, no real money).
+- pg_cron schedules: extension is available locally but jobs only run if you trigger them manually via Studio SQL.
+- Push notifications: FCM not configured locally; expect silent no-ops on `send-push-notification`.
+
+**Reset local data:** `npm run db:reset` wipes + reapplies migrations + reseeds.
+
+**Test users (already in seed.sql):**
+| Phone | UUID prefix | State |
+|---|---|---|
+| `+919999999901` | `11111111-…` | Active tenant, fully verified, payments + cashback |
+| `+919999999902` | `22222222-…` | Verified landlord paired with the tenant above |
+| `+919999999903` | `33333333-…` | Early funnel (post-OTP, pre-extraction) |
+
+Use OTP `123456` in dev mode (gated by `ALLOW_DEMO_AUTH=true`).
+
+### Option B — point at the Supabase dev branch (cloud)
+
+Useful when you don't want to run Docker locally. Targets the v2-backend-dev Supabase project shared with the team.
+
 ```bash
 cd rn-app
-npm install
-cp .env.example .env          # Add Supabase URL + keys
-npx expo start                # Development server
+cp .env.local.example .env.local
+# Replace EXPO_PUBLIC_SUPABASE_URL with https://zqlowjveyqiagnbmfwsb.supabase.co
+# and the anon key with the dev-branch publishable key.
+npm install && npx expo start
 ```
+
+This points at the dev branch, which has the same edge functions and Cloud Run wiring as prod (per `docs/ENVIRONMENT_INFRASTRUCTURE.md`).
 
 ## Documentation
 

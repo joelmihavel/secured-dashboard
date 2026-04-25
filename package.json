@@ -1,0 +1,17 @@
+{
+  "name": "secured-v2-monorepo",
+  "private": true,
+  "description": "Flent Secured v2 — meta package for repo-wide tooling. Each subproject (rn-app, admin-app, cloud-run/extraction-service, supabase/functions) has its own package.json.",
+  "scripts": {
+    "dev:up": "bash scripts/dev-up.sh",
+    "dev:down": "supabase stop",
+    "dev:status": "supabase status",
+    "db:reset": "supabase db reset",
+    "db:migrate": "supabase db push",
+    "fns:serve": "supabase functions serve --env-file supabase/.env.local",
+    "lint:env": "bash scripts/check-env-isolation.sh"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
