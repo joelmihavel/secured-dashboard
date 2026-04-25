@@ -220,10 +220,40 @@ serve(async (req: Request) => {
     const checkout_mode = (validatedBody as Record<string, unknown>).checkout_mode as string | undefined;
 
     // Dual-gateway routing: client sends gateway_version to opt into Cashfree
-    // BUILD_MARKER: 2026-03-27T00:30:00Z — if you see this in logs, deployment is fresh
+    // BUILD_MARKER: 2026-04-25 — Phase 3.5b — server-side killswitch read added
     const gateway_version = body.gateway_version as string | undefined;
-    const useCashfree = gateway_version === 'cashfree';
-    console.log("[initiate-payment] BUILD_MARKER=2026-03-27T00:30 GATEWAY ROUTING: gateway_version=", JSON.stringify(gateway_version), "useCashfree=", useCashfree, "typeof=", typeof gateway_version, "RAW_BODY_KEYS=", Object.keys(body).join(","));
+    const clientWantsCashfree = gateway_version === 'cashfree';
+
+    // Phase 3.5b — read the server-side killswitch (Phase 3.5a created the
+    // get_payment_gateway() helper + app_config.payment_gateway row).
+    // For now, we OBSERVE only — log when client and server disagree, but
+    // still honor the client's choice. This makes the migration safe:
+    // - Default state: server returns 'cashfree', client sends 'cashfree' → no log
+    // - Future emergency: ops flips app_config.payment_gateway.primary='payu',
+    //   logs flag the divergence, lets us identify how many client builds
+    //   are still requesting Cashfree and need an OTA / app update
+    // - Phase 3.5c (future): switch from observe-only to enforce — server
+    //   directive overrides client gateway_version
+    let serverActiveGateway: string | null = null;
+    try {
+      const { data: gwData } = await supabase.rpc('get_payment_gateway');
+      serverActiveGateway = (gwData as string | null) ?? null;
+    } catch (rpcErr) {
+      // get_payment_gateway() helper missing or RPC failed — fall back silently
+      console.warn("[initiate-payment] get_payment_gateway() RPC unavailable:", rpcErr instanceof Error ? rpcErr.message : String(rpcErr));
+    }
+    if (serverActiveGateway && gateway_version && serverActiveGateway !== gateway_version) {
+      console.warn(
+        "[initiate-payment] GATEWAY_DIVERGENCE — server_active=", serverActiveGateway,
+        "client_requested=", gateway_version,
+        "user_id=", userId,
+        "tenancy_id=", body.tenancy_id,
+        "(observe-only — Phase 3.5b: still honoring client's choice)"
+      );
+    }
+
+    const useCashfree = clientWantsCashfree;
+    console.log("[initiate-payment] BUILD_MARKER=2026-04-25T-Phase3.5b GATEWAY ROUTING: gateway_version=", JSON.stringify(gateway_version), "useCashfree=", useCashfree, "server_active=", serverActiveGateway, "RAW_BODY_KEYS=", Object.keys(body).join(","));
 
     // Normalize payment method (iOS sends net_banking, credit_card, debit_card)
     const payment_method = normalizePaymentMethod(rawPaymentMethod);
