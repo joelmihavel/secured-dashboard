@@ -1,6 +1,6 @@
 # Environment Infrastructure — Flent Secured
 
-> Last updated: 2026-04-25 (Cloud Run dev/prod split documented)
+> Last updated: 2026-04-25 (full dev/prod parity: Cloud Run, edge fns, cron)
 
 ## Architecture Overview
 
@@ -94,10 +94,13 @@ Heavy-lift extraction (Document AI + Gemini multimodal, up to 15 min) runs in Cl
 | Service | Writes to (Supabase) | URL | Used by |
 |---|---|---|---|
 | `extraction-service-prod` | Main (`uowjtrzmszuaiokqxgir`) | `https://extraction-service-prod-nbmslvmlcq-el.a.run.app` | Production + Preview EAS builds |
-| `extraction-service-dev` | Branch (`zqlowjveyqiagnbmfwsb`) | `https://extraction-service-dev-nbmslvmlcq-el.a.run.app` | Development EAS builds (when toggled on the dev branch project) |
-| `stamp-verification-service-prod` | Main only | `https://stamp-verification-service-prod-nbmslvmlcq-el.a.run.app` | SHCIL e-Stamp verification (production only) |
+| `extraction-service-dev` | Branch (`zqlowjveyqiagnbmfwsb`) | `https://extraction-service-dev-nbmslvmlcq-el.a.run.app` | Development EAS builds |
+| `stamp-verification-service-prod` | Main | `https://stamp-verification-service-prod-nbmslvmlcq-el.a.run.app` | Prod SHCIL e-Stamp verification, called by `extraction-service-prod` |
+| `stamp-verification-service-dev` | Branch (`zqlowjveyqiagnbmfwsb`) | `https://stamp-verification-service-dev-nbmslvmlcq-el.a.run.app` | Dev SHCIL e-Stamp verification, called by `extraction-service-dev` |
 
 **Old `extraction-service`** (no `-prod`/`-dev` suffix) was deleted on 2026-04-25 — it was a Phase-0 leftover that pointed at the dev branch DB and caused confusion with the prod service. Do not recreate without the suffix.
+
+**Source code:** `extraction-service-{prod,dev}` build from `cloud-run/extraction-service/`. The stamp-verification service source is **not in this repo** — `stamp-verification-service-dev` was deployed by reusing the prod container image (`@sha256:917dd58806…`) with dev env vars. To rebuild from source, you need to redeploy from wherever the stamp service code actually lives (likely a separate repo or another teammate's machine).
 
 ### Source of Truth
 Both extraction services build from the same source: `cloud-run/extraction-service/` on `main`. Same code; only env vars differ.
@@ -124,8 +127,10 @@ Per-environment differences:
 | `SUPABASE_SERVICE_ROLE_KEY` | JWT for `zqlowjveyqiagnbmfwsb` | JWT for `uowjtrzmszuaiokqxgir` |
 | `EXTRACTION_SECRET` | `dev-extraction-secret-flent2026` | `prod-extraction-secret-flent2026` |
 | `NODE_ENV` | `development` | `production` |
-| `STAMP_VERIFICATION_SERVICE_URL` | (omitted — no dev stamp service) | Set to stamp-verification-service-prod URL |
-| `STAMP_VERIFICATION_SECRET` | (omitted) | Set |
+| `STAMP_VERIFICATION_SERVICE_URL` | `https://stamp-verification-service-dev-nbmslvmlcq-el.a.run.app` | `https://stamp-verification-service-prod-nbmslvmlcq-el.a.run.app` |
+| `STAMP_VERIFICATION_SECRET` | `dev-stamp-verification-secret-flent2026` | `prod-side secret` |
+
+The `stamp-verification-service-{dev,prod}` services share `TWOCAPTCHA_API_KEY` and `ZENROWS_API_KEY` (single vendor accounts) and `SUPABASE_*` env vars per environment. Their `VERIFICATION_SECRET` values are environment-specific to prevent cross-env auth.
 
 ### Wiring Edge Functions to Cloud Run
 
