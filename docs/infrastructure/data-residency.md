@@ -40,15 +40,45 @@ The Document AI processor ID is `cc5734db2b80908b` in location `us`. Every rent 
 - RBI Storage of Payment System Data circular (Apr 6, 2018) — payment system data must be stored only in India. Document AI doesn't *store* the data (it's request-scoped), but processing in US is a grey zone.
 - DPDP Act 2023 cross-border data transfer provisions — currently India has not designated a "trusted countries" allowlist; transfer to non-allowlisted jurisdictions requires consent + safeguards.
 
-**Remediation:**
-1. Provision a Document AI processor in `asia-south1` (Mumbai) — Google Cloud now supports DocAI in Mumbai for most processor types.
-2. Update `GCP_PROCESSOR_ID` and `GCP_LOCATION` env vars on `extraction-service-{prod,dev}`.
-3. Smoke test with a real rent agreement (extraction quality should be identical; Mumbai DocAI uses the same model).
-4. If `asia-south1` doesn't support the specific processor type used, the alternative is:
-   - Document the legal exposure and obtain RBI / DPDP counsel sign-off
-   - Implement client-side redaction before upload (mask PAN/Aadhaar before sending to DocAI) — significant code change
+**Remediation (provisioned as of 2026-04-25):**
 
-**Owner action required:** provision the new processor in `asia-south1`, then update Cloud Run env vars. ~1 hour of work + smoke test cycle.
+A new `FORM_PARSER_PROCESSOR` was provisioned in `asia-south1` to mirror the current US processor:
+
+| Attribute | Old (us) | New (asia-south1) |
+|---|---|---|
+| Processor ID | `cc5734db2b80908b` | `e427db2ce3a92621` |
+| Display name | flent-rent-agreement-parser | flent-rent-agreement-parser-asia-south1 |
+| Type | FORM_PARSER_PROCESSOR | same |
+| Model version | pretrained-form-parser-v2.0-2022-11-10 | same |
+| Endpoint | `https://us-documentai.googleapis.com/...` | `https://asia-south1-documentai.googleapis.com/...` |
+| Created | 2025-12-30 | 2026-04-25 |
+
+**Same model version on both** — extraction quality should be identical. The Mumbai processor exists but Cloud Run is NOT yet flipped to use it (regression-prevention principle: dev verification first).
+
+To flip when ready (after dev smoke test):
+
+```bash
+# Step 1 — flip dev first
+gcloud run services update extraction-service-dev \
+  --region=asia-south1 --project=secured-by-flent \
+  --update-env-vars GCP_PROCESSOR_ID=e427db2ce3a92621,GCP_LOCATION=asia-south1
+
+# Step 2 — verify a real extraction completes against the new processor
+# Trigger a test agreement upload via the dev branch + check
+# extracted_rental_info row populates correctly
+
+# Step 3 — flip prod after 24-48h dev soak
+gcloud run services update extraction-service-prod \
+  --region=asia-south1 --project=secured-by-flent \
+  --update-env-vars GCP_PROCESSOR_ID=e427db2ce3a92621,GCP_LOCATION=asia-south1
+
+# Step 4 — keep the us processor enabled for ~30d as rollback insurance
+# Then disable it via:
+# curl -X POST -H "Authorization: Bearer $(gcloud auth print-access-token)" \
+#   "https://us-documentai.googleapis.com/v1/projects/secured-by-flent/locations/us/processors/cc5734db2b80908b:disable"
+```
+
+**Owner action required:** verify on dev, then flip prod env vars. ~30 min of work + 48h soak.
 
 ### 🟥 Finding 2 — Vertex AI Gemini calls use `global` endpoint
 
