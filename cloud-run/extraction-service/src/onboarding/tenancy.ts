@@ -58,25 +58,42 @@ export async function ensureTenancyForExtraction(
   //
   // Done BEFORE the existence check so that re-runs for an already-
   // processed extraction also get the chance to clean up stale siblings.
-  // NOTE: we use `.or(...)` with an IS NULL clause because `.neq()` against
-  // NULL returns UNKNOWN in SQL and would NOT match orphaned rows whose
-  // extracted_rental_info_id became NULL via ON DELETE SET NULL cascade.
-  const { data: supersededRows, error: supersedeErr } = await supabase
+  // Two-step supersede:
+  //   (a) delete pending_verification tenancies for this user where
+  //       extracted_rental_info_id != current extraction (re-upload case).
+  //   (b) delete pending_verification tenancies whose
+  //       extracted_rental_info_id IS NULL (FK ON DELETE SET NULL cascade
+  //       leftovers).
+  // Two separate calls because `.neq()` in PostgREST treats NULL as
+  // unknown (skips it), and `.or(... .is.null, ... .neq.X)` had a quoting
+  // bug that produced invalid SQL.
+  const { data: supersededByExtraction, error: supersedeErrA } = await supabase
     .from("tenancies")
     .delete()
     .eq("user_id", userId)
     .eq("status", "pending_verification")
-    .or(`extracted_rental_info_id.is.null,extracted_rental_info_id.neq.${extraction.id}`)
+    .neq("extracted_rental_info_id", extraction.id)
     .select("id");
 
-  if (supersedeErr) {
+  const { data: supersededOrphans, error: supersedeErrB } = await supabase
+    .from("tenancies")
+    .delete()
+    .eq("user_id", userId)
+    .eq("status", "pending_verification")
+    .is("extracted_rental_info_id", null)
+    .select("id");
+
+  const totalSuperseded =
+    (supersededByExtraction?.length ?? 0) + (supersededOrphans?.length ?? 0);
+
+  if (supersedeErrA || supersedeErrB) {
     console.warn(
       "[tenancy] Failed to supersede prior pending_verification tenancies (non-fatal):",
-      supersedeErr.message
+      supersedeErrA?.message ?? supersedeErrB?.message
     );
-  } else if (supersededRows && supersededRows.length > 0) {
+  } else if (totalSuperseded > 0) {
     console.log(
-      `[tenancy] Superseded ${supersededRows.length} prior pending_verification tenanc${supersededRows.length === 1 ? "y" : "ies"} for user ${userId} (re-upload with new extraction)`
+      `[tenancy] Superseded ${totalSuperseded} prior pending_verification tenanc${totalSuperseded === 1 ? "y" : "ies"} for user ${userId} (re-upload with new extraction)`
     );
   }
 

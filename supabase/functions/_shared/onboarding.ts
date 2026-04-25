@@ -158,25 +158,34 @@ export async function ensureTenancyForExtraction(
   // never carried payments, so it's safe to remove. Done BEFORE the
   // existence check so re-runs also clean stale siblings. We deliberately
   // do NOT touch tenancies with any status other than pending_verification.
-  // NOTE: use .or(...) with IS NULL because .neq() against NULL returns
-  // UNKNOWN in SQL and would NOT match orphaned rows whose
-  // extracted_rental_info_id became NULL via ON DELETE SET NULL cascade.
-  const { data: supersededRows, error: supersedeErr } = await supabase
+  // Two-step supersede (see tenancy.ts in cloud-run for explanation).
+  const { data: supersededByExtraction, error: supersedeErrA } = await supabase
     .from("tenancies")
     .delete()
     .eq("user_id", userId)
     .eq("status", "pending_verification")
-    .or(`extracted_rental_info_id.is.null,extracted_rental_info_id.neq.${extraction.id}`)
+    .neq("extracted_rental_info_id", extraction.id)
     .select("id");
 
-  if (supersedeErr) {
+  const { data: supersededOrphans, error: supersedeErrB } = await supabase
+    .from("tenancies")
+    .delete()
+    .eq("user_id", userId)
+    .eq("status", "pending_verification")
+    .is("extracted_rental_info_id", null)
+    .select("id");
+
+  const totalSuperseded =
+    (supersededByExtraction?.length ?? 0) + (supersededOrphans?.length ?? 0);
+
+  if (supersedeErrA || supersedeErrB) {
     console.warn(
       "[onboarding] Failed to clean up prior pending_verification tenancies (non-fatal):",
-      supersedeErr.message,
+      supersedeErrA?.message ?? supersedeErrB?.message,
     );
-  } else if (supersededRows && supersededRows.length > 0) {
+  } else if (totalSuperseded > 0) {
     console.log(
-      `[onboarding] Superseded ${supersededRows.length} prior pending_verification tenanc${supersededRows.length === 1 ? "y" : "ies"} for user ${userId} (re-upload with new extraction)`,
+      `[onboarding] Superseded ${totalSuperseded} prior pending_verification tenanc${totalSuperseded === 1 ? "y" : "ies"} for user ${userId} (re-upload with new extraction)`,
     );
   }
 
