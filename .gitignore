@@ -16,9 +16,28 @@ supabase/.temp/
 *.rej
 *.orig
 
-# Fix scripts (temp dev tools)
+# Scratch / one-off dev tools (Figma scripting, parsing, layout dumps)
 fix-*.js
 test-*.js
+parse_*.js
+parse_*.txt
+figma_*.json
+get_layout*.js
+extract_text_nodes.js
+update_carousel.js
+new_cards.json
+progress.txt
+Oops.rej*
+
+# Test runner artifacts
+.playwright-mcp/
+playwright-report/
+
+# Stale agent / planning state
+.context/
+
+# v1 legacy reference (kept in git history pre-2026-04-25)
+screenshot-parity-v1/
 
 # IDE / tool configs
 .serena/
