@@ -67,6 +67,14 @@ export const config = Object.freeze({
   vertex: {
     projectId: process.env.VERTEX_AI_PROJECT_ID ?? 'flent-ai-project-2',
     credentials: optional(process.env.VERTEX_AI_CREDENTIALS),
+    /**
+     * Vertex AI endpoint location. Defaults to 'global' (current behavior —
+     * Vertex picks any region). Per docs/infrastructure/data-residency.md
+     * Phase 7d, recommended to pin to 'asia-south1' for DPDP-friendlier
+     * processing. Verify model availability before flipping; gemini-3-flash-preview
+     * may not be in asia-south1 yet.
+     */
+    location: process.env.VERTEX_AI_LOCATION ?? 'global',
   },
 
   /** Used for Gemini API-key fallback path (when Vertex AI is unavailable). */

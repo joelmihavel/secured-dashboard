@@ -289,7 +289,7 @@ export async function runExtractionPipeline(
             documentText,
             vertexAiCredentials,
             vertexAiProjectId,
-            'global'
+            config.vertex.location
           );
           geminiDebug.vertex_ai_success = true;
           geminiDebug.final_result_keys = geminiResult ? Object.keys(geminiResult).length : 0;
@@ -308,7 +308,7 @@ export async function runExtractionPipeline(
                   documentText,
                   vertexAiCredentials,
                   vertexAiProjectId,
-                  'global'
+                  config.vertex.location
                 );
                 geminiDebug.vertex_ai_success = true;
                 geminiDebug.vertex_ai_retried = true;
@@ -402,7 +402,7 @@ export async function runExtractionPipeline(
               base64Content,
               vertexAiCredentials,
               vertexAiProjectId,
-              'global'
+              config.vertex.location
             );
             if (geminiResult) {
               geminiDebug.vertex_ai_success = true;
