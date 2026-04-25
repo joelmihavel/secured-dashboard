@@ -1,0 +1,64 @@
+# Reusable workflow — lint a single subproject by path filter.
+#
+# Called by pr-gates.yml. Each subproject (rn-app, admin-app, cloud-run/
+# extraction-service) runs typecheck + eslint here. Supabase functions are
+# handled separately via deno (see _reusable-lint-functions if/when added).
+#
+# Per the cleanup plan (Phase 5 Day 1), this is one of the non-blocking
+# foundation pieces. It becomes a required status check on Day 8.
+
+name: lint
+
+on:
+  workflow_call:
+    inputs:
+      subproject:
+        description: "Subproject to lint (rn-app | admin-app | cloud-run/extraction-service)"
+        required: true
+        type: string
+      node-version:
+        description: "Node.js version"
+        required: false
+        type: string
+        default: "20"
+
+jobs:
+  lint:
+    name: Lint ${{ inputs.subproject }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ inputs.node-version }}
+          cache: npm
+          cache-dependency-path: ${{ inputs.subproject }}/package-lock.json
+
+      - name: Install dependencies
+        working-directory: ${{ inputs.subproject }}
+        run: npm ci --no-audit --no-fund
+
+      - name: TypeScript check
+        working-directory: ${{ inputs.subproject }}
+        run: |
+          if [ -f tsconfig.json ]; then
+            npx tsc --noEmit --skipLibCheck
+          else
+            echo "No tsconfig.json — skipping tsc"
+          fi
+
+      - name: Lint
+        working-directory: ${{ inputs.subproject }}
+        run: |
+          if [ "$(jq -r '.scripts.lint // empty' package.json)" != "" ]; then
+            npm run lint
+          else
+            echo "No lint script — skipping"
+          fi

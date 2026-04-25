@@ -1,0 +1,62 @@
+# CODEOWNERS — Secured-v2
+#
+# Per the cleanup plan (Phase 5), this file scopes who must review changes
+# to sensitive paths. Solo developer setup today; structured so when the
+# team grows you can swap in @flent-homes/<team> handles in place of
+# @atrishabh-flent without re-architecting.
+#
+# Reviewer assignment is automatic on PRs that touch matched paths.
+# CODEOWNERS DOES NOT enforce review by itself — that requires branch
+# protection rules (Phase 5 Day 8). Until then, this file just nominates
+# reviewers, who can then approve or request changes.
+
+# Default — every PR pings the owner unless overridden below
+*                                                @atrishabh-flent
+
+# Database — migrations are append-only, schema changes need extra eyes
+/supabase/migrations/                            @atrishabh-flent
+/supabase/functions/_shared/                     @atrishabh-flent
+
+# Payment surface — money paths get strictest review
+/supabase/functions/initiate-cashfree-payment/   @atrishabh-flent
+/supabase/functions/cashfree-split-webhook/      @atrishabh-flent
+/supabase/functions/cashfree-vendor-webhook/     @atrishabh-flent
+/supabase/functions/payment-webhook/             @atrishabh-flent
+/supabase/functions/settle-to-landlord/          @atrishabh-flent
+/supabase/functions/poll-settlement-status/      @atrishabh-flent
+/rn-app/src/services/payment/                    @atrishabh-flent
+/rn-app/src/services/api/payments.ts             @atrishabh-flent
+
+# Identity / KYC
+/supabase/functions/verify-pan/                  @atrishabh-flent
+/supabase/functions/verify-bank/                 @atrishabh-flent
+/supabase/functions/verify-identity/             @atrishabh-flent
+
+# Admin app — has elevated DB access
+/admin-app/                                      @atrishabh-flent
+
+# Cloud Run services — heavy-lift extraction + stamp verification
+/cloud-run/                                      @atrishabh-flent
+
+# CI / build / deploy config
+/.github/workflows/                              @atrishabh-flent
+/.github/CODEOWNERS                              @atrishabh-flent
+/.github/branch-protection-main.json             @atrishabh-flent
+/scripts/                                        @atrishabh-flent
+/scripts/dev-up.sh                               @atrishabh-flent
+/scripts/check-env-isolation.sh                  @atrishabh-flent
+/scripts/ci/                                     @atrishabh-flent
+
+# Mobile app entry points — affect EAS routing
+/rn-app/eas.json                                 @atrishabh-flent
+/rn-app/app.json                                 @atrishabh-flent
+/rn-app/package.json                             @atrishabh-flent
+
+# Env/config modules — central sources of truth
+/rn-app/src/config/                              @atrishabh-flent
+/admin-app/src/lib/env.ts                        @atrishabh-flent
+/cloud-run/extraction-service/src/config.ts      @atrishabh-flent
+
+# Documentation — change tracking helps the cleanup story
+/docs/                                           @atrishabh-flent
+/README.md                                       @atrishabh-flent

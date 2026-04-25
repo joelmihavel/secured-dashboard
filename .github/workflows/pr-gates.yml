@@ -1,0 +1,185 @@
+# PR Gates — secret scan + lint + typecheck + migration-lint + env-isolation.
+#
+# Runs on every PR targeting main or dev. Uses path filters to skip jobs
+# that don't apply to the change set.
+#
+# Per the cleanup plan (Phase 5):
+#   - Day 1–2: this workflow exists but is NOT required by branch protection.
+#     PRs can merge even if these jobs fail. We use the time to fix false
+#     positives.
+#   - Day 8: status checks flip to required (per .github/branch-protection-main.json).
+#     PRs blocked on any failure.
+#   - Day 13+: maestro-smoke joins the required set.
+
+name: PR Gates
+
+on:
+  pull_request:
+    branches: [main, dev]
+    types: [opened, synchronize, reopened]
+
+# Cancel previous runs of the same PR when a new commit is pushed
+concurrency:
+  group: pr-gates-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pull-requests: write   # for posting summary comments
+
+jobs:
+  # ─── Detect what changed to skip irrelevant jobs ────────────────────────
+  changes:
+    name: Detect changes
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    outputs:
+      rn: ${{ steps.filter.outputs.rn }}
+      admin: ${{ steps.filter.outputs.admin }}
+      cloudrun: ${{ steps.filter.outputs.cloudrun }}
+      functions: ${{ steps.filter.outputs.functions }}
+      migrations: ${{ steps.filter.outputs.migrations }}
+      scripts: ${{ steps.filter.outputs.scripts }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: filter
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            rn:
+              - 'rn-app/**'
+            admin:
+              - 'admin-app/**'
+            cloudrun:
+              - 'cloud-run/**'
+            functions:
+              - 'supabase/functions/**'
+            migrations:
+              - 'supabase/migrations/**'
+            scripts:
+              - 'scripts/**'
+              - 'package.json'
+              - '.github/workflows/**'
+
+  # ─── Gitleaks secret scan ───────────────────────────────────────────────
+  secret-scan:
+    name: gitleaks
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # gitleaks needs history for diff scan
+      - uses: gitleaks/gitleaks-action@v2
+        env:
+          GITLEAKS_ENABLE_UPLOAD_ARTIFACT: "true"
+          GITLEAKS_CONFIG: ".gitleaks.toml"
+
+  # ─── env-isolation lint (subprojects must use central env modules) ─────
+  lint-env:
+    name: env isolation
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    needs: changes
+    if: needs.changes.outputs.rn == 'true' || needs.changes.outputs.admin == 'true' || needs.changes.outputs.cloudrun == 'true'
+    steps:
+      - uses: actions/checkout@v4
+      - run: bash scripts/check-env-isolation.sh
+
+  # ─── Per-subproject lint + typecheck ───────────────────────────────────
+  lint-rn:
+    name: lint rn-app
+    needs: changes
+    if: needs.changes.outputs.rn == 'true'
+    uses: ./.github/workflows/_reusable-lint.yml
+    with:
+      subproject: rn-app
+
+  lint-admin:
+    name: lint admin-app
+    needs: changes
+    if: needs.changes.outputs.admin == 'true'
+    uses: ./.github/workflows/_reusable-lint.yml
+    with:
+      subproject: admin-app
+
+  lint-cloudrun:
+    name: lint cloud-run/extraction-service
+    needs: changes
+    if: needs.changes.outputs.cloudrun == 'true'
+    uses: ./.github/workflows/_reusable-lint.yml
+    with:
+      subproject: cloud-run/extraction-service
+
+  # ─── Supabase function lint (deno) ──────────────────────────────────────
+  lint-functions:
+    name: lint supabase functions
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    needs: changes
+    if: needs.changes.outputs.functions == 'true'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: denoland/setup-deno@v1
+        with:
+          deno-version: v1.x
+      - name: Deno lint
+        run: |
+          # Skip _shared (lots of historical patterns); only lint changed function dirs
+          for dir in $(git diff --name-only origin/${{ github.event.pull_request.base.ref }}...HEAD -- supabase/functions/ | xargs -I {} dirname {} | sort -u); do
+            if [ -d "$dir" ] && [ -f "$dir/index.ts" ]; then
+              echo "=== Linting $dir ==="
+              deno lint "$dir/index.ts" || true
+            fi
+          done
+
+  # ─── Migration safety lint ──────────────────────────────────────────────
+  lint-migrations:
+    name: migration-lint
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    needs: changes
+    if: needs.changes.outputs.migrations == 'true'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Run migration-lint on PR diff
+        run: |
+          BASE_SHA=$(git merge-base origin/${{ github.event.pull_request.base.ref }} HEAD)
+          node scripts/ci/lint-migrations.mjs --diff $BASE_SHA
+
+  # ─── Summary status check (single check name for branch protection) ────
+  pr-gates-summary:
+    name: PR gates summary
+    runs-on: ubuntu-latest
+    needs:
+      - secret-scan
+      - lint-env
+      - lint-rn
+      - lint-admin
+      - lint-cloudrun
+      - lint-functions
+      - lint-migrations
+    if: always()
+    steps:
+      - name: Summary
+        run: |
+          echo "secret-scan:      ${{ needs.secret-scan.result }}"
+          echo "lint-env:         ${{ needs.lint-env.result }}"
+          echo "lint-rn:          ${{ needs.lint-rn.result }}"
+          echo "lint-admin:       ${{ needs.lint-admin.result }}"
+          echo "lint-cloudrun:    ${{ needs.lint-cloudrun.result }}"
+          echo "lint-functions:   ${{ needs.lint-functions.result }}"
+          echo "lint-migrations:  ${{ needs.lint-migrations.result }}"
+          # Per Phase 5 Day 1–2: this workflow runs in NON-BLOCKING mode.
+          # We log results but don't fail the job — gives us time to fix
+          # false positives before flipping required-checks on Day 8.
+          # When flipping to blocking, change `exit 0` below to:
+          #   for r in "${{ needs.secret-scan.result }}" ...; do
+          #     [ "$r" = "success" ] || [ "$r" = "skipped" ] || exit 1
+          #   done
+          exit 0

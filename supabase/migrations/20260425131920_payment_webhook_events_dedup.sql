@@ -70,6 +70,9 @@ END $$;
 -- whoever wires the cron should add a `cron.schedule(...)` in a follow-up
 -- migration, gated on `EXISTS (SELECT 1 FROM pg_extension WHERE extname='pg_cron')`
 -- so it's a no-op locally.
+--
+-- @security-definer: needs to bypass RLS to delete on behalf of the cron job
+-- (no user context). Only callable by service_role per REVOKE below.
 CREATE OR REPLACE FUNCTION public.cleanup_payment_webhook_events()
 RETURNS integer
 LANGUAGE plpgsql SECURITY DEFINER
@@ -84,6 +87,8 @@ BEGIN
 END;
 $function$;
 
+-- @grant-review: standard pattern — revoke EXECUTE from anon + authenticated
+-- so only service_role (cron, edge functions) can invoke this cleanup.
 REVOKE EXECUTE ON FUNCTION public.cleanup_payment_webhook_events() FROM anon, authenticated;
 
 -- rollback:

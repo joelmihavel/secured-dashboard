@@ -1,0 +1,104 @@
+# gitleaks config for Secured-v2
+#
+# Scans diffs (PRs) and history (push) for committed secrets. Wired into
+# the pr-gates.yml workflow.
+#
+# Per the cleanup plan's Phase 5: this is one of the 11 required status
+# checks once branch protection flips on (Day 8). Until then it runs in
+# non-blocking mode.
+#
+# Reference: https://github.com/gitleaks/gitleaks/blob/master/config/gitleaks.toml
+
+title = "Secured-v2 secret scan"
+
+[extend]
+# Inherit gitleaks' built-in default rules (AWS, GitHub, Slack, etc.)
+useDefault = true
+
+# ─── Custom rules — service-specific patterns we care about ────────────────
+
+[[rules]]
+id = "supabase-jwt"
+description = "Supabase service-role / anon JWT in code or migrations"
+# JWT pattern: header.payload.signature, all base64url segments
+regex = '''eyJhbGciOi[A-Za-z0-9_-]+\.eyJpc3Mi[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+'''
+keywords = ["eyJhbGci"]
+
+[[rules]]
+id = "supabase-secret-key"
+description = "Supabase opaque service-role key (sb_secret_*)"
+regex = '''sb_secret_[A-Za-z0-9_-]{16,}'''
+keywords = ["sb_secret_"]
+
+[[rules]]
+id = "supabase-publishable-key"
+description = "Supabase publishable key in non-template files (anon keys are public, but flag if they appear outside .env.example)"
+regex = '''sb_publishable_[A-Za-z0-9_-]{16,}'''
+keywords = ["sb_publishable_"]
+
+[[rules]]
+id = "expo-token"
+description = "Expo / EAS access token"
+regex = '''(?i)(expo[._-]?token|eas[._-]?token)\s*[:=]\s*['"]?[A-Za-z0-9_-]{20,}['"]?'''
+keywords = ["EXPO_TOKEN", "EAS_TOKEN"]
+
+[[rules]]
+id = "cashfree-secret"
+description = "Cashfree API secret pattern"
+regex = '''(?i)cashfree[_-]?(secret|app[_-]?secret|public[_-]?key)\s*[:=]\s*['"]?[A-Za-z0-9_-]{20,}['"]?'''
+keywords = ["CASHFREE_SECRET", "CASHFREE_PG_APP_SECRET", "CASHFREE_PUBLIC_KEY"]
+
+[[rules]]
+id = "twilio-auth-token"
+description = "Twilio auth token (32 hex chars)"
+regex = '''(?i)twilio[_-]?auth[_-]?token\s*[:=]\s*['"]?[a-f0-9]{32}['"]?'''
+keywords = ["TWILIO_AUTH_TOKEN"]
+
+[[rules]]
+id = "google-api-key"
+description = "Google API key (AIza...)"
+regex = '''AIza[0-9A-Za-z_-]{35}'''
+keywords = ["AIza"]
+
+# ─── Allowlist — known-safe places these patterns appear ──────────────────
+
+[allowlist]
+description = "Files where matched patterns are intentional templates / public values"
+paths = [
+    # Env templates that document what to fill in (with placeholder values)
+    '''\.env\.example$''',
+    '''\.env\.local\.example$''',
+    '''rn-app/\.env\.local\.example$''',
+    '''supabase/\.env\.local\.example$''',
+    # Documentation — references to env var NAMES, not values
+    '''docs/.*\.md$''',
+    '''README\.md$''',
+    # Plan files — may discuss secret patterns by name
+    '''\.claude/.*''',
+    # The gitleaks config itself contains pattern strings that match its own rules
+    '''\.gitleaks\.toml$''',
+]
+
+# Stopwords — case-insensitive substrings that mark a match as a false positive
+stopwords = [
+    "example",
+    "placeholder",
+    "<your-key-here>",
+    "your-",
+    "replace-me",
+    "redacted",
+    "xxxxxxxx",
+    "fake",
+    "dummy",
+    "test_",
+    "AAAA1234",
+]
+
+# ─── Known-leaked credentials being rotated ──────────────────────────────
+#
+# Per the cleanup plan's Phase Z, the prod service-role JWT in migration
+# 20260308000001_migrate_cron_keys_to_vault.sql is being rotated. Once Phase
+# Z lands, the JWT will be invalid and we should NOT add it to the allowlist
+# (we want gitleaks to flag any future re-introduction). For now, we don't
+# allowlist it — gitleaks will warn but the pr-gates.yml runs in non-blocking
+# mode until branch protection flips on.
