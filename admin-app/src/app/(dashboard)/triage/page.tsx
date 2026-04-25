@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { fetchView, callEdgeFunction } from "@/lib/supabase";
+import { adminApiKey } from "@/lib/env";
 import { formatCurrencyShort, maskPhone } from "@/lib/utils";
 import type { UserFunnel } from "@/types/user";
 import { ApprovalPreflight } from "@/components/users/approval-preflight";
@@ -96,7 +97,7 @@ export default function TriagePage() {
       await callEdgeFunction("admin-waitlist", {
         action,
         user_ids: ids,
-        admin_key: process.env.NEXT_PUBLIC_ADMIN_KEY || "",
+        admin_key: adminApiKey,
         ...(action === "reject" ? { rejection_reasons: ["Admin rejection"] } : {}),
       });
       setFeedback({

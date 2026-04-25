@@ -1,19 +1,7 @@
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
+import { getEnvConfig, type Environment } from "./env";
 
-const ENVIRONMENTS = {
-  dev: {
-    url: "https://zqlowjveyqiagnbmfwsb.supabase.co",
-    anonKey: process.env.NEXT_PUBLIC_SUPABASE_DEV_ANON_KEY || "",
-    serviceKey: process.env.NEXT_PUBLIC_SUPABASE_DEV_SERVICE_KEY || "",
-  },
-  main: {
-    url: "https://uowjtrzmszuaiokqxgir.supabase.co",
-    anonKey: process.env.NEXT_PUBLIC_SUPABASE_MAIN_ANON_KEY || "",
-    serviceKey: process.env.NEXT_PUBLIC_SUPABASE_MAIN_SERVICE_KEY || "",
-  },
-} as const;
-
-export type Environment = keyof typeof ENVIRONMENTS;
+export type { Environment };
 
 let currentEnv: Environment = "main";
 let client: SupabaseClient | null = null;
@@ -22,7 +10,7 @@ export function getSupabaseClient(env?: Environment): SupabaseClient {
   const targetEnv = env || currentEnv;
   if (!client || targetEnv !== currentEnv) {
     currentEnv = targetEnv;
-    const config = ENVIRONMENTS[targetEnv];
+    const config = getEnvConfig(targetEnv);
     // Use service key if available (bypasses RLS for admin reads)
     // Falls back to anon key
     const key = config.serviceKey || config.anonKey;
@@ -41,7 +29,7 @@ export function getCurrentEnvironment(): Environment {
 }
 
 export function getEnvironmentConfig(env?: Environment) {
-  return ENVIRONMENTS[env || currentEnv];
+  return getEnvConfig(env || currentEnv);
 }
 
 export async function fetchView<T = Record<string, unknown>>(

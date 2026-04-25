@@ -10,6 +10,7 @@ import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
 import { formatCurrency, formatCurrencyShort, formatDate, maskPhone } from "@/lib/utils";
 import { callEdgeFunction } from "@/lib/supabase";
+import { adminApiKey } from "@/lib/env";
 import type { UserFunnel } from "@/types/user";
 import { RiskFactorBreakdown } from "./risk-factor-breakdown";
 import { ApprovalPreflight } from "./approval-preflight";
@@ -55,7 +56,7 @@ export function UserDetail({ user }: { user: UserFunnel }) {
       const result = await callEdgeFunction("admin-waitlist", {
         action: "approve",
         user_ids: [user.user_id],
-        admin_key: process.env.NEXT_PUBLIC_ADMIN_KEY || "",
+        admin_key: adminApiKey,
       });
       setApprovalResult({ success: true, message: "User approved successfully" });
       setShowPreflight(false);
