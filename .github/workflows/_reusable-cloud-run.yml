@@ -91,7 +91,13 @@ jobs:
         id: probe
         run: |
           CANDIDATE_URL="https://candidate---${{ inputs.service }}-nbmslvmlcq-el.a.run.app"
-          ID_TOKEN=$(gcloud auth print-identity-token --audiences="$CANDIDATE_URL")
+          # WIF-federated identity can't directly mint ID tokens via
+          # `gcloud auth print-identity-token --audiences`. Workaround:
+          # impersonate the deployer SA itself (requires
+          # roles/iam.serviceAccountTokenCreator on the SA to itself).
+          ID_TOKEN=$(gcloud auth print-identity-token \
+            --impersonate-service-account="${{ secrets.GCP_SA_EMAIL }}" \
+            --audiences="$CANDIDATE_URL")
           HTTP=$(curl -s -o /tmp/health.json -w "%{http_code}" \
                  -H "Authorization: Bearer $ID_TOKEN" \
                  "$CANDIDATE_URL/health")
