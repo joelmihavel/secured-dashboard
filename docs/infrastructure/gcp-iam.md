@@ -1,41 +1,54 @@
 # GCP IAM Audit — Cloud Run Services
 
-> **Last reviewed:** 2026-04-25 (Phase 7a of cleanup plan)
+> **Last reviewed:** 2026-04-26 (Phase 7a of cleanup plan, finding #1 RESOLVED)
 >
 > Run this audit periodically (or wire it into a CI workflow) — IAM drift is silent and hard to spot.
 
-## Current state (snapshot 2026-04-25)
+## Current state (snapshot 2026-04-26)
 
 ### Service accounts in use
 
-All 5 Cloud Run services run as the **default Compute Engine service account**:
-
-```
-150238445962-compute@developer.gserviceaccount.com
-```
+All 4 extraction + stamp Cloud Run services now run as **dedicated per-service SAs**:
 
 | Cloud Run service | Service account |
 |---|---|
-| extraction-service-prod | default compute SA |
-| extraction-service-dev | default compute SA |
-| stamp-verification-service-prod | default compute SA |
-| stamp-verification-service-dev | default compute SA |
-| api-club-proxy | default compute SA |
+| extraction-service-prod | `extraction-service-prod-sa@secured-by-flent.iam.gserviceaccount.com` |
+| extraction-service-dev | `extraction-service-dev-sa@secured-by-flent.iam.gserviceaccount.com` |
+| stamp-verification-service-prod | `stamp-verifier-prod-sa@secured-by-flent.iam.gserviceaccount.com` |
+| stamp-verification-service-dev | `stamp-verifier-dev-sa@secured-by-flent.iam.gserviceaccount.com` |
+| api-club-proxy | (still default compute SA — out of scope, not part of extraction pipeline) |
 
-### Roles on the default compute SA
+### Roles per per-service SA
+
+**`extraction-service-{dev,prod}-sa`:**
+- `roles/logging.logWriter` (project-level — Cloud Run runtime requirement)
+- `roles/monitoring.metricWriter` (project-level)
+- `roles/documentai.apiUser` (project-level — for OCR calls to processor `e427db2ce3a92621`)
+- `roles/secretmanager.secretAccessor` on `extraction-doc-ai-creds` (resource-scoped)
+- `roles/secretmanager.secretAccessor` on `extraction-gcp-creds` (resource-scoped)
+- `roles/aiplatform.user` on `flent-ai-project-2` (cross-project — for Vertex AI Gemini)
+
+**`stamp-verifier-{dev,prod}-sa`:**
+- `roles/logging.logWriter` (project-level)
+- `roles/monitoring.metricWriter` (project-level)
+- `roles/secretmanager.secretAccessor` on `stamp-verification-secret` (resource-scoped)
+- `roles/secretmanager.secretAccessor` on `twocaptcha-api-key` (resource-scoped)
+
+### Default compute SA — still `roles/editor` (residual concern)
 
 ```
-roles/editor
+150238445962-compute@developer.gserviceaccount.com → roles/editor
 ```
 
-🟥 **CRITICAL FINDING #1:** the default compute SA has `roles/editor` project-wide. That's extremely broad — grants almost all GCP write capabilities across the project. Any compromise of a single Cloud Run container would let an attacker:
-- Read/write all Cloud Storage buckets in `secured-by-flent`
-- Modify any Cloud Run service (including deploying replacements)
-- Read most Secret Manager secrets
-- Modify IAM bindings on most resources
-- Delete BigQuery datasets, Pub/Sub topics, etc.
+The default compute SA still has `roles/editor` project-wide, but **no Cloud Run service runtime is using it anymore** (extraction + stamp all switched to per-service SAs as of 2026-04-26 ~06:55 UTC). It's still used by Cloud Build for source-deploys (`gcloud run deploy --source` uses it as the build SA). Removing `roles/editor` requires careful audit of who else relies on it (Cloud Build, any other workloads). Treat as Phase 7a cleanup task: separate from the SA-switch migration.
 
-For a fintech with KYC + bank account + payment data flowing through Document AI and Vertex AI, this is excessive blast radius for any single workload.
+✅ **CRITICAL FINDING #1 RESOLVED (2026-04-26):** runtime SAs are now per-service with least-privilege bindings. The "compromise of one Cloud Run container = roles/editor on whole project" attack path is closed for extraction + stamp services. A compromise of `extraction-service-prod` now only grants:
+- DocAI API calls (no destructive scope)
+- Read of 2 specific secrets (`extraction-doc-ai-creds`, `extraction-gcp-creds`)
+- Vertex AI calls on a separate project
+- Logging/monitoring writes
+
+Default compute SA `roles/editor` remains for Cloud Build but is no longer attached to runtime workloads.
 
 ### Public invoker bindings on Cloud Run
 
