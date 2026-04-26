@@ -6,11 +6,11 @@
  * ACTIVE, BLOCKED, ACTION_REQUIRED, etc.
  *
  * Endpoint: POST /functions/v1/cashfree-vendor-webhook
- * Auth: HMAC-SHA256 Base64 signature via x-webhook-signature header
- * Secret: CASHFREE_VENDOR_WEBHOOK_SECRET (preferred) — set separately from
- *         CASHFREE_PG_APP_SECRET so a PG-secret leak can't forge vendor
- *         status updates. See cashfree-split-webhook for the phased
- *         rollout pattern; same applies here.
+ * Auth:     HMAC-SHA256 Base64 signature via x-webhook-signature header
+ * Secret:   CASHFREE_PG_APP_SECRET — Cashfree signs ALL webhooks with the
+ *           merchant's project-wide PG Client Secret. There is no
+ *           per-webhook signing key in Cashfree's dashboard or API.
+ *           See docs/backend/cashfree-integration.md "Webhook signing".
  *
  * Register URL in Cashfree dashboard → Webhooks → Vendor Status Change:
  *   https://{project-ref}.supabase.co/functions/v1/cashfree-vendor-webhook
@@ -23,18 +23,12 @@ import { handleError } from "../_shared/errors.ts";
 import { hmacSha256Base64, timingSafeCompare } from "../_shared/crypto.ts";
 import { AuditLogger } from "../_shared/audit.ts";
 
-// Resolve the signing secret with explicit precedence + warning on fallback.
-const VENDOR_SECRET = Deno.env.get("CASHFREE_VENDOR_WEBHOOK_SECRET");
-const PG_SECRET = Deno.env.get("CASHFREE_PG_APP_SECRET") ?? Deno.env.get("CASHFREE_PG_SECRET_KEY");
-const CF_WEBHOOK_SECRET = VENDOR_SECRET ?? PG_SECRET;
+// Cashfree signs all webhooks with the merchant-wide PG Client Secret.
+// There is no per-webhook signing key in their dashboard. See header.
+const CF_WEBHOOK_SECRET = Deno.env.get("CASHFREE_PG_APP_SECRET") ?? Deno.env.get("CASHFREE_PG_SECRET_KEY");
 if (!CF_WEBHOOK_SECRET) {
   console.error(
-    "[cashfree-vendor-webhook] FATAL: neither CASHFREE_VENDOR_WEBHOOK_SECRET nor CASHFREE_PG_APP_SECRET is set",
-  );
-}
-if (!VENDOR_SECRET && PG_SECRET) {
-  console.warn(
-    "[cashfree-vendor-webhook] Using PG secret as fallback. Set CASHFREE_VENDOR_WEBHOOK_SECRET to a separate value to remove this warning.",
+    "[cashfree-vendor-webhook] FATAL: CASHFREE_PG_APP_SECRET (or legacy CASHFREE_PG_SECRET_KEY) is not set",
   );
 }
 

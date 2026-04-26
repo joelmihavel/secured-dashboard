@@ -41,8 +41,8 @@ each function via one of these patterns:
 | `auth-otp` | OTP-pre-auth (rate-limited phone validation) | false | Public entry point |
 | `landlord-auth-otp` | same as auth-otp | false | Landlord variant |
 | `payment-webhook` | HMAC | false | Cashfree PG webhook |
-| `cashfree-split-webhook` | HMAC | false | vendor settlement webhook (Phase 7e: separate secret) |
-| `cashfree-vendor-webhook` | HMAC | false | Vendor status webhook (Phase 7e: separate secret) |
+| `cashfree-split-webhook` | HMAC | false | vendor settlement webhook (signed with PG App Secret — Cashfree has no per-webhook key) |
+| `cashfree-vendor-webhook` | HMAC | false | Vendor status webhook (signed with PG App Secret — Cashfree has no per-webhook key) |
 | `admin-*` | admin key + service role | false | All admin-only functions |
 | `seed-test-data`, `dev-seed` | test phone + ALLOW_DEMO_AUTH | false | Dev/QA only |
 | All other user-facing functions | createAuthenticatedClient | false | Default pattern |

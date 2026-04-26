@@ -165,8 +165,7 @@ supabase secrets list --project-ref uowjtrzmszuaiokqxgir | grep -i cashfree
 
 Expected secrets:
 - `CASHFREE_PG_APP_ID` + `CASHFREE_PG_SECRET_KEY` (PG callbacks)
-- `CASHFREE_SPLIT_WEBHOOK_SECRET` (split webhook — separate from PG, per Phase 7e)
-- `CASHFREE_VENDOR_WEBHOOK_SECRET` (vendor webhook — separate from PG, per Phase 7e)
+- (No separate webhook secrets — Cashfree only supports one merchant-wide signing key, the PG Client Secret. All webhooks sign with `CASHFREE_PG_APP_SECRET`.)
 
 **Common causes:**
 1. **Cashfree dashboard rotated the signing key** without us updating Supabase secrets → fix: copy new secret from Cashfree merchant portal → `supabase secrets set CASHFREE_*=<new>`
@@ -174,7 +173,7 @@ Expected secrets:
 3. **Stale timestamp** — webhook handlers reject events > 5min old. Cashfree retries beyond that window are expected to 4xx.
 
 **If the bug is in our code (e.g., wrong env var name):**
-- See Phase 7e. The pattern is: prefer the dedicated webhook secret with PG-secret fallback during rotation. Once Cashfree dashboard secret rotation is done, follow-up commit removes the fallback.
+- See `docs/backend/cashfree-integration.md` "Webhook secrets" — Cashfree signs all webhooks with the merchant-wide `CASHFREE_PG_APP_SECRET`. Rotate that key in the Cashfree dashboard + Supabase secrets, then watch logs for 24h.
 
 ---
 

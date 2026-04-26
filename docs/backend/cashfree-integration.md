@@ -20,10 +20,8 @@ Cashfree exposes two distinct platforms we use:
 | `CASHFREE_BASE_URL` | Supabase function secrets | `https://api.cashfree.com/verification` (prod) or `https://sandbox.cashfree.com/verification` |
 | `CASHFREE_PUBLIC_KEY` | Supabase function secrets | RSA public key for `x-cf-signature` (M360 webhooks) |
 | `CASHFREE_PG_APP_ID` | Supabase function secrets | PG client ID |
-| `CASHFREE_PG_APP_SECRET` | Supabase function secrets | PG secret. Doubles as HMAC key for legacy webhook signing — see Phase 7e for the secret-separation fix |
+| `CASHFREE_PG_APP_SECRET` | Supabase function secrets | PG Client Secret. Cashfree signs ALL webhooks (PG + vendor settlement + vendor status) with this single project-wide secret — there is no per-webhook signing key in Cashfree's dashboard or API. Rotating this secret rotates webhook signing globally AND PG API auth (same key). |
 | `CASHFREE_PG_BASE_URL` | Supabase function secrets | `https://api.cashfree.com/pg` |
-| `CASHFREE_SPLIT_WEBHOOK_SECRET` | Supabase function secrets | **Should be different from `CASHFREE_PG_APP_SECRET`** — Phase 7e's bug fix. Read by `cashfree-split-webhook` with PG-secret fallback for phased rollout |
-| `CASHFREE_VENDOR_WEBHOOK_SECRET` | Supabase function secrets | Same pattern as split secret, for `cashfree-vendor-webhook` |
 | `EXPO_PUBLIC_PAYMENT_GATEWAY` | EAS dashboard / `.env.local` | `cashfree` (default) — switches RN client between Cashfree and PayU paths |
 | `EXPO_PUBLIC_CASHFREE_ENV` | EAS dashboard | `SANDBOX` (development/preview) or `PRODUCTION` |
 
@@ -32,8 +30,8 @@ Cashfree exposes two distinct platforms we use:
 | Event | URL | Edge fn | Signature header |
 |---|---|---|---|
 | `PAYMENT_SUCCESS`, `PAYMENT_FAILED`, `REFUND_STATUS_WEBHOOK` | `https://uowjtrzmszuaiokqxgir.supabase.co/functions/v1/payment-webhook` | `payment-webhook` | `x-webhook-signature` (HMAC-SHA256 Base64 of `timestamp + rawBody`, signed with `CASHFREE_PG_APP_SECRET`) |
-| `VENDOR_SETTLEMENT_SUCCESS`, `VENDOR_SETTLEMENT_FAILED`, `VENDOR_SETTLEMENT_REVERSED` | `https://uowjtrzmszuaiokqxgir.supabase.co/functions/v1/cashfree-split-webhook` | `cashfree-split-webhook` | `x-webhook-signature` (signed with `CASHFREE_SPLIT_WEBHOOK_SECRET` if set, falls back to PG secret with warning) |
-| `VENDOR_STATUS_UPDATE` | `https://uowjtrzmszuaiokqxgir.supabase.co/functions/v1/cashfree-vendor-webhook` | `cashfree-vendor-webhook` | `x-webhook-signature` (signed with `CASHFREE_VENDOR_WEBHOOK_SECRET` if set, falls back to PG secret with warning) |
+| `VENDOR_SETTLEMENT_SUCCESS`, `VENDOR_SETTLEMENT_FAILED`, `VENDOR_SETTLEMENT_REVERSED` | `https://uowjtrzmszuaiokqxgir.supabase.co/functions/v1/cashfree-split-webhook` | `cashfree-split-webhook` | `x-webhook-signature` (signed with `CASHFREE_PG_APP_SECRET`) |
+| `VENDOR_STATUS_UPDATE` | `https://uowjtrzmszuaiokqxgir.supabase.co/functions/v1/cashfree-vendor-webhook` | `cashfree-vendor-webhook` | `x-webhook-signature` (signed with `CASHFREE_PG_APP_SECRET`) |
 
 API version pinned to `2025-01-01` across all calls.
 
@@ -102,17 +100,19 @@ v_user_funnel view exposes flattened m360_* fields for the admin dashboard
 
 ## Webhook secrets
 
-The `cashfree-split-webhook` and `cashfree-vendor-webhook` previously read `CASHFREE_PG_APP_SECRET` for HMAC verification despite header docs claiming a separate secret. Anyone with the PG secret could forge settlement / vendor webhooks → double-credit landlord payouts or fake KYC status.
+**Reality (verified 2026-04-26):** Cashfree's dashboard and API only support ONE merchant-wide signing secret — the PG Client Secret (`CASHFREE_PG_APP_SECRET` in our env). There is no per-webhook signing key option. PG payment webhooks, vendor settlement webhooks, and vendor status webhooks are ALL signed with the same secret. The `cashfree-split-webhook` and `cashfree-vendor-webhook` handlers therefore read `CASHFREE_PG_APP_SECRET` directly. Source: docs.cashfree.com/payments/online/webhooks/signature-verification + Cashfree maintainer confirmation on Stack Overflow.
 
-**Fix (Phase 7e, 2026-04-25):** both webhooks now prefer `CASHFREE_SPLIT_WEBHOOK_SECRET` / `CASHFREE_VENDOR_WEBHOOK_SECRET` with PG-secret fallback. To complete the fix:
+**Phase 7e plan was killed (2026-04-26)** — the original plan to give each webhook its own signing key isn't achievable through Cashfree. The dual-secret framing was removed from the codebase. To rotate the webhook signing key (which simultaneously rotates PG API auth — same key):
 
-1. Generate two random secrets (e.g., `openssl rand -hex 32`)
-2. `supabase secrets set CASHFREE_SPLIT_WEBHOOK_SECRET=<value> --project-ref uowjtrzmszuaiokqxgir`
-3. `supabase secrets set CASHFREE_VENDOR_WEBHOOK_SECRET=<value> --project-ref uowjtrzmszuaiokqxgir`
-4. In Cashfree merchant dashboard → Webhooks (Vendor Settlement + Vendor Status sections) → update each webhook's signing key to match
-5. Verify settlement + vendor webhooks for 24h
-6. Remove the PG-secret fallback in code (follow-up commit)
-7. Repeat steps 2–5 with different values for the dev project (`zqlowjveyqiagnbmfwsb`)
+1. In Cashfree merchant dashboard → Developers → API Keys → rotate the PG Client Secret. Cashfree also signs webhooks with this key, so signing rotates too.
+2. Update Supabase: `supabase secrets set CASHFREE_PG_APP_SECRET=<new-value> --project-ref uowjtrzmszuaiokqxgir`
+3. Verify webhook signature verification still passes by watching `supabase functions logs cashfree-split-webhook --project-ref uowjtrzmszuaiokqxgir --since 1h` for 24h.
+4. Repeat for dev project (`zqlowjveyqiagnbmfwsb`) with a different secret.
+
+**Defense-in-depth options (since per-webhook keys aren't available):**
+- Replay defense via `processed_webhooks` dedup (already in place)
+- Strict freshness window: `cashfree-{split,vendor}-webhook` log `STALE_TIMESTAMP` warnings when `x-webhook-timestamp` > 5 min old (currently observe-only; flip to reject after observation period)
+- Cashfree IP allowlist: reject requests not from Cashfree's published IP ranges (not yet implemented)
 
 ## Replay defense
 

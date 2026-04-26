@@ -1336,7 +1336,7 @@ Migrations are located in `supabase/migrations/` and applied via `supabase db pu
 1. Deletes orphan rows where `user_id` no longer exists in `users`.
 2. Adds the FK constraint idempotently.
 
-### `20260425131920_payment_webhook_events_dedup.sql` (Phase 7e webhook hardening, 2026-04-25)
+### `20260425131920_payment_webhook_events_dedup.sql` (webhook hardening, 2026-04-25)
 
 **Purpose:** Adds `payment_webhook_events` dedup table for replay defense on Cashfree (and other) webhooks. Composite PK `(source, event_id)`, 30-day retention via `cleanup_payment_webhook_events()` helper function.
 

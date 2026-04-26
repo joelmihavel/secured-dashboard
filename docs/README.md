@@ -679,7 +679,6 @@ Set per project: `supabase secrets set KEY=VALUE --project-ref <ref>`. Auto-inje
 | `CASHFREE_PG_APP_ID` | Yes | Cashfree Payment Gateway client ID |
 | `CASHFREE_PG_APP_SECRET` | Yes | Cashfree PG secret + webhook HMAC key |
 | `CASHFREE_PG_BASE_URL` | Yes | Cashfree PG base URL (`https://api.cashfree.com/pg`) |
-| `CASHFREE_SPLIT_WEBHOOK_SECRET` | Yes | **Should be separate from PG secret** — see Phase 7e in cleanup plan; current code has a bug treating PG secret as fallback |
 | `PAYU_MERCHANT_KEY` | Optional (legacy) | PayU merchant key — only needed while PayU fallback is alive |
 | `PAYU_MERCHANT_SALT` | Optional (legacy) | PayU salt for hash generation |
 | `TWILIO_ACCOUNT_SID` | Yes | Twilio for SMS + WhatsApp |

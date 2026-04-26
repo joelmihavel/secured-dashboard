@@ -22,21 +22,13 @@
  * The webhook payload does NOT contain adjustment_id or order_id — matching is
  * done by vendor_id → bank_accounts → tenancies → payments.
  *
- * Endpoint: POST /functions/v1/cashfree-split-webhook (URL retained for
- *   Cashfree dashboard compatibility — renaming requires coordinated
- *   dashboard URL update with risk of dropping events)
- * Auth: HMAC-SHA256 Base64 signature via x-webhook-signature header
- * Secret: CASHFREE_SPLIT_WEBHOOK_SECRET (preferred) — must be set separately
- *         from CASHFREE_PG_APP_SECRET so a PG-secret leak can't forge
- *         settlement webhooks.
- *
- *         If unset, falls back to CASHFREE_PG_APP_SECRET with a console
- *         warning. The fallback exists ONLY to support a phased rollout:
- *         (1) deploy this code (works with either secret)
- *         (2) set CASHFREE_SPLIT_WEBHOOK_SECRET on the project
- *         (3) update Cashfree merchant dashboard → Webhooks → Vendor Settlement
- *             → "Sign with this secret" to use the new value
- *         (4) remove the fallback in a follow-up commit
+ * Endpoint: POST /functions/v1/cashfree-split-webhook
+ * Auth:     HMAC-SHA256 Base64 signature via x-webhook-signature header
+ * Secret:   CASHFREE_PG_APP_SECRET — Cashfree signs ALL webhooks (PG payment,
+ *           vendor settlement, vendor status) with the merchant's project-wide
+ *           PG Client Secret. There is no per-webhook signing key in
+ *           Cashfree's dashboard or API. See docs/backend/cashfree-integration.md
+ *           "Webhook signing" for the security model.
  *
  * Register URL in Cashfree dashboard → Webhooks (Vendor Settlement events):
  *   https://{project-ref}.supabase.co/functions/v1/cashfree-split-webhook
@@ -54,19 +46,12 @@ import { notifyUser } from "../_shared/notifications.ts";
 // CONFIGURATION
 // ==============================================
 
-// Resolve the signing secret with explicit precedence + warning on fallback.
-// See header docblock for the phased-rollout rationale.
-const SPLIT_SECRET = Deno.env.get("CASHFREE_SPLIT_WEBHOOK_SECRET");
-const PG_SECRET = Deno.env.get("CASHFREE_PG_APP_SECRET") ?? Deno.env.get("CASHFREE_PG_SECRET_KEY");
-const CF_SPLIT_WEBHOOK_SECRET = SPLIT_SECRET ?? PG_SECRET;
+// Cashfree signs all webhooks with the merchant-wide PG Client Secret.
+// There is no per-webhook signing key in their dashboard. See header.
+const CF_SPLIT_WEBHOOK_SECRET = Deno.env.get("CASHFREE_PG_APP_SECRET") ?? Deno.env.get("CASHFREE_PG_SECRET_KEY");
 if (!CF_SPLIT_WEBHOOK_SECRET) {
   console.error(
-    "[cashfree-split-webhook] FATAL: neither CASHFREE_SPLIT_WEBHOOK_SECRET nor CASHFREE_PG_APP_SECRET is set",
-  );
-}
-if (!SPLIT_SECRET && PG_SECRET) {
-  console.warn(
-    "[cashfree-split-webhook] Using PG secret as fallback. Set CASHFREE_SPLIT_WEBHOOK_SECRET to a separate value and update Cashfree dashboard webhook config to remove this warning. See https://github.com/flent-homes/Secured-v2/blob/main/docs/backend/cashfree-integration.md#webhook-secrets",
+    "[cashfree-split-webhook] FATAL: CASHFREE_PG_APP_SECRET (or legacy CASHFREE_PG_SECRET_KEY) is not set",
   );
 }
 
