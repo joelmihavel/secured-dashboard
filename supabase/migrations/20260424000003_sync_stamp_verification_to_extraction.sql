@@ -50,6 +50,9 @@ BEGIN
 END;
 $$;
 
+-- @grant-review: trigger function fires on stamp_verifications writes which
+-- only happen from the stamp-verification edge function (service role).
+-- anon/authenticated callers have no business invoking it directly.
 -- Only service_role should own this trigger function.
 REVOKE EXECUTE ON FUNCTION _sync_stamp_verification_to_extraction() FROM anon, authenticated;
 

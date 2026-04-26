@@ -37,3 +37,8 @@ BEGIN
       ON DELETE CASCADE;
   END IF;
 END $$;
+
+-- rollback:
+--   ALTER TABLE public.waitlist_entries DROP CONSTRAINT IF EXISTS waitlist_entries_user_id_fkey;
+--   -- The DELETE of orphans in step 1 cannot be reversed; orphans were already
+--   -- broken (their user_id pointed to a deleted user). No restorable state existed.

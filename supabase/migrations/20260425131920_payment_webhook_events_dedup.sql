@@ -55,6 +55,11 @@ CREATE INDEX IF NOT EXISTS idx_payment_webhook_events_received_at
 -- has any reason to query this table.
 ALTER TABLE payment_webhook_events ENABLE ROW LEVEL SECURITY;
 
+-- @rls-review: this table is only ever written/read by webhook handlers
+-- running with service_role. anon/authenticated have zero legitimate need.
+-- USING(true) + WITH CHECK(true) is the standard "service-role only" form
+-- for an internal log table. No paired policy test needed because no other
+-- role can reach this table.
 DO $$ BEGIN
   IF NOT EXISTS (
     SELECT 1 FROM pg_policies WHERE policyname = 'payment_webhook_events_service_role'

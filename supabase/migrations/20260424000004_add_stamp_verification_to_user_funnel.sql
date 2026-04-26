@@ -13,6 +13,9 @@
 -- query returned empty set), and all code consumers use .select("*") so
 -- new columns propagate automatically.
 
+-- @safe-destructive: view is recreated immediately below with a superset of
+-- columns. No data loss possible (views hold no data). Existing readers
+-- continue to work because they SELECT * and only consume known columns.
 DROP VIEW IF EXISTS public.v_user_funnel;
 
 CREATE VIEW public.v_user_funnel AS
@@ -162,9 +165,17 @@ LEFT JOIN LATERAL (
 
 ORDER BY u.created_at DESC;
 
+-- @grant-review: anon/authenticated have no business reading the funnel
+-- view (admin-app reads via service-role through the server route handler).
+-- Pattern matches the original 20260419000001 grants exactly.
 -- Grants: match the existing pattern from 20260419000001 exactly.
 REVOKE ALL ON public.v_user_funnel FROM anon;
 
 REVOKE ALL ON public.v_user_funnel FROM authenticated;
 
 GRANT SELECT ON public.v_user_funnel TO service_role;
+
+-- rollback:
+--   DROP VIEW IF EXISTS public.v_user_funnel;
+--   -- Then re-run 20260419000001 to recreate the previous-shape view (without
+--   -- the three new stamp_verification_* columns).
