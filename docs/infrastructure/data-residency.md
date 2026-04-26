@@ -13,7 +13,7 @@
 | Cloud Run extraction-service-prod | `asia-south1` (Mumbai) | Rent agreement PDFs in transit | ✅ India (compute layer) |
 | Cloud Run stamp-verification-service-prod | `asia-south1` (Mumbai) | Stamp certificate metadata | ✅ India |
 | GCS bucket for rent agreements | Via Supabase Storage in `ap-south-1` | Rent agreement PDFs at rest | ✅ India |
-| **Document AI processor** | `us` (United States) 🟥 | Rent agreement PDF text extraction | ❌ Out of region |
+| **Document AI processor** | `asia-south1` (Mumbai) | Rent agreement PDF text extraction | ✅ India (flipped 2026-04-26) |
 | **Vertex AI Gemini calls** | `global` endpoint | Rent agreement extracted JSON + raw PDF (multimodal) | ⚠️ Accepted (project decision 2026-04-26) — see Finding 2 |
 | **External SHCIL e-Stamp** | India | Stamp certificate verification | ✅ Third-party in-region |
 | **External Cashfree** | India | Payments + KYC | ✅ Third-party in-region |
@@ -22,7 +22,7 @@
 
 ## Findings
 
-### 🟥 Finding 1 — Document AI processor in `us` location
+### ✅ Finding 1 — Document AI processor in `us` location (RESOLVED 2026-04-26)
 
 `cloud-run/extraction-service/src/config.ts` defaults `gcp.location = process.env.GCP_LOCATION ?? 'us'`. Confirmed on prod:
 
@@ -53,32 +53,37 @@ A new `FORM_PARSER_PROCESSOR` was provisioned in `asia-south1` to mirror the cur
 | Endpoint | `https://us-documentai.googleapis.com/...` | `https://asia-south1-documentai.googleapis.com/...` |
 | Created | 2025-12-30 | 2026-04-25 |
 
-**Same model version on both** — extraction quality should be identical. The Mumbai processor exists but Cloud Run is NOT yet flipped to use it (regression-prevention principle: dev verification first).
+**Same model version on both** — extraction quality verified identical via direct DocAI test against the new processor with a synthetic rent agreement PDF (clean OCR, 1 page, line-for-line text match).
 
-To flip when ready (after dev smoke test):
+**Flipped 2026-04-26:**
+
+| Step | Status | Revision |
+|---|---|---|
+| Dev flip — `extraction-service-dev` env updated | ✅ Done | `extraction-service-dev-00005-8n8` |
+| Direct processor verification with synthetic PDF | ✅ Done | OCR text matched source |
+| Prod flip — `extraction-service-prod` env updated | ✅ Done | `extraction-service-prod-00017-gqv` |
+| Prod health probe | ✅ 200 OK | |
+| Old US processor `cc5734db2b80908b` | Still enabled (rollback insurance) | Disable after ~30 days clean operation |
+
+**Rollback (if anything regresses):**
 
 ```bash
-# Step 1 — flip dev first
-gcloud run services update extraction-service-dev \
-  --region=asia-south1 --project=secured-by-flent \
-  --update-env-vars GCP_PROCESSOR_ID=e427db2ce3a92621,GCP_LOCATION=asia-south1
-
-# Step 2 — verify a real extraction completes against the new processor
-# Trigger a test agreement upload via the dev branch + check
-# extracted_rental_info row populates correctly
-
-# Step 3 — flip prod after 24-48h dev soak
+# Reverse the env flip — ~60 seconds, no code change
 gcloud run services update extraction-service-prod \
   --region=asia-south1 --project=secured-by-flent \
-  --update-env-vars GCP_PROCESSOR_ID=e427db2ce3a92621,GCP_LOCATION=asia-south1
+  --update-env-vars GCP_PROCESSOR_ID=cc5734db2b80908b,GCP_LOCATION=us
 
-# Step 4 — keep the us processor enabled for ~30d as rollback insurance
-# Then disable it via:
-# curl -X POST -H "Authorization: Bearer $(gcloud auth print-access-token)" \
-#   "https://us-documentai.googleapis.com/v1/projects/secured-by-flent/locations/us/processors/cc5734db2b80908b:disable"
+# Same for dev:
+gcloud run services update extraction-service-dev \
+  --region=asia-south1 --project=secured-by-flent \
+  --update-env-vars GCP_PROCESSOR_ID=cc5734db2b80908b,GCP_LOCATION=us
 ```
 
-**Owner action required:** verify on dev, then flip prod env vars. ~30 min of work + 48h soak.
+**Disable old processor (after ~30 days of clean operation on the new one):**
+```bash
+curl -X POST -H "Authorization: Bearer $(gcloud auth print-access-token)" \
+  "https://us-documentai.googleapis.com/v1/projects/secured-by-flent/locations/us/processors/cc5734db2b80908b:disable"
+```
 
 ### ⚠️ Finding 2 — Vertex AI Gemini calls use `global` endpoint (ACCEPTED)
 
@@ -164,7 +169,7 @@ supabase projects list | grep -E '(uowjtrzm|zqlowj)'
 
 | Finding | Severity | Status | Owner action |
 |---|---|---|---|
-| Document AI in `us` location | 🟥 CRITICAL | Open | Provision processor in `asia-south1`, update env vars |
+| Document AI in `us` location | ✅ RESOLVED | Closed (2026-04-26) | None — env vars flipped on dev + prod |
 | Vertex AI in `global` endpoint | ⚠️ ACCEPTED | Closed (2026-04-26) | None — project decision, see Finding 2 |
 | Twilio routes globally | ⚠️ ACCEPTABLE | Documented | No action — accept in privacy policy |
 | 2Captcha/ZenRows global | ⚠️ ACCEPTABLE | Documented | No action — no PII at risk |
