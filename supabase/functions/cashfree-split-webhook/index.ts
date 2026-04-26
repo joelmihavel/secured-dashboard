@@ -123,6 +123,21 @@ serve(async (req: Request) => {
       return jsonResponse({ status: "ignored", reason: "invalid signature" });
     }
 
+    // Observe-only freshness window (Phase 7e). Cashfree's x-webhook-timestamp
+    // is epoch seconds. We log when age > 5 min so we can measure how often
+    // legitimate webhooks land outside the window before flipping to enforcement.
+    // Once observation shows ≥99.9% of legit webhooks land inside 5 min, swap
+    // the warn for `return jsonResponse({ status: "ignored", reason: "stale" })`.
+    const tsSec = parseInt(timestamp, 10);
+    if (Number.isFinite(tsSec) && tsSec > 0) {
+      const ageSec = Math.floor(Date.now() / 1000) - tsSec;
+      if (ageSec > 300) {
+        console.warn(
+          `[cashfree-split-webhook] STALE_TIMESTAMP age=${ageSec}s timestamp=${timestamp} (observe-only — see Phase 7e)`,
+        );
+      }
+    }
+
     let payload: SplitWebhookPayload;
     try {
       payload = JSON.parse(rawBody);

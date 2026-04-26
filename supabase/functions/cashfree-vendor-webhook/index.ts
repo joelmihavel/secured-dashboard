@@ -79,6 +79,19 @@ serve(async (req: Request) => {
       return jsonResponse({ status: "ignored", reason: "invalid signature" });
     }
 
+    // Observe-only freshness window (Phase 7e). See cashfree-split-webhook for
+    // rationale. Flip `console.warn` to `return jsonResponse(...ignored stale)`
+    // once observation confirms legitimate traffic stays inside 5 min.
+    const tsSec = parseInt(timestamp, 10);
+    if (Number.isFinite(tsSec) && tsSec > 0) {
+      const ageSec = Math.floor(Date.now() / 1000) - tsSec;
+      if (ageSec > 300) {
+        console.warn(
+          `[cashfree-vendor-webhook] STALE_TIMESTAMP age=${ageSec}s timestamp=${timestamp} (observe-only — see Phase 7e)`,
+        );
+      }
+    }
+
     let payload: VendorStatusPayload;
     try {
       payload = JSON.parse(rawBody);

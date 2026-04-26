@@ -114,24 +114,26 @@ The `cashfree-split-webhook` and `cashfree-vendor-webhook` previously read `CASH
 
 ## Replay defense
 
-Migration `20260425131920_payment_webhook_events_dedup.sql` adds the `payment_webhook_events` table. Each webhook handler should:
+**Current state:** webhook handlers already dedup via the existing `processed_webhooks` table. Each handler:
 
-```ts
-const { data: dedup } = await supabase
-  .from('payment_webhook_events')
-  .insert({ event_id: payload.event_id, source: 'cashfree-split' })
-  .select('event_id')
-  .maybeSingle();
-if (!dedup) {
-  // Replay — already processed
-  return jsonResponse({ ok: true, deduplicated: true });
-}
-// ...continue processing...
-```
+1. Computes a dedup key (e.g. `cf-split-${settlement_id}-${event_type}` for split webhooks)
+2. SELECTs `processed_webhooks` for that key — if found, returns "Already processed" success
+3. After processing, UPSERTs the key into `processed_webhooks`
 
-`cleanup_payment_webhook_events()` SQL function sweeps rows older than 30 days. Schedule it via cron when convenient.
+This pattern is already in place across `payment-webhook`, `cashfree-split-webhook`, `cashfree-vendor-webhook`.
 
-The dedup integration into each handler is a follow-up — the table exists in prod + dev as of 2026-04-25.
+**Redundant new table (Phase 7e plan deviation):** migration `20260425131920_payment_webhook_events_dedup.sql` added `payment_webhook_events` (composite PK `(source, event_id)` + 30-day retention helper). It's **not currently wired into handlers** — `processed_webhooks` already does the job. Cleanup options:
+
+- **Option A (preferred):** drop `payment_webhook_events` in a follow-up migration; document `processed_webhooks` as canonical
+- **Option B:** migrate handlers from `processed_webhooks` → `payment_webhook_events` (better hygiene: composite PK + auto-retention via `cleanup_payment_webhook_events()`), then drop `processed_webhooks`
+
+Either way, do not leave both tables long-term. Today's behavior is correct because handlers all use the older table; the new table is dormant.
+
+## Webhook timestamp freshness (observe-only)
+
+Both `cashfree-split-webhook` and `cashfree-vendor-webhook` log `[STALE_TIMESTAMP age=Ns]` warnings when Cashfree's `x-webhook-timestamp` is more than 5 min old (Phase 7e, observe-only). They do **not reject** stale events yet — first we measure how often legitimate Cashfree retries land outside the window.
+
+Once observation shows ≥99.9% of legit webhooks land inside 5 min over a sample, swap the `console.warn` for an early `return jsonResponse({ status: "ignored", reason: "stale" })`. This protects against captured-payload replays beyond the freshness window.
 
 ## Sandbox vs production
 
