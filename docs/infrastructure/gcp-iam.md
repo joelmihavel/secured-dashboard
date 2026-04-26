@@ -42,6 +42,8 @@ All 4 extraction + stamp Cloud Run services now run as **dedicated per-service S
 
 The default compute SA still has `roles/editor` project-wide, but **no Cloud Run service runtime is using it anymore** (extraction + stamp all switched to per-service SAs as of 2026-04-26 ~06:55 UTC). It's still used by Cloud Build for source-deploys (`gcloud run deploy --source` uses it as the build SA). Removing `roles/editor` requires careful audit of who else relies on it (Cloud Build, any other workloads). Treat as Phase 7a cleanup task: separate from the SA-switch migration.
 
+> **Note on the `?? 'us'` fallback in code:** `cloud-run/extraction-service/src/config.ts` reads `process.env.GCP_LOCATION ?? 'us'`. The fallback is **intentional rollback insurance** — if the Cloud Run env var is ever cleared in an emergency rollback, the service starts up against the original US processor instead of crashing. Production env vars on `extraction-service-{prod,dev}` are explicitly set to `asia-south1` (verified 2026-04-26 — `gcloud run services describe ... --format='value(spec.template.spec.containers[0].env)'`). The code default does NOT indicate stale deployment.
+
 ✅ **CRITICAL FINDING #1 RESOLVED (2026-04-26):** runtime SAs are now per-service with least-privilege bindings. The "compromise of one Cloud Run container = roles/editor on whole project" attack path is closed for extraction + stamp services. A compromise of `extraction-service-prod` now only grants:
 - DocAI API calls (no destructive scope)
 - Read of 2 specific secrets (`extraction-doc-ai-creds`, `extraction-gcp-creds`)

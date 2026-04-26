@@ -1,11 +1,17 @@
 # Infrastructure: Cloudflare, EAS, Supabase, and Admin Scripts
 
 <!-- STALE-WARNING -->
-> ⚠️ **Pre-cleanup-arc doc.** This page was last refreshed before the 2026-04-25/26 cleanup batch (DocAI residency flip, per-service SA migration, Phase 8c audit_logs immutability, Cashfree settlement webhook secret separation, Easy Split → Vendor Adjustments rename, etc.). Specific examples and counts may not match current state. The dated header below reflects when the file was originally written, NOT the current cleanup state. Cross-check against code before relying on details.
+> ⚠️ **Body content predates the 2026-04-25/26 cleanup batch.** Quick deltas:
+> - **Cloud Run SAs:** all 4 extraction + stamp services now run under per-service SAs (`extraction-service-{prod,dev}-sa`, `stamp-verifier-{prod,dev}-sa`), not the default Compute Engine SA — see `docs/infrastructure/gcp-iam.md`
+> - **DocAI processor:** prod + dev are on the asia-south1 processor `e427db2ce3a92621` (was US `cc5734db2b80908b`)
+> - **Cashfree:** auto-Easy-Split is removed; settlement happens via `createAdjustment` after payment success — see `docs/backend/cashfree-integration.md`
+> - **Old `extraction-service`** (no `-prod`/`-dev` suffix) was deleted on 2026-04-25
+>
+> Cloudflare Worker proxy (`devapi.flent.in`) sections below remain valid. EAS + Supabase deploy commands remain valid.
 
 > Deployment and infrastructure documentation for Flent Secured.
 >
-> Last verified: 2026-03-08 from source code inspection.
+> Last verified: 2026-03-08 from source code inspection. Cleanup-arc deltas added 2026-04-26.
 
 ---
 

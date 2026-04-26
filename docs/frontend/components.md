@@ -773,7 +773,7 @@ Payment flow components. Located in `src/components/payment/`.
 **File:** `payment/PaymentMethodModal/index.tsx`
 
 Payment flow orchestrator managing a multi-step state machine:
-`enter-amount` -> `selector` -> `[add-card | add-debit-card | add-netbanking | confirm-payment]` -> PayU SDK launch.
+`enter-amount` -> `selector` -> `[add-card | add-debit-card | add-netbanking | confirm-payment]` -> Cashfree SDK launch (primary as of 2026-04). PayU is a legacy fallback still wired for older app versions in the natural-soak window.
 
 | Prop | Type | Default | Description |
 |------|------|---------|-------------|
@@ -828,7 +828,7 @@ Fee display shows per-method rates (UPI: Free, CC: 1.85%, DC: 0.9%, NB: Rs 15 fl
 
 **File:** `payment/PaymentMethodModal/ConfirmPaymentContent.tsx`
 
-Receipt-style confirmation screen showing payment summary before launching the PayU SDK.
+Receipt-style confirmation screen showing payment summary before launching the payment SDK (Cashfree primary; PayU legacy fallback).
 
 **Used in:** PaymentMethodModal (final step before SDK).
 

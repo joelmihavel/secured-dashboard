@@ -671,6 +671,10 @@ Most screens wrap content in the shared `<Screen>` component which handles:
 | `/(profile)/edit` | `(profile)/edit.tsx` | Yes | `useDashboard()`, `updateProfile()` |
 | `/(profile)/agreement` | `(profile)/agreement.tsx` | Yes | `useDashboard()` |
 | `/(profile)/edit-bank-details` | `(profile)/edit-bank-details.tsx` | Yes | `verify-bank` (update mode) |
+| `/(payment)/success` | `(payment)/success.tsx` | Yes | Renders post-payment success state |
+| `/(waitlist)/rejected` | `(waitlist)/rejected.tsx` | Yes | Rejection state (admin sets `admin_review='rejected'`) |
 | `/(dev)/screen-picker` | `(dev)/screen-picker.tsx` | Yes | None |
+| `/(dev)/critical-update-preview` | `(dev)/critical-update-preview.tsx` | Yes | Dev-only preview of forced-update screen |
+| `/(agreement)/add-bank-details` | `(agreement)/add-bank-details.tsx` | Yes | `verify-bank` (initial-setup variant; separate from `/(profile)/edit-bank-details`) |
 
-**Total: 24 screens** (excluding test files)
+**Total: 27 user-facing screens + 2 dev screens = 29 screens** (excluding 9 `_layout.tsx` files). Authoritative inventory: `find rn-app/app -name "*.tsx" -not -name "_layout.tsx" | wc -l`.

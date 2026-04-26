@@ -193,10 +193,13 @@ Client-side staleness: `pending` > 3 min or `processing` > 12 min → marks as f
 
 | Variable | Used by | Purpose |
 |----------|---------|---------|
-| `GCP_DOCUMENT_AI_CREDENTIALS` | process-document | Document AI service account JSON |
-| `GCP_PROJECT_ID` | process-document | Document AI project (`secured-by-flent`) |
-| `GCP_PROCESSOR_ID` | process-document | Document AI processor ID |
-| `GCP_LOCATION` | process-document | Document AI region (`us`) |
-| `VERTEX_AI_CREDENTIALS` | process-document, reprocess | Vertex AI service account JSON |
-| `VERTEX_AI_PROJECT_ID` | process-document, reprocess | Vertex AI project (`flent-ai-project-2`) |
+| `GCP_DOCUMENT_AI_CREDENTIALS` | process-document, extraction-service | Document AI service account JSON |
+| `GCP_PROJECT_ID` | process-document, extraction-service | Document AI project (`secured-by-flent`) |
+| `GCP_PROCESSOR_ID` | process-document, extraction-service | Document AI processor ID. **Phase 7d (2026-04-26)**: flipped from US (`cc5734db2b80908b`) to asia-south1 (`e427db2ce3a92621`) for DPDP/RBI residency. Old US processor stays enabled ~30d as rollback insurance. |
+| `GCP_LOCATION` | process-document, extraction-service | Document AI region. **Phase 7d**: now `asia-south1` (was `us`). Code default is still `'us'` as rollback fallback in `cloud-run/extraction-service/src/config.ts`. |
+| `VERTEX_AI_CREDENTIALS` | process-document, reprocess, extraction-service | Vertex AI service account JSON |
+| `VERTEX_AI_PROJECT_ID` | process-document, reprocess, extraction-service | Vertex AI project (`flent-ai-project-2`) |
+| `VERTEX_AI_LOCATION` | extraction-service | Vertex AI endpoint region. Default `global` (project decision 2026-04-26 — see `docs/infrastructure/data-residency.md` Finding 2 ACCEPTED). |
 | `GEMINI_API_KEY_SECURED` | fallback, reprocess | Gemini API key for `generativelanguage.googleapis.com` |
+
+**Cloud Run runtime auth (Phase 7a, 2026-04-26):** the extraction-service Cloud Run instances run under per-service SAs (`extraction-service-prod-sa`, `extraction-service-dev-sa`), NOT the default Compute Engine SA. The per-service SAs have least-privilege role bindings — `documentai.apiUser`, scoped `secretmanager.secretAccessor` on the credential secrets, cross-project `aiplatform.user` on `flent-ai-project-2`, plus `logging.logWriter` and `monitoring.metricWriter`. See `docs/infrastructure/gcp-iam.md` for the full role inventory.

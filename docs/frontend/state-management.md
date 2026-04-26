@@ -189,7 +189,7 @@ Manages the phone verification flow UI state.
 
 **File:** `src/stores/payment.ts`
 
-Manages payment flow UI state and PayU SDK session parameters.
+Manages payment flow UI state and payment SDK session parameters. As of 2026-04, Cashfree is the primary gateway; PayU is a legacy fallback still wired for older app versions in the natural-soak window. The store fields below carry the PayU vocabulary because the store predates the Cashfree migration; the same fields hold Cashfree session data when the gateway is Cashfree.
 
 **State machine:** `idle` -> `selecting_method` -> `confirming` -> `processing` -> `success` | `failed` | `refunded`
 
@@ -411,7 +411,7 @@ All hooks are in `src/hooks/` and re-exported via the barrel `src/hooks/index.ts
 
 | Hook | Type | Description |
 |------|------|-------------|
-| `usePaymentFlow` | imperative | Core PayU SDK orchestration. Implements double-submit guard, SDK launch via `launchCorePayment`, and outcome normalization (success/failed/cancelled). |
+| `usePaymentFlow` | imperative | Core payment SDK orchestration (Cashfree primary, PayU legacy fallback). Implements double-submit guard, SDK launch, and outcome normalization (success/failed/cancelled). Server-driven gateway killswitch is observed but not enforced today — see Phase 3.5b. |
 
 **Return type:** `PaymentFlowOutcome` -- { status, paymentId, transactionId, errorMessage }
 

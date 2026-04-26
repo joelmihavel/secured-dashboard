@@ -1149,7 +1149,7 @@ RLS is enabled on all tables. The security model follows a consistent pattern:
 | `identity_verifications` | SELECT own | Full access |
 | `cashback_ledger` | SELECT own | Full access |
 | `idempotency_keys` | SELECT own | Full access |
-| `audit_logs` | SELECT own (excluding `security`/`system` categories) | Full access |
+| `audit_logs` | SELECT own (excluding `security`/`system` categories) | INSERT (append-only), SELECT all, **DELETE restricted** to rows older than 1 year AND not in `payment`/`security` categories. **No UPDATE policy** — UPDATEs are blocked entirely (Phase 8c immutability, 2026-04-26). |
 | `extracted_rental_info` | SELECT/INSERT/UPDATE own | Full access |
 | `device_tokens` | Full CRUD on own tokens | Full access |
 | `notifications` | SELECT/UPDATE own | Full access |
@@ -1327,3 +1327,42 @@ Migrations are located in `supabase/migrations/` and applied via `supabase db pu
 2. **View recreation:** Drops and recreates `v_user_funnel` with `LATERAL ... LIMIT 1` for the tenancies join, consistent with all other lateral joins.
 3. **View scope:** Includes 90+ columns spanning `users`, `waitlist_entries`, `extracted_rental_info`, `tenancies`, `bank_accounts`, `identity_verifications`, and payment/stamp aggregates.
 4. **Grants:** `REVOKE ALL` from `anon`; `GRANT SELECT` to `service_role` only.
+
+### `20260425082914_waitlist_entries_user_fk_cascade.sql` (Phase 1 cleanup, 2026-04-25)
+
+**Purpose:** Adds `ON DELETE CASCADE` foreign key from `waitlist_entries.user_id` to `users.id`. Cleans up orphan waitlist entries that had been inflating `get_onboarded_count()`.
+
+**Changes:**
+1. Deletes orphan rows where `user_id` no longer exists in `users`.
+2. Adds the FK constraint idempotently.
+
+### `20260425131920_payment_webhook_events_dedup.sql` (Phase 7e webhook hardening, 2026-04-25)
+
+**Purpose:** Adds `payment_webhook_events` dedup table for replay defense on Cashfree (and other) webhooks. Composite PK `(source, event_id)`, 30-day retention via `cleanup_payment_webhook_events()` helper function.
+
+**Note:** Currently dormant — webhook handlers still dedup via the existing `processed_webhooks` table. Cleanup option: drop one of the two tables in a follow-up.
+
+### `20260425141812_drop_send_payment_reminders.sql` (Phase 8b, 2026-04-25)
+
+**Purpose:** Drops the orphan `send_payment_reminders()` SQL function. Pre-archive verification confirmed zero callers (the corresponding edge fn `send-reminders` is part of Phase 6 archival).
+
+### `20260425141937_audit_logs_immutability.sql` (Phase 8c, 2026-04-25, applied to prod 2026-04-26)
+
+**Purpose:** Replaces the overly broad `audit_logs_service_all` policy with stricter command-scoped policies enforcing append-only semantics:
+- `audit_logs_service_insert` — INSERT (append-only) for service_role.
+- `audit_logs_service_select` — SELECT for service_role; existing `audit_logs_user_select` preserved for authenticated users.
+- `audit_logs_service_cleanup_only` — DELETE only when `created_at < NOW() - INTERVAL '1 year'` AND `action_category NOT IN ('payment','security')`. Matches the cleanup-audit-logs cron pattern.
+- **No UPDATE policy** — UPDATE is blocked entirely. Audit corrections must be logged as new rows with `action_category='audit_correction'`.
+
+**Why:** RBI Master Direction on Digital Payment Security Controls + DPDP Act audit trail requirements imply payment + security audit rows should be immutable. The previous policy let any service-role code path silently rewrite or wipe audit trail.
+
+### `20260425143501_payment_gateway_killswitch.sql` (Phase 3.5a, 2026-04-25)
+
+**Purpose:** Lays the foundation for SERVER-DRIVEN payment gateway selection (replacing today's build-time `EXPO_PUBLIC_PAYMENT_GATEWAY` env var). Adds a `payment_gateway` row to `app_config` with `primary` (default `cashfree`) and `emergency_fallback` (`payu`) fields.
+
+**Changes:**
+1. Inserts the `app_config` row idempotently with the safe defaults.
+2. Adds `get_payment_gateway()` SECURITY DEFINER helper function (returns `'cashfree'` if config missing or empty).
+3. Grants EXECUTE only to `service_role`.
+
+**Status:** Currently OBSERVE-ONLY in `initiate-payment` edge fn (Phase 3.5b) — the function logs `GATEWAY_DIVERGENCE` warnings when client-chosen gateway disagrees with server config but does not yet override. Flip to enforce in Phase 3.5c after observation period.

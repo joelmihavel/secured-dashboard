@@ -1,5 +1,7 @@
 # PayU → Cashfree Payment Gateway Migration — Technical Specification
 
+> **Historical record (2026-03-26 spec, migration shipped 2026-04-25).** This document captures the design as it was written. As of 2026-04-26: the auto-Easy-Split feature was removed (settlement now happens via `createAdjustment` after payment success). The shared module `_shared/cashfree-easysplit.ts` referenced throughout this spec was renamed to `_shared/cashfree-pg-vendors.ts`. All other endpoint paths (`/pg/easy-split/vendors/...`) remain valid since they're how Cashfree organizes vendor management endpoints. For current-state reference, see `docs/backend/cashfree-integration.md`.
+
 **Branch:** `atrishabh/cashfree-migration`
 **Base:** `main`
 **Target env:** Supabase Dev DB (`zqlowjveyqiagnbmfwsb`) for testing + Expo Preview

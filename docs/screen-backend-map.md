@@ -271,7 +271,7 @@ Screen: (payment)/enter-rent.tsx -> PaymentMethodModal component
         --> Generates PayU hash server-side
         --> Returns: { payment_id, txn_id, payu: { key, hash, surl, furl, ... } }
         --> Tables: payments (INSERT)
-  --> Step 4 - PayU SDK:
+  --> Step 4 - Payment SDK (Cashfree primary as of 2026-04; PayU legacy fallback for older app versions in soak window):
     --> Opens PayU Custom Browser with hash params
     --> PayU server-to-server webhook on completion:
       --> Edge: payment-webhook (POST, no JWT -- PayU webhook)
