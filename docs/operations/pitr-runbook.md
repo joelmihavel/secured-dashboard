@@ -167,7 +167,7 @@ Supabase dashboard → Project → Backups → "Restore in place" → confirm ti
 | Asset | Recovery path |
 |---|---|
 | Edge function source code | `git checkout <pre-incident-tag> -- supabase/functions/<name> && supabase functions deploy <name>` |
-| Edge function secrets | `/tmp/prod-fn-secrets.txt` snapshot from Phase 0.6a — manually re-set via `supabase secrets set` |
+| Edge function secrets | `/tmp/prod-fn-secrets.txt` snapshot from Phase 0.6a (run `bash scripts/ops/snapshot-fn-secrets.sh` to refresh) — names only; values come from your password manager / Cashfree / Twilio dashboards |
 | GCS Storage objects (rent agreements) | GCS object versioning (NOT currently enabled — out-of-scope follow-up) |
 | Cloud Run revisions | `gcloud run services update-traffic --to-revisions=<good-rev>=100` |
 | Cron schedules | `cron.job` baseline snapshot at `/tmp/prod-cron-baseline.sql` from Phase 0 |
