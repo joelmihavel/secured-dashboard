@@ -1,8 +1,6 @@
 /**
  * config.ts — single source of truth for env reads in extraction-service.
  *
- * CI smoke-test marker: 2026-04-26 (Phase 5 dev-trigger end-to-end test).
- *
  * Reads every required env var ONCE at module load, validates required
  * fields (logs FATAL + exits if anything's missing), and exports a
  * typed frozen `config` object.
