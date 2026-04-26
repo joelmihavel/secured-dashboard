@@ -14,7 +14,7 @@
   pr-gates.yml                  PR validation (gitleaks + lint + typecheck + migration-lint)
   deploy.yml                    Reusable orchestrator — called by dev/prod triggers
   deploy-dev-trigger.yml        push to dev branch → deploys to dev infra
-  deploy-prod-trigger.yml       push to main → deploys to prod (with approval gates)
+  deploy-prod-trigger.yml       push tag `deploy-prod-*` → deploys to prod (no approval gates — tag-push IS the gate)
   mobile-release.yml            workflow_dispatch / tag push → Maestro regression + EAS build + submit
   maestro-nightly.yml           daily 00:30 IST → full Maestro on dev, files issue on failure
   rollback.yml                  workflow_dispatch → per-surface rollback
@@ -32,8 +32,10 @@
 | Git branch | Trigger workflow | Supabase project | Cloud Run service | EAS channel |
 |---|---|---|---|---|
 | `dev` (push) | `deploy-dev-trigger.yml` | `zqlowjveyqiagnbmfwsb` | `extraction-service-dev` | `development` |
-| `main` (push) | `deploy-prod-trigger.yml` (gated by GH Environment approval) | `uowjtrzmszuaiokqxgir` | `extraction-service-prod` | `production` |
+| Tag `deploy-prod-*` push | `deploy-prod-trigger.yml` (no Environment gate — tag-push IS the deploy decision) | `uowjtrzmszuaiokqxgir` | `extraction-service-prod` | `production` |
 | Tag `v*` | `mobile-release.yml` | n/a | n/a | builds prod profile, submits to TestFlight |
+
+**Why tag-trigger for prod:** push-to-main does NOT auto-deploy. The deploy decision is decoupled from the merge decision so doc-only fixes, refactors, batched merges don't auto-deploy to prod. To deploy: `git tag deploy-prod-$(date +%Y-%m-%d)-<slug> && git push origin <tag>`. The tag itself + auto-generated GitHub Release with commit notes is the audit trail.
 
 ## Required GH secrets
 
@@ -128,14 +130,22 @@ gh api -X PUT repos/flent-homes/Secured-v2/branches/dev/protection \
 
 Both JSONs require `PR gates summary` as the only status check (the summary job orchestrates the underlying checks). When `pr-gates-summary` flips from non-blocking to blocking, this rule starts gating merges.
 
-## GitHub Environments (for prod approval gates)
+## GitHub Environments — NOT used (tag-trigger replaces this)
 
-Configure under repo Settings → Environments. Create:
+The original cleanup plan called for `production-migrations` + `production-cloud-run` GitHub Environments with required reviewer + 5-min wait timer. These require GitHub Pro on private repos. **Project decision (2026-04-26): skip the Pro upgrade.** See memory `project_branch_protection_deferred.md`.
 
-- `production-migrations` — required reviewer: yourself; wait timer: 5 min (5-min cooldown after approval to allow a "wait, no!" cancel)
-- `production-cloud-run` — same
+**Replacement gate: tag-triggered prod deploy** (see Branch → environment routing table above). Pushing to `main` does NOT auto-deploy. To deploy:
 
-The `deploy-prod-trigger.yml` workflow has `environment: production-migrations` and `environment: production-cloud-run` jobs that pause for these gates before the actual deploy job runs.
+```bash
+# After merging to main and verifying:
+SLUG="cashfree-rotation"   # short description of what's deploying
+git tag "deploy-prod-$(date +%Y-%m-%d)-${SLUG}"
+git push origin "deploy-prod-$(date +%Y-%m-%d)-${SLUG}"
+```
+
+The tag is the deploy artifact + audit trail. The workflow also auto-creates a GitHub Release on the tag with commit-since-last-deploy notes.
+
+**Backup manual trigger:** GitHub Actions UI → "deploy-prod" → "Run workflow" → click. Same effect as tag-push without creating a tag.
 
 ## Rollback playbook
 

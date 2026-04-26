@@ -1,16 +1,30 @@
-# Deploy on push to main — calls the shared deploy.yml with prod inputs.
+# Deploy prod — triggered by pushing a tag matching `deploy-prod-*`
+# (or via manual workflow_dispatch).
 #
-# Per the cleanup plan (Phase 5 Day 9):
-#   - Each prod-mutating job is gated by GitHub Environments with required
-#     reviewers + 5-min wait timer (configured in repo settings, NOT here)
-#   - Sequencing: Day 9 — this workflow lands. Day 17 — flip required-checks
-#     gate for main branch. The 7-day window between is intentional.
+# Push to `main` alone does NOT deploy. The tag is the deploy decision —
+# you push `deploy-prod-<date>-<slug>` when you want the merged code on
+# main to actually go live. This decouples "merge to main" from "deploy
+# to production" so doc-only fixes, refactors, and batched merges don't
+# auto-deploy.
+#
+# Why no GitHub Environments / approval gates: GitHub Pro is required
+# for those on private repos, and the user opted out (see memory
+# project_branch_protection_deferred.md + project_prod_ci_tag_deploy.md).
+# The tag-push step IS the manual approval — only the user can push tags,
+# and creating a tag is an explicit action distinct from merging code.
+#
+# Tag convention:
+#   deploy-prod-2026-04-26-cashfree-rotation
+#   deploy-prod-<YYYY-MM-DD>-<short-slug>
+#
+# To deploy: `git tag deploy-prod-$(date +%Y-%m-%d)-<slug> && git push origin <tag>`
+# To dispatch manually:    GitHub Actions UI → "deploy-prod" → "Run workflow"
 
 name: deploy-prod
 
 on:
   push:
-    branches: [main]
+    tags: ['deploy-prod-*']
   workflow_dispatch: {}
 
 concurrency:
@@ -18,26 +32,7 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  # GitHub Environment with required reviewer for migrations
-  approve-migrations:
-    name: Approve migrations
-    runs-on: ubuntu-latest
-    environment: production-migrations
-    timeout-minutes: 10080   # 7 days — pending approvals shouldn't block forever
-    steps:
-      - run: echo "Migrations approved by ${{ github.actor }} for ${{ github.sha }}"
-
-  # GitHub Environment with required reviewer for cloud-run
-  approve-cloud-run:
-    name: Approve cloud-run
-    runs-on: ubuntu-latest
-    environment: production-cloud-run
-    timeout-minutes: 10080
-    steps:
-      - run: echo "Cloud Run approved by ${{ github.actor }} for ${{ github.sha }}"
-
   deploy:
-    needs: [approve-migrations, approve-cloud-run]
     uses: ./.github/workflows/deploy.yml
     with:
       environment: prod
@@ -52,9 +47,10 @@ jobs:
       EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
       SLACK_DEPLOYS_WEBHOOK: ${{ secrets.SLACK_DEPLOYS_WEBHOOK }}
 
-  tag-release:
-    name: Tag release
+  release-notes:
+    name: Add release notes to deploy tag
     needs: deploy
+    if: startsWith(github.ref, 'refs/tags/deploy-prod-')
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -62,18 +58,19 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - name: Compute next tag
-        id: tag
-        run: |
-          # Use rn-app/package.json version + commit count as tag
-          BASE=$(jq -r .version rn-app/package.json)
-          COUNT=$(git rev-list --count HEAD)
-          echo "tag=v${BASE}-r${COUNT}" >> $GITHUB_OUTPUT
-      - name: Create release
+      - name: Create GitHub Release on the deploy tag
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh release create "${{ steps.tag.outputs.tag }}" \
-            --target ${{ github.sha }} \
-            --generate-notes \
-            --title "Release ${{ steps.tag.outputs.tag }}"
+          # Tag pushed by user is the release marker. Add auto-generated
+          # release notes (commits since previous deploy-prod-* tag).
+          TAG="${GITHUB_REF#refs/tags/}"
+          PREV_TAG=$(git tag -l 'deploy-prod-*' --sort=-creatordate | sed -n '2p')
+          if [ -z "$PREV_TAG" ]; then
+            NOTES_OPT="--generate-notes"
+          else
+            NOTES_OPT="--generate-notes --notes-start-tag $PREV_TAG"
+          fi
+          gh release create "$TAG" \
+            --title "Production deploy: $TAG" \
+            $NOTES_OPT
