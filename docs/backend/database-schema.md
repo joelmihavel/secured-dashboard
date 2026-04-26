@@ -1,11 +1,8 @@
 # Flent Secured -- Database Schema Documentation
 
-<!-- STALE-WARNING -->
-> ⚠️ **Pre-cleanup-arc doc.** This page was last refreshed before the 2026-04-25/26 cleanup batch (DocAI residency flip, per-service SA migration, Phase 8c audit_logs immutability, Cashfree settlement webhook secret separation, Easy Split → Vendor Adjustments rename, etc.). Specific examples and counts may not match current state. The dated header below reflects when the file was originally written, NOT the current cleanup state. Cross-check against code before relying on details.
-
-**Last updated:** 2026-03-08
+**Last updated:** 2026-04-26 (table inventory + RLS overview re-checked; specific column lists may drift between releases — cross-check against `supabase/migrations/`)
 **Database:** PostgreSQL (Supabase-managed)
-**Project ID:** `zqlowjveyqiagnbmfwsb`
+**Project IDs:** `uowjtrzmszuaiokqxgir` (prod), `zqlowjveyqiagnbmfwsb` (dev/sandbox)
 **Region:** `ap-south-1` (Mumbai, India)
 
 ---

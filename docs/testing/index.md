@@ -2,7 +2,7 @@
 
 The repo ships with a **fully configured Maestro E2E test suite** at `maestro/`. 49 flows total: 39 screen flows + 10 journey flows + 3 profiles (smoke / regression / nightly) + cloud execution script. This guide covers running the tests, the conventions, and how to extend them.
 
-> **Last reviewed:** 2026-04-25
+> **Last reviewed:** 2026-04-26
 
 ## Contents
 
@@ -78,9 +78,9 @@ Maestro Cloud requires `MAESTRO_CLOUD_API_KEY` env var. Get one from `mobile.dev
 | Situation | Use |
 |---|---|
 | Iterating on a new flow / debugging | **Local emulator** — free, fast |
-| Verifying a PR before merge | **GH Actions hosted Android emulator** (Phase 5 CI) — free, slower than local |
+| Verifying a PR before merge | **GH Actions hosted Android emulator** via `pr-gates.yml` — free, slower than local |
 | Pre-release regression | **Maestro Cloud** with `regression` profile — covers iOS + Android, multiple device sizes |
-| Nightly drift detection on dev | **Maestro Cloud** with `nightly` profile (Phase 5 `maestro-nightly.yml`) |
+| Nightly drift detection on dev | **Maestro Cloud** with `nightly` profile via `maestro-nightly.yml` |
 
 The plan's CI/CD design uses GH-hosted emulators for PR gates (free) and Maestro Cloud only for `mobile-release.yml` and `maestro-nightly.yml` to keep costs bounded.
 
@@ -89,7 +89,7 @@ The plan's CI/CD design uses GH-hosted emulators for PR gates (free) and Maestro
 Maestro flows assume the app has a known seed state. Two layers:
 
 ### Local — `supabase/seed.sql`
-Runs on every `npm run db:reset`. Creates 3 test users with full journey state:
+Runs on every `npm run db:reset` (from repo root, not rn-app). Creates 3 test users with full journey state:
 
 | Phone | UUID | State |
 |---|---|---|
@@ -99,19 +99,21 @@ Runs on every `npm run db:reset`. Creates 3 test users with full journey state:
 
 Dev OTP (when `ALLOW_DEMO_AUTH=true`): **`123456`**.
 
+> **Note:** the `+91999999990X` range above is for the local seed.sql. The DevNavigator Quick Login in dev builds uses a separate `+919999900001-3` range — see `rn-app/docs/dev-testing-guide.md`.
+
 ### Cloud — `seed-test-data` edge fn
-For Maestro Cloud or remote dev runs, `seed-test-data` edge fn (`supabase/functions/seed-test-data/`) creates test phones in the `+91999990XXXX` range with controlled journey states. Auth gated to those test phones + service role — see the function source for details.
+For Maestro Cloud or remote dev runs, `seed-test-data` edge fn (`supabase/functions/seed-test-data/`) creates test phones with controlled journey states. Auth gated to those test phones + service role — see the function source for details.
 
-### `dev-seed` — jump to a specific journey state
-The DevNavigator UI in dev builds (`(dev)/screen-picker`) backs onto `dev-seed` edge fn. Use this when you need a specific tenant state for a test:
+### `seed-test.sh` — jump to a specific journey state
+For ad-hoc seeding to a specific state, use the wrapper script (which calls the `seed-test-data` edge fn):
 
-```yaml
-# Maestro flow snippet
-- runFlow:
-    file: ../setup/jump-to-state.yaml
-    env:
-      TARGET_STATE: waitlisted_approved
+```bash
+./rn-app/scripts/seed-test.sh active +919999900001
+./rn-app/scripts/seed-test.sh approved +919999900002
+./rn-app/scripts/seed-test.sh signed_up
 ```
+
+The DevNavigator UI in dev builds (`rn-app/app/(dev)/screen-picker.tsx`) provides an in-app equivalent.
 
 ## TestID conventions
 
@@ -166,7 +168,7 @@ appId: in.flent.secured
 
 Use this in flows that test a single screen's behavior in isolation rather than the full journey to get there.
 
-> Document deep-link routes in `docs/frontend/deep-linking.md` (TODO — not yet written; track via the cleanup plan's Phase 4).
+> Deep-link routes are documented in `docs/frontend/deep-linking.md`.
 
 ## Adding a new flow
 
@@ -209,11 +211,8 @@ Common gotchas:
 - **Flaky timing** — Maestro's default 5s wait may not be enough for screens that fetch data. Use `extendedWaitUntil` with `assertVisible` and a longer timeout.
 - **Deep link fails** — verify the URL scheme is registered and the app handles the path. `flentsecured://` only works on dev/preview builds, not Expo Go.
 
-## Plan integration
+## CI integration (live)
 
-Per the cleanup plan, Phase 5 wires Maestro into CI:
-- `pr-gates.yml` runs `smoke` profile on every PR, on a GH-hosted Android emulator (free)
-- `maestro-nightly.yml` runs `nightly` profile on dev branch via Maestro Cloud, files an issue on failure
-- `mobile-release.yml` runs `regression` profile via Maestro Cloud before EAS submit
-
-These are pending — see the plan for status.
+- `pr-gates.yml` — runs `smoke` profile on every PR
+- `maestro-nightly.yml` — runs `nightly` profile on dev daily, files a GitHub issue on failure
+- `mobile-release.yml` — runs `regression` profile via Maestro Cloud before EAS submit

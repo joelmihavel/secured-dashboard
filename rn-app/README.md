@@ -9,8 +9,8 @@ Rent payment app for Indian tenants. Pay rent via UPI, cards, or netbanking with
 | Framework | Expo SDK 52, React Native 0.81, expo-router v4 |
 | State | Zustand (client) + React Query (server) |
 | Backend | Supabase (Auth, PostgREST, Edge Functions, Realtime) |
-| Payments | PayU Core SDK (UPI, Cards, Netbanking) |
-| Identity | Cashfree M360 (KYC via OTP consent) |
+| Payments | Cashfree PG (primary, since 2026-03-31) + PayU Core SDK (legacy fallback) |
+| Identity | Cashfree M360 (OTP routing for new users, PAN/Aadhaar verification) |
 | Auth | Dual-path OTP: Supabase Auth (existing users) + Cashfree M360 (new users) |
 | Proxy | Cloudflare Worker (`devapi.flent.in`) — bypasses ISP DNS blocks on `*.supabase.co` |
 | CI/CD | EAS Build + EAS Update (OTA) |

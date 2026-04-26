@@ -329,7 +329,6 @@ Secured v2-react-native project/
 |   +-- app.json                     # Expo app configuration
 |   +-- eas.json                     # EAS Build profiles
 |   +-- tsconfig.json                # TypeScript configuration
-|   +-- jest.config.js               # Jest test configuration
 |   +-- package.json                 # Dependencies
 |
 +-- supabase/                        # Backend (Supabase)
@@ -528,12 +527,7 @@ eas build --platform ios --profile development:device
 
 ### Running Tests
 
-```bash
-cd rn-app
-npm test                  # Run all tests
-npm run test:watch        # Watch mode
-npm run test:coverage     # Coverage report
-```
+No unit-test suite exists. E2E coverage is via Maestro Cloud — see [`docs/testing/index.md`](testing/index.md).
 
 ### EAS Build Profiles
 

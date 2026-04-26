@@ -42,9 +42,10 @@ Import from `@/src/components`:
 ## Quality Gates (ALL must pass before committing)
 1. `npx tsc --noEmit` — zero TypeScript errors
 2. `npx eslint {changed-file}` — zero lint errors
-3. `npm test -- --passWithNoTests` — existing tests pass
-4. App renders without crash
-5. For verify stories: BuildBot 12-step pipeline passes
+3. App renders without crash
+4. For verify stories: BuildBot 12-step pipeline passes
+
+> No unit-test suite exists. E2E coverage is via Maestro — see `docs/testing/index.md`.
 
 ## Figma Data is ABSOLUTE TRUTH
 - ONLY use Figma REST API data as source of truth for ALL UI values

@@ -1,10 +1,7 @@
 # Screens and Routing Reference
 
-<!-- STALE-WARNING -->
-> ⚠️ **Pre-cleanup-arc doc.** This page was last refreshed before the 2026-04-25/26 cleanup batch (DocAI residency flip, per-service SA migration, Phase 8c audit_logs immutability, Cashfree settlement webhook secret separation, Easy Split → Vendor Adjustments rename, etc.). Specific examples and counts may not match current state. The dated header below reflects when the file was originally written, NOT the current cleanup state. Cross-check against code before relying on details.
-
 > Flent Secured -- React Native (Expo Router 6)
-> Last updated: 2026-03-08
+> Last updated: 2026-04-26 (route inventory + group animations re-verified; per-screen examples not exhaustively re-audited)
 
 This document provides a comprehensive reference for every screen and route in the Flent Secured mobile application. It covers the routing architecture, full navigation flow, per-screen details (purpose, components, API calls, navigation targets, state management), and layout patterns.
 
@@ -75,7 +72,7 @@ KeyboardProvider
 | `(setup)` | fade | Post-approval setup |
 | `(payment)` | fade, transparentModal | Overlay on top of main |
 | `(waitlist)` | fade | Waitlist screens |
-| `(agreement)` | fade | Agreement upload/review |
+| `(agreement)` | slide_from_right | Agreement upload/review |
 | `(profile)` | slide_from_right, 250ms | Profile screens |
 | `(dev)` | (default) | DEV only, conditional render |
 
@@ -490,7 +487,7 @@ App Launch
 |---|---|
 | **Route** | `/(payment)/status` |
 | **File** | `app/(payment)/status.tsx` |
-| **Purpose** | Consolidated status screen replacing separate success/processing/failed screens. Uses a `useReducer` state machine to render PENDING, SUCCESS, FAILED, REFUNDED, or TIMED_OUT states. Features payment receipt card, polling, PDF receipt generation, and contact support. |
+| **Purpose** | Non-success payment status screen. Uses a `useReducer` state machine to render PENDING, FAILED, REFUNDED, or TIMED_OUT states. On successful resolution, navigates to `/(payment)/success` for the receipt screen. Features payment ticket card, polling, and contact support. |
 | **Key Components** | `Screen`, `Text`, `PrimaryButton`, `BackButton`, `PaymentReceiptCard`, `DashedDivider`, `OfflineBanner` |
 | **API Services** | `checkPaymentStatus()` -- polls payment status (5s interval, 300s timeout for card/netbanking, 360s for UPI; Realtime handles fast path). `generateReceipt()` -- fetches receipt data from `generate-receipt` edge function. `useRealtimeQuery()` -- Supabase Realtime subscription for status updates. `expo-print` + `expo-sharing` -- PDF receipt generation. |
 | **Navigation Targets** | `/(main)` (via "Go Home" or back button). `/(payment)/enter-rent` (via "Try Again" on failure). |

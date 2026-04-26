@@ -1,6 +1,6 @@
 # Flent Secured -- Development & Testing Infrastructure Guide
 
-Last updated: 2026-02-27
+Last updated: 2026-04-26
 
 ---
 
@@ -128,18 +128,18 @@ Three buttons, one per test phone number. Tapping a button performs a complete l
 
 A loading spinner replaces the button label while login is in progress. All buttons are disabled during a login attempt to prevent double-fires.
 
-| Button Label     | Phone           | OTP      |
-|------------------|-----------------|----------|
-| Active User      | +919999900001   | 123456   |
-| Waitlisted User  | +919999900002   | 654321   |
-| New Signup       | +919999900003   | 111111   |
+| Button Label                  | Phone           | OTP      |
+|-------------------------------|-----------------|----------|
+| Apple Review (mock)           | +919999900001   | 123456   |
+| Apple Review (waitlist)       | +919999900002   | 654321   |
+| Dev Test (real data)          | +919999900003   | 111111   |
 
 #### Mock Service Toggles
 
 - **All Mocks** (master toggle): Flips every service mock on or off. Toggling this clears the React Query cache and resets all Zustand stores to prevent stale data mixing between real and mock sources.
 - **Mock Services** (collapsible): Per-service toggles for `dashboard`, `payments`, `waitlist`, `agreement`, `setup`, and `profile`. Expanding the section shows individual switches.
 
-Default state on app start: `dashboard` and `payments` mocks are ON; all others are OFF.
+Default state on app start: **all mocks are OFF**. Toggle individual services or use the master "All Mocks" switch as needed (`rn-app/src/__dev__/devConfig.ts`).
 
 #### Font Scale Override
 
