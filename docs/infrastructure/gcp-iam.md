@@ -58,15 +58,16 @@ Default compute SA `roles/editor` remains for Cloud Build but is no longer attac
 extraction-service-prod          → allUsers / roles/run.invoker
 stamp-verification-service-prod  → allUsers / roles/run.invoker
 api-club-proxy                   → allUsers / roles/run.invoker
-extraction-service-dev           → (empty — no public binding)
+extraction-service-dev           → allUsers / roles/run.invoker  (added 2026-04-26 for parity)
 stamp-verification-service-dev   → (empty — no public binding)
 ```
 
-🟥 **CRITICAL FINDING #2:** prod Cloud Run services are publicly invokable. Anyone on the internet can hit `https://extraction-service-prod-...run.app/extract` and the network layer accepts the request. The services themselves enforce a `x-extraction-secret` header check in middleware, so unauthorized requests get a 401 — but:
+⚠️ **FINDING #2 (open, accepted with mitigation):** prod Cloud Run services are publicly invokable. Anyone on the internet can hit `https://extraction-service-prod-...run.app/extract` and the network layer accepts the request. The services themselves enforce a `x-extraction-secret` header check in middleware, so unauthorized requests get a 401 — but:
 - That's defense-in-depth, not zero-trust. A bug in middleware or a leaked secret would directly expose the service.
 - Public-invoker services attract unauthorized probing traffic, generating log noise that can hide real attacks.
 - It's the inverse of the `--no-allow-unauthenticated` flag used at deploy time — someone added the `allUsers` binding manually post-deploy.
-- Notably **dev is more locked down than prod** here, which is backwards.
+- **Dev now matches prod (added allUsers on extraction-service-dev on 2026-04-26 during CI/CD smoke test).** Rationale: edge functions hit dev via the same secret-header pattern as prod; keeping dev IAM-tighter-than-prod required a workaround in the CI health probe (impersonation chain) and didn't add real security since the secret-header is the actual auth boundary. Parity is more valuable than asymmetric IAM hardening on the dev clone.
+- `stamp-verification-service-dev` stays IAM-tight because it isn't called from CI's health probe path.
 
 ### What's NOT broken
 

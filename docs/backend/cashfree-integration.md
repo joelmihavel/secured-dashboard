@@ -124,12 +124,7 @@ v_user_funnel view exposes flattened m360_* fields for the admin dashboard
 
 This pattern is already in place across `payment-webhook`, `cashfree-split-webhook`, `cashfree-vendor-webhook`.
 
-**Redundant new table (Phase 7e plan deviation):** migration `20260425131920_payment_webhook_events_dedup.sql` added `payment_webhook_events` (composite PK `(source, event_id)` + 30-day retention helper). It's **not currently wired into handlers** — `processed_webhooks` already does the job. Cleanup options:
-
-- **Option A (preferred):** drop `payment_webhook_events` in a follow-up migration; document `processed_webhooks` as canonical
-- **Option B:** migrate handlers from `processed_webhooks` → `payment_webhook_events` (better hygiene: composite PK + auto-retention via `cleanup_payment_webhook_events()`), then drop `processed_webhooks`
-
-Either way, do not leave both tables long-term. Today's behavior is correct because handlers all use the older table; the new table is dormant.
+**Cleanup history:** migration `20260425131920_payment_webhook_events_dedup.sql` originally added a parallel `payment_webhook_events` table (composite PK `(source, event_id)` + 30-day retention helper) intended to replace `processed_webhooks`. The table was never wired into the webhook handlers, so it sat dormant alongside the canonical one. Migration `20260426094339_drop_payment_webhook_events_table.sql` (2026-04-26) removed it. **`processed_webhooks` is now the single source of truth for webhook replay defense.**
 
 ## Webhook timestamp freshness (observe-only)
 
