@@ -55,10 +55,16 @@ jobs:
       rn: ${{ steps.filter.outputs.rn }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          # paths-filter needs prior commit available; default depth=1 doesn't
+          # expose HEAD~1 / github.event.before. fetch-depth: 0 = full history.
+          fetch-depth: 0
       - id: filter
         uses: dorny/paths-filter@v3
         with:
-          base: HEAD~1
+          # On push events, paths-filter auto-uses github.event.before so it
+          # diffs the entire push (works for multi-commit pushes too).
+          # No explicit base needed.
           filters: |
             migrations:
               - 'supabase/migrations/**'
