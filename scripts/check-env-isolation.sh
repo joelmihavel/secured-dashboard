@@ -6,7 +6,8 @@
 #
 # Allowed central modules:
 #   - rn-app/src/config/env.ts
-#   - admin-app/src/lib/env.ts
+#   - admin-app/src/lib/env.ts          (browser-safe — anon key + URL)
+#   - admin-app/src/lib/env-server.ts   (server-only — service-role keys, Phase A)
 #   - cloud-run/extraction-service/src/config.ts
 #
 # Anything else that reads process.env.* in the source trees fails the check.
@@ -27,7 +28,7 @@ cd "$ROOT"
 
 # Central modules that ARE allowed to read process.env directly.
 # Add new ones here as new subprojects come online.
-ALLOWED='rn-app/src/config/env\.ts$|admin-app/src/lib/env\.ts$|cloud-run/extraction-service/src/config\.ts$'
+ALLOWED='rn-app/src/config/env\.ts$|admin-app/src/lib/env\.ts$|admin-app/src/lib/env-server\.ts$|cloud-run/extraction-service/src/config\.ts$'
 
 # Where to look. Skips test files, build outputs, node_modules, scripts/legacy/.
 SEARCH_DIRS='rn-app/src rn-app/app admin-app/src admin-app/app cloud-run'
