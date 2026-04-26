@@ -14,7 +14,7 @@
 | Cloud Run stamp-verification-service-prod | `asia-south1` (Mumbai) | Stamp certificate metadata | ✅ India |
 | GCS bucket for rent agreements | Via Supabase Storage in `ap-south-1` | Rent agreement PDFs at rest | ✅ India |
 | **Document AI processor** | `us` (United States) 🟥 | Rent agreement PDF text extraction | ❌ Out of region |
-| **Vertex AI Gemini calls** | `global` endpoint 🟥 | Rent agreement extracted JSON + raw PDF (multimodal) | ❌ Out of region (potentially) |
+| **Vertex AI Gemini calls** | `global` endpoint | Rent agreement extracted JSON + raw PDF (multimodal) | ⚠️ Accepted (project decision 2026-04-26) — see Finding 2 |
 | **External SHCIL e-Stamp** | India | Stamp certificate verification | ✅ Third-party in-region |
 | **External Cashfree** | India | Payments + KYC | ✅ Third-party in-region |
 | **External Twilio** | Global routing | OTP + WhatsApp | ⚠️ Limited PII (phone number only) |
@@ -80,42 +80,36 @@ gcloud run services update extraction-service-prod \
 
 **Owner action required:** verify on dev, then flip prod env vars. ~30 min of work + 48h soak.
 
-### 🟥 Finding 2 — Vertex AI Gemini calls use `global` endpoint
+### ⚠️ Finding 2 — Vertex AI Gemini calls use `global` endpoint (ACCEPTED)
 
-`cloud-run/extraction-service/src/services/gemini-vertex.ts` defaults `location: string = 'global'`. The `global` endpoint:
+**Status:** ACCEPTED on 2026-04-26 as a project decision. **Do not reopen** without revisiting the underlying trade-off.
 
-- Supports provisioned throughput SLAs (which we may or may not be using)
+`cloud-run/extraction-service/src/services/gemini-vertex.ts` reads location from `config.vertex.location` (env var `VERTEX_AI_LOCATION`), defaulting to `'global'`. The `global` endpoint:
+
+- Supports provisioned throughput SLAs and the gemini-3-flash-preview model used for extraction
 - Routes to the closest available region for inference
 - Per Vertex AI docs: data may be processed in any of US, EU, or Asia regions
 
-For multimodal PDF calls (which include the entire rent agreement as base64 input), this means the document — with all the same PAN/Aadhaar/bank info — flows through whichever region Vertex AI picks at request time.
+For multimodal PDF calls, the document flows through whichever region Vertex picks at request time.
 
-**Impact:** Same as Finding 1, but harder to reason about because the region is non-deterministic.
+**Why accepted:**
+- Model availability — gemini-3-flash-preview is on the global endpoint; regional availability uncertain and would force a model downgrade
+- Provisioned-throughput SKU is global; pinning regionally would forfeit throughput guarantees
+- Inference latency benefits from closest-available routing
+- The DocAI processor flip (Finding 1) covers the deterministic OCR step; Vertex multimodal is the synthesis step where regional pinning has the steeper trade-off
 
-**Remediation (partially done as of 2026-04-25 commit `c10facc7`):**
+**Mitigation in place (commit `c10facc7`):**
 
-The `cloud-run/extraction-service` codebase now reads the Vertex location
-from `config.vertex.location` (env var `VERTEX_AI_LOCATION`), defaulting
-to `'global'` to preserve current behavior. To flip to `asia-south1`:
+The env var `VERTEX_AI_LOCATION` is configurable so the location can be flipped in an emergency without a code change. Default stays `'global'`.
 
 ```bash
-# Verify model availability in asia-south1 first:
-gcloud ai models list --region=asia-south1 --project=flent-ai-project-2 \
-  | grep -i gemini
-
-# If gemini-3-flash-preview is listed, flip the env var:
+# Emergency override only — not the recommended path:
 gcloud run services update extraction-service-prod \
   --region=asia-south1 --project=secured-by-flent \
   --update-env-vars VERTEX_AI_LOCATION=asia-south1
-
-# Smoke test with a real rent agreement extraction
-# Verify in logs that '[gemini-vertex] using location=asia-south1'
-# Watch for MODEL_NOT_AVAILABLE errors over 24h before flipping prod
 ```
 
-If the model isn't in `asia-south1`, fall back to `asia-southeast1` (Singapore) — still extra-territorial but closer + better legal stance than `us`. Provisioned throughput SKU may not be available regionally — accept the throughput trade-off in exchange for residency.
-
-**Owner action required:** verify model availability + flip env var. ~30 min.
+**No owner action required.** The DPDP/RBI compliance posture is documented; consult counsel if regulatory expectations shift.
 
 ### ⚠️ Finding 3 — Twilio messaging for OTP + WhatsApp
 
@@ -171,7 +165,7 @@ supabase projects list | grep -E '(uowjtrzm|zqlowj)'
 | Finding | Severity | Status | Owner action |
 |---|---|---|---|
 | Document AI in `us` location | 🟥 CRITICAL | Open | Provision processor in `asia-south1`, update env vars |
-| Vertex AI in `global` endpoint | 🟥 CRITICAL | Open | Pin to `asia-south1`, verify model availability |
+| Vertex AI in `global` endpoint | ⚠️ ACCEPTED | Closed (2026-04-26) | None — project decision, see Finding 2 |
 | Twilio routes globally | ⚠️ ACCEPTABLE | Documented | No action — accept in privacy policy |
 | 2Captcha/ZenRows global | ⚠️ ACCEPTABLE | Documented | No action — no PII at risk |
 | Supabase + GCS in Mumbai | ✅ OK | n/a | n/a |
