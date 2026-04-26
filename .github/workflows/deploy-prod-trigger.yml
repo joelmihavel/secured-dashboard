@@ -44,7 +44,13 @@ jobs:
       project-ref: uowjtrzmszuaiokqxgir
       cloud-run-service: extraction-service-prod
       eas-channel: production
-    secrets: inherit
+    # Map env-suffixed repo secrets to the generic names deploy.yml expects.
+    secrets:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      GCP_WIF_PROVIDER: ${{ secrets.GCP_WIF_PROVIDER_PROD }}
+      GCP_SA_EMAIL: ${{ secrets.GCP_SA_EMAIL_PROD }}
+      EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+      SLACK_DEPLOYS_WEBHOOK: ${{ secrets.SLACK_DEPLOYS_WEBHOOK }}
 
   tag-release:
     name: Tag release

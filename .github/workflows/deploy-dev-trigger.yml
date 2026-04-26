@@ -24,4 +24,12 @@ jobs:
       project-ref: zqlowjveyqiagnbmfwsb
       cloud-run-service: extraction-service-dev
       eas-channel: development
-    secrets: inherit
+    # Map env-suffixed repo secrets to the generic names deploy.yml expects.
+    # Repo has separate GCP_WIF_PROVIDER_DEV / _PROD pairs so dev and prod
+    # CI flows assume their own deployer SAs (not a shared one).
+    secrets:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      GCP_WIF_PROVIDER: ${{ secrets.GCP_WIF_PROVIDER_DEV }}
+      GCP_SA_EMAIL: ${{ secrets.GCP_SA_EMAIL_DEV }}
+      EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+      SLACK_DEPLOYS_WEBHOOK: ${{ secrets.SLACK_DEPLOYS_WEBHOOK }}
