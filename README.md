@@ -108,7 +108,6 @@ Comprehensive documentation lives in [`docs/`](docs/README.md):
 | [Frontend — State Management](docs/frontend/state-management.md) | Zustand stores, React Query patterns, data flow |
 | [Infrastructure — Cloudflare & Deployment](docs/infrastructure/cloudflare-and-deployment.md) | CF Worker proxy, EAS builds, OTA updates |
 | [Screen-Backend Map](docs/screen-backend-map.md) | Every screen mapped to its backend endpoints and data flow |
-| [E2E Test Report](docs/BACKEND_E2E_AUDIT_REPORT.md) | Backend endpoint test coverage and findings |
 | [Development & Testing Guide](rn-app/docs/dev-testing-guide.md) | DevNavigator, mock data, test phones, build profiles |
 
 ## License
