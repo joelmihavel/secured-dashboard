@@ -26,7 +26,7 @@
 // ==============================================
 
 const CF_APP_ID = Deno.env.get("CASHFREE_PG_APP_ID")!;
-const CF_SECRET_KEY = Deno.env.get("CASHFREE_PG_APP_SECRET") ?? Deno.env.get("CASHFREE_PG_SECRET_KEY")!;
+const CF_SECRET_KEY = Deno.env.get("CASHFREE_PG_APP_SECRET")!;
 const CF_BASE_URL = (Deno.env.get("CASHFREE_PG_BASE_URL") ?? "https://sandbox.cashfree.com").replace(/\/$/, "");
 const CF_API_VERSION = "2025-01-01";
 const FETCH_TIMEOUT_MS = 10000;

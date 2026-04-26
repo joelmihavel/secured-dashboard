@@ -48,11 +48,9 @@ import { notifyUser } from "../_shared/notifications.ts";
 
 // Cashfree signs all webhooks with the merchant-wide PG Client Secret.
 // There is no per-webhook signing key in their dashboard. See header.
-const CF_SPLIT_WEBHOOK_SECRET = Deno.env.get("CASHFREE_PG_APP_SECRET") ?? Deno.env.get("CASHFREE_PG_SECRET_KEY");
+const CF_SPLIT_WEBHOOK_SECRET = Deno.env.get("CASHFREE_PG_APP_SECRET");
 if (!CF_SPLIT_WEBHOOK_SECRET) {
-  console.error(
-    "[cashfree-split-webhook] FATAL: CASHFREE_PG_APP_SECRET (or legacy CASHFREE_PG_SECRET_KEY) is not set",
-  );
+  console.error("[cashfree-split-webhook] FATAL: CASHFREE_PG_APP_SECRET is not set");
 }
 
 // ==============================================
