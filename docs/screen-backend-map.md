@@ -1,5 +1,8 @@
 # Screen-to-Backend Mapping
 
+<!-- STALE-WARNING -->
+> ⚠️ **Pre-cleanup-arc doc.** This page was last refreshed before the 2026-04-25/26 cleanup batch (DocAI residency flip, per-service SA migration, Phase 8c audit_logs immutability, Cashfree settlement webhook secret separation, Easy Split → Vendor Adjustments rename, etc.). Specific examples and counts may not match current state. The dated header below reflects when the file was originally written, NOT the current cleanup state. Cross-check against code before relying on details.
+
 > Flent Secured -- Comprehensive mapping of every screen to its backend services, edge functions, and database tables.
 >
 > Last verified: 2026-03-08 from source code inspection.

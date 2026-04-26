@@ -91,12 +91,14 @@ Heavy-lift extraction (Document AI + Gemini multimodal, up to 15 min) runs in Cl
 
 ### Service Inventory (project: `secured-by-flent`, region: `asia-south1`)
 
-| Service | Writes to (Supabase) | URL | Used by |
-|---|---|---|---|
-| `extraction-service-prod` | Main (`uowjtrzmszuaiokqxgir`) | `https://extraction-service-prod-nbmslvmlcq-el.a.run.app` | Production + Preview EAS builds |
-| `extraction-service-dev` | Branch (`zqlowjveyqiagnbmfwsb`) | `https://extraction-service-dev-nbmslvmlcq-el.a.run.app` | Development EAS builds |
-| `stamp-verification-service-prod` | Main | `https://stamp-verification-service-prod-nbmslvmlcq-el.a.run.app` | Prod SHCIL e-Stamp verification, called by `extraction-service-prod` |
-| `stamp-verification-service-dev` | Branch (`zqlowjveyqiagnbmfwsb`) | `https://stamp-verification-service-dev-nbmslvmlcq-el.a.run.app` | Dev SHCIL e-Stamp verification, called by `extraction-service-dev` |
+| Service | Runtime SA | Writes to (Supabase) | URL | Used by |
+|---|---|---|---|---|
+| `extraction-service-prod` | `extraction-service-prod-sa` | Main (`uowjtrzmszuaiokqxgir`) | `https://extraction-service-prod-nbmslvmlcq-el.a.run.app` | Production + Preview EAS builds |
+| `extraction-service-dev` | `extraction-service-dev-sa` | Branch (`zqlowjveyqiagnbmfwsb`) | `https://extraction-service-dev-nbmslvmlcq-el.a.run.app` | Development EAS builds |
+| `stamp-verification-service-prod` | `stamp-verifier-prod-sa` | Main | `https://stamp-verification-service-prod-nbmslvmlcq-el.a.run.app` | Prod SHCIL e-Stamp verification, called by `extraction-service-prod` |
+| `stamp-verification-service-dev` | `stamp-verifier-dev-sa` | Branch (`zqlowjveyqiagnbmfwsb`) | `https://stamp-verification-service-dev-nbmslvmlcq-el.a.run.app` | Dev SHCIL e-Stamp verification, called by `extraction-service-dev` |
+
+All four runtime SAs were switched off the default Compute Engine SA on 2026-04-26 (Phase 7a) — see `docs/infrastructure/gcp-iam.md` for per-SA role bindings.
 
 **Old `extraction-service`** (no `-prod`/`-dev` suffix) was deleted on 2026-04-25 — it was a Phase-0 leftover that pointed at the dev branch DB and caused confusion with the prod service. Do not recreate without the suffix.
 
@@ -110,8 +112,8 @@ Both extraction services build from the same source: `cloud-run/extraction-servi
 Common to both services (load secrets from Secret Manager, never hard-code):
 ```
 GCP_PROJECT_ID                = secured-by-flent
-GCP_PROCESSOR_ID              = cc5734db2b80908b
-GCP_LOCATION                  = us
+GCP_PROCESSOR_ID              = e427db2ce3a92621   # asia-south1 processor (Phase 7d, flipped 2026-04-26 — old us processor cc5734db2b80908b kept enabled ~30d as rollback insurance)
+GCP_LOCATION                  = asia-south1
 VERTEX_AI_PROJECT_ID          = flent-ai-project-2
 GEMINI_API_KEY_SECURED        = <gemini api key>
 GOOGLE_MAPS_API_KEY           = <maps api key>
@@ -185,7 +187,7 @@ gcloud run deploy extraction-service-dev \
   --memory=1Gi --cpu=2 --timeout=900 \
   --max-instances=10 --concurrency=1 \
   --no-allow-unauthenticated \
-  --set-env-vars="SUPABASE_URL=https://zqlowjveyqiagnbmfwsb.supabase.co,SUPABASE_SERVICE_ROLE_KEY=<dev-service-role-jwt>,EXTRACTION_SECRET=dev-extraction-secret-flent2026,GCP_PROJECT_ID=secured-by-flent,GCP_PROCESSOR_ID=cc5734db2b80908b,GCP_LOCATION=us,VERTEX_AI_PROJECT_ID=flent-ai-project-2,GEMINI_API_KEY_SECURED=<gemini-key>,GOOGLE_MAPS_API_KEY=<maps-key>,NODE_ENV=development" \
+  --set-env-vars="SUPABASE_URL=https://zqlowjveyqiagnbmfwsb.supabase.co,SUPABASE_SERVICE_ROLE_KEY=<dev-service-role-jwt>,EXTRACTION_SECRET=dev-extraction-secret-flent2026,GCP_PROJECT_ID=secured-by-flent,GCP_PROCESSOR_ID=e427db2ce3a92621,GCP_LOCATION=asia-south1,VERTEX_AI_PROJECT_ID=flent-ai-project-2,GEMINI_API_KEY_SECURED=<gemini-key>,GOOGLE_MAPS_API_KEY=<maps-key>,NODE_ENV=development" \
   --set-secrets="GCP_DOCUMENT_AI_CREDENTIALS=extraction-gcp-creds:latest,VERTEX_AI_CREDENTIALS=extraction-gcp-creds:latest"
 ```
 
