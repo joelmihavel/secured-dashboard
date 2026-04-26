@@ -33,7 +33,7 @@ import {
   runOpportunisticNameMatch,
 } from "../_shared/name-match-service.ts";
 import { generateCfSignature } from "../_shared/cashfree-m360-otp.ts";
-import { createVendor, getVendor, CashfreeError } from "../_shared/cashfree-easysplit.ts";
+import { createVendor, getVendor, CashfreeError } from "../_shared/cashfree-pg-vendors.ts";
 import { recomputeAndStoreRisk } from "../_shared/risk-utils.ts";
 
 // ==============================================
@@ -311,7 +311,7 @@ serve(async (req: Request) => {
     }
 
     // ── IMMEDIATE VENDOR REGISTRATION ────────────────────────────
-    // Register landlord as Cashfree Easy Split vendor right after PAN
+    // Register landlord as Cashfree vendor right after PAN
     // verification succeeds. Don't wait for the daily sync-vendors cron.
     // Skip when no tenancy — pre-waitlist flow has no landlord to register.
     if (hasTenancy && panValid && matchResult.matched) {

@@ -1,9 +1,10 @@
 /**
  * Flent Secured v2 - Initiate Cashfree Payment Edge Function
  *
- * Cashfree-only payment initiation. Creates a Cashfree order via Easy Split
- * and returns a payment_session_id for Web Checkout (card/debit/netbanking)
- * or native SDK (UPI).
+ * Cashfree-only payment initiation. Creates a plain Cashfree PG order (no
+ * auto-Easy-Split — settlement to landlord happens later via createAdjustment
+ * in settle-to-landlord cron) and returns a payment_session_id for Web
+ * Checkout (card/debit/netbanking) or native SDK (UPI).
  *
  * Endpoint: POST /functions/v1/initiate-cashfree-payment
  * Auth: Required (JWT)
@@ -27,7 +28,7 @@ import { AuditLogger, AuditActions } from "../_shared/audit.ts";
 import { IdempotencyManager, getIdempotencyKey } from "../_shared/idempotency.ts";
 import { generateTransactionId } from "../_shared/crypto.ts";
 import { isTestUser } from "../_shared/demo-helpers.ts";
-import { createOrder, CashfreeError } from "../_shared/cashfree-easysplit.ts";
+import { createOrder, CashfreeError } from "../_shared/cashfree-pg-vendors.ts";
 
 // ==============================================
 // CONFIGURATION

@@ -8,8 +8,9 @@
  *   3. MONITORING: Alerts ops if any landlord_payout_status='pending'/'processing'
  *      payments are older than 24h
  *
- * Tier 1 (PayU → Flent settlement tracking) is removed — Cashfree Easy Split
- * on-demand transfer handles landlord settlement via settle-to-landlord cron.
+ * Tier 1 (PayU → Flent settlement tracking) is removed — Cashfree vendor
+ * adjustment + on-demand transfer handles landlord settlement via
+ * settle-to-landlord cron (createAdjustment then native vendor schedule).
  *
  * Endpoint: POST /functions/v1/poll-settlement-status
  * Auth: Service role only (called by pg_cron every 30 min)
@@ -21,7 +22,7 @@ import { handleCors, jsonResponse, errorResponse } from "../_shared/cors.ts";
 import { AppError, handleError } from "../_shared/errors.ts";
 import { AuditLogger } from "../_shared/audit.ts";
 import { getSystemTransferFlag, type SystemTransferFlag } from "../_shared/transfer-flags.ts";
-import { getOrderPaymentStatus, createRefund, getVendorRecon, CashfreeError } from "../_shared/cashfree-easysplit.ts";
+import { getOrderPaymentStatus, createRefund, getVendorRecon, CashfreeError } from "../_shared/cashfree-pg-vendors.ts";
 import { notifyUser } from "../_shared/notifications.ts";
 import { getSupabaseUrl } from "../_shared/supabase.ts";
 

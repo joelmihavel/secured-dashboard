@@ -20,7 +20,7 @@ import {
   getVendor,
   updateVendor,
   CashfreeError,
-} from "../_shared/cashfree-easysplit.ts";
+} from "../_shared/cashfree-pg-vendors.ts";
 
 serve(async (req: Request) => {
   const corsResponse = handleCors(req);

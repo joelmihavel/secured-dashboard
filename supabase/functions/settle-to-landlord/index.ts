@@ -16,7 +16,7 @@ import { handleCors, jsonResponse, errorResponse } from "../_shared/cors.ts";
 import { AppError, handleError } from "../_shared/errors.ts";
 import { AuditLogger } from "../_shared/audit.ts";
 import { getSystemTransferFlag } from "../_shared/transfer-flags.ts";
-import { createAdjustment, CashfreeError } from "../_shared/cashfree-easysplit.ts";
+import { createAdjustment, CashfreeError } from "../_shared/cashfree-pg-vendors.ts";
 import { notifyUserWithFallback } from "../_shared/notifications.ts";
 
 // ==============================================

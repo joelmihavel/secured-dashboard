@@ -1,13 +1,21 @@
 /**
- * Flent Secured v2 - Cashfree Easy Split Shared Module
+ * Flent Secured v2 - Cashfree PG + Vendors Shared Module
  *
- * Wraps the Cashfree PG + Easy Split APIs:
+ * Wraps the Cashfree Payment Gateway, Vendor management, and Adjustments APIs.
+ * The auto-Easy-Split feature (a `vendor_split` array at order creation time)
+ * is NOT used — settlement happens via createAdjustment() AFTER payment success
+ * via the settle-to-landlord cron. The endpoint paths still live under the
+ * /pg/easy-split/... namespace because that's how Cashfree organizes them;
+ * we don't use the Easy Split auto-split feature itself.
+ *
  *   - createOrder()           POST /pg/orders                                   (v2025-01-01)
  *   - createVendor()          POST /pg/easy-split/vendors                       (v2025-01-01)
  *   - getVendor()             GET  /pg/easy-split/vendors/{vendor_id}           (v2025-01-01)
+ *   - updateVendor()          PATCH /pg/easy-split/vendors/{vendor_id}          (v2025-01-01)
  *   - createAdjustment()      POST /pg/easy-split/vendors/{vendor_id}/adjustment (v2023-08-01)
  *   - createRefund()          POST /pg/orders/{order_id}/refunds                (v2025-01-01)
  *   - getOrderPaymentStatus() GET  /pg/orders/{order_id}                        (v2025-01-01)
+ *   - getVendorRecon()        POST /pg/recon/vendor                             (v2025-01-01)
  *
  * Auth: x-client-id + x-client-secret (same as Cashfree PG credentials)
  * All amounts are in paise internally; converted to rupees at API boundary.
@@ -215,7 +223,7 @@ export async function createOrder(params: {
 // ==============================================
 
 /**
- * Registers a landlord as a Cashfree Easy Split vendor.
+ * Registers a landlord as a Cashfree vendor (settlement target).
  * Supports two paths:
  *   - Bank account: provide account_number + account_holder + ifsc
  *   - UPI VPA: provide upi_vpa (Cashfree accepts either bank or upi)
@@ -260,7 +268,7 @@ export async function createVendor(input: CashfreeVendorInput): Promise<Cashfree
 
   // PAN is mandatory for Individual account type — Cashfree returns 500 (not 400) if missing
   if (!input.pan) {
-    throw new CashfreeError("PAN is required to register an Individual vendor in Cashfree Easy Split", 0);
+    throw new CashfreeError("PAN is required to register an Individual vendor in Cashfree", 0);
   }
 
   body.kyc_details = {
@@ -291,7 +299,7 @@ export async function getVendor(vendorId: string): Promise<CashfreeVendor> {
 // ==============================================
 
 /**
- * Updates an existing Cashfree Easy Split vendor.
+ * Updates an existing Cashfree vendor.
  * Use to change settlement schedule, bank/UPI details, or KYC.
  */
 export async function updateVendor(
@@ -412,8 +420,9 @@ export async function createAdjustment(params: {
  * Initiates a refund for a Cashfree PG payment via the order_id.
  * Used when settlement to landlord fails after 36 hours.
  *
- * When Easy Split is active, use refund_splits to specify how much to
- * debit from each vendor vs merchant balance.
+ * Refunds debit the merchant balance directly. We don't pass refund_splits
+ * because we don't use auto-Easy-Split — landlord debit on refund is handled
+ * separately via vendor adjustments if needed.
  *
  * @param orderId     - Cashfree order_id (cf_order_id or gateway_order_id)
  * @param amountPaise - Refund amount in paise

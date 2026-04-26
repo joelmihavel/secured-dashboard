@@ -26,7 +26,7 @@ import { AuditLogger, AuditActions } from "../_shared/audit.ts";
 import { IdempotencyManager, getIdempotencyKey } from "../_shared/idempotency.ts";
 import { generatePayUHash, generateTransactionId, sha512, hmacSha256 } from "../_shared/crypto.ts";
 import { isTestUser } from "../_shared/demo-helpers.ts";
-import { createOrder, CashfreeError } from "../_shared/cashfree-easysplit.ts";
+import { createOrder, CashfreeError } from "../_shared/cashfree-pg-vendors.ts";
 import {
   PAYU_MERCHANT_KEY,
   PAYU_MERCHANT_SALT,

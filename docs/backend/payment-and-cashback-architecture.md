@@ -11,7 +11,7 @@
 > - [docs/backend/edge-functions.md](./edge-functions.md) — auth patterns + per-function reference
 >
 > **Current state at a glance:**
-> - **Primary gateway:** Cashfree Payments (UPI, cards, netbanking, Easy Split settlement to landlord)
+> - **Primary gateway:** Cashfree Payments (UPI, cards, netbanking; vendor settlement to landlord via createAdjustment + scheduled vendor transfer — NOT auto-Easy-Split at order time)
 > - **Identity:** Cashfree Mobile 360 (PAN + credit score + mobile intelligence)
 > - **PayU:** legacy fallback being phased out per the cleanup plan's PayU workstream (3-6 month soak before removal)
 > - **Resolution:** `EXPO_PUBLIC_PAYMENT_GATEWAY` env var picks gateway at build time; defaults to `cashfree`
@@ -22,7 +22,7 @@
 > reference. Cashfree's flow is similar in shape (initiate → checkout
 > WebView → webhook → settle) but differs on:
 > - Gateway init (Cashfree SDK + Web Checkout vs PayU Core SDK)
-> - Settlement (Cashfree Easy Split direct-to-landlord vs PayU manual settlement)
+> - Settlement (Cashfree vendor adjustment + scheduled transfer vs PayU manual settlement)
 > - Webhook payload schema (different event types + signature scheme)
 
 > Last verified: 2026-03-08 from source code inspection.

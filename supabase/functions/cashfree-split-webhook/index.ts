@@ -1,10 +1,19 @@
 /**
- * Flent Secured v2 - Cashfree Easy Split Webhook
+ * Flent Secured v2 - Cashfree Vendor Settlement Webhook
  *
- * Handles settlement lifecycle events from Cashfree Easy Split:
+ * Handles vendor settlement lifecycle events from Cashfree (the URL/feature
+ * is referred to as "Easy Split" in the Cashfree dashboard, but we don't use
+ * the auto-split-at-order Easy Split feature — settlement happens via
+ * createAdjustment() AFTER payment success in settle-to-landlord cron).
+ *
  *   VENDOR_SETTLEMENT_SUCCESS  → landlord_payout_status = settled
  *   VENDOR_SETTLEMENT_FAILED   → landlord_payout_status = retrying (36hr cron → failed + refund)
  *   VENDOR_SETTLEMENT_REVERSED → landlord_payout_status = retrying (36hr cron → failed + refund)
+ *
+ * The webhook is the FAST path for settlement detection. The BACKUP path is
+ * `poll-settlement-status` cron (every 30 min) calling /pg/recon/vendor —
+ * see reconcileVendorSettlements() in that function. If this webhook is
+ * delayed or lost, the recon cron eventually picks up the same settlement.
  *
  * IMPORTANT: Vendor settlement webhooks are at the VENDOR level, not per-order.
  * A single settlement (one bank UTR) covers ALL pending vendor balance, which may
@@ -13,7 +22,9 @@
  * The webhook payload does NOT contain adjustment_id or order_id — matching is
  * done by vendor_id → bank_accounts → tenancies → payments.
  *
- * Endpoint: POST /functions/v1/cashfree-split-webhook
+ * Endpoint: POST /functions/v1/cashfree-split-webhook (URL retained for
+ *   Cashfree dashboard compatibility — renaming requires coordinated
+ *   dashboard URL update with risk of dropping events)
  * Auth: HMAC-SHA256 Base64 signature via x-webhook-signature header
  * Secret: CASHFREE_SPLIT_WEBHOOK_SECRET (preferred) — must be set separately
  *         from CASHFREE_PG_APP_SECRET so a PG-secret leak can't forge
@@ -23,11 +34,11 @@
  *         warning. The fallback exists ONLY to support a phased rollout:
  *         (1) deploy this code (works with either secret)
  *         (2) set CASHFREE_SPLIT_WEBHOOK_SECRET on the project
- *         (3) update Cashfree merchant dashboard → Webhooks → Easy Split
+ *         (3) update Cashfree merchant dashboard → Webhooks → Vendor Settlement
  *             → "Sign with this secret" to use the new value
  *         (4) remove the fallback in a follow-up commit
  *
- * Register URL in Cashfree dashboard → Webhooks → Easy Split:
+ * Register URL in Cashfree dashboard → Webhooks (Vendor Settlement events):
  *   https://{project-ref}.supabase.co/functions/v1/cashfree-split-webhook
  */
 

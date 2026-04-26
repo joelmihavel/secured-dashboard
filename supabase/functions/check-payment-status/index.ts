@@ -29,7 +29,7 @@ import {
   PAYU_INFO_URL,
   fetchWithTimeout,
 } from "../_shared/payu-config.ts";
-import { getOrderPaymentStatus, CashfreeError } from "../_shared/cashfree-easysplit.ts";
+import { getOrderPaymentStatus, CashfreeError } from "../_shared/cashfree-pg-vendors.ts";
 
 // How old a payment must be (in ms) before we check PayU directly
 const STALE_THRESHOLD_MS = 2 * 60 * 1000; // 2 minutes

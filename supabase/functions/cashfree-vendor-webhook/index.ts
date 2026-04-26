@@ -1,7 +1,7 @@
 /**
  * Flent Secured v2 - Cashfree Vendor Status Webhook
  *
- * Handles VENDOR_STATUS_UPDATE events from Cashfree Easy Split.
+ * Handles VENDOR_STATUS_UPDATE events from Cashfree (URL is under the "Easy Split" namespace in the dashboard, but auto-Easy-Split is not in use; this is plain vendor status).
  * Updates bank_accounts.cf_beneficiary_status when a vendor becomes
  * ACTIVE, BLOCKED, ACTION_REQUIRED, etc.
  *
@@ -12,7 +12,7 @@
  *         status updates. See cashfree-split-webhook for the phased
  *         rollout pattern; same applies here.
  *
- * Register URL in Cashfree dashboard → Webhooks → Easy Split → Vendor Status Change:
+ * Register URL in Cashfree dashboard → Webhooks → Vendor Status Change:
  *   https://{project-ref}.supabase.co/functions/v1/cashfree-vendor-webhook
  */
 

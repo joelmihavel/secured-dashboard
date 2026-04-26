@@ -222,7 +222,7 @@ Set via `supabase secrets set KEY=value --project-ref <ref>`.
 - `CASHFREE_BASE_URL` — `https://api.cashfree.com/verification` (PRODUCTION)
 - `CASHFREE_PUBLIC_KEY` — RSA public key for x-cf-signature
 
-**Cashfree PG** (payments, Easy Split, settlements):
+**Cashfree PG** (payments + vendor settlements):
 - `CASHFREE_PG_APP_ID` — PG client ID (PRODUCTION)
 - `CASHFREE_PG_APP_SECRET` — PG secret (PRODUCTION) — also used for webhook signature verification
 - `CASHFREE_PG_BASE_URL` — `https://api.cashfree.com/pg` (PRODUCTION)
@@ -245,7 +245,7 @@ Set via `supabase secrets set KEY=value --project-ref <ref>`.
 | Webhook | URL | Events |
 |---------|-----|--------|
 | Payment | `https://uowjtrzmszuaiokqxgir.supabase.co/functions/v1/payment-webhook` | PAYMENT_SUCCESS, PAYMENT_FAILED, REFUND_STATUS_WEBHOOK |
-| Easy Split Settlement | `https://uowjtrzmszuaiokqxgir.supabase.co/functions/v1/cashfree-split-webhook` | VENDOR_SETTLEMENT_SUCCESS/FAILED/REVERSED |
+| Vendor Settlement | `https://uowjtrzmszuaiokqxgir.supabase.co/functions/v1/cashfree-split-webhook` | VENDOR_SETTLEMENT_SUCCESS/FAILED/REVERSED (URL retains `cashfree-split-webhook` name for dashboard compatibility) |
 | Vendor Status | `https://uowjtrzmszuaiokqxgir.supabase.co/functions/v1/cashfree-vendor-webhook` | VENDOR_STATUS_UPDATE |
 
 All webhooks use PG App Secret for HMAC-SHA256 signature verification. API version: `2025-01-01`.

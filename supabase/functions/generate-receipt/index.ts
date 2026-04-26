@@ -19,7 +19,7 @@ import {
 } from "../_shared/supabase.ts";
 import { handleCors, jsonResponse, errorResponse } from "../_shared/cors.ts";
 import { AppError, handleError } from "../_shared/errors.ts";
-import { getVendorRecon, CashfreeError } from "../_shared/cashfree-easysplit.ts";
+import { getVendorRecon, CashfreeError } from "../_shared/cashfree-pg-vendors.ts";
 // ==============================================
 // TYPES
 // ==============================================

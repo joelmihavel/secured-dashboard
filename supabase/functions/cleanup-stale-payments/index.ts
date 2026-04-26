@@ -20,7 +20,7 @@ import { createServiceClient, hasServiceRoleAuth } from "../_shared/supabase.ts"
 import { handleCors, jsonResponse, errorResponse } from "../_shared/cors.ts";
 import { handleError } from "../_shared/errors.ts";
 import { sha512 } from "../_shared/crypto.ts";
-import { getOrderPaymentStatus } from "../_shared/cashfree-easysplit.ts";
+import { getOrderPaymentStatus } from "../_shared/cashfree-pg-vendors.ts";
 
 // ==============================================
 // CONFIGURATION

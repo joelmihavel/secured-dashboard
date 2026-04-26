@@ -38,7 +38,7 @@ Flent Secured solves the problem of informal, untracked rent payments in India. 
 
 - **Identity and Address Verification** -- Three-step verification: bank account verification (name matching against agreement), utility bill verification (address confirmation), and landlord invitation via WhatsApp.
 
-- **Payment Processing** -- Rent payments through Cashfree Payments (UPI, credit cards, debit cards, net banking, plus Easy Split settlement to landlord). PayU is a legacy fallback being phased out — see PayU removal workstream in the implementation plan. All payments tracked end-to-end with webhook confirmation.
+- **Payment Processing** -- Rent payments through Cashfree Payments (UPI, credit cards, debit cards, net banking, plus vendor settlement to landlord). PayU is a legacy fallback being phased out — see PayU removal workstream in the implementation plan. All payments tracked end-to-end with webhook confirmation.
 
 - **Cashback Rewards** -- Tenants earn 1% cashback on timely rent payments (paid before the cutoff day each month). Cashback accumulates in a ledger with expiry management.
 
@@ -162,7 +162,7 @@ Indian ISPs (Jio, Airtel, and others) periodically block `*.supabase.co` domains
 
 | Service | Purpose |
 |---------|---------|
-| Cashfree Payments | Primary payment gateway — UPI, cards, netbanking, Easy Split settlement to landlord |
+| Cashfree Payments | Primary payment gateway — UPI, cards, netbanking, vendor settlement to landlord |
 | Cashfree Mobile 360 (M360) | Identity verification — PAN, credit score, mobile intelligence |
 | PayU India | Legacy payment gateway, being phased out (see PayU removal workstream in cleanup plan) |
 | Google Document AI | OCR extraction (text-only path) |
@@ -627,7 +627,7 @@ Detailed documentation for each subsystem is available in the `docs/` directory.
 
 These docs need refresh to reflect what actually shipped:
 - `backend/edge-functions.md` — recount + per-function auth-pattern table
-- `backend/payment-and-cashback-architecture.md` — Cashfree PG, Easy Split, M360 identity
+- `backend/payment-and-cashback-architecture.md` — Cashfree PG, vendor adjustments, M360 identity
 - `screen-backend-map.md` — Cashfree screens, stamp screens
 - New: `backend/cashfree-integration.md`, `backend/stamp-verification.md`, `backend/cron-jobs.md`
 - New: `frontend/deep-linking.md`, `development/index.md` (DevNavigator + dev-seed), `testing/index.md` (Maestro)

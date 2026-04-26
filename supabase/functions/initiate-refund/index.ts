@@ -21,7 +21,7 @@ import {
   fetchWithTimeout,
   requirePayUCredentials,
 } from "../_shared/payu-config.ts";
-import { createRefund as createCashfreeRefund } from "../_shared/cashfree-easysplit.ts";
+import { createRefund as createCashfreeRefund } from "../_shared/cashfree-pg-vendors.ts";
 
 // PayU uses the same info endpoint for refunds (cancel_refund_transaction command)
 const PAYU_REFUND_URL = PAYU_INFO_URL;

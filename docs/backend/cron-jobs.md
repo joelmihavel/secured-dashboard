@@ -34,7 +34,7 @@
 | `process-notification-schedule` | `*/5 * * * *` | Schedules new notifications (e.g., rent due in N days) into the queue | `process-notification-schedule` edge fn | New scheduled notifications don't fire |
 | `retry-failed-notifications` | `*/15 * * * *` | `UPDATE notification_queue SET status='pending' WHERE status='failed' AND retry_count < max_retries AND age < 24h` | inline `UPDATE` | Failed notifications never retry |
 | `send-onboarding-reminders` | `*/5 * * * *` | Reminds users on the waitlist who haven't completed bank/utility/landlord steps | `send-onboarding-reminders` edge fn | Funnel drops |
-| `settle-to-landlord` | `2-57/5 * * * *` (every 5 min) | Initiates Cashfree Easy Split payout to the landlord vendor for completed payments | `settle-to-landlord` edge fn | Landlord doesn't get paid |
+| `settle-to-landlord` | `2-57/5 * * * *` (every 5 min) | Initiates Cashfree vendor adjustment + on-demand transfer to the landlord for completed payments | `settle-to-landlord` edge fn | Landlord doesn't get paid |
 | `sweep-stamp-verifications` | `0 22 * * *` (03:30 IST) | Catches stamp verifications that didn't fire fire-and-forget — last 48h scope | `sweep-stamp-verifications` edge fn | Stamp verification gaps in admin views |
 | `sync-vendors` | `*/15 * * * *` | Syncs Cashfree vendor (landlord bank account) status into `bank_accounts.cf_beneficiary_status` | `sync-vendors` edge fn | Stale vendor status shown to admin |
 | `upgrade-landlord-status` | `*/15 * * * *` | Calls `upgrade-landlord-status` edge fn via `net.http_post` (uses `current_setting('app.service_role_key')`) | `upgrade-landlord-status` edge fn | Landlord-tier upgrades delayed |

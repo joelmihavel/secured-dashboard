@@ -8,7 +8,7 @@ Cashfree exposes two distinct platforms we use:
 
 | Platform | What it does | Edge fns / services |
 |---|---|---|
-| **Cashfree Payment Gateway (PG)** | Payment processing — UPI / cards / netbanking. Includes Easy Split for direct-to-landlord settlement. | `initiate-cashfree-payment`, `payment-webhook`, `cashfree-split-webhook`, `cashfree-vendor-webhook`, `cashfree-pay-order` (legacy/dead — verify-then-archive in Phase 6), `settle-to-landlord`, `poll-settlement-status` |
+| **Cashfree Payment Gateway (PG)** | Payment processing — UPI / cards / netbanking. Vendor settlement to landlord happens AFTER payment via createAdjustment + scheduled vendor transfer (NOT via auto-Easy-Split at order time). | `initiate-cashfree-payment`, `payment-webhook`, `cashfree-split-webhook`, `cashfree-vendor-webhook`, `cashfree-pay-order` (legacy/dead — verify-then-archive in Phase 6), `settle-to-landlord`, `poll-settlement-status` |
 | **Cashfree Mobile 360 (M360)** | Identity verification — PAN, mobile intelligence, credit score | `verify-identity`, `verify-pan`, `verify-bank` |
 
 ## Environment variables
@@ -68,15 +68,17 @@ User completes payment on Cashfree's hosted page
 
 Server-side `order_meta.payment_methods` restricts which instruments Cashfree shows in the checkout — we control the menu, not the user.
 
-## Easy Split (settlement to landlord)
+## Settlement to landlord (Cashfree vendor adjustments)
+
+We do NOT use auto-Easy-Split (the `vendor_split` array at order creation). Settlement happens AFTER payment success via the Cashfree Vendor Adjustments API. The Cashfree dashboard / API URL namespace still includes `/pg/easy-split/...` because that's how Cashfree organizes vendor management endpoints — we just don't use the auto-split feature itself.
 
 When a payment succeeds:
 1. The payment is logged in `payments` with `status='success'`
 2. The `settle-to-landlord` cron (every 5 min, `2-57/5 * * * *` UTC) finds completed payments not yet settled
-3. Calls `settle-to-landlord` edge fn → Cashfree Easy Split API → splits the payment minus fees to the landlord's `cf_beneficiary_id`
-4. Cashfree fires `cashfree-split-webhook` when settlement actually flows to bank (could take minutes to hours)
-5. Webhook updates `tenancies.landlord_payout_status` and writes the bank UTR
-6. `poll-settlement-and-reconcile` cron runs every 30 min as a safety net for missed webhooks
+3. Calls `settle-to-landlord` edge fn → Cashfree `createAdjustment()` (`POST /pg/easy-split/vendors/{vendor_id}/adjustment`) → credits the vendor's ledger inside Cashfree
+4. Cashfree's vendor schedule (every 3h per `schedule_option=9`) eventually transfers the vendor balance to the landlord's bank account, generating a UTR
+5. Cashfree fires `cashfree-split-webhook` (the URL retains the historical name) on `VENDOR_SETTLEMENT_SUCCESS` — handler updates `payments.landlord_payout_status='settled'` + writes the bank UTR
+6. **Backup path:** `poll-settlement-and-reconcile` cron runs every 30 min calling `/pg/recon/vendor` (Vendor Recon API) — `reconcileVendorSettlements()` matches settled entries to stuck payments via `entity_id → cf_adjustment_id`, then by amount tolerance, and updates the same fields the webhook would. Catches missed webhooks self-healingly.
 
 ## M360 Identity Flow
 
@@ -107,7 +109,7 @@ The `cashfree-split-webhook` and `cashfree-vendor-webhook` previously read `CASH
 1. Generate two random secrets (e.g., `openssl rand -hex 32`)
 2. `supabase secrets set CASHFREE_SPLIT_WEBHOOK_SECRET=<value> --project-ref uowjtrzmszuaiokqxgir`
 3. `supabase secrets set CASHFREE_VENDOR_WEBHOOK_SECRET=<value> --project-ref uowjtrzmszuaiokqxgir`
-4. In Cashfree merchant dashboard → Webhooks → Easy Split → update each webhook's signing key to match
+4. In Cashfree merchant dashboard → Webhooks (Vendor Settlement + Vendor Status sections) → update each webhook's signing key to match
 5. Verify settlement + vendor webhooks for 24h
 6. Remove the PG-secret fallback in code (follow-up commit)
 7. Repeat steps 2–5 with different values for the dev project (`zqlowjveyqiagnbmfwsb`)

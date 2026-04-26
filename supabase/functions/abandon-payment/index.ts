@@ -30,7 +30,7 @@ import {
   PAYU_INFO_URL,
   fetchWithTimeout,
 } from "../_shared/payu-config.ts";
-import { getOrderPaymentStatus, CashfreeError } from "../_shared/cashfree-easysplit.ts";
+import { getOrderPaymentStatus, CashfreeError } from "../_shared/cashfree-pg-vendors.ts";
 
 // PayU status mapping (same as check-payment-status / payment-webhook)
 const PAYU_STATUS_MAP: Record<string, string> = {

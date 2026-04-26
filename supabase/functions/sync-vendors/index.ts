@@ -2,7 +2,7 @@
  * Flent Secured v2 - Sync Vendors Edge Function
  *
  * Daily pre-flight check that ensures every verified landlord bank account
- * is registered as an ACTIVE Cashfree Easy Split vendor before payout day.
+ * is registered as an ACTIVE Cashfree vendor before payout day.
  *
  * Steps:
  *   1. Query bank_accounts where party_type=landlord, verified=true,
@@ -27,7 +27,7 @@ import {
   getVendor,
   updateVendor,
   CashfreeError,
-} from "../_shared/cashfree-easysplit.ts";
+} from "../_shared/cashfree-pg-vendors.ts";
 
 const BATCH_SIZE = 50;
 
@@ -157,7 +157,7 @@ serve(async (req: Request) => {
           const phone = (user?.phone ?? "").replace(/^\+91/, "");
           const email = user?.email ?? `${account.id}@flent.app`;
 
-          // PAN is mandatory for Individual account type in Cashfree Easy Split
+          // PAN is mandatory for Individual account type in Cashfree vendor onboarding
           if (!account.pan_number_encrypted) {
             console.warn(`[sync-vendors] Skipping bank_account ${account.id} — PAN is required for vendor creation but not on record`);
             await audit.logFailure(
