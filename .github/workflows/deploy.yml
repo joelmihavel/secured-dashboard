@@ -62,9 +62,19 @@ jobs:
       - id: filter
         uses: dorny/paths-filter@v3
         with:
-          # On push events, paths-filter auto-uses github.event.before so it
-          # diffs the entire push (works for multi-commit pushes too).
-          # No explicit base needed.
+          # When deploy.yml is invoked via workflow_call (from
+          # deploy-dev-trigger.yml / deploy-prod-trigger.yml), the
+          # auto-detect-push logic in paths-filter doesn't fire and it
+          # falls back to comparing origin/main...origin/<branch> against
+          # the default branch. After `git push origin main:dev` those
+          # refs are identical, so the filter saw zero changes and skipped
+          # every downstream job (caught 2026-04-26 on commits 01c9e3be /
+          # 5021a155). Pin base explicitly to the push event's `before`
+          # SHA so the diff is always against the previous tip of the
+          # branch we just pushed to. The `0000…` fallback handles the
+          # very-first-push case where `before` is the null SHA.
+          base: ${{ github.event.before == '0000000000000000000000000000000000000000' && github.event.repository.default_branch || github.event.before }}
+          ref: ${{ github.sha }}
           filters: |
             migrations:
               - 'supabase/migrations/**'
