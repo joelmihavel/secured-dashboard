@@ -613,7 +613,7 @@ Detailed documentation for each subsystem is available in the `docs/` directory.
 | Document | Description |
 |---|---|
 | [Incident response runbook](./operations/incident-response.md) | Per-surface rollback verbs (Cloud Run / edge fns / migrations / OTA), P0/P1 playbooks, "do NOT do during incident" |
-| [PITR runbook](./operations/pitr-runbook.md) | Point-in-time recovery via preview branches; design-only until Phase 0.6b rehearsal |
+| [Recovery runbook](./operations/recovery-runbook.md) | Daily-backup-snapshot recovery (Supabase PITR not enabled on this project); selective row restore + schema rollback paths |
 
 ### Archives
 

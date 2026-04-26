@@ -19,7 +19,7 @@ The single mental model: **every prod surface has one rollback verb.** No "panic
 | Migrations (schema rollback) | Print `-- rollback:` block from migration file → manually apply via `supabase db query` | 5–15 min (manual review required) |
 | Mobile (OTA) | `eas update --branch production --republish --group <prev-group-id>` | 5 min |
 | Mobile (native, PayU SDK / native deps) | Full EAS rebuild + store re-submit | 24–48h |
-| Supabase project (data corruption) | PITR — see `pitr-runbook.md` | 30–90 min (Supabase support) |
+| Supabase project (data corruption) | Daily snapshot — see `recovery-runbook.md` | 30–120 min (Supabase support; PITR is NOT enabled — RPO ≤24h) |
 | Vercel (admin-app) | Vercel dashboard → Deployments → "Promote previous" | 60s |
 
 ---
@@ -147,8 +147,8 @@ gcloud run services describe extraction-service-prod \
 4. **If the rollback involves data preservation (e.g., column drop with prior backfill), engage extreme caution:** open Supabase dashboard, do a manual backup snapshot first, then apply rollback under monitored conditions.
 
 **If schema is partially applied (some files succeeded, others failed):**
-- This is the worst case. PITR is faster + safer than manual reconciliation.
-- See `pitr-runbook.md` to restore prod-at-T-1h to a preview branch, schema-diff against current, pick the right intervention.
+- This is the worst case. With daily-only backups (no PITR), restore loses up to 24h of writes — manual reconciliation may still be needed.
+- See `recovery-runbook.md` for the daily-backup-snapshot recovery flow (selective row restore preferred over full restore).
 
 ---
 
