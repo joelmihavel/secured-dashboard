@@ -170,3 +170,11 @@ CREATE TRIGGER waitlist_entries_updated_at
 -- 3b. Reverse the rename of set_waitlist_entries_updated_at → trigger_waitlist_entries_updated_at
 ALTER TRIGGER trigger_waitlist_entries_updated_at ON public.waitlist_entries
   RENAME TO set_waitlist_entries_updated_at;
+
+-- =====================================================================
+-- Section 4: prod-only policies that were promoted to dev (drop these
+-- if you want to roll dev back to its pre-2026-04-26 state)
+-- =====================================================================
+
+DROP POLICY IF EXISTS notification_schedule_service_role ON public.notification_schedule;
+DROP POLICY IF EXISTS waitlist_entries_update_own ON public.waitlist_entries;

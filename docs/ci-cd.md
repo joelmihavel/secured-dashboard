@@ -115,12 +115,14 @@ echo "GCP_SA_EMAIL = cloud-run-deployer-prod@${PROJECT}.iam.gserviceaccount.com"
 
 If the deploy ever fails with "PERMISSION_DENIED" on Artifact Registry or Cloud Build, the SA is missing the corresponding role from step 5.
 
-## Branch protection setup (Phase 5 Day 8)
+## Branch protection setup
+
+> ⚠️ **DEFERRED (2026-04-26).** Branch protection requires GitHub Pro for private repos; the project decided not to upgrade. Current prod gate is the tag-triggered deploy workflow described below, which serves the same merge-vs-ship separation. The JSON commands below remain documented for the day Pro is added (or for a public-repo fork). See memory `project_branch_protection_deferred.md`.
 
 Two rules — one per branch.
 
 ```bash
-# Apply the committed JSON
+# Apply the committed JSON (requires GH Pro on private repo)
 gh api -X PUT repos/flent-homes/Secured-v2/branches/main/protection \
   --input .github/branch-protection-main.json
 

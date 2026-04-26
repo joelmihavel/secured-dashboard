@@ -44,9 +44,9 @@ cd cloud-run/extraction-service
 gcloud run deploy extraction-service-prod \
   --source . --region=asia-south1 --project=secured-by-flent
 
-# CI path (Phase 5 Day 3+, see docs/ci-cd.md)
+# CI path (see docs/ci-cd.md) — prod deploys require pushing a `deploy-prod-*` tag.
+# Push to main does NOT auto-deploy.
 gh workflow run deploy-prod-trigger.yml
-# (push to main also auto-triggers it)
 ```
 
 ⚠️ **Never use `--set-env-vars` in CI.** It wipes existing env vars including secrets. The CI workflow `_reusable-cloud-run.yml` enforces this by snapshotting env hash before/after deploy and failing on drift.
@@ -93,12 +93,12 @@ The image-pin drift detection workflow (`stamp-verification-image-pin.yml` — P
 
 Per [docs/infrastructure/gcp-iam.md](./gcp-iam.md):
 
-- 🟥 All services run as the default Compute Engine SA with `roles/editor` project-wide. Recommend creating per-service SAs with least-privilege bindings.
+- ✅ Per-service SAs deployed 2026-04-26 (Phase 7a): `extraction-service-{prod,dev}-sa`, `stamp-verifier-{prod,dev}-sa`. The default Compute Engine SA still has `roles/editor` project-wide (out of scope for this phase).
 - 🟥 `extraction-service-prod`, `stamp-verification-service-prod`, and `api-club-proxy` have `allUsers → roles/run.invoker` bindings. The services themselves enforce a header secret check, but defense-in-depth would prefer no public network exposure.
 
 Per [docs/infrastructure/data-residency.md](./data-residency.md):
 
-- 🟥 `GCP_LOCATION=us` for Document AI processor — rent agreement PII processed in US.
-- 🟥 Vertex AI calls use `global` location — region non-deterministic.
+- ✅ Document AI processor flipped to `asia-south1` (`e427db2ce3a92621`) on 2026-04-26 (Phase 7d). Old US processor `cc5734db2b80908b` kept 30 days as rollback insurance.
+- 🟥 Vertex AI calls use `global` location — region non-deterministic. Stays as-is per project decision.
 
 These are tracked in the cleanup plan, not auto-fixed because each touches IAM bindings or vendor configurations.

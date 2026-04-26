@@ -143,26 +143,36 @@ gateway's signature scheme (out of our control — Supabase platform).
 | 56 | `register-device-token` | POST | JWT | Register/update push token |
 | 57 | `broadcast-app-update` | POST | Service Role | Broadcast app update to all users |
 | 58 | `update-profile` | POST | JWT | Update user profile fields |
-| 59 | `upload-avatar` | POST | JWT | Generate presigned avatar upload URL |
-| 60 | `pixelate-avatar` | POST | JWT | Pixelate photo with orange tint |
-| 61 | `assign-default-avatar` | POST | JWT | Assign random default pixel art avatar |
-| 62 | `delete-account` | POST | JWT | Full account deletion + archive |
-| 63 | `get-my-referral-code` | GET | JWT | Get or generate user referral code |
-| 64 | `apply-referral-code` | POST | JWT | Apply referral code with rewards |
-| 65 | `validate-referral-code` | GET/POST | JWT | Validate referral code without applying |
-| 66 | `dashboard-data` | GET | JWT | Aggregated home screen dashboard data |
-| 67 | `admin-encrypt` | POST | Service Role | AES-256-GCM encryption utility for admin operations |
-| 68 | `admin-fetch-views` | GET | Service Role | Aggregated admin dashboard data from database views |
-| 69 | `admin-payment-data` | GET | Service Role | Payment reporting with decrypted landlord bank details |
-| 70 | `debug-payment` | POST | None | Inspect payment data (TEMPORARY -- delete after investigation) |
-| 71 | `payu-hash-test` | GET/POST | None | PayU credential + hash diagnostic |
-| 72 | `payu-post-inspector` | POST | None | Capture SDK POST data for debugging |
-| 73 | `dev-seed` | POST | Anon Key | Client-side jump-to-screen seeding |
-| 74 | `seed-test-data` | POST | Service Role | Seed test user to specific state |
-| 75 | `pre-approval-audit` | POST | Admin Key | Pre-approval risk and data-integrity audit |
-| 76 | `twilio-debug` | POST | None | Inspect Twilio message statuses (TEMPORARY -- delete after investigation) |
-| 77 | `test-gemini-extraction` | POST | None | Diagnostic Gemini extraction test |
-| 78 | `sync-netbanking-banks` | POST | Service Role | Sync bank list from PayU |
+| 59 | `delete-account` | POST | JWT | Full account deletion + archive |
+| 60 | `get-my-referral-code` | GET | JWT | Get or generate user referral code |
+| 61 | `apply-referral-code` | POST | JWT | Apply referral code with rewards |
+| 62 | `validate-referral-code` | GET/POST | JWT | Validate referral code without applying |
+| 63 | `dashboard-data` | GET | JWT | Aggregated home screen dashboard data |
+| 64 | `admin-encrypt` | POST | Service Role | AES-256-GCM encryption utility for admin operations |
+| 65 | `admin-fetch-views` | GET | Service Role | Aggregated admin dashboard data from database views |
+| 66 | `admin-payment-data` | GET | Service Role | Payment reporting with decrypted landlord bank details |
+| 67 | `admin-fix-vendors` | POST | Service Role | One-off admin tool to repair Cashfree vendor records |
+| 68 | `dev-seed` | POST | Anon Key | Client-side jump-to-screen seeding |
+| 69 | `seed-test-data` | POST | Service Role | Seed test user to specific state |
+| 70 | `pre-approval-audit` | POST | Admin Key | Pre-approval risk and data-integrity audit |
+| 71 | `sync-netbanking-banks` | POST | Service Role | Sync bank list from PayU (legacy) |
+| 72 | `initiate-cashfree-payment` | POST | JWT | Cashfree order creation (primary payment path since 2026-03-31) |
+| 73 | `cashfree-pay-order` | POST | JWT | Cashfree pay-order finalization step |
+| 74 | `cashfree-split-webhook` | POST | HMAC sig | Cashfree split-settlement webhook (signed with PG App Secret) |
+| 75 | `cashfree-vendor-webhook` | POST | HMAC sig | Cashfree vendor-status webhook (signed with PG App Secret) |
+| 76 | `process-document-fallback` | POST | Service Role | Cloud Run extraction fallback path (Phase-0/2, 2026-04-09) |
+| 77 | `abandon-payment` | POST | JWT | Mark abandoned payment + release idempotency lock |
+| 78 | `whatsapp-broadcast` | POST | Service Role | Bulk WhatsApp send via Twilio templates |
+| 79 | `compute-risk` | POST | Service Role | Risk-engine score for waitlist applicants |
+| 80 | `verify-upi-vpa` | POST | JWT | Cashfree UPI VPA penny-drop verification (landlord) |
+| 81 | `get-landlord-tenancy` | GET | Service Role | Landlord-side tenancy lookup |
+| 82 | `landlord-approve` | POST | Service Role | Landlord approval of tenancy invite |
+| 83 | `upgrade-landlord-status` | POST | Service Role | Promote landlord verification state |
+| 84 | `sync-vendors` | POST | Service Role | Cashfree vendor catalogue sync |
+| 85 | `process-notification-schedule` | POST | Service Role | Cron-driven notification dispatch |
+| 86 | `send-reminders` | POST | Service Role | Generic reminder dispatch |
+| 87 | `send-onboarding-reminders` | POST | Service Role | Onboarding-specific reminder dispatch |
+| 88 | `open-app` | GET | None | Universal-link landing/redirect handler |
 
 ---
 
