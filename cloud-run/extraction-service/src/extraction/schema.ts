@@ -120,7 +120,7 @@ export const EXTRACTION_RESPONSE_SCHEMA = {
     },
     description_of_document: {
       type: "string",
-      description: "Document type as stated on stamp (e.g., Rental Agreement, Lease Deed, Leave and License)",
+      description: "EXACT verbatim text from the 'Description of Document' field on the e-stamp paper. MUST include the article number when present (e.g., 'Article 30(1)(i) Lease of Immovable Property - Not exceeding 1 year in case of Residential property'). Do NOT abbreviate, summarize, paraphrase, or reduce to a category label like 'Rental Agreement'. Copy the text as-is, preserving the article number, spelling, and punctuation.",
       nullable: true,
     },
     first_party: {

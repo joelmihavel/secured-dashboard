@@ -57,11 +57,13 @@ const HINT_COLOR = '#797979';
 const TEXT_GRAY = '#A9A9A9';
 const TEXT_ORANGE = '#FF9A6D';
 
-/** Text: 41:11546 — 147x40, centered within gauge */
+/** Text: 41:11546 — 147x40, centered within gauge.
+ *  REL_Y nudged down from 74.6 → 100 per visual feedback so the text sits
+ *  near the gauge baseline rather than mid-arc. */
 const TEXT_W = 147;
 const TEXT_H = 40;
 const TEXT_REL_X = 65.5;
-const TEXT_REL_Y = 74.6;
+const TEXT_REL_Y = 100;
 
 /** Hint text: 41:11549 — 42x40, "This\nrelease" */
 const HINT_W = 42;

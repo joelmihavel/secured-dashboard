@@ -250,7 +250,7 @@ const EXTRACTION_RESPONSE_SCHEMA = {
     },
     description_of_document: {
       type: "string",
-      description: "Document type as stated on stamp (e.g., Rental Agreement, Lease Deed, Leave and License)",
+      description: "EXACT verbatim text from the 'Description of Document' field on the e-stamp paper. MUST include the article number when present (e.g., 'Article 30(1)(i) Lease of Immovable Property - Not exceeding 1 year in case of Residential property'). Do NOT abbreviate, summarize, paraphrase, or reduce to a category label like 'Rental Agreement'. Copy the text as-is, preserving the article number, spelling, and punctuation.",
       nullable: true,
     },
     first_party: {
@@ -1498,7 +1498,7 @@ Extract and return a JSON object with these exact fields (use null for fields yo
   "certificate_issued_date": "YYYY-MM-DD format - date when stamp certificate was issued",
   "account_reference": "account reference number from e-stamp",
   "purchased_by": "name of person who purchased the stamp paper",
-  "description_of_document": "type of document (e.g., 'Rental Agreement', 'Lease Deed', 'Leave and License')",
+  "description_of_document": "EXACT verbatim text from the 'Description of Document' field on the e-stamp paper. MUST include the article number when present (e.g., 'Article 30(1)(i) Lease of Immovable Property - Not exceeding 1 year in case of Residential property'). Do NOT abbreviate, summarize, paraphrase, or reduce to a category label like 'Rental Agreement'. Copy the text as-is, preserving the article number, spelling, and punctuation.",
   "first_party": "first party name as mentioned on stamp paper (usually lessor/landlord)",
   "second_party": "second party name as mentioned on stamp paper (usually lessee/tenant)",
   "stamp_duty_paid_by": "who paid the stamp duty (tenant/landlord/both)",
@@ -1682,7 +1682,7 @@ Please extract and return a JSON object with these exact fields:
   "certificate_issued_date": "YYYY-MM-DD format",
   "account_reference": "account reference from e-stamp",
   "purchased_by": "who purchased the stamp paper",
-  "description_of_document": "document type (e.g., Rental Agreement)",
+  "description_of_document": "EXACT verbatim text from the 'Description of Document' field on the e-stamp paper. MUST include the article number when present (e.g., 'Article 30(1)(i) Lease of Immovable Property - Not exceeding 1 year in case of Residential property'). Do NOT abbreviate, summarize, or reduce to a category label. Copy as-is.",
   "first_party": "first party on stamp paper (usually lessor)",
   "second_party": "second party on stamp paper (usually lessee)",
   "stamp_duty_paid_by": "who paid stamp duty",

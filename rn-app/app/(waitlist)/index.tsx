@@ -35,8 +35,10 @@ import {
   BenefitsCarousel,
   DottedGridPattern,
   SkeletonLoader,
+  BottomSheet,
 } from '@/src/components';
-import { WaitlistRelease } from '@/src/components/waitlist/WaitlistRelease';
+// WaitlistRelease replaced by ProgressArc — the latter is the codebase's
+// Figma-aligned gauge component (see ProgressArc.tsx for node references).
 import { useWaitlist, waitlistKeys } from '@/src/hooks';
 import { useQueryClient } from '@tanstack/react-query';
 import { colors } from '@/src/theme/colors';
@@ -277,7 +279,13 @@ export default function WaitlistScreen() {
   } = useWaitlist();
 
   const [isNavigating, setIsNavigating] = useState(false);
+  const [isInviteDrawerOpen, setIsInviteDrawerOpen] = useState(false);
   const transitionOpacity = useSharedValue(0);
+
+  // Spots-bumped count for the "Referral applied" / drawer header subtitle.
+  // 4 chars filled ≈ +10 spots, anything else ≈ +5. Source of truth lives
+  // server-side, this is a UI hint until the backend exposes the value.
+  const referralSpots = referralCode && referralCode.length >= 4 ? 10 : 5;
 
   // Stable navigation callbacks for runOnJS (Reanimated v4 requires standalone functions, not method refs)
   const navigateToApproved = React.useCallback(() => {
@@ -388,7 +396,9 @@ export default function WaitlistScreen() {
     }
   }, [error?.code, isNavigating]);
 
-  const displayName = (userName ? userName.split(' ')[0] : '') || 'there';
+  // Fall back to null (not literal "there") when we have no name — render
+  // collapses the second line in that case rather than showing a placeholder.
+  const displayName = userName?.trim() || null;
   const submissionDate = status?.submissionDate ?? '';
   const reviewTime = status?.estimatedReviewTime ?? '';
   const membersOnboarded = status?.currentOnboarded ?? 0;
@@ -555,108 +565,119 @@ export default function WaitlistScreen() {
               <Logo size={38} color={FIGMA.colors.textPrimary} />
             </View>
 
-            {/* Text Block - Frame 2095586319 (node 41:11217) */}
+            {/* Text Block — Figma 4651:78274
+                "Welcome," in muted grey, name in WHITE (not orange). Subtitle is
+                only shown for the long-pending fallback variant — the default
+                (welcomed) state has no subtitle per Figma. */}
             <View style={styles.textBlock}>
               {isPendingLong ? (
-                <Text style={styles.titleBase}>
-                  <RNText style={styles.titleGray}>We're still</RNText>
-                  {'\n'}
-                  <RNText style={styles.titleAccent}>setting{'\n'}things up</RNText>
-                </Text>
-              ) : (
+                <>
+                  <Text style={styles.titleBase}>
+                    <RNText style={styles.titleGray}>We're still</RNText>
+                    {'\n'}
+                    <RNText style={styles.titleAccent}>setting{'\n'}things up</RNText>
+                  </Text>
+                  <Text style={styles.subtitle}>
+                    Taking a bit longer than usual. Hang tight!
+                  </Text>
+                </>
+              ) : displayName ? (
                 <Text style={styles.titleBase}>
                   <RNText style={styles.titleGray}>Welcome,</RNText>
                   {'\n'}
-                  <RNText style={styles.titleAccent}>{displayName}</RNText>
+                  <RNText style={styles.titleWhite}>{displayName}</RNText>
+                </Text>
+              ) : (
+                <Text style={styles.titleBase}>
+                  <RNText style={styles.titleGray}>Welcome</RNText>
                 </Text>
               )}
-
-              {/* Subtitle - node 41:11219 */}
-              {/* computedStyles: fontSize 14, lineHeight 20, color #A6A6A6 */}
-              <Text style={styles.subtitle}>
-                {isPendingLong
-                  ? 'Taking a bit longer than usual. Hang tight!'
-                  : 'Your application is in review'}
-              </Text>
             </View>
           </Animated.View>
 
-          {/* Timeline Card - Frame 2095586388 (node 41:11220) */}
-          {/* computedStyles: borderRadius 12, padding 24/16, gap 24 */}
+          {/* Section order per Figma 4651:78274:
+              1. Header (above)
+              2. Half-circle gauge (WaitlistRelease)
+              3. CTA pill / referral applied cards
+              4. Timeline status card
+              5. "Once you're in" steps
+              6. Benefits carousel */}
+
+          {/* Release Progress — Figma 4651:88340 / 4651:78274 (Ellipse 21888).
+              Uses the existing ProgressArc component which already encodes the
+              exact Figma geometry (278×139 container, 0.8 innerRadius ring,
+              strokeLinecap rounded "drop" at the start, etc). */}
           <Animated.View
             entering={FadeInDown.delay(FIGMA.animation.stagger * 2).duration(FIGMA.animation.duration)}
+          >
+            <ProgressArc
+              current={membersOnboarded}
+              total={totalSlots}
+            />
+          </Animated.View>
+
+          {/* CTA pill / referral applied cards */}
+          <Animated.View
+            entering={FadeInDown.delay(FIGMA.animation.stagger * 3).duration(FIGMA.animation.duration)}
+            style={styles.ctaSection}
+          >
+            {referralApplied || inviteCodeClaimed ? (
+              <>
+                <View style={styles.successPill}>
+                  <Text style={styles.successPillText}>Referral applied ✅</Text>
+                </View>
+                <View style={styles.successPill}>
+                  <Text style={styles.successPillText}>🎉 You moved up {referralSpots} spots</Text>
+                </View>
+              </>
+            ) : (
+              <PrimaryButton
+                title="Get early access faster"
+                onPress={() => setIsInviteDrawerOpen(true)}
+                showDivider={true}
+                testID="get-early-access-faster"
+              />
+            )}
+          </Animated.View>
+
+          {/* Timeline Card — moved AFTER the CTA per Figma 4651:78274 */}
+          <Animated.View
+            entering={FadeInDown.delay(FIGMA.animation.stagger * 4).duration(FIGMA.animation.duration)}
             style={styles.timelineCard}
           >
             <ApplicationTimeline items={timelineItems} />
           </Animated.View>
 
-          {/* Release Progress */}
+          {/* "Once you're in / get started in 3 steps" — Figma 4651:78274.
+              When referral applied, heading + step labels shift slightly per Figma 4651:88588. */}
           <Animated.View
-            entering={FadeInDown.delay(FIGMA.animation.stagger * 3).duration(FIGMA.animation.duration)}
+            entering={FadeInDown.delay(FIGMA.animation.stagger * 5).duration(FIGMA.animation.duration)}
+            style={styles.stepsSection}
           >
-            <WaitlistRelease
-              currentOnboarded={membersOnboarded}
-              totalMemberSlots={totalSlots}
-            />
-          </Animated.View>
+            <Text style={styles.stepsHeading}>
+              <Text inherit style={styles.stepsHeadingWhite}>Once you&apos;re in</Text>
+              {'\n'}
+              <Text inherit style={styles.stepsHeadingAccent}>
+                {referralApplied || inviteCodeClaimed
+                  ? 'keep these things handy'
+                  : 'get started in 3 steps'}
+              </Text>
+            </Text>
 
-          {/* Invite Card - Frame 2095586389 */}
-          <Animated.View
-            entering={FadeInDown.delay(FIGMA.animation.stagger * 4).duration(FIGMA.animation.duration)}
-            style={styles.inviteCard}
-          >
-            {referralApplied || inviteCodeClaimed ? (
-              // Success State - Frame 2095586525 (node 3099:27830)
-              <View style={styles.successBanner}>
-                <Text style={styles.successBannerText}>
-                  Kudos! You've been bumped up 🤌
-                </Text>
-              </View>
-            ) : (
-              <>
-                {/* Text Block - Frame 1686557332 */}
-                <View style={styles.inviteTextBlock}>
-                  <Text style={styles.inviteLabel}>
-                    Have an Invite Code?
-                  </Text>
-                  <Text style={styles.inviteDescription}>
-                    Get priority access to the platform if you use a referral code
-                  </Text>
-                </View>
-
-                {/* Referral Code Input */}
-                <ReferralCodeInput
-                  code={referralCode}
-                  onCharacterChange={setReferralCharacter}
-                  error={referralError ?? undefined}
-                  disabled={referralApplied}
-                />
-
-                {referralError ? (
-                  <Text style={styles.referralErrorText}>{referralError}</Text>
-                ) : null}
-
-                <View style={styles.buttonGroup}>
-                  {referralError ? (
-                    // Error State - button instance (node 3099:27758)
-                    <PrimaryButton
-                      title="Clear code"
-                      onPress={clearReferralCode}
-                      showDivider={true}
-                    />
-                  ) : (
-                    // Default State
-                    <PrimaryButton
-                      title="Enter invite code"
-                      onPress={claimInviteCode}
-                      disabled={false}
-                      loading={isClaimingInviteCode}
-                      showDivider={true}
-                    />
-                  )}
-                </View>
-              </>
-            )}
+            <View style={styles.stepsRow}>
+              <StepDot index={1} label="Landlord's bank details and PAN" />
+              <View style={styles.stepConnector} />
+              <StepDot index={2} label="Home electricity bill" />
+              <View style={styles.stepConnector} />
+              <StepDot
+                index={3}
+                label={
+                  referralApplied || inviteCodeClaimed
+                    ? "Landlord's contact details"
+                    : 'Landlord invitation'
+                }
+              />
+            </View>
           </Animated.View>
 
           {/* Benefits Carousel — Figma 4109:24285 */}
@@ -690,13 +711,96 @@ export default function WaitlistScreen() {
       )}
 
       {/* Transition Overlay */}
-      <Animated.View 
+      <Animated.View
         style={[
-          StyleSheet.absoluteFill, 
+          StyleSheet.absoluteFill,
           { backgroundColor: '#131313', pointerEvents: 'none', zIndex: 999 },
           transitionAnimatedStyle
-        ]} 
+        ]}
       />
+
+      {/* Invite Code Drawer — Figma 4651:98884 / 109194 / 119504 / 129815 */}
+      <BottomSheet
+        visible={isInviteDrawerOpen}
+        onClose={() => setIsInviteDrawerOpen(false)}
+        paddingHorizontal={0}
+      >
+        <View style={styles.drawerContent}>
+          <View style={styles.drawerHeader}>
+            <Text style={styles.drawerTitle}>
+              <Text inherit style={styles.drawerTitleWhite}>Use a</Text>
+              {'\n'}
+              <Text inherit style={styles.drawerTitleAccent}>Referral Code</Text>
+            </Text>
+            <Text style={styles.drawerSubtitle}>(+{referralSpots} spots)</Text>
+          </View>
+
+          <View style={styles.drawerDivider} />
+
+          <View style={styles.drawerBody}>
+            <Text style={styles.drawerLabel}>Have an Invite Code?</Text>
+            <Text style={styles.drawerDescription}>
+              Get priority access to the platform if you use a referral code
+            </Text>
+
+            {referralApplied || inviteCodeClaimed ? (
+              // Valid code applied — Figma 4651:119504
+              <View style={styles.drawerSuccessBanner}>
+                <Text style={styles.drawerSuccessText}>
+                  🤌 Kudos. You&apos;re among Secured&apos;s first members
+                </Text>
+              </View>
+            ) : (
+              <ReferralCodeInput
+                code={referralCode}
+                onCharacterChange={setReferralCharacter}
+                error={referralError ?? undefined}
+                disabled={referralApplied}
+              />
+            )}
+          </View>
+
+          <View style={styles.drawerCtaWrap}>
+            {referralApplied || inviteCodeClaimed ? (
+              // Valid: only "Go Back" — Figma 4651:119504
+              <PrimaryButton
+                title="Go Back"
+                onPress={() => setIsInviteDrawerOpen(false)}
+                showDivider
+                testID="invite-drawer-goback"
+              />
+            ) : referralError ? (
+              // Invalid code — Figma 4651:129815
+              <PrimaryButton
+                title="Clear Code"
+                onPress={clearReferralCode}
+                showDivider
+                testID="invite-drawer-clear"
+              />
+            ) : (
+              <PrimaryButton
+                title="Enter Invite Code"
+                onPress={claimInviteCode}
+                disabled={!isReferralComplete}
+                loading={isClaimingInviteCode}
+                showDivider
+                testID="invite-drawer-submit"
+              />
+            )}
+          </View>
+        </View>
+      </BottomSheet>
+    </View>
+  );
+}
+
+/** "Once you're in" step dot — orange filled when index === 1, hollow otherwise. */
+function StepDot({ index, label }: { index: number; label: string }) {
+  const isFirst = index === 1;
+  return (
+    <View style={styles.stepDotWrap}>
+      <View style={[styles.stepDot, isFirst ? styles.stepDotActive : styles.stepDotInactive]} />
+      <Text style={styles.stepLabel}>{label}</Text>
     </View>
   );
 }
@@ -755,14 +859,13 @@ const styles = StyleSheet.create({
   },
 
   // Title base - node 41:11218
-  // Container text for nested styling with line break
-  // Figma: 313x192, fontSize 48, lineHeight 64, letterSpacing -2
-  // fontWeight 400 -> PlusJakartaSans-Regular (no RN fontWeight)
+  // Title — Figma 4651:78274 uses h4 (28/36 -1) for the welcomed state, not the
+  // big h1. Long-pending state still uses larger style via the FIGMA token below.
   titleBase: {
     fontFamily: FIGMA.typography.title.fontFamily,
-    fontSize: FIGMA.typography.title.fontSize,
-    lineHeight: FIGMA.typography.title.lineHeight,
-    letterSpacing: FIGMA.typography.title.letterSpacing,
+    fontSize: 28,
+    lineHeight: 36,
+    letterSpacing: -0.6,
   },
 
   // Title gray part - "Welcome,"
@@ -771,10 +874,16 @@ const styles = StyleSheet.create({
     color: FIGMA.colors.textGray,
   },
 
-  // Title accent part - name on second line
-  // styleOverrideTable "36": color #FF9A6D (brand[500])
+  // Title accent part — orange. Used by the "We're still setting things up"
+  // long-pending heading. The default "Welcome, {name}" uses titleWhite per Figma.
   titleAccent: {
     color: FIGMA.colors.textAccent,
+  },
+
+  // Title white — name on second line of the welcomed heading. Figma 4651:78274
+  // shows the user's name in pure white, not orange.
+  titleWhite: {
+    color: colors.white,
   },
 
   // Subtitle - node 41:11219
@@ -881,6 +990,154 @@ const styles = StyleSheet.create({
     gap: 8,
   },
 
+  // CTA section — Figma 4651:78274 / 88588
+  ctaSection: {
+    width: '100%',
+    alignItems: 'center',
+    gap: 4,
+  },
+  successPill: {
+    width: '100%',
+    backgroundColor: FIGMA.colors.cardBackgroundSecondary, // #1A1A1A
+    borderRadius: 12,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    alignItems: 'center',
+  },
+  successPillText: {
+    fontFamily: FIGMA.typography.value.fontFamily,
+    fontSize: 14,
+    lineHeight: 20,
+    color: FIGMA.colors.textSecondary,
+    textAlign: 'center',
+  },
+
+  // "Once you're in" steps section — Figma 4651:78274
+  stepsSection: {
+    width: '100%',
+    gap: 24,
+    paddingTop: 8,
+  },
+  stepsHeading: {
+    fontFamily: FIGMA.typography.subtitle.fontFamily,
+    fontSize: 22,
+    lineHeight: 28,
+    letterSpacing: -0.6,
+  },
+  stepsHeadingWhite: { color: colors.white },
+  stepsHeadingAccent: { color: colors.brand[500] },
+  stepsRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 4,
+  },
+  stepDotWrap: {
+    flex: 1,
+    alignItems: 'center',
+    gap: 8,
+  },
+  stepDot: {
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+    borderWidth: 1.5,
+  },
+  // Active step — solid orange fill with matching border
+  stepDotActive: {
+    backgroundColor: colors.brand[500],
+    borderColor: colors.brand[500],
+  },
+  // Inactive — hollow circle with orange ring per Figma 4651:78274
+  // (was grey ring; the brand-orange ring is what makes the connector dots
+  //  feel like part of the accent journey).
+  stepDotInactive: {
+    backgroundColor: 'transparent',
+    borderColor: colors.brand[500],
+  },
+  stepLabel: {
+    fontFamily: FIGMA.typography.label.fontFamily,
+    fontSize: 12,
+    lineHeight: 16,
+    color: colors.neutral[500],
+    textAlign: 'center',
+  },
+  stepConnector: {
+    flex: 0.6,
+    height: 1,
+    backgroundColor: colors.black[400],
+    marginTop: 5,
+  },
+
+  // Invite Code Drawer — Figma 4651:98884 / 109194 / 119504 / 129815
+  drawerContent: {
+    paddingTop: 16,
+    paddingBottom: 24,
+    gap: 30,
+  },
+  drawerHeader: {
+    paddingHorizontal: 24,
+    gap: 4,
+  },
+  drawerTitle: {
+    fontFamily: 'PlusJakartaSans-Regular',
+    fontSize: 28,
+    lineHeight: 36,
+    letterSpacing: -1,
+  },
+  drawerTitleWhite: { color: colors.white },
+  drawerTitleAccent: { color: colors.brand[500] },
+  drawerSubtitle: {
+    fontFamily: 'PlusJakartaSans-Regular',
+    fontSize: 13,
+    lineHeight: 18,
+    color: colors.neutral[500],
+    marginTop: 4,
+  },
+  drawerDivider: {
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: colors.black[400],
+    marginHorizontal: 24,
+  },
+  drawerBody: {
+    paddingHorizontal: 24,
+    gap: 12,
+    alignItems: 'center',
+  },
+  drawerLabel: {
+    fontFamily: 'PlusJakartaSans-Regular',
+    fontSize: 12,
+    lineHeight: 16,
+    color: colors.neutral[600],
+    alignSelf: 'flex-start',
+  },
+  drawerDescription: {
+    fontFamily: 'PlusJakartaSans-Regular',
+    fontSize: 14,
+    lineHeight: 20,
+    color: colors.white,
+    alignSelf: 'flex-start',
+  },
+  drawerSuccessBanner: {
+    width: '100%',
+    backgroundColor: colors.black[600],
+    borderRadius: 12,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    alignItems: 'center',
+    marginTop: 8,
+  },
+  drawerSuccessText: {
+    fontFamily: 'PlusJakartaSans-Regular',
+    fontSize: 14,
+    lineHeight: 20,
+    color: colors.neutral[500],
+    textAlign: 'center',
+  },
+  drawerCtaWrap: {
+    paddingHorizontal: 24,
+    alignItems: 'center',
+  },
+
   // Divider — 24x2, #4D4D4D, borderRadius 200
   divider: {
     width: FIGMA.divider.width,
@@ -982,17 +1239,5 @@ const styles = StyleSheet.create({
     flex: 1,
     height: 1,
     backgroundColor: '#4D4D4D', // Figma: #4D4D4D connector
-  },
-  stepsLabelRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  stepLabel: {
-    fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: 12,
-    lineHeight: 16.92,
-    letterSpacing: -0.24,
-    color: '#878787', // colours/neutral/600
-    flex: 1,
   },
 });

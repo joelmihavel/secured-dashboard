@@ -191,7 +191,13 @@ const SECTIONS: Section[] = [
   {
     label: 'Agreement',
     screens: [
+      { name: 'Agreement Intro', path: '/(agreement)/intro' },
       { name: 'Upload Agreement', path: '/(agreement)/upload' },
+      { name: 'Manual Entry', path: '/(agreement)/manual-entry' },
+      { name: 'Manual Entry Review', path: '/(agreement)/review' },
+      { name: 'Upload Review (Extracted)', path: '/(agreement)/upload-review' },
+      { name: 'Upload Edit', path: '/(agreement)/upload-edit' },
+      { name: 'Setup Intro', path: '/(agreement)/setup-intro' },
       { name: 'Add Bank (Pre-Waitlist)', path: '/(agreement)/add-bank-details' },
     ],
   },

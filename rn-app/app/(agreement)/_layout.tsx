@@ -23,7 +23,13 @@ export default function AgreementLayout() {
         freezeOnBlur: true, // Prevent PropertyDOM crash on background resume
       }}
     >
+      <Stack.Screen name="intro" />
       <Stack.Screen name="upload" />
+      <Stack.Screen name="manual-entry" />
+      <Stack.Screen name="review" />
+      <Stack.Screen name="upload-review" />
+      <Stack.Screen name="upload-edit" />
+      <Stack.Screen name="setup-intro" />
       <Stack.Screen name="add-bank-details" />
     </Stack>
   );

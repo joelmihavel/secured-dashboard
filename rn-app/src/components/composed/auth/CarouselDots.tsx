@@ -9,7 +9,7 @@
  */
 
 import React, { memo } from 'react';
-import { View, StyleSheet } from 'react-native';
+import { View, StyleSheet, Pressable } from 'react-native';
 
 // EXACT Figma values from extraction 1-28985 (carousel slide 1)
 // Figma Frame 160:2678: gap: 4, 8x8 ellipses
@@ -24,30 +24,29 @@ const FIGMA_DOTS = {
 export interface CarouselDotsProps {
   count: number;
   activeIndex: number;
+  onDotPress?: (index: number) => void;
 }
 
-function CarouselDotsComponent({ count, activeIndex }: CarouselDotsProps) {
+function CarouselDotsComponent({ count, activeIndex, onDotPress }: CarouselDotsProps) {
   return (
     <View style={styles.container}>
       {Array.from({ length: count }).map((_, index) => (
-        <Dot key={index} isActive={index === activeIndex} />
+        <Pressable
+          key={index}
+          onPress={onDotPress ? () => onDotPress(index) : undefined}
+          hitSlop={{ top: 12, bottom: 12, left: 6, right: 6 }}
+          accessibilityRole="button"
+          accessibilityLabel={`Go to slide ${index + 1}`}
+        >
+          <View
+            style={[
+              styles.dot,
+              index === activeIndex ? styles.dotActive : styles.dotInactive,
+            ]}
+          />
+        </Pressable>
       ))}
     </View>
-  );
-}
-
-interface DotProps {
-  isActive: boolean;
-}
-
-function Dot({ isActive }: DotProps) {
-  return (
-    <View
-      style={[
-        styles.dot,
-        isActive ? styles.dotActive : styles.dotInactive,
-      ]}
-    />
   );
 }
 
