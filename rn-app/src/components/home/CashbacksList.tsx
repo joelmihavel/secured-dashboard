@@ -126,7 +126,7 @@ function CashbacksListComponent({
 
           <View style={styles.setupSection}>
             <Text style={styles.sectionHeader}>
-              {'COMPLETE VERIFICATION'}
+              {'COMPLETE SETUP TO ACCESS YOUR CASHBACK'}
             </Text>
             <CashbackSetupSteps
               steps={setupSteps}

@@ -82,7 +82,8 @@ const STATE_CONFIG: Record<LandlordInviteState, { label: string; action: string;
     color: colors.brand[500], // #FF9A6D
   },
   not_approved: {
-    label: "Landlord hasn't approved your tenancy",
+    // Figma 4651:142257 — rejected variant of the invite row
+    label: 'Landlord rejected invite link',
     action: 'Need help?',
     color: colors.error.radix, // #E5484D
   },

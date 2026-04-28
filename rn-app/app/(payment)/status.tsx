@@ -34,6 +34,7 @@ import Svg, { Path } from 'react-native-svg';
 import { useQueryClient } from '@tanstack/react-query';
 
 import { Screen, Text, PrimaryButton, BackButton } from '@/src/components';
+import { GradientPill } from '@/src/components/agreement/GradientPill';
 import { PaymentReceiptCard } from '@/src/components/payment/PaymentReceiptCard';
 import { OfflineBanner } from '@/src/components/ui/Layout/OfflineBanner';
 import { useNetworkStatus } from '@/src/hooks/useNetworkStatus';
@@ -111,7 +112,6 @@ const FIGMA_COLORS = {
   pendingStamp: PAYMENT_COLORS.pendingStamp,
   infoText: PAYMENT_COLORS.mutedText,
   iconColor: PAYMENT_COLORS.labelText,
-  tryAgainText: PAYMENT_COLORS.mutedText,
 } as const;
 
 // ============================================
@@ -886,65 +886,21 @@ export default function PaymentStatusScreen() {
   };
 
   // ============================================
-  // RENDER BUTTONS
+  // RENDER HEADER PILL — Figma 4651:140126/140177/140228
+  // pending → Contact support · timed_out/failed → Try again · refunded → Contact support
   // ============================================
 
-  const renderButtons = () => {
+  const headerPill = (() => {
     switch (state.status) {
-      case 'pending':
-        return (
-          <PrimaryButton
-            title="Contact support"
-            onPress={handleContactSupport}
-            showDivider={true}
-            testID="contact-support-button"
-          />
-        );
-
-      case 'timed_out':
-        return (
-          <>
-            <PrimaryButton
-              title="Try Again"
-              onPress={handleTryAgain}
-              showDivider={true}
-              testID="try-again-button"
-            />
-            <PrimaryButton
-              title="Check back later"
-              onPress={handleGoHome}
-              showDivider={true}
-              testID="check-back-later-button"
-            />
-            <TouchableOpacity
-              onPress={handleContactSupport}
-              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-            >
-              <Text style={styles.contactSupportText}>Contact Support</Text>
-            </TouchableOpacity>
-          </>
-        );
-
       case 'failed':
+      case 'timed_out':
+        return { label: 'Try again', onPress: handleTryAgain, testID: 'try-again-button' };
+      case 'pending':
       case 'refunded':
-        return (
-          <>
-            <PrimaryButton
-              title="Contact Support"
-              onPress={handleContactSupport}
-              showDivider={true}
-              testID="contact-support-button"
-            />
-            <TouchableOpacity
-              onPress={handleTryAgain}
-              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-            >
-              <Text style={styles.contactSupportText}>Try Again</Text>
-            </TouchableOpacity>
-          </>
-        );
+      default:
+        return { label: 'Contact support', onPress: handleContactSupport, testID: 'contact-support-button' };
     }
-  };
+  })();
 
   // ============================================
   // ERROR BOUNDARY RENDER
@@ -962,12 +918,20 @@ export default function PaymentStatusScreen() {
   // MAIN RENDER (wrapped in try-catch)
   // ============================================
 
-  const backButton = (
-    <BackButton
-      style={StyleSheet.flatten([styles.backButton, { top: sv(52) }])}
-      onPress={handleBack}
-      testID="back-button"
-    />
+  const header = (
+    <View style={[styles.header, { paddingTop: Math.max(insets.top, sv(12)) }]}>
+      <BackButton
+        style={styles.backButton}
+        onPress={handleBack}
+        testID="back-button"
+      />
+      <GradientPill
+        label={headerPill.label}
+        onPress={headerPill.onPress}
+        style={styles.headerPill}
+        testID={headerPill.testID}
+      />
+    </View>
   );
 
   const card = (
@@ -978,6 +942,7 @@ export default function PaymentStatusScreen() {
       titleLine1={titleConfig.line1}
       titleLine2={titleConfig.line2}
       titleLine2Color={FIGMA_COLORS.titleAccent}
+      topMargin={0}
       contentPaddingTop={sv(130)}
       titleMarginLeft={s(10)}
       titleMarginBottom={sv(25)}
@@ -986,19 +951,12 @@ export default function PaymentStatusScreen() {
     </PaymentReceiptCard>
   );
 
-  const buttons = (
-    <View style={styles.buttonContainer}>
-      {renderButtons()}
-    </View>
-  );
-
   let content: React.ReactNode;
   try {
     content = (
       <View style={styles.container}>
-        {backButton}
+        {header}
         {card}
-        {buttons}
       </View>
     );
   } catch (err) {
@@ -1036,6 +994,18 @@ const styles = StyleSheet.create({
     paddingHorizontal: s(24),
   },
 
+  // -- Header (back arrow + state-aware pill)
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    minHeight: sv(48),
+    marginBottom: sv(64),
+  },
+  headerPill: {
+    minWidth: s(120),
+  },
+
   // -- Info section (pending/failed/refunded)
   // Figma: container at x=1, y=219, w=269 inside 270px card.
   // Card content has padding s(24). Offset: left -(24-1)=-23, right -24 to span full width.
@@ -1069,24 +1039,7 @@ const styles = StyleSheet.create({
     textAlign: 'left',
   },
 
-  buttonContainer: {
-    width: '100%',
-    paddingHorizontal: s(16),
-    gap: sv(16),
-    alignItems: 'center',
-    marginTop: sv(40),
-  },
-  contactSupportText: {
-    fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: sf(12),
-    lineHeight: sf(20),
-    color: FIGMA_COLORS.tryAgainText, // #A9A9A9
-    textAlign: 'center' as const,
-  },
   backButton: {
-    position: 'absolute' as const,
-    left: s(72),
-    zIndex: 10,
     width: s(32),
     height: sv(32),
     justifyContent: 'center' as const,

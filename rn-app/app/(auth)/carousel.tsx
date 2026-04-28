@@ -1,36 +1,23 @@
 /**
  * Onboarding Carousel Screen
- * Figma Node: 756:206841 (Splash / get-started --carousel 40)
+ * Figma Nodes: 4685:152502, 4685:156878, 4685:161211 (slides 1, 2, 3)
  *
- * UX: Background, logo, skip button, and dots stay FIXED.
+ * Background, logo, skip button, and dots stay FIXED.
  * Only the heading + body text swipes horizontally.
- *
- * Figma Values (from get_design_context 756:210868, 2026-02-26):
- * - Background: #131313 (colors.black[700])
- * - Dotted pattern: DottedGridPattern
- * - Logo: 33.375x40px (size=40 for Logo component)
- * - Outer Container: pt-80, pb-64
- * - Inner Container: flex-1, justify-end, px-48, gap-40
- * - Text Container: gap-40 (logo + text wrapper)
- * - Text Wrapper: gap-16 (heading + body)
- * - Heading: PlusJakartaSans-Regular, 48/64, letterSpacing -2
- *   - Accent spans: #FF9A6D, Gray spans: #A9A9A9
- * - Body: PlusJakartaSans-Regular, 14/20, #A6A6A6
- * - Skip: 14/20, white, underlined (no arrow)
- * - Carousel dots: 8x8, gap-4, active=#FF9A6D, inactive=#202020
+ * Background reuses the dotted halftone illustration from splash/welcome.
  */
 
 import React, { useState, useCallback, useRef, useEffect } from 'react';
-import { View, Text as RNText, Image, StyleSheet, Dimensions, FlatList, ViewToken, TouchableOpacity } from 'react-native';
+import { View, Text as RNText, Image, StyleSheet, Dimensions, FlatList, ViewToken, TouchableOpacity, Pressable } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
-import Animated from 'react-native-reanimated';
-import { Illustration1, Illustration2, Illustration3 } from '@/src/components/onboarding';
 
-import { Screen, Logo, Text, DottedGridPattern } from '@/src/components';
+import { Screen, Logo, Text } from '@/src/components';
 import { CarouselDots } from '@/src/components';
 import { colors } from '@/src/theme';
 import { s, sv } from '@/src/theme/scale';
+
+const LANDING_BG = require('../../assets/images/patterns/landing-bg.png');
 
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -97,13 +84,6 @@ export default function CarouselScreen() {
   const [activeIndex, setActiveIndex] = useState(initialPage);
   const flatListRef = useRef<FlatList<Slide>>(null);
 
-  // CSS Transitions (Reanimated 4) — opacity driven by activeIndex state
-  const cssTransitionStyle = { transitionProperty: 'opacity' as const, transitionDuration: '300ms' as const };
-  const style1 = { ...cssTransitionStyle, opacity: activeIndex === 0 ? 1 : 0 };
-  const style2 = { ...cssTransitionStyle, opacity: activeIndex === 1 ? 1 : 0 };
-  const style3 = { ...cssTransitionStyle, opacity: activeIndex === 2 ? 1 : 0 };
-
-
   useEffect(() => {
     if (page && flatListRef.current) {
       const targetIndex = Math.max(0, Math.min(parseInt(page, 10) - 1, slides.length - 1));
@@ -118,6 +98,25 @@ export default function CarouselScreen() {
     routerRef.current.push('/(auth)/sign-up');
   }, []);
 
+  const handleAdvance = useCallback(() => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setActiveIndex((current) => {
+      if (current >= slides.length - 1) {
+        routerRef.current.push('/(auth)/sign-up');
+        return current;
+      }
+      const next = current + 1;
+      flatListRef.current?.scrollToIndex({ index: next, animated: true });
+      return next;
+    });
+  }, []);
+
+  const handleDotPress = useCallback((index: number) => {
+    Haptics.selectionAsync();
+    flatListRef.current?.scrollToIndex({ index, animated: true });
+    setActiveIndex(index);
+  }, []);
+
   const onViewableItemsChanged = useCallback(
     ({ viewableItems }: { viewableItems: ViewToken[] }) => {
       if (viewableItems.length > 0 && viewableItems[0].index !== null) {
@@ -130,7 +129,7 @@ export default function CarouselScreen() {
   const viewabilityConfig = useRef({ itemVisiblePercentThreshold: 50 }).current;
 
   const renderSlideText = useCallback(({ item }: { item: Slide }) => (
-    <View style={styles.slideItem}>
+    <Pressable style={styles.slideItem} onPress={handleAdvance} testID={`carousel-slide-${item.id}`}>
       <RNText style={styles.heading}>
         {item.headingSegments.map((segment, index) => (
           <RNText key={index} style={{ color: segment.color }}>
@@ -141,32 +140,25 @@ export default function CarouselScreen() {
       <Text style={[styles.bodyText, { color: item.descriptionColor }]}>
         {item.description}
       </Text>
-    </View>
-  ), []);
+    </Pressable>
+  ), [handleAdvance]);
 
   return (
     <Screen padded={false} testID="carousel-screen" safeAreaTop={false} safeAreaBottom={false} style={styles.screen}>
-      <DottedGridPattern fadeMask={false} />
+      <Image
+        source={LANDING_BG}
+        style={styles.bgImage}
+        resizeMode="cover"
+        accessibilityElementsHidden
+        importantForAccessibility="no"
+      />
 
-
-      {/* Illustrations — only render active + adjacent to avoid 941 simultaneous worklets */}
-      <View style={StyleSheet.absoluteFill} pointerEvents="none">
-        {activeIndex <= 1 && (
-          <Animated.View style={[styles.illus1Container, style1]}>
-            <Illustration1 width={104} height={70} />
-          </Animated.View>
-        )}
-        {activeIndex >= 0 && activeIndex <= 2 && (
-          <Animated.View style={[styles.illus2Container, style2]}>
-            <Illustration2 width={106} height={78} />
-          </Animated.View>
-        )}
-        {activeIndex >= 1 && (
-          <Animated.View style={[styles.illus3Container, style3]}>
-            <Illustration3 width={76} height={92} />
-          </Animated.View>
-        )}
-      </View>
+      {/* Tap anywhere on the bg to advance to the next slide */}
+      <Pressable
+        style={StyleSheet.absoluteFill}
+        onPress={handleAdvance}
+        testID="carousel-advance-overlay"
+      />
 
       <View style={styles.outerContainer} pointerEvents="box-none">
         <View style={styles.innerContainer} pointerEvents="box-none">
@@ -205,10 +197,8 @@ export default function CarouselScreen() {
             <Text style={styles.skipText}>{activeIndex === slides.length - 1 ? 'Continue' : 'Skip'}</Text>
           </TouchableOpacity>
 
-          {/* Carousel dots */}
-          <View pointerEvents="none">
-            <CarouselDots count={slides.length} activeIndex={activeIndex} />
-          </View>
+          {/* Carousel dots — tap a dot to jump to that slide */}
+          <CarouselDots count={slides.length} activeIndex={activeIndex} onDotPress={handleDotPress} />
         </View>
       </View>
     </Screen>
@@ -220,29 +210,13 @@ const styles = StyleSheet.create({
     backgroundColor: colors.black[700],
     flex: 1,
   },
-  // Figma 759:302123 — card illustration: absolute (45, 245), 104x70, opacity 0.48
-    illus1Container: {
+  bgImage: {
     position: 'absolute',
-    left: s(45),
-    top: sv(245),
-  },
-  illus2Container: {
-    position: 'absolute',
-    left: s(45),
-    top: sv(243),
-  },
-  illus3Container: {
-    position: 'absolute',
-    left: s(41),
-    top: sv(239),
-  },
-  oldCardIllustration: {
-    position: 'absolute',
-    left: s(45),
-    top: sv(245),
-    width: s(104),
-    height: sv(70),
-    opacity: 0.48,
+    top: sv(-66),
+    left: s(-18),
+    width: s(469),
+    height: sv(664),
+    opacity: 0.32,
   },
   // Figma 756:210868 — outer container: pt-80, pb-64
   outerContainer: {

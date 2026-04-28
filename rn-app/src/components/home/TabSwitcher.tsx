@@ -31,13 +31,15 @@ export interface TabSwitcherProps {
   disabled?: boolean;
   /** Smaller padding and font for inline use */
   compact?: boolean;
+  /** Stretch the switcher to fill its parent's width; tabs share width 50/50 */
+  fullWidth?: boolean;
   /** Override container background (default #1A1A1A) */
   bgColor?: string;
   /** Override active tab background (default same as container) */
   activeBgColor?: string;
 }
 
-function TabSwitcherComponent({ tabs, activeTabId, onTabChange, disabled = false, compact = false, bgColor, activeBgColor }: TabSwitcherProps) {
+function TabSwitcherComponent({ tabs, activeTabId, onTabChange, disabled = false, compact = false, fullWidth = false, bgColor, activeBgColor }: TabSwitcherProps) {
   const handlePress = useCallback(
     (tabId: string) => {
       if (disabled) return;
@@ -53,6 +55,7 @@ function TabSwitcherComponent({ tabs, activeTabId, onTabChange, disabled = false
       style={[
         styles.container,
         compact && styles.containerCompact,
+        fullWidth && styles.containerFullWidth,
         bgColor && { backgroundColor: bgColor, borderColor: bgColor },
         disabled && styles.containerDisabled,
       ]}
@@ -69,10 +72,12 @@ function TabSwitcherComponent({ tabs, activeTabId, onTabChange, disabled = false
             accessibilityState={{ selected: isActive }}
             accessibilityLabel={tab.label}
             disabled={disabled}
+            style={fullWidth ? styles.tabFullWidth : undefined}
           >
             <View style={[
               isActive ? styles.tabActive : styles.tabInactive,
               compact && (isActive ? styles.tabActiveCompact : styles.tabInactiveCompact),
+              fullWidth && styles.tabFullWidthInner,
               isActive && (activeBgColor || bgColor) && { backgroundColor: activeBgColor || bgColor },
             ]}>
               <Text style={[
@@ -102,6 +107,17 @@ const styles = StyleSheet.create({
   },
   containerCompact: {
     padding: 3,
+  },
+  containerFullWidth: {
+    alignSelf: 'stretch',
+    width: '100%',
+  },
+  tabFullWidth: {
+    flex: 1,
+  },
+  tabFullWidthInner: {
+    flex: 1,
+    paddingHorizontal: 0,
   },
   containerDisabled: {
     opacity: 0.5,

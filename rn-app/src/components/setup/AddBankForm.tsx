@@ -24,7 +24,10 @@ import {
   Easing,
   TouchableOpacity,
   Linking,
+  Image,
 } from 'react-native';
+
+const BG_SHAPE = require('../../../assets/images/background_shape.png');
 import { KeyboardAvoidingView, useKeyboardState } from 'react-native-keyboard-controller';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -33,7 +36,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 // navigation state update. Using it in deps causes infinite re-render loops.
 import * as Haptics from 'expo-haptics';
 import Svg, { Path } from 'react-native-svg';
-import { AlertBanner, Text, TextInput, PrimaryButton, ScreenTitle, Logo } from '@/src/components';
+import { AlertBanner, Text, TextInput, PrimaryButton, ScreenTitle, Logo, BackButton } from '@/src/components';
+import { GradientPill } from '@/src/components/agreement/GradientPill';
 import { TabSwitcher } from '@/src/components/home';
 import { DottedGridPattern } from '@/src/components/patterns/DottedGridPattern';
 import { useVerifyBank, useVerifyUpiVpa, useVerifyPan, useDashboard, validateAccountNumber, validateIfscCode, validateUpiVpa } from '@/src/hooks';
@@ -42,8 +46,8 @@ import type { BankVerificationResponse, UpiVerificationResponse, PanVerification
 import { colors } from '@/src/theme';
 
 const PAYMENT_METHOD_TABS = [
-  { id: 'upi', label: 'UPI' },
-  { id: 'bank', label: 'Bank Account' },
+  { id: 'bank', label: 'Bank Details' },
+  { id: 'upi', label: 'UPI Details' },
 ];
 
 type ScreenState = 'form' | 'loading' | 'success' | 'failure';
@@ -68,6 +72,16 @@ const FIGMA = {
   disabledText: '#656565',
 } as const;
 
+/** Generic server/network failures that warrant the full-screen failure UI. */
+function isGenericApiError(code: string | undefined): boolean {
+  return (
+    code === 'NETWORK_ERROR' ||
+    code === 'SERVICE_UNAVAILABLE' ||
+    code === 'EMPTY_RESPONSE' ||
+    code === 'UNKNOWN_ERROR'
+  );
+}
+
 function isValidPanFormat(pan: string): boolean {
   return /^[A-Z]{5}\d{4}[A-Z]$/.test(pan.toUpperCase());
 }
@@ -85,10 +99,11 @@ function InfoIcon() {
 }
 
 // ── Loading Spinner (animated ring) ──────────────────────────────────────
-function VerificationSpinner() {
+function VerificationSpinner({ failed = false }: { failed?: boolean }) {
   const spinValue = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
+    if (failed) return; // freeze rotation in error state — looks intentional
     const anim = Animated.loop(
       Animated.timing(spinValue, {
         toValue: 1,
@@ -99,23 +114,25 @@ function VerificationSpinner() {
     );
     anim.start();
     return () => anim.stop();
-  }, [spinValue]);
+  }, [spinValue, failed]);
 
   const spin = spinValue.interpolate({
     inputRange: [0, 1],
     outputRange: ['0deg', '360deg'],
   });
 
+  const arcColor = failed ? colors.error.radix : FIGMA.spinnerFg;
+
   return (
     <View style={spinnerStyles.container}>
       {/* Background ring */}
       <View style={spinnerStyles.bgRing} />
-      {/* Animated accent ring (partial arc) */}
-      <Animated.View style={[spinnerStyles.fgRing, { transform: [{ rotate: spin }] }]}>
+      {/* Accent ring — animated when verifying, static when failed */}
+      <Animated.View style={[spinnerStyles.fgRing, { transform: [{ rotate: failed ? '0deg' : spin }] }]}>
         <Svg width={148} height={148} viewBox="0 0 148 148" fill="none">
           <Path
             d="M74 6C111.555 6 142 36.4446 142 74"
-            stroke={FIGMA.spinnerFg}
+            stroke={arcColor}
             strokeWidth={12}
             strokeLinecap="round"
           />
@@ -380,7 +397,8 @@ export default function AddBankScreen({ preWaitlist = false }: AddBankProps) {
           // Auth errors (code NOT_AUTHENTICATED) get a generic field hint to avoid confusion.
           const fieldHint = error.code === 'NOT_AUTHENTICATED' ? 'Error' : 'Incorrect PAN';
           setErrors((prev) => ({ ...prev, panCard: fieldHint }));
-          setScreenState('form');
+          // Generic server/network errors → full-screen failure UI; field-specific errors → form
+          setScreenState(isGenericApiError(error.code) ? 'failure' : 'form');
           if (error.foundName) setFoundName(error.foundName);
         },
       }
@@ -467,7 +485,7 @@ export default function AddBankScreen({ preWaitlist = false }: AddBankProps) {
               : error.code === 'NAME_MISMATCH' ? 'Invalid VPA'
               : 'Verification failed';
             setErrors((prev) => ({ ...prev, upiVpa: fieldHint }));
-            setScreenState('form');
+            setScreenState(isGenericApiError(error.code) ? 'failure' : 'form');
             if (error.foundName) setFoundName(error.foundName);
           },
         }
@@ -507,7 +525,7 @@ export default function AddBankScreen({ preWaitlist = false }: AddBankProps) {
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
             setApiError(error.message || 'Bank verification failed');
             setErrors((prev) => ({ ...prev, accountNumber: 'Invalid Bank A/C' }));
-            setScreenState('form');
+            setScreenState(isGenericApiError(error.code) ? 'failure' : 'form');
           },
         }
       );
@@ -586,9 +604,36 @@ export default function AddBankScreen({ preWaitlist = false }: AddBankProps) {
           <VerificationSpinner />
           <Text style={styles.loadingBody}>
             {isUpi
-              ? 'Verifying the UPI ID and PAN with partners. This takes few seconds.'
-              : 'Verifying the bank account and PAN with partners. This takes few seconds.'}
+              ? 'Verifying the UPI ID and PAN with our partners. This takes few seconds.'
+              : 'Verifying the bank account and PAN with our partners. This takes few seconds.'}
           </Text>
+        </View>
+      </View>
+    );
+  }
+
+  // ── FAILURE STATE — Figma 4651:140624 ───────────────────────────────────
+  // Full-screen "We couldn't / Verify these Details" with red spinner + Try Again.
+  // Reached on generic server/network failures; field-specific errors stay in form.
+  if (screenState === 'failure') {
+    return (
+      <View style={styles.container}>
+        <DottedGridPattern fadeMask={false} />
+        <View style={[styles.loadingLogoRow, { paddingTop: insets.top + 48 }]}>
+          <Logo size={40} />
+        </View>
+        <View style={styles.loadingContent}>
+          <Text style={styles.loadingTitle}>
+            <Text style={styles.loadingTitleGray}>We couldn&apos;t{'\n'}</Text>
+            <Text style={styles.failureTitleAccent}>Verify these Details</Text>
+          </Text>
+          <VerificationSpinner failed />
+          <Text style={styles.loadingBody}>
+            {apiError || 'Please check the details and try again'}
+          </Text>
+        </View>
+        <View style={[styles.failureCtaWrap, { paddingBottom: insets.bottom + 24 }]}>
+          <PrimaryButton title="Try Again" onPress={handleRetry} showDivider />
         </View>
       </View>
     );
@@ -598,7 +643,15 @@ export default function AddBankScreen({ preWaitlist = false }: AddBankProps) {
 
   return (
     <View style={styles.container}>
-      <DottedGridPattern fadeMask={false} />
+      {/* Decorative arch + faint dotted pattern, per Figma 4651:76437 */}
+      <Image
+        source={BG_SHAPE}
+        style={styles.bgShape}
+        resizeMode="cover"
+        accessibilityElementsHidden
+        importantForAccessibility="no"
+      />
+      <DottedGridPattern dotOpacity={0.08} fadeMask={false} animated={false} />
       <KeyboardAvoidingView
         style={styles.flex}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -606,45 +659,78 @@ export default function AddBankScreen({ preWaitlist = false }: AddBankProps) {
         <ScrollView
           style={styles.flex}
           contentContainerStyle={{
-            paddingHorizontal: 48,
+            paddingHorizontal: 36,
             paddingTop: insets.top + 16,
             paddingBottom: insets.bottom + 32,
           }}
           keyboardShouldPersistTaps="handled"
-          showsVerticalScrollIndicator={true}
+          showsVerticalScrollIndicator={false}
         >
-          {/* Logo */}
-          <View style={styles.logoContainer}>
-            <Logo size={32} />
+          {/* Top row — back arrow + primary action pill */}
+          <View style={styles.topRow}>
+            <BackButton
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                routerRef.current.back();
+              }}
+              style={styles.topRowBack}
+              color={colors.white}
+            />
+            <GradientPill
+              label={allVerified ? 'Confirm & Continue' : 'Verify Details'}
+              onPress={allVerified ? handleConfirm : handleSubmit}
+              disabled={!allVerified && !allFieldsFilled}
+            />
           </View>
 
-          {/* Title */}
-          <View style={preWaitlist ? styles.titleContainerCompact : styles.titleContainer}>
+          {/* Title + subtitle — Figma keeps "Verify / bank details" in success state too,
+              with a different subtitle that surfaces the verified holder name. */}
+          <View style={styles.titleBlock}>
             {allVerified ? (
-              <ScreenTitle gray="Details " accent="Verified" />
+              <Text style={styles.heading}>
+                <Text inherit style={styles.headingWhite}>Verify</Text>
+                {'\n'}
+                <Text inherit style={styles.headingAccent}>bank details</Text>
+              </Text>
             ) : (
-              <ScreenTitle gray="Add your landlord's " accent="bank details" />
+              <Text style={styles.heading}>
+                <Text inherit style={styles.headingWhite}>Enter</Text>
+                {'\n'}
+                <Text inherit style={styles.headingAccent}>bank details</Text>
+              </Text>
+            )}
+            {allVerified && verifiedName ? (
+              <Text style={styles.subtitleText}>
+                Payments will be sent to{' '}
+                <Text inherit style={styles.subtitleNameAccent}>{verifiedName}</Text>
+              </Text>
+            ) : (
+              <Text style={styles.subtitleText}>
+                We&apos;ll confirm that these details match your landlord before enabling payments
+              </Text>
             )}
           </View>
 
+          <View style={styles.headerDivider} />
+
           {/* Progress Bar — hidden in pre-waitlist mode */}
           {!preWaitlist && (
-            <View style={[styles.progressContainer, allVerified && { marginTop: 16 }]}>
+            <View style={[styles.progressContainer, { marginTop: 0 }]}>
               <View style={styles.progressTrack}>
                 <View style={styles.progressFill} />
               </View>
             </View>
           )}
 
-          {/* Payment Method Selector — always visible */}
+          {/* Payment method selector — Bank Details / UPI Details pill tabs (full width) */}
           <View style={styles.selectorContainer}>
             <TabSwitcher
               tabs={PAYMENT_METHOD_TABS}
               activeTabId={paymentMethod}
               onTabChange={handleMethodSwitch}
               disabled={screenState !== 'form'}
-              compact
-              />
+              fullWidth
+            />
           </View>
 
           {/* UPI amount limit warning */}
@@ -665,7 +751,6 @@ export default function AddBankScreen({ preWaitlist = false }: AddBankProps) {
 
           {/* Form — verified output fields on top, input fields below */}
           <View style={styles.formContainer}>
-            {/* Verified names — read-only, shown above inputs for confirmation */}
             {accountVerified && verifiedName && (
               <TextInput
                 label="Account Holder Name"
@@ -685,13 +770,12 @@ export default function AddBankScreen({ preWaitlist = false }: AddBankProps) {
               />
             )}
 
-            {/* Input fields */}
             {isUpi ? (
               <TextInput
-                label="UPI ID"
+                label="UPI Account ID"
                 value={upiVpa}
                 onChangeText={handleUpiVpaChange}
-                placeholder="e.g. name@oksbi"
+                placeholder="e.g. john@bank"
                 error={errors.upiVpa}
                 errorDetail={foundName ? `Account holder: ${foundName}` : undefined}
                 success={upiFieldSuccess}
@@ -702,7 +786,7 @@ export default function AddBankScreen({ preWaitlist = false }: AddBankProps) {
             ) : (
               <>
                 <TextInput
-                  label="Account Number"
+                  label="Account holder number"
                   value={accountNumber}
                   onChangeText={handleAccountNumberChange}
                   placeholder="e.g. 1234567890"
@@ -726,7 +810,7 @@ export default function AddBankScreen({ preWaitlist = false }: AddBankProps) {
             )}
 
             <TextInput
-              label="PAN Card"
+              label="PAN CARD"
               value={panCard}
               onChangeText={handlePanCardChange}
               placeholder="e.g. CSNPM9874A"
@@ -737,37 +821,41 @@ export default function AddBankScreen({ preWaitlist = false }: AddBankProps) {
             />
           </View>
 
-          {/* Bottom spacer — taller when verified names are showing */}
-          <View style={{ height: allVerified ? 200 : 150 }} />
+          {/* Read-only info section — Figma 4651:76989 / 77303
+              Surfaces the bank/UPI metadata returned by the verification API once
+              everything is verified. Each row has a # icon, label, value. */}
+          {allVerified && (
+            <View style={styles.infoSection}>
+              {verifiedName && (
+                <InfoRow label="Holder Name" value={verifiedName} />
+              )}
+              {!isUpi && verificationResult?.bankName && (
+                <InfoRow label="Bank" value={verificationResult.bankName} />
+              )}
+              {!isUpi && verificationResult?.branch && (
+                <InfoRow label="Branch" value={verificationResult.branch} showDivider={false} />
+              )}
+              {isUpi && upiVerificationResult?.bankName && (
+                <InfoRow label="Bank" value={upiVerificationResult.bankName} showDivider={false} />
+              )}
+            </View>
+          )}
+
+          {/* "Payments will be sent to ..." line under heading once verified */}
+          {/* (rendered via subtitle replacement below — see titleBlock) */}
+
+          {/* Bottom helper — only shows once user starts filling */}
+          {(accountNumber || ifscCode || upiVpa || panCard) && (
+            <Text style={styles.bottomHelper}>
+              Required for landlord verification and compliance (not stored publicly)
+            </Text>
+          )}
+
+          {/* Skip link removed — Figma 4651:76437 doesn't show "I'll do this later"
+              on the form. Skip is available on the setup-intro screen instead. */}
+
+          <View style={{ height: 48 }} />
         </ScrollView>
-
-        {/* Sticky bottom button — hidden when keyboard is open to avoid covering inputs */}
-        {!keyboardVisible && (
-        <View style={[styles.stickyBottom, { paddingBottom: insets.bottom + 16 }]}>
-          {allVerified ? (
-            <PrimaryButton
-              title="Confirm & continue"
-              onPress={handleConfirm}
-            />
-          ) : (
-            <PrimaryButton
-              title="Verify details"
-              onPress={handleSubmit}
-              disabled={!allFieldsFilled}
-            />
-          )}
-
-          {preWaitlist && (
-            <TouchableOpacity onPress={handleSkip} style={styles.skipButton}>
-              <Text style={styles.skipText}>I'll do this later</Text>
-            </TouchableOpacity>
-          )}
-
-          <Text style={styles.footerText}>
-            PAN is required for rent compliance and verification.
-          </Text>
-        </View>
-        )}
       </KeyboardAvoidingView>
     </View>
   );
@@ -778,6 +866,15 @@ export default function AddBankScreen({ preWaitlist = false }: AddBankProps) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: FIGMA.bg },
   flex: { flex: 1 },
+  bgShape: {
+    position: 'absolute',
+    top: -100,
+    left: '50%',
+    width: 481,
+    height: 405,
+    marginLeft: -481 / 2,
+    opacity: 0.48,
+  },
 
   // Loading state — Figma 4109:3579
   loadingLogoRow: {
@@ -803,6 +900,21 @@ const styles = StyleSheet.create({
     fontSize: 32, lineHeight: 48, letterSpacing: -1,
     color: FIGMA.accent, // Figma: #FF9A6D
   },
+  // Failure state ("We couldn't / Verify these Details") — red accent
+  failureTitleAccent: {
+    fontFamily: 'PlusJakartaSans-Regular',
+    fontSize: 32, lineHeight: 48, letterSpacing: -1,
+    color: colors.error.radix, // Figma: red verification fail
+  },
+  failureCtaWrap: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    paddingHorizontal: 48,
+    paddingTop: 16,
+    alignItems: 'center',
+  },
   loadingBody: {
     fontFamily: 'PlusJakartaSans-Regular', // Figma: 400
     fontSize: 14, lineHeight: 20,
@@ -811,10 +923,49 @@ const styles = StyleSheet.create({
     maxWidth: 273, // Figma: 273px width
   },
 
-  // Logo
+  // Logo (legacy — unused after redesign, kept for any other referrers)
   logoContainer: { alignSelf: 'flex-start', marginBottom: 40 },
 
-  // Title
+  // Top row — back arrow + Verify Details / Confirm pill
+  topRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 32,
+  },
+  topRowBack: {
+    width: 32,
+    height: 32,
+    justifyContent: 'center',
+  },
+
+  // Title block (Figma: "Enter / bank details")
+  titleBlock: {
+    gap: 8,
+    marginBottom: 24,
+  },
+  heading: {
+    fontFamily: 'PlusJakartaSans-Regular',
+    fontSize: 32, lineHeight: 40, letterSpacing: -1,
+  },
+  headingWhite: { color: colors.white },
+  headingAccent: { color: colors.brand[500] },
+  subtitleText: {
+    fontFamily: 'PlusJakartaSans-Regular',
+    fontSize: 13, lineHeight: 18,
+    color: colors.neutral[500],
+  },
+  subtitleNameAccent: {
+    color: colors.brand[500],
+    textDecorationLine: 'underline' as const,
+  },
+  headerDivider: {
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: colors.black[400],
+    marginBottom: 24,
+  },
+
+  // Title (legacy — unused, kept to avoid breakage if referenced elsewhere)
   titleContainer: { marginBottom: 48 },
   titleContainerCompact: { marginBottom: 32 },
 
@@ -826,8 +977,8 @@ const styles = StyleSheet.create({
     marginBottom: 32,
   },
 
-  // Payment method selector — below progress bar, left-aligned with form fields
-  selectorContainer: { marginBottom: 32, flexDirection: 'row', justifyContent: 'flex-start' },
+  // Payment method selector — full-width pill stretching across the form
+  selectorContainer: { marginBottom: 32 },
 
   // Amount limit warning
   amountWarning: { marginBottom: 16 },
@@ -898,13 +1049,27 @@ const styles = StyleSheet.create({
   // Button section — closer to form so it's visible on initial load
   // buttonSection removed — button is now in stickyBottom
 
-  // Skip (pre-waitlist)
+  // Skip (pre-waitlist) — inline below form, not sticky
   skipButton: { paddingVertical: 4, paddingHorizontal: 12 },
+  skipInline: {
+    marginTop: 24,
+    alignSelf: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+  },
   skipText: {
     fontFamily: 'PlusJakartaSans-Medium',
     fontSize: 14, lineHeight: 20,
     color: colors.white,
     textDecorationLine: 'underline' as const,
+  },
+
+  // Bottom helper (replaces footerText for new design)
+  bottomHelper: {
+    fontFamily: 'PlusJakartaSans-Regular',
+    fontSize: 13, lineHeight: 18,
+    color: colors.neutral[500],
+    marginTop: 24,
   },
 
   // Footer — Figma: 12px Regular #A9A9A9

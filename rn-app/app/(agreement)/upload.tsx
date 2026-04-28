@@ -48,7 +48,7 @@ import * as Haptics from 'expo-haptics';
 import * as DocumentPicker from 'expo-document-picker';
 import Svg, { Path } from 'react-native-svg';
 
-import { Screen, Text, PrimaryButton, Logo } from '@/src/components';
+import { Screen, Text, PrimaryButton, Logo, BackButton } from '@/src/components';
 import { isJourneyMode, advanceJourneyStage } from '@/src/review/journeyMode';
 import { DottedGridPattern } from '@/src/components/patterns';
 import { useAgreement, useNetworkStatus } from '@/src/hooks';
@@ -236,7 +236,7 @@ const FIGMA = {
 // TYPES
 // ============================================
 
-type UploadState = 'idle' | 'uploading' | 'success' | 'error_expired' | 'error_size';
+type UploadState = 'idle' | 'uploading' | 'success' | 'error_expired' | 'error_size' | 'slow';
 interface SelectedDocument {
   uri: string;
   name: string;
@@ -254,7 +254,7 @@ const STATE_CONFIG = {
     foldCornerFill: FIGMA.colors.foldCornerFill, // #1A1A1A
     foldCornerStroke: FIGMA.colors.foldCornerStroke, // #202020
 
-    buttonTitle: 'Proceed',
+    buttonTitle: 'Upload Agreement',
     buttonEnabled: false,
     errorMessage: null as string | null,
     showDivider: true,
@@ -267,7 +267,7 @@ const STATE_CONFIG = {
     foldCornerFill: FIGMA.colors.foldCornerFill, // #1A1A1A
     foldCornerStroke: FIGMA.colors.foldCornerStroke,
 
-    buttonTitle: 'Proceed',
+    buttonTitle: 'Upload Agreement',
     buttonEnabled: false,
     errorMessage: null as string | null,
     showDivider: true,
@@ -281,7 +281,7 @@ const STATE_CONFIG = {
     foldCornerFill: FIGMA.colors.foldCornerFill, // #1A1A1A (Figma 1:30090 Vector 44)
     foldCornerStroke: FIGMA.colors.foldCornerStroke, // #202020
 
-    buttonTitle: 'Proceed',
+    buttonTitle: 'Proceed →',
     buttonEnabled: true,
     errorMessage: null as string | null,
     showDivider: true, // Figma: divider pill above active button
@@ -290,30 +290,46 @@ const STATE_CONFIG = {
   },
   error_expired: {
     borderColor: FIGMA.colors.iconError, // #E5484D
-    borderWidth: 1, // Figma 1:30178: stroke weight 1, align INSIDE
+    borderWidth: 1, // Figma 4651:76703: stroke weight 1, align INSIDE
     foldCornerFill: FIGMA.colors.foldCornerFill, // #1A1A1A
-    foldCornerStroke: FIGMA.colors.iconError, // #E5484D - matches card border
+    foldCornerStroke: FIGMA.colors.iconError, // matches card border
 
-    buttonTitle: 'Upload again',
-    buttonEnabled: true,
-    // From 1-30178 - message appears OUTSIDE the card
-    errorMessage: 'The agreement is invalid or expired. Please upload a valid one',
-    showDivider: true, // Figma: divider pill above active button
-    fileNameColor: FIGMA.colors.iconError, // Figma 1:30178: red filename
+    // Figma 4651:76703 — button text stays "Proceed →" but disabled. User taps
+    // trash to clear and try again with a different file.
+    buttonTitle: 'Proceed →',
+    buttonEnabled: false,
+    errorMessage: 'The agreement is invalid or expired. Please upload a valid one.',
+    showDivider: true,
+    fileNameColor: FIGMA.colors.fileName, // muted, matches uploaded state
     showTrashIcon: true,
   },
   error_size: {
     borderColor: FIGMA.colors.iconError,
     borderWidth: 1,
-    foldCornerFill: FIGMA.colors.foldCornerFill, // #1A1A1A
+    foldCornerFill: FIGMA.colors.foldCornerFill,
     foldCornerStroke: FIGMA.colors.iconError,
 
-    buttonTitle: 'Upload again',
+    buttonTitle: 'Proceed →',
+    buttonEnabled: false,
+    // Figma 4651:76745
+    errorMessage: 'This file is too large. Please upload a file under 10MB',
+    showDivider: true,
+    fileNameColor: FIGMA.colors.fileName,
+    showTrashIcon: true,
+  },
+  // Figma 4651:76787 — upload taking too long, offer manual entry as fallback.
+  // Border + helper text in warning orange (not red).
+  slow: {
+    borderColor: FIGMA.colors.iconWarning, // #FFB020
+    borderWidth: 1,
+    foldCornerFill: FIGMA.colors.foldCornerFill,
+    foldCornerStroke: FIGMA.colors.iconWarning,
+
+    buttonTitle: 'Enter details manually →',
     buttonEnabled: true,
-    // From 1-30268 - message appears OUTSIDE the card
-    errorMessage: 'This file is too large. Maximum size is 10MB',
-    showDivider: true, // Figma: divider pill above active button
-    fileNameColor: FIGMA.colors.iconError, // red filename
+    errorMessage: 'This is taking longer than expected. You can enter details manually instead',
+    showDivider: true,
+    fileNameColor: FIGMA.colors.fileName,
     showTrashIcon: true,
   },
 } as const;
@@ -1116,7 +1132,10 @@ export default function UploadScreen() {
 
   const handleGetNotified = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    routerRef.current.replace('/(waitlist)' as never);
+    // Figma 4651:76829 — after a successful upload + extraction, the user
+    // reviews the auto-filled fields. From there: Confirm & Continue → setup-intro,
+    // or "Edit Missing Details" / tap a row → manual-entry.
+    routerRef.current.replace('/(agreement)/upload-review' as never);
   }, []);
 
   // Get current state config
@@ -1133,7 +1152,15 @@ export default function UploadScreen() {
     switch (uploadState) {
       case 'error_expired':
       case 'error_size':
+        // Button is disabled in these states (Figma 4651:76703 / 76745).
+        // User must tap trash to clear and re-pick. This branch is a no-op
+        // safety net in case button gets enabled.
         handleRetry();
+        break;
+      case 'slow':
+        // Figma 4651:76787 — manual entry fallback when upload is taking too long.
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        routerRef.current.push('/(agreement)/manual-entry' as never);
         break;
       case 'success':
         handleGetNotified();
@@ -1167,27 +1194,29 @@ export default function UploadScreen() {
       >
         {/* Header Section - Frame 1686557318 (node 1:29986) */}
         <View style={styles.headerSection}>
-          {/* Logo - Frame 1686557264 (node 1:29987) */}
-          {/* Extraction shows: width: 32.04, height: 38.4 */}
-          <View>
-            <Logo size={38} />
-          </View>
+          {/* Back arrow — Figma 4651:76276 has a back arrow at top-left, no logo */}
+          <BackButton
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              routerRef.current.back();
+            }}
+            color={colors.white}
+            style={{ width: 32, height: 32, justifyContent: 'center' }}
+          />
 
-          {/* Text Block - Frame 2095586319 */}
+          {/* Text Block — Figma 4651:76276 */}
           <View style={styles.textBlock}>
-            {/* Title - "One\nMore Step" with mixed styles */}
             <View>
               <Text style={styles.titleGray}>
-                One
+                Upload
               </Text>
               <Text style={styles.titleAccent}>
-                More Step
+                rental agreement
               </Text>
             </View>
 
-            {/* Subtitle - exact Figma text from 1:29991 */}
             <Text style={styles.subtitle}>
-              Your rental agreement helps us confirm your eligibility and unlock your Secured benefits.
+              We&apos;ll auto-fill your details for verification. Takes ~10 seconds.
             </Text>
           </View>
 
@@ -1313,6 +1342,25 @@ export default function UploadScreen() {
             showDivider={config.showDivider}
             testID="proceed-button"
           />
+
+          {/* "Don't have a rent agreement?" — Figma 4651:76276
+              Only shown in idle state before upload starts. Routes to manual entry. */}
+          {uploadState === 'idle' && !document && (
+            <TouchableOpacity
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                routerRef.current.push('/(agreement)/manual-entry' as never);
+              }}
+              style={styles.manualLinkRow}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              testID="manual-entry-link"
+            >
+              <Text style={styles.manualLinkText}>
+                Don&apos;t have a rent agreement?{' '}
+                <Text inherit style={styles.manualLinkAccent}>Enter details manually</Text>
+              </Text>
+            </TouchableOpacity>
+          )}
         </View>
       </ScrollView>
     </Screen>
@@ -1529,5 +1577,23 @@ const styles = StyleSheet.create({
   buttonContainer: {
     width: FIGMA.layout.contentWidth, // 297
     marginTop: FIGMA.layout.buttonGap, // 40px itemSpacing from Frame 1686557268
+  },
+
+  // "Don't have a rent agreement? Enter details manually" — Figma 4651:76276
+  manualLinkRow: {
+    marginTop: 16,
+    alignSelf: 'center',
+    paddingVertical: 4,
+  },
+  manualLinkText: {
+    fontFamily: 'PlusJakartaSans-Regular',
+    fontSize: 13,
+    lineHeight: 18,
+    color: colors.neutral[500],
+    textAlign: 'center',
+  },
+  manualLinkAccent: {
+    color: colors.brand[500],
+    textDecorationLine: 'underline',
   },
 });

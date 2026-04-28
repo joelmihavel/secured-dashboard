@@ -198,7 +198,6 @@ const PhoneInputComponent = forwardRef<RNTextInput, PhoneInputProps>(
             onPress={() => !disabled && setPickerVisible(true)}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           >
-            <RNText style={styles.flagText}>{selectedCountry.flag}</RNText>
             <RNText style={[styles.countryCode, { color: countryCodeColor }]}>{countryCode}</RNText>
             <Svg width={16} height={16} viewBox="0 0 16 16" fill="none">
               <Path

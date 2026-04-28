@@ -72,6 +72,7 @@ import {
   CashbackModuleState,
   VerificationStatusSheet,
 } from '@/src/components/home';
+import { Marquee, TOP_MARQUEE_ITEMS, BOTTOM_MARQUEE_ITEMS } from '@/src/components/auth/landing-decor';
 
 import type { CashbackEarningsEntry } from '@/src/components/home/CashbackEarningsCard';
 import type { SetupStep } from '@/src/components/home/CashbackSetupSteps';
@@ -838,6 +839,16 @@ export default function HomeScreen() {
           <HomeHeader userName={userName} userId={user?.id} unreadCount={unreadCount} />
         </Animated.View>
 
+        {/* Marquee bands — Figma 4651:142960. Always visible on home. */}
+        <View style={styles.homeMarquees} pointerEvents="none">
+          <View style={[styles.marqueeRotated, { transform: [{ rotate: '0.22deg' }] }]}>
+            <Marquee items={TOP_MARQUEE_ITEMS} backgroundColor={colors.black[600]} />
+          </View>
+          <View style={[styles.marqueeRotated, { transform: [{ rotate: '-0.48deg' }] }]}>
+            <Marquee items={BOTTOM_MARQUEE_ITEMS} backgroundColor={colors.brand[600]} reverse />
+          </View>
+        </View>
+
         <Animated.View entering={FadeInDown.delay(80).duration(350)} style={styles.mainContent}>
           {/* Dashboard Content */}
           {renderDashboardContent(dashboardState, {
@@ -1197,6 +1208,17 @@ const styles = StyleSheet.create({
     // NO flex: 1 — inside ScrollView, children must hug content, not stretch.
     // flex: 1 caused invisible flex-fill space distributed between children.
     gap: 24, // Figma 769:308866: itemSpacing 24 between top-level sections
+  },
+  homeMarquees: {
+    // Marquee bands sit just below the header. Negative side margins let the
+    // rotated bands overflow horizontally without clipping.
+    marginHorizontal: -220,
+    marginTop: 8,
+    marginBottom: 12,
+  },
+  marqueeRotated: {
+    width: 847,
+    alignSelf: 'center',
   },
   scrollContentWithFooter: {
     // Footer height (~118) + base padding = total bottom clearance

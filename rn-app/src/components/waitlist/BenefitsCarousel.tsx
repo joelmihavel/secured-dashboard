@@ -65,16 +65,16 @@ function PaperclipSvg() {
 }
 
 // ============================================
-// DECORATIVE SPARKLE SVG
+// DECORATIVE PLUS / SPARKLE SVG
+// Figma 4651:78274 uses an orange diamond-cross marker centred in the card.
 // ============================================
 
-function SparkleSvg({ size = 20 }: { size?: number }) {
+function PlusMarkerSvg({ size = 28 }: { size?: number }) {
   return (
-    <Svg width={size} height={size * 1.7} viewBox="0 0 21 35" fill="none">
+    <Svg width={size} height={size} viewBox="0 0 28 28" fill="none">
       <Path
-        d="M10.5 0L12.3 13.5L21 17.5L12.3 21.5L10.5 35L8.7 21.5L0 17.5L8.7 13.5L10.5 0Z"
-        fill={colors.black[400]}
-        opacity={0.4}
+        d="M14 4 L15 13 L24 14 L15 15 L14 24 L13 15 L4 14 L13 13 Z"
+        fill={colors.brand[500]}
       />
     </Svg>
   );
@@ -108,23 +108,12 @@ function BenefitCard({ item }: { item: BenefitCardData }) {
         <PaperclipSvg />
       </View>
 
-      {/* Sparkle decorations */}
-      <View style={cardStyles.sparkleTopLeft}>
-        <SparkleSvg size={14} />
-      </View>
-      <View style={cardStyles.sparkleTopRight}>
-        <SparkleSvg size={14} />
-      </View>
-
-      {/* Centered content */}
+      {/* Centered content — Figma 4651:78274: orange + marker on top, text, Live Now badge */}
       <View style={cardStyles.content}>
-        {/* Flent logo */}
-        <Logo size={36} color={colors.neutral[500]} />
+        <PlusMarkerSvg size={28} />
 
-        {/* Description text */}
         <RNText style={cardStyles.description}>{item.text}</RNText>
 
-        {/* Status badge */}
         <View style={cardStyles.badge}>
           <RNText style={[cardStyles.badgeText, isLive ? cardStyles.badgeLive : cardStyles.badgeComingSoon]}>
             {isLive ? 'Live Now' : 'Coming Soon'}

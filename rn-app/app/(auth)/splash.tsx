@@ -1,33 +1,23 @@
 /**
  * Splash / Get Started Screen
- * Figma Node: 684:3081
+ * Figma Node: 4651:75972 (Splash / get-started --1)
  *
- * Figma Values (from get_design_context 2026-02-25):
- * - Background: #131313 (colors.black[700])
- * - Dotted pattern: 8% opacity dots (DottedGridPattern)
- * - Background Shape (174:2668): 481x405px, opacity 48%, centered horizontally, top -100px
- * - Vector 1 (1:28057): 333.751x400px, bottom-0, right-[-120.56px], -scale-y-100, opacity 1%
- * - Content container: h-613px, centered vertically with +85.5px offset, pb-64, px-48
- * - Logo: 33.375x40px
- * - Logo→text gap: 40px
- * - Heading: PlusJakartaSans-Regular, 48/64, letterSpacing -2
- *   "Make\nyour rent\n" = #A9A9A9, "work for you→" = #FF9A6D
- * - Body: PlusJakartaSans-Regular, 14/20, #A6A6A6
- * - Heading→body gap: 16px
- * - Button: "Get Started" (PrimaryButton component)
- * - Login: "Already a user? Log in", 14/20, white, "Log in" underlined
- * - Button→login gap: 24px
+ * Brand intro screen — "Welcome to Secured by flent" with rotated marquee bands
+ * advertising rent cashback. Tap Get Started → welcome (Frame 2).
  */
 
 import React, { useCallback, useRef } from 'react';
-import { View, StyleSheet, Pressable } from 'react-native';
+import { View, StyleSheet, Image } from 'react-native';
 import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { Screen, Logo, Text, PrimaryButton, DottedGridPattern } from '@/src/components';
+import { Screen, Logo, Text, PrimaryButton } from '@/src/components';
+import { BgLine, MarqueeStack, Plus, Wordmark } from '@/src/components/auth/landing-decor';
 import { colors } from '@/src/theme';
 import { s, sf, sv } from '@/src/theme/scale';
+
+const LANDING_BG = require('../../assets/images/patterns/landing-bg.png');
 
 export default function SplashScreen() {
   const router = useRouter();
@@ -39,57 +29,51 @@ export default function SplashScreen() {
   const handleGetStarted = useCallback(() => {
     if (navigating.current) return;
     navigating.current = true;
-    routerRef.current.replace('/(auth)/carousel');
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    routerRef.current.push('/(auth)/welcome');
     setTimeout(() => { navigating.current = false; }, 1000);
   }, []);
 
-  const handleLogin = useCallback(() => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    routerRef.current.push('/(auth)/sign-up');
-  }, []);
-
-  // Figma frame height 852, content ends at y=818, bottom safe area = 34px
-  const paddingBottom = Math.max(insets.bottom, 34);
+  const paddingBottom = Math.max(insets.bottom, sv(34));
 
   return (
     <Screen padded={false} testID="splash-screen" safeAreaTop={false} safeAreaBottom={false} style={styles.screen}>
-      {/* Dotted grid background and splash shape */}
-      <DottedGridPattern fadeMask={false} />
+      <Image
+        source={LANDING_BG}
+        style={styles.bgImage}
+        resizeMode="cover"
+        accessibilityElementsHidden
+        importantForAccessibility="no"
+      />
 
-      {/* Content — Figma: h-613, centered vertically, pb-64, px-48 */}
-      <View style={[styles.outerContainer, { paddingBottom }]}>
-        <View style={styles.mainContent}>
-          <View style={styles.topSection}>
-            <Logo size={40} />
-            <View style={styles.textContainer}>
-              <Text style={styles.heading}>
-                Make{'\n'}your rent{'\n'}
-                <Text inherit style={styles.headingAccent}>work for you→</Text>
-              </Text>
-              <Text style={styles.subheading}>
-                Secured is India’s first rent payment app built to reward reliable tenants.
-              </Text>
-            </View>
-          </View>
+      <BgLine style={styles.bgLinePosition} />
 
-          <View style={styles.bottomSection}>
-            <PrimaryButton
-              title="Get started"
-              onPress={handleGetStarted}
-              showDivider={true}
-              testID="get-started-button"
-            />
-            <Pressable
-              onPress={handleLogin}
-              style={styles.loginContainer}
-              hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-            >
-              <Text style={styles.loginText}>
-                Already a user? <Text inherit style={styles.loginLink}>Log in</Text>
-              </Text>
-            </Pressable>
-          </View>
+      <MarqueeStack />
+
+      {/* Decorative "+" markers — Figma 4651:76010 (26,740) and 4651:76012 (359,578) on the 393×852 splash frame */}
+      <Plus style={{ left: s(26), top: sv(740) }} />
+      <Plus style={{ left: s(359), top: sv(578) }} />
+
+      <View style={[styles.logoSlot, { top: insets.top + sv(220) }]}>
+        <Logo size={40} />
+      </View>
+
+      <View style={styles.welcomeBlock}>
+        <Text style={styles.welcomeTo}>Welcome to</Text>
+        <Text style={styles.brandName}>Secured</Text>
+        <View style={styles.byFlentRow}>
+          <Text style={styles.byText}>by</Text>
+          <Wordmark width={s(39)} height={s(14)} color={colors.white} />
         </View>
+      </View>
+
+      <View style={[styles.ctaWrap, { bottom: paddingBottom + sv(36) }]}>
+        <PrimaryButton
+          title="Get Started →"
+          onPress={handleGetStarted}
+          showDivider
+          testID="get-started-button"
+        />
       </View>
     </Screen>
   );
@@ -100,66 +84,64 @@ const styles = StyleSheet.create({
     backgroundColor: colors.black[700],
     flex: 1,
   },
-  // Content layout: Figma h-613, flex-end aligned, pb-64 — scaled for device
-  outerContainer: {
-    flex: 1,
-    justifyContent: 'flex-end',
+  bgImage: {
+    position: 'absolute',
+    top: sv(-66),
+    left: s(-18),
+    width: s(469),
+    height: sv(664),
+    opacity: 0.32,
   },
-  mainContent: {
-    height: sv(613),
-    flexDirection: 'column',
-    justifyContent: 'space-between',
-    paddingBottom: sv(64),
+  bgLinePosition: {
+    left: '50%',
+    top: '50%',
+    marginLeft: -s(405) / 2,
+    marginTop: sv(229.5) - sv(269) / 2,
   },
-  topSection: {
-    width: '100%',
-    flexDirection: 'column',
-    paddingHorizontal: s(48),
-    gap: sv(40),
-  },
-  textContainer: {
-    width: '100%',
-    flexDirection: 'column',
-    gap: sv(16),
-  },
-  // Heading: Figma 48/64, letterSpacing -2, PlusJakartaSans-Regular — scaled
-  heading: {
-    fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: sf(48),
-    lineHeight: sf(64),
-    letterSpacing: -2,
-    color: colors.neutral[500], // #A9A9A9
-  },
-  headingAccent: {
-    color: colors.brand[500], // #FF9A6D
-  },
-  // Body: Figma 14/20, #A6A6A6 — scaled
-  subheading: {
-    fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: sf(14),
-    lineHeight: sf(20),
-    color: colors.black[200], // #A6A6A6
-  },
-  bottomSection: {
-    width: '100%',
-    flexDirection: 'column',
+  logoSlot: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
     alignItems: 'center',
-    paddingHorizontal: s(48),
-    gap: sv(24),
   },
-  loginContainer: {
-    width: '100%',
+  welcomeBlock: {
+    position: 'absolute',
+    top: sv(524),
+    left: 0,
+    right: 0,
     alignItems: 'center',
-    justifyContent: 'center',
   },
-  // Login text: Figma 14/20, white — scaled
-  loginText: {
+  welcomeTo: {
     fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: sf(14),
-    lineHeight: sf(20),
+    fontSize: sf(22),
+    lineHeight: sf(35),
     color: colors.white,
   },
-  loginLink: {
-    textDecorationLine: 'underline',
+  brandName: {
+    fontFamily: 'PlusJakartaSans-Regular',
+    fontSize: sf(40),
+    lineHeight: sf(56),
+    letterSpacing: -1,
+    color: colors.brand[500],
+    marginTop: sv(24),
+  },
+  byFlentRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: s(4),
+    marginTop: sv(20),
+  },
+  byText: {
+    fontFamily: 'PlusJakartaSans-Regular',
+    fontSize: sf(17),
+    lineHeight: sf(20),
+    letterSpacing: -0.6,
+    color: colors.white,
+  },
+  ctaWrap: {
+    position: 'absolute',
+    left: s(48),
+    right: s(48),
+    alignItems: 'center',
   },
 });

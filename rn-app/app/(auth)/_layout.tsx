@@ -21,7 +21,9 @@ export default function AuthLayout() {
     >
       <Stack.Screen name="splash" options={{ gestureEnabled: false }} />
       <Stack.Screen name="beta-splash" options={{ gestureEnabled: false }} />
+      <Stack.Screen name="welcome" options={{ gestureEnabled: false }} />
       <Stack.Screen name="carousel" />
+      <Stack.Screen name="login" />
       <Stack.Screen name="sign-up" />
       <Stack.Screen
         name="otp"

@@ -103,6 +103,8 @@ function RootLayoutInner() {
     'PlusJakartaSans-Bold': require('@/assets/fonts/PlusJakartaSans-Bold.ttf'),
     // Inter
     'Inter-Regular': require('@/assets/fonts/Inter-Regular.ttf'),
+    // Geist Pixel — used by the marquee bands (Figma 4651:75946)
+    'GeistPixel-Triangle': require('@/assets/fonts/GeistPixel-Triangle.ttf'),
   });
 
   // NOTE: SplashScreen.hideAsync() is NOT called here on font load.

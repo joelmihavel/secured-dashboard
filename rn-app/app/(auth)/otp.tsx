@@ -1,6 +1,6 @@
 /**
  * OTP Verification Screen (Bottom Sheet)
- * Figma Nodes: 1-31175 (empty), 1-31073 (filled), 1-31277 (error1), 1-31380 (error2)
+ * Figma Nodes: 4651:150631 (default), 4651:150938 (Wrong Code), 4651:150834 (Too many Attempts)
  *
  * PIXEL-PERFECT Figma Values (verified from all 4 blueprint JSONs):
  *
@@ -121,7 +121,10 @@ async function resolvePostOtpTarget(userId: string): Promise<string> {
         return '/(waitlist)';
       case 'signed_up':
       default:
-        return '/(agreement)/upload';
+        // First time post-OTP — show the agreement intro before the upload screen.
+        // Returning users (signed_up but app reopened) are routed by index.tsx
+        // directly to /(agreement)/upload, so the intro is one-shot.
+        return '/(agreement)/intro';
     }
   } catch {
     return '/(agreement)/upload';

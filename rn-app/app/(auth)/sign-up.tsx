@@ -23,16 +23,19 @@
  */
 
 import React, { useState, useCallback, useRef, useEffect } from 'react';
-import { View, StyleSheet, TextInput as RNTextInput } from 'react-native';
+import { View, StyleSheet, TextInput as RNTextInput, Image } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import { useRouter, useLocalSearchParams } from 'expo-router';
+import * as Haptics from 'expo-haptics';
 
-import { Screen, Logo, Text, PrimaryButton, PhoneInput, TextInput, SkeletonLoader } from '@/src/components';
-import { DottedGridPattern, ConsentToggle } from '@/src/components';
+import { Screen, Text, PrimaryButton, PhoneInput, TextInput, SkeletonLoader, BackButton } from '@/src/components';
+import { ConsentToggle } from '@/src/components';
 import { useAuth } from '@/src/hooks';
 import { useAuthStore } from '@/src/stores/auth';
 import { colors, typography } from '@/src/theme';
 import { s, sf, sv } from '@/src/theme/scale';
+
+const SIGNUP_BG = require('../../assets/images/patterns/signup-bg.png');
 
 // Exact Figma color values mapped to theme tokens
 const FIGMA_COLORS = {
@@ -70,24 +73,15 @@ const FIGMA_DIMENSIONS = {
   consentWidth: s(234.5),              // Figma: consent text width
 };
 
-// Exact Figma spacing gaps from enhanced-extraction.json
+// Figma 4651:150110 — outer container has gap 40 between two child groups.
+// Group A (4651:150111): back-arrow / heading / inputs, gap 48.
+// Group B (4651:150118): button / consent row, gap 16.
 const FIGMA_GAPS = {
-  // Frame 1686557318 (inner stack: Logo, Title, Inputs, Actions) uses itemSpacing: 48
-  innerStackGap: 48,                   // Figma Frame 1686557318 itemSpacing: 48
-  formInputsGap: 16,                   // Between form inputs (Figma Frame 90:2928 itemSpacing: 16)
-  inputLabelGap: 6,                    // Between label and input field (Figma itemSpacing: 6)
-  buttonToConsent: 16,                 // Button to consent gap (Figma Frame 1:29185 itemSpacing: 16)
+  topGroupGap: 48,                     // Group A itemSpacing
+  groupsGap: 40,                       // Between Group A and Group B
+  formInputsGap: 16,                   // Between phone + name inputs
+  bottomGroupGap: 16,                  // Group B itemSpacing
 } as const;
-
-// Exact Figma layout positioning
-// Screen frame starts at Y=350, Logo (Vector 1) at Y=451
-// Total offset from screen top = 451 - 350 = 101px
-// SafeAreaView adds ~53px for status bar (Figma "Status Bar" instance height)
-// Additional paddingTop needed = 101 - 53 = 48px
-const FIGMA_LAYOUT = {
-  // SafeAreaView top is disabled, so we use the full 101px offset
-  contentTopOffset: sv(101),            // Figma: 101px total from top of screen
-};
 
 export default function SignUpScreen() {
   const router = useRouter();
@@ -177,6 +171,15 @@ export default function SignUpScreen() {
     }
   }, [isSendingOtp]);
 
+  const handleBack = useCallback(() => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    if (routerRef.current.canGoBack()) {
+      routerRef.current.back();
+    } else {
+      routerRef.current.replace('/(auth)/welcome');
+    }
+  }, []);
+
   const handleGetStarted = useCallback(() => {
     if (!isFormValid || isSendingRef.current || isSendingOtp) return;
 
@@ -201,8 +204,14 @@ export default function SignUpScreen() {
 
   return (
     <Screen padded={false} testID="sign-up-screen" safeAreaTop={false}>
-      {/* Background Pattern - uses actual Figma images with correct opacity (8%) */}
-      <DottedGridPattern fadeMask={false} />
+      {/* Background — orbital halftone with floating coins, Figma image 150 */}
+      <Image
+        source={SIGNUP_BG}
+        style={styles.bgImage}
+        resizeMode="cover"
+        accessibilityElementsHidden
+        importantForAccessibility="no"
+      />
 
       <KeyboardAwareScrollView
         bottomOffset={20}
@@ -211,23 +220,22 @@ export default function SignUpScreen() {
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
-        {/* Main Container - Figma Frame 1686557268 */}
+        {/* Main Container — Figma 4651:150110 (centered vertically, gap 40 between groups) */}
         <View style={styles.container}>
-          {/* Inner Stack - Figma Frame 1686557318 with gap: 48 */}
-          <View style={styles.innerStack}>
-            {/* Logo - Figma: 32.04x38.4 (Frame 1686557264) */}
-            <Logo size={38.4} />
+          {/* Group A — Figma 4651:150111: back arrow / heading / inputs (gap 48) */}
+          <View style={styles.topGroup}>
+            <BackButton
+              onPress={handleBack}
+              style={styles.backButton}
+              testID="back-button"
+            />
 
-            {/* Title - Figma 1:29183: "Let's get to " in #A9A9A9, "know you" in #FF9A6D */}
             <Text style={styles.headingGray}>
               Let's get to{'\n'}
               <Text inherit style={styles.headingAccent}>know  you</Text>
             </Text>
 
-            {/* Form - Figma Frame 90:2928 with gap: 16 */}
             <View style={styles.formContainer}>
-              {/* Phone Input - Figma placeholder: "Enter Number" */}
-              {/* Figma 1:29108: Hint Text#48:17 = false in empty state; show only when filled */}
               <PhoneInput
                 label="Phone"
                 value={phone}
@@ -239,9 +247,6 @@ export default function SignUpScreen() {
                 placeholder="Enter Number"
                 testID="phone-input"
               />
-
-              {/* Name Input - Figma placeholder: "e.g. John Appleseed" */}
-              {/* Figma 1:29108: Hint Text = hidden in empty state; show only when filled */}
               <TextInput
                 ref={nameInputRef}
                 label="Name"
@@ -253,26 +258,23 @@ export default function SignUpScreen() {
                 testID="name-input"
               />
             </View>
+          </View>
 
-            {/* Button + Consent - Figma Frame 1:29185 with gap: 16 */}
-            <View style={styles.bottomSection}>
-              {/* Get Started Button - Figma shows NO divider above button */}
-              <PrimaryButton
-                title="Get started"
-                onPress={handleGetStarted}
-                disabled={!isFormValid}
-                loading={isSendingOtp}
-                showDivider={true}
-                testID="get-started-button"
-              />
-
-              {/* Consent Toggle */}
-              <ConsentToggle
-                value={consent}
-                onValueChange={handleConsentChange}
-                testID="consent-toggle"
-              />
-            </View>
+          {/* Group B — Figma 4651:150118: button / consent row (gap 16) */}
+          <View style={styles.bottomGroup}>
+            <PrimaryButton
+              title="Get started"
+              onPress={handleGetStarted}
+              disabled={!isFormValid}
+              loading={isSendingOtp}
+              showDivider={true}
+              testID="get-started-button"
+            />
+            <ConsentToggle
+              value={consent}
+              onValueChange={handleConsentChange}
+              testID="consent-toggle"
+            />
           </View>
         </View>
       </KeyboardAwareScrollView>
@@ -287,21 +289,38 @@ const styles = StyleSheet.create({
   scrollContent: {
     flexGrow: 1,
   },
-  container: {
-    flex: 1,
-    // Figma Frame 1686557268: paddingRight=48, paddingLeft=48, counterAxisAlignItems=CENTER
-    paddingHorizontal: FIGMA_DIMENSIONS.containerPadding,
-    alignItems: 'center',               // Figma: counterAxisAlignItems: CENTER
-    // Figma: Content starts at Y=451, screen at Y=350 (101px offset)
-    // SafeAreaView handles ~53px status bar, so additional padding = 48px
-    paddingTop: FIGMA_LAYOUT.contentTopOffset,
+  bgImage: {
+    position: 'absolute',
+    top: sv(44),
+    left: s(-48),
+    width: s(469),
+    height: sv(664),
+    opacity: 0.24,
   },
-  innerStack: {
-    // Figma Frame 1686557318: VERTICAL layout with itemSpacing: 48
-    // Contains: Logo, Title, Inputs container, Actions container
+  // Figma 4651:150611 — 32×32, left-aligned within the 297-wide content stack.
+  backButton: {
+    alignSelf: 'flex-start',
+  },
+  container: {
+    // Figma 4651:150110 — centered vertically (top:50% −translate-y-1/2),
+    // 48px horizontal padding, 40px gap between top and bottom groups.
+    flex: 1,
+    paddingHorizontal: FIGMA_DIMENSIONS.containerPadding,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: FIGMA_GAPS.groupsGap,
+  },
+  topGroup: {
+    // Figma 4651:150111 — back arrow / heading / inputs, gap 48.
     flexDirection: 'column',
-    gap: FIGMA_GAPS.innerStackGap,        // 48px per Figma
-    width: FIGMA_DIMENSIONS.contentWidth, // 297px per Figma
+    gap: FIGMA_GAPS.topGroupGap,
+    width: FIGMA_DIMENSIONS.contentWidth,
+  },
+  bottomGroup: {
+    // Figma 4651:150118 — button / consent row, gap 16.
+    flexDirection: 'column',
+    gap: FIGMA_GAPS.bottomGroupGap,
+    width: FIGMA_DIMENSIONS.contentWidth,
   },
   headingGray: {
     ...typography.h1,
@@ -314,12 +333,7 @@ const styles = StyleSheet.create({
     color: FIGMA_COLORS.headingAccent,    // #FF9A6D - "know you" orange accent
   },
   formContainer: {
-    // Figma Frame 90:2928: VERTICAL layout with itemSpacing: 16
-    gap: FIGMA_GAPS.formInputsGap,        // 16px per Figma
-  },
-  bottomSection: {
-    // Figma Frame 1:29185: VERTICAL layout with itemSpacing: 16
-    // Contains: Button, Consent toggle row
-    gap: FIGMA_GAPS.buttonToConsent,      // 16px per Figma
+    // Figma 4651:150115 — phone + name inputs, gap 16.
+    gap: FIGMA_GAPS.formInputsGap,
   },
 });
