@@ -26,6 +26,7 @@ import { serve } from "https://deno.land/std@0.208.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
 import { handleCors, jsonResponse, errorResponse } from "../_shared/cors.ts";
 import { notifyUser, scheduleNotification } from "../_shared/notifications.ts";
+import { isWhatsAppAutomatedEnabled } from "../_shared/feature-flags.ts";
 import type { NotificationType } from "../_shared/notification-templates.ts";
 
 function getSupabaseUrl(): string {
@@ -66,6 +67,16 @@ serve(async (req: Request) => {
     const supabase = createClient(supabaseUrl, serviceKey, {
       auth: { autoRefreshToken: false, persistSession: false },
     });
+
+    // Daily reminder cron — fully automated. Skip when operator paused
+    // automated WA so we don't insert dedup rows or fan out for nothing.
+    if (!(await isWhatsAppAutomatedEnabled())) {
+      return jsonResponse({
+        success: true,
+        results: [],
+        message: "whatsapp_automated_disabled",
+      });
+    }
 
     const results: ReminderResult[] = [];
     const today = nowIST();

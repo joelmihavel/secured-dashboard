@@ -34,6 +34,12 @@ import {
   type NotificationType,
 } from "../_shared/notification-templates.ts";
 import { sendWhatsAppForUser } from "../_shared/notifications.ts";
+import {
+  reserveWhatsAppSlot,
+  releaseWhatsAppSlot,
+  logSendOutcome,
+} from "../_shared/notification-policy.ts";
+import { isWhatsAppSendEnabled } from "../_shared/feature-flags.ts";
 
 // ==============================================
 // TYPES
@@ -151,17 +157,15 @@ serve(async (req: Request) => {
     } = validatedBody;
 
     // ------------------------------------------
-    // 1. Check notification preferences
+    // 1. Check push preferences (WA prefs are handled inside reserveWhatsAppSlot)
     // ------------------------------------------
     const prefColumn = PREFERENCE_MAP[notification_type];
     let pushAllowed = true;
-    // WhatsApp preference (default: allowed)
-    let waAllowed = true;
 
     if (prefColumn) {
       const { data: prefs } = await supabase
         .from("notification_preferences")
-        .select(`push_enabled, whatsapp_enabled, ${prefColumn}`)
+        .select(`push_enabled, ${prefColumn}`)
         .eq("user_id", user_id)
         .single();
 
@@ -173,27 +177,17 @@ serve(async (req: Request) => {
         } else if ((prefs as any)[prefColumn] === false) {
           pushAllowed = false;
         }
-        // deno-lint-ignore no-explicit-any
-        if ((prefs as any).whatsapp_enabled === false) {
-          waAllowed = false;
-        }
       }
-      // If no prefs row → fail-open: send anyway
+      // If no prefs row → fail-open
     } else {
-      // No preference column (always-send types like waitlist) — still check global push_enabled
       const { data: prefs } = await supabase
         .from("notification_preferences")
-        .select("push_enabled, whatsapp_enabled")
+        .select("push_enabled")
         .eq("user_id", user_id)
         .single();
-
       // deno-lint-ignore no-explicit-any
       if (prefs && (prefs as any).push_enabled === false) {
         pushAllowed = false;
-      }
-      // deno-lint-ignore no-explicit-any
-      if (prefs && (prefs as any).whatsapp_enabled === false) {
-        waAllowed = false;
       }
     }
 
@@ -301,14 +295,47 @@ serve(async (req: Request) => {
       channelPromises.push(pushPromise.then((r) => ({ channel: "push", result: r })));
     }
 
-    // WhatsApp notification promise
-    if (waAllowed && WHATSAPP_TEMPLATE_MAP[notification_type]) {
-      const waPromise = sendWhatsAppForUser(
-        supabase, user_id, notification_type, template_vars,
-      ).catch((e: Error) => {
-        console.error("[notify-user] WhatsApp error:", e);
-        return { success: false, error: e.message };
-      });
+    // WhatsApp — race-safe slot reservation, then send, then release.
+    if (WHATSAPP_TEMPLATE_MAP[notification_type]) {
+      const waPromise = (async () => {
+        // Short-circuit before reserving a slot: when the master kill is on,
+        // the slot would just be reserved and immediately released as
+        // 'failed', polluting the send log. The cached flag check is cheap.
+        if (!(await isWhatsAppSendEnabled())) {
+          return { success: false, error: "wa_kill_switch" };
+        }
+        const reservation = await reserveWhatsAppSlot(
+          supabase,
+          user_id,
+          notification_type,
+          { source: "notify-user" },
+        );
+        if (!reservation.allowed) {
+          await logSendOutcome(supabase, {
+            user_id,
+            notification_type,
+            outcome: "skipped",
+            skip_reason: reservation.reason,
+            context: { source: "notify-user" },
+          });
+          return { success: false, error: `policy_skip:${reservation.reason}` };
+        }
+        const result = await sendWhatsAppForUser(
+          supabase, user_id, notification_type, template_vars,
+        ).catch((e: Error) => {
+          console.error("[notify-user] WhatsApp error:", e);
+          return { success: false, error: e.message };
+        });
+        const sendResult = result as { success: boolean; error?: string; messageId?: string };
+        await releaseWhatsAppSlot(
+          supabase,
+          reservation.slotId,
+          sendResult.success ? "sent" : "failed",
+          sendResult.messageId,
+          sendResult.success ? undefined : sendResult.error,
+        );
+        return result;
+      })();
       channelPromises.push(waPromise.then((r) => ({ channel: "wa", result: r })));
     }
 

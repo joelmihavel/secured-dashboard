@@ -21,6 +21,7 @@ import { handleCors, jsonResponse, errorResponse, getCorsHeaders } from "../_sha
 import { AppError, NotFoundError, ValidationError, handleError } from "../_shared/errors.ts";
 import { AuditLogger, AuditActions } from "../_shared/audit.ts";
 import { notifyUser, sendWhatsApp } from "../_shared/notifications.ts";
+import { reserveWhatsAppSlot, releaseWhatsAppSlot } from "../_shared/notification-policy.ts";
 import { checkAndUpgradeLandlordStatus } from "../_shared/landlord-m360-check.ts";
 
 serve(async (req: Request) => {
@@ -258,7 +259,7 @@ async function handleConfirm(
     ? landlordUser.phone
     : `+${landlordUser.phone.replace(/\D/g, "")}`;
 
-  Promise.all([
+  Promise.allSettled([
     // Push notification to tenant
     notifyUser(supabaseUrl, serviceKey, {
       user_id: tenancy.user_id,
@@ -270,12 +271,52 @@ async function handleConfirm(
       related_entity_type: "tenancy",
       related_entity_id: tenancy.id,
     }),
-    // WhatsApp thank-you to landlord
-    sendWhatsApp({
-      to: landlordE164,
-      template: "HXcbf7e476ac60af8a9cc548028ef914ea",
-    }),
-  ]).catch((err) => console.error("[landlord-confirm] Notification error:", err));
+    // WhatsApp thank-you to landlord — policy-gated (respects landlord's
+    // whatsapp_enabled and global daily cap). Wrapped in try/finally so a
+    // thrown sendWhatsApp doesn't leak the reserved slot.
+    (async () => {
+      const reservation = await reserveWhatsAppSlot(
+        supabase,
+        landlordUserId,
+        "landlord_thank_you",
+        { source: "landlord-confirm", tenancy_id: tenancy.id },
+      );
+      if (!reservation.allowed) {
+        console.warn(
+          `[landlord-confirm] WA thank-you skipped for ${landlordUserId}: ${reservation.reason}`,
+        );
+        return;
+      }
+      let result: { success: boolean; messageId?: string; error?: string } | null = null;
+      try {
+        result = await sendWhatsApp({
+          to: landlordE164,
+          template: "HXcbf7e476ac60af8a9cc548028ef914ea",
+        });
+      } finally {
+        await releaseWhatsAppSlot(
+          supabase,
+          reservation.slotId,
+          result?.success ? "sent" : "failed",
+          result?.messageId,
+          result?.success ? undefined : result?.error ?? "send threw",
+        );
+      }
+    })(),
+  ]).then((results) => {
+    // allSettled: each channel reports independently — a thrown WA send
+    // doesn't mask a failed tenant push (or vice versa).
+    // NOTE: index → channel mapping is bound to the array order above:
+    //   [0] = notifyUser tenant push, [1] = WhatsApp thank-you to landlord.
+    // Keep array order stable when editing.
+    const CHANNEL_BY_INDEX = ["tenant_push", "landlord_wa"] as const;
+    results.forEach((r, i) => {
+      if (r.status === "rejected") {
+        const channel = CHANNEL_BY_INDEX[i] ?? `channel_${i}`;
+        console.error(`[landlord-confirm] ${channel} failed:`, r.reason);
+      }
+    });
+  });
 
   // Fire-and-forget: check M360 name match and upgrade to 'verified' if matched
   checkAndUpgradeLandlordStatus(tenancy.id, tenancy.landlord_phone, supabase)

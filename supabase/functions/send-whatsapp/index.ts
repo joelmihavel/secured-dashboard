@@ -15,6 +15,7 @@ import { AppError, ValidationError, handleError } from "../_shared/errors.ts";
 import { validateSchema, sanitizePhone, isValidIndianPhone } from "../_shared/validation.ts";
 import { AuditLogger, AuditActions } from "../_shared/audit.ts";
 import { sendWhatsApp, WhatsAppMessage } from "../_shared/notifications.ts";
+import { isWhatsAppSendEnabled } from "../_shared/feature-flags.ts";
 
 // ==============================================
 // TYPES
@@ -80,6 +81,27 @@ serve(async (req: Request) => {
     // Validate either body or template is provided
     if (!validatedBody.body && !validatedBody.template) {
       throw new ValidationError("Either body or template is required");
+    }
+
+    // Kill-switch — short-circuit before touching Twilio. If a queue row
+    // drove this call, mark it failed with error_message='wa_kill_switch'.
+    // The retry-failed-notifications cron filters this error_message out, so
+    // the row stays terminally failed while the flag is off (no retry storm).
+    if (!(await isWhatsAppSendEnabled())) {
+      if (validatedBody.notification_queue_id) {
+        await supabase
+          .from("notification_queue")
+          .update({
+            status: "failed",
+            error_message: "wa_kill_switch",
+          })
+          .eq("id", validatedBody.notification_queue_id);
+      }
+      return jsonResponse({
+        success: false,
+        error: "wa_kill_switch",
+        skipped: true,
+      });
     }
 
     // Build message

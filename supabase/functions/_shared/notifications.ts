@@ -8,6 +8,7 @@
  */
 
 import { ExternalServiceError } from "./errors.ts";
+import { isWhatsAppSendEnabled } from "./feature-flags.ts";
 
 // ==============================================
 // CONFIGURATION
@@ -173,10 +174,18 @@ async function twilioRequest(
 
 /**
  * Sends a WhatsApp message via Twilio.
+ *
+ * Gated by the `whatsapp_send` feature flag (DB-backed, fail-closed). Every
+ * caller — direct, queued, broadcast, or per-user — passes through here, so
+ * one toggle stops all WhatsApp traffic.
  */
 export async function sendWhatsApp(
   message: WhatsAppMessage
 ): Promise<NotificationResult> {
+  if (!(await isWhatsAppSendEnabled())) {
+    return { success: false, error: "wa_kill_switch" };
+  }
+
   // Format phone number for WhatsApp (supports any E.164 number)
   let to: string;
   if (message.to.startsWith("whatsapp:")) {
@@ -226,8 +235,8 @@ export async function sendWhatsApp(
  * Sends a WhatsApp notification to a user using their stored phone number
  * and the appropriate Twilio Content Template for the notification type.
  *
- * Returns gracefully if:
- * - WA notifications are globally disabled (WA_NOTIFICATIONS_ENABLED=false)
+ * The master kill-switch is enforced inside `sendWhatsApp`; this helper
+ * returns gracefully if:
  * - No WhatsApp template exists for this notification type
  * - The ContentSid env var is not set (template not yet approved)
  * - User has no phone number
@@ -238,11 +247,6 @@ export async function sendWhatsAppForUser(
   notificationType: NotificationType,
   templateVars: Record<string, string> = {},
 ): Promise<NotificationResult> {
-  // Global kill-switch
-  if (Deno.env.get("WA_NOTIFICATIONS_ENABLED") === "false") {
-    return { success: false, error: "WA notifications disabled" };
-  }
-
   const waConfig = WHATSAPP_TEMPLATE_MAP[notificationType];
   if (!waConfig) {
     return { success: false, error: `No WA template for ${notificationType}` };

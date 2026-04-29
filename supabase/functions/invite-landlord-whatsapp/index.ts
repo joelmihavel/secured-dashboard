@@ -16,6 +16,7 @@ import { AppError, ValidationError, handleError } from "../_shared/errors.ts";
 import { isValidPhone } from "../_shared/validation.ts";
 import { AuditLogger, AuditActions } from "../_shared/audit.ts";
 import { sendWhatsApp } from "../_shared/notifications.ts";
+import { reserveWhatsAppSlot, releaseWhatsAppSlot } from "../_shared/notification-policy.ts";
 
 serve(async (req: Request) => {
   const corsResponse = handleCors(req);
@@ -137,15 +138,67 @@ serve(async (req: Request) => {
     // Format E.164 for WhatsApp: e.g. +919876543210
     const e164Phone = `${resolvedCountryCode}${resolvedPhone}`;
 
-    // Send WhatsApp via template
-    const result = await sendWhatsApp({
-      to: e164Phone,
-      template: LANDLORD_INVITE_TEMPLATE_SID,
-      templateParams: [tenantFullName],
-    });
+    // Best-effort: if the landlord already has a Flent account we want to
+    // honor their whatsapp_enabled / daily-cap. Otherwise we send without a
+    // policy reservation (one-shot tenant-initiated invite).
+    const { data: landlordUser } = await supabaseAdmin
+      .from("users")
+      .select("id")
+      .eq("phone", e164Phone)
+      .maybeSingle();
+    const landlordUserId = (landlordUser as { id?: string } | null)?.id ?? null;
 
-    if (!result.success) {
-      console.error("[invite-landlord-whatsapp] WhatsApp send failed:", result.error);
+    let reservationSlotId = "";
+    if (landlordUserId) {
+      const reservation = await reserveWhatsAppSlot(
+        supabaseAdmin,
+        landlordUserId,
+        "landlord_invite",
+        { source: "invite-landlord-whatsapp", tenancy_id: tenancy.id },
+      );
+      if (!reservation.allowed) {
+        throw new AppError(
+          `Cannot send WhatsApp invite: ${reservation.reason}`,
+          "POLICY_BLOCKED",
+          429,
+        );
+      }
+      reservationSlotId = reservation.slotId;
+    }
+
+    // Send WhatsApp via template — wrapped in try/finally so a thrown
+    // sendWhatsApp (network error, runtime exception in twilioRequest, etc.)
+    // still releases the reserved slot. Without this, a failure here would
+    // leak a 'pending' row that counts toward the lifetime cap permanently.
+    let result: { success: boolean; messageId?: string; error?: string } | null = null;
+    let sendError: unknown = null;
+    try {
+      result = await sendWhatsApp({
+        to: e164Phone,
+        template: LANDLORD_INVITE_TEMPLATE_SID,
+        templateParams: [tenantFullName],
+      });
+    } catch (err) {
+      sendError = err;
+    } finally {
+      if (reservationSlotId) {
+        await releaseWhatsAppSlot(
+          supabaseAdmin,
+          reservationSlotId,
+          result?.success ? "sent" : "failed",
+          result?.messageId,
+          result?.success
+            ? undefined
+            : result?.error ??
+              (sendError instanceof Error ? sendError.message : sendError ? String(sendError) : "send threw"),
+        );
+      }
+    }
+
+    if (sendError) throw sendError;
+
+    if (!result?.success) {
+      console.error("[invite-landlord-whatsapp] WhatsApp send failed:", result?.error);
       throw new AppError(
         "Failed to send WhatsApp invite. Please try again.",
         "WHATSAPP_SEND_FAILED",

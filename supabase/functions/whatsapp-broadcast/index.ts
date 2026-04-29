@@ -15,6 +15,12 @@ import { AppError, ValidationError, handleError } from "../_shared/errors.ts";
 import { AuditLogger } from "../_shared/audit.ts";
 import { sendWhatsApp } from "../_shared/notifications.ts";
 import { sanitizePhone, formatPhoneWithCountryCode } from "../_shared/validation.ts";
+import { isWhatsAppBroadcastEnabled } from "../_shared/feature-flags.ts";
+import {
+  reserveWhatsAppSlot,
+  releaseWhatsAppSlot,
+  logSendOutcome,
+} from "../_shared/notification-policy.ts";
 
 // ==============================================
 // CONFIGURATION
@@ -81,6 +87,16 @@ serve(async (req: Request) => {
     const maxRecipients = body.max_recipients ?? 5000;
     const isDryRun = body.dry_run ?? false;
 
+    // Kill-switch — checks both `whatsapp_send` and `whatsapp_broadcast`.
+    // Dry runs are still gated so a disabled environment never even queries
+    // the audience (avoids leaking row counts during a kill).
+    if (!(await isWhatsAppBroadcastEnabled())) {
+      return jsonResponse(
+        { success: false, error: "wa_broadcast_kill_switch", skipped: true },
+        503,
+      );
+    }
+
     // Build audience query
     let query = supabase
       .from("users")
@@ -136,12 +152,42 @@ serve(async (req: Request) => {
       }, 409);
     }
 
-    // Send messages sequentially with rate limiting
+    // Send messages sequentially with rate limiting.
+    // Each recipient goes through reserveWhatsAppSlot, which honors the
+    // global per-user daily cap and the user's whatsapp_enabled preference.
+    // Per-type policies don't apply — broadcasts use a synthetic type with
+    // no notification_policy row, so reserve_whatsapp_slot only enforces
+    // the global cap for them.
+    const broadcastType = `broadcast:${body.campaign_name}`;
     let sentCount = 0;
     let failedCount = 0;
+    let skippedCount = 0;
 
     for (const user of recipients) {
       if (!user.phone) continue;
+
+      const reservation = await reserveWhatsAppSlot(
+        supabase,
+        user.id,
+        broadcastType,
+        {
+          source: "whatsapp-broadcast",
+          content_sid: body.content_sid,
+          audience: body.audience,
+        },
+      );
+
+      if (!reservation.allowed) {
+        skippedCount++;
+        await logSendOutcome(supabase, {
+          user_id: user.id,
+          notification_type: broadcastType,
+          outcome: "skipped",
+          skip_reason: reservation.reason,
+          context: { source: "whatsapp-broadcast" },
+        });
+        continue;
+      }
 
       try {
         const normalizedPhone = formatPhoneWithCountryCode(
@@ -156,25 +202,71 @@ serve(async (req: Request) => {
             : undefined,
         });
 
-        if (result.success) {
+        const sendResult = result as { success: boolean; error?: string; messageId?: string };
+
+        if (sendResult.success) {
           sentCount++;
         } else {
           failedCount++;
           console.warn(
-            `[broadcast] Failed for XXXX${user.phone.slice(-4)}: ${result.error}`
+            `[broadcast] Failed for XXXX${user.phone.slice(-4)}: ${sendResult.error}`
           );
+        }
+
+        if (reservation.slotId) {
+          await releaseWhatsAppSlot(
+            supabase,
+            reservation.slotId,
+            sendResult.success ? "sent" : "failed",
+            sendResult.messageId,
+            sendResult.success ? undefined : sendResult.error,
+          );
+        } else {
+          // Reservation failed open (RPC error). Backstop the audit trail
+          // with an explicit log entry so this send isn't invisible.
+          await logSendOutcome(supabase, {
+            user_id: user.id,
+            notification_type: broadcastType,
+            outcome: sendResult.success ? "sent" : "failed",
+            external_id: sendResult.messageId,
+            error_message: sendResult.success ? undefined : sendResult.error,
+            context: { source: "whatsapp-broadcast", reservation_failed_open: true },
+          });
         }
       } catch (sendError) {
         failedCount++;
         console.error(`[broadcast] Error for user ${user.id}:`, sendError);
+        if (reservation.slotId) {
+          await releaseWhatsAppSlot(
+            supabase,
+            reservation.slotId,
+            "failed",
+            undefined,
+            sendError instanceof Error ? sendError.message : String(sendError),
+          );
+        } else {
+          await logSendOutcome(supabase, {
+            user_id: user.id,
+            notification_type: broadcastType,
+            outcome: "failed",
+            error_message: sendError instanceof Error ? sendError.message : String(sendError),
+            context: { source: "whatsapp-broadcast", reservation_failed_open: true },
+          });
+        }
       }
 
       // Rate limiting: 100ms delay between messages (~10 MPS, well under 80 MPS limit)
       await new Promise((resolve) => setTimeout(resolve, 100));
     }
 
-    // Log to broadcast_log table
-    await supabase
+    // Log to broadcast_log table. Soft-fail: if the insert errors (e.g.
+    // schema mismatch from an unapplied migration), surface log_failed in
+    // the response and log loudly to console — but don't 500. Returning
+    // 500 after a successful Twilio fan-out invites the admin to retry,
+    // which (after the 10-min single-flight) would double-send the
+    // campaign. The audit_logs row below is the compliance trail; the
+    // broadcast_log table is the operational trail.
+    const { error: logError } = await supabase
       .from("whatsapp_broadcast_log")
       .insert({
         campaign_name: body.campaign_name,
@@ -183,11 +275,13 @@ serve(async (req: Request) => {
         audience_filter: body.audience,
         total_sent: sentCount,
         total_failed: failedCount,
+        total_skipped: skippedCount,
         initiated_by: "admin",
-      })
-      .catch((err: Error) => {
-        console.error("[broadcast] Failed to log broadcast:", err);
       });
+    const logFailed = !!logError;
+    if (logError) {
+      console.error("[broadcast] Failed to log broadcast (audit_logs still recorded):", logError);
+    }
 
     await audit.logSuccess(
       "BROADCAST_SENT",
@@ -200,17 +294,21 @@ serve(async (req: Request) => {
         total_recipients: recipients.length,
         sent: sentCount,
         failed: failedCount,
+        skipped: skippedCount,
       }
     );
 
     return jsonResponse({
       success: true,
+      log_failed: logFailed,
+      log_error: logError?.message,
       data: {
         campaign_name: body.campaign_name,
         audience: body.audience,
         total_recipients: recipients.length,
         sent: sentCount,
         failed: failedCount,
+        skipped: skippedCount,
       },
     });
   } catch (error) {

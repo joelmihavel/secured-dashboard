@@ -16,6 +16,7 @@ import { serve } from "https://deno.land/std@0.208.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
 import { handleCors, jsonResponse, errorResponse } from "../_shared/cors.ts";
 import { notifyUser } from "../_shared/notifications.ts";
+import { isWhatsAppAutomatedEnabled } from "../_shared/feature-flags.ts";
 
 function getSupabaseUrl(): string {
   return Deno.env.get("SUPABASE_URL") || Deno.env.get("SB_URL") || "";
@@ -126,6 +127,19 @@ serve(async (req: Request) => {
     const supabase = createClient(supabaseUrl, serviceKey, {
       auth: { autoRefreshToken: false, persistSession: false },
     });
+
+    // Operator paused automated WA. Scheduled rows are funnel nudges /
+    // reminders — treating them all as automated. Skip the cron entirely
+    // so we don't burn through schedule rows while WA is silenced.
+    if (!(await isWhatsAppAutomatedEnabled())) {
+      return jsonResponse({
+        success: true,
+        sent: 0,
+        skipped: 0,
+        errors: 0,
+        message: "whatsapp_automated_disabled",
+      });
+    }
 
     const now = new Date();
     let sent = 0;

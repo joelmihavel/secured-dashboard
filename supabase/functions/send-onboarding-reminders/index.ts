@@ -14,6 +14,7 @@ import { serve } from "https://deno.land/std@0.208.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
 import { handleCors, jsonResponse, errorResponse } from "../_shared/cors.ts";
 import { notifyUser } from "../_shared/notifications.ts";
+import { isWhatsAppAutomatedEnabled } from "../_shared/feature-flags.ts";
 
 function getSupabaseUrl(): string {
   return Deno.env.get("SUPABASE_URL") || Deno.env.get("SB_URL") || "";
@@ -37,6 +38,19 @@ serve(async (req: Request) => {
     const supabase = createClient(supabaseUrl, serviceKey, {
       auth: { autoRefreshToken: false, persistSession: false },
     });
+
+    // Skip the entire automated nudge cron when the operator has paused
+    // automated WA. Push/in-app would still go out but onboarding nudges are
+    // 100% WhatsApp — there's nothing else to do for these users right now.
+    if (!(await isWhatsAppAutomatedEnabled())) {
+      return jsonResponse({
+        success: true,
+        sent: 0,
+        skipped: 0,
+        errors: 0,
+        message: "whatsapp_automated_disabled",
+      });
+    }
 
     const now = new Date();
     let sent = 0;
