@@ -252,9 +252,14 @@ export async function resendOtp(
 }
 
 /**
- * Sign out the current user
+ * Sign out the current user.
+ *
+ * @param explicitUserId - Pre-snapshotted userId from the caller. Required when
+ *   signOut is called AFTER clearAllStores (the standard order in useAuth.signOut),
+ *   because the auth store has already been reset and `useAuthStore.getState().userId`
+ *   will be null at that point. Falls back to the store for backward compatibility.
  */
-export async function signOut(): Promise<{ success: boolean; error: string | null }> {
+export async function signOut(explicitUserId?: string): Promise<{ success: boolean; error: string | null }> {
   // Review mode: deactivate, then clear the fake session from SecureStore
   if (isReviewMode()) {
     deactivateReviewMode();
@@ -269,9 +274,10 @@ export async function signOut(): Promise<{ success: boolean; error: string | nul
   // Deactivate push token before signing out (H6: prevent ghost notifications)
   // NEVER use getSession() here — it triggers _callRefreshToken() which races
   // with autoRefreshToken and can cause double refresh token consumption (lesson #33).
-  // Read userId from the auth store instead (set during sign-in, cleared on sign-out).
+  // Use the explicit snapshot from the caller; fall back to the store only when
+  // signOut is invoked outside the standard useAuth flow (e.g. tests, legacy paths).
   try {
-    const userId = useAuthStore.getState().userId;
+    const userId = explicitUserId ?? useAuthStore.getState().userId;
     if (userId) {
       await supabase
         .from('device_tokens')
