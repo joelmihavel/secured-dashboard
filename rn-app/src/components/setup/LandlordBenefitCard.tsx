@@ -84,10 +84,13 @@ function ScratchMarks() {
 export interface LandlordBenefitCardProps {
   /** Body string with optional `accent` segments rendered in brand orange. */
   body: React.ReactNode;
+  /** Card icon (40×40). Defaults to the house+shield mark. Pass a different
+   *  node so adjacent cards in a carousel don't all share the same glyph. */
+  icon?: React.ReactNode;
   testID?: string;
 }
 
-export function LandlordBenefitCard({ body, testID }: LandlordBenefitCardProps) {
+export function LandlordBenefitCard({ body, icon, testID }: LandlordBenefitCardProps) {
   return (
     <View style={styles.container} testID={testID}>
       <View style={styles.background} />
@@ -109,7 +112,7 @@ export function LandlordBenefitCard({ body, testID }: LandlordBenefitCardProps) 
         </View>
       </View>
       <View style={styles.content}>
-        <HouseShieldIcon size={40} />
+        {icon ?? <HouseShieldIcon size={40} />}
         {typeof body === 'string' ? <Text style={styles.body}>{body}</Text> : body}
       </View>
     </View>

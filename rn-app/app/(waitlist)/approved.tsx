@@ -233,8 +233,11 @@ export default function WaitlistApprovedScreen() {
   }));
 
   // Stable navigation callback for runOnJS (Reanimated v4 requires standalone functions, not method refs)
+  // Route through the setup-intro screen first so the user sees the
+  // "Set up rent payments" pitch before the bank form — matching the
+  // journey-router behaviour for cold-start approved users.
   const navigateToSetup = useCallback(() => {
-    routerRef.current.replace('/(setup)/add-bank' as never);
+    routerRef.current.replace('/(agreement)/setup-intro?context=approved' as never);
   }, []);
 
   // Handle "Step Inside" button

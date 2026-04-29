@@ -3,9 +3,19 @@
  * Figma Nodes: 4651:143792 (Profile main), 4651:143883 (Secured Benefits sheet)
  *
  * Personal account hub: avatar + agreement date, three pill menu items (View Agreement,
- * Landlord Payment Details, Secured Benefits), Finances + Support sections, Sign Out
- * pill, Delete Account link. The "Secured Benefits" pill opens a bottom sheet with a
+ * Landlord Bank Details, Secured Benefits), Support section, Sign Out pill,
+ * Delete Account link. The "Secured Benefits" pill opens a bottom sheet with a
  * horizontal carousel of notepad-style benefit cards.
+ *
+ * "Landlord Bank Details" routes to a READ-ONLY screen — changing the
+ * landlord's payout account is intentionally support-gated (fraud vector:
+ * a tenant could redirect rent to their own account). Don't relabel this
+ * pill "Edit ..." until there's a real edit flow with re-verification.
+ *
+ * The "Finances → Payment Methods" row was removed (the underlying screen is
+ * unbuilt; the row was wired to /edit-bank-details, duplicating the landlord
+ * pill above). Bring it back when there's a real payment-methods management
+ * surface to point it at.
  */
 
 import React, { useCallback, useRef, useState } from 'react';
@@ -63,11 +73,6 @@ export default function ProfileScreen() {
   }, []);
 
   const handleLandlordPaymentDetails = useCallback(() => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    routerRef.current.push('/(profile)/edit-bank-details' as never);
-  }, []);
-
-  const handlePaymentMethods = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     routerRef.current.push('/(profile)/edit-bank-details' as never);
   }, []);
@@ -155,7 +160,7 @@ export default function ProfileScreen() {
 
           <View style={styles.menuStack}>
             <MenuPill label="View Agreement" onPress={handleViewAgreement} testID="view-agreement" />
-            <MenuPill label="Landlord Payment Details" onPress={handleLandlordPaymentDetails} testID="landlord-payment-details" />
+            <MenuPill label="Landlord Bank Details" onPress={handleLandlordPaymentDetails} testID="landlord-payment-details" />
             <MenuPill
               label="Secured Benefits →"
               onPress={handleOpenBenefits}
@@ -165,23 +170,8 @@ export default function ProfileScreen() {
           </View>
         </Animated.View>
 
-        {/* Finances section */}
-        <Animated.View entering={FadeInDown.delay(160).duration(350)} style={styles.section}>
-          <Text style={styles.sectionTitle}>Finances</Text>
-          <Pressable
-            style={styles.financeRow}
-            onPress={handlePaymentMethods}
-            accessibilityRole="button"
-            accessibilityLabel="Payment Methods"
-            testID="payment-methods"
-          >
-            <Text style={styles.financeLabel}>Payment Methods</Text>
-            <Text style={styles.financeMeta}>Manage →</Text>
-          </Pressable>
-        </Animated.View>
-
         {/* Support section */}
-        <Animated.View entering={FadeInDown.delay(240).duration(350)} style={styles.section}>
+        <Animated.View entering={FadeInDown.delay(160).duration(350)} style={styles.section}>
           <Text style={styles.sectionTitle}>Support</Text>
           <View style={styles.menuStack}>
             <MenuPill label="Contact Support" onPress={handleContactSupport} testID="contact-support" />
@@ -190,7 +180,7 @@ export default function ProfileScreen() {
         </Animated.View>
 
         {/* Sign Out + Delete */}
-        <Animated.View entering={FadeInDown.delay(320).duration(350)} style={styles.bottomSection}>
+        <Animated.View entering={FadeInDown.delay(240).duration(350)} style={styles.bottomSection}>
           <MenuPill label="Sign Out" onPress={handleSignOut} testID="sign-out" />
           <Pressable
             onPress={handleDeleteAccount}
@@ -449,29 +439,6 @@ const styles = StyleSheet.create({
   },
   pillTextAccent: {
     color: colors.brand[500],
-  },
-
-  // Finance row (label + meta)
-  financeRow: {
-    backgroundColor: colors.black[500],
-    borderRadius: 12,
-    paddingHorizontal: s(24),
-    paddingVertical: sv(16),
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  financeLabel: {
-    fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: sf(14),
-    lineHeight: sf(20),
-    color: colors.neutral[300],
-  },
-  financeMeta: {
-    fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: sf(12),
-    lineHeight: sf(20),
-    color: colors.black[350],
   },
 
   // Bottom section (sign out + delete)

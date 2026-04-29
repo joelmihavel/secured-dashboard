@@ -219,8 +219,9 @@ const styles = StyleSheet.create({
   },
   heading: {
     fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: sf(22),
-    lineHeight: sf(35),
+    fontSize: sf(28),
+    lineHeight: sf(40),
+    letterSpacing: -1,
     color: colors.white,
     textAlign: 'center',
   },

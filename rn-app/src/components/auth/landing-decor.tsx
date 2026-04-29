@@ -25,11 +25,13 @@ export const BOTTOM_MARQUEE_ITEMS = [B, B, F, F, F, B, B];
 export function Marquee({
   items,
   backgroundColor,
+  textColor = colors.white,
   speedPxPerSec = 36,
   reverse = false,
 }: {
   items: string[];
   backgroundColor: string;
+  textColor?: string;
   /** Scroll speed in pixels per second. Default 36 — matches the comfortable pace
    *  of the splash/welcome bands. Lower = slower. */
   speedPxPerSec?: number;
@@ -64,12 +66,12 @@ export function Marquee({
       <Animated.View style={[styles.marqueeTrack, { transform: [{ translateX: tx }] }]}>
         <View style={styles.marqueeRowInner} onLayout={onTrackLayout}>
           {items.map((t, i) => (
-            <RNText key={`a-${i}`} style={styles.marqueeText} numberOfLines={1}>{t}</RNText>
+            <RNText key={`a-${i}`} style={[styles.marqueeText, { color: textColor }]} numberOfLines={1}>{t}</RNText>
           ))}
         </View>
         <View style={styles.marqueeRowInner}>
           {items.map((t, i) => (
-            <RNText key={`b-${i}`} style={styles.marqueeText} numberOfLines={1}>{t}</RNText>
+            <RNText key={`b-${i}`} style={[styles.marqueeText, { color: textColor }]} numberOfLines={1}>{t}</RNText>
           ))}
         </View>
       </Animated.View>
@@ -85,7 +87,7 @@ export function MarqueeStack() {
         <Marquee items={TOP_MARQUEE_ITEMS} backgroundColor={colors.black[600]} />
       </View>
       <View style={[styles.marqueeRow, { transform: [{ rotate: '-0.48deg' }] }]}>
-        <Marquee items={BOTTOM_MARQUEE_ITEMS} backgroundColor={colors.brand[600]} reverse />
+        <Marquee items={BOTTOM_MARQUEE_ITEMS} backgroundColor={colors.brand[600]} textColor={colors.black[700]} reverse />
       </View>
     </View>
   );
@@ -167,11 +169,11 @@ const styles = StyleSheet.create({
     flexShrink: 0,
   },
   marqueeText: {
-    // Figma 4651:75946 — Geist Pixel:Triangle, 10px / 1.5lh. All-caps across both bands.
-    fontFamily: 'GeistPixel-Triangle',
+    // Figma references Geist Pixel:Triangle, but the pixel TTF has no bold cut
+    // — swapped to PlusJakartaSans-Bold so the marquee reads as a real bold.
+    fontFamily: 'PlusJakartaSans-Bold',
     fontSize: sf(10),
     lineHeight: sf(15),
-    color: colors.white,
     textTransform: 'uppercase',
   },
   bgLineWrap: {

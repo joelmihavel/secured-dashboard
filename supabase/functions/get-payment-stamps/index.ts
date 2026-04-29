@@ -241,12 +241,17 @@ serve(async (req: Request) => {
 
     // Payment tracking starts from tenancy creation (when user joined platform),
     // NOT from agreement lease dates. Agreement dates are extraction metadata only.
-    // cashback_cutoff_day (grace period) is used for on_time/late/missed classification;
-    // rent_due_day is only for display ("Your rent is due on the 1st").
+    //
+    // Two distinct cutoffs apply to each month:
+    //   • rent_due_day      — the actual obligation deadline. After this passes
+    //                         with no success payment, the month is "missed".
+    //   • cashback_cutoff_day — earlier (or equal) date for cashback eligibility.
+    //                         Payments after this are still on-rent-time but
+    //                         classified "late" (cashback forfeited).
+    // The two often coincide; when they differ (e.g. cutoff=7, due=15) we must
+    // NOT mark the month missed between them — the user still has time to pay.
     const trackingStart = new Date(tenancy.created_at);
     const dueDay = tenancy.rent_due_day;
-    // cashback_cutoff_day is the grace-period day used for on_time/late/missed classification.
-    // rent_due_day is only used for the due_date display field.
     const cutoffDay = tenancy.cashback_cutoff_day ?? tenancy.rent_due_day;
 
     const ist = nowInIst();
@@ -292,18 +297,22 @@ serve(async (req: Request) => {
       let status: PaymentStampEntry["status"];
       let daysLate: number | null = null;
 
-      // Is this a future month or current month where cutoff date hasn't passed?
+      // Is this a future month, or the current month where the rent due day
+      // hasn't passed yet? Note we anchor on rent_due_day (the obligation
+      // deadline), NOT cashback_cutoff_day — between the two, the rent isn't
+      // yet "missed", just no longer cashback-eligible. Cashback eligibility
+      // is enforced separately via dueCutoffUtc when classifying paid months.
       const isFutureMonth =
         y > currentYear || (y === currentYear && m > currentMonth);
       const isCurrentMonth = y === currentYear && m === currentMonth;
       const daysInMonth = new Date(y, m + 1, 0).getDate();
-      const clampedCutoffDay = Math.min(cutoffDay, daysInMonth);
-      const dueDateNotPassed = isCurrentMonth && currentDay <= clampedCutoffDay;
+      const clampedDueDay = Math.min(dueDay, daysInMonth);
+      const dueDateNotPassed = isCurrentMonth && currentDay <= clampedDueDay;
 
       // Grey (pending) is the zero state. Stamps only change when:
-      // - Payment completed (success) → on_time or late
-      // - Due date passed with no success payment → missed
-      // failed/refunded/no-payment all remain grey until due date passes.
+      // - Payment completed (success) → on_time or late (vs cashback cutoff)
+      // - Rent due day passed with no success payment → missed
+      // failed/refunded/no-payment all remain grey until rent due day passes.
       if (isFutureMonth || dueDateNotPassed) {
         // Due date hasn't passed — grey unless already paid
         if (payment && payment.status === "success" && payment.paid_at) {

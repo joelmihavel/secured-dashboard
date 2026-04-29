@@ -259,8 +259,15 @@ export default function HomeScreen() {
   const allTimeCashback = cashback?.total_savings ?? cashbackBalance;
   const cashbackRate = (cashback?.discount_rate ?? 0.01) * 100; // Backend sends 0.01 (1%), UI displays as percentage
 
-  // Show bottom footer whenever there's a tenancy with rent
-  const showBottomFooter = upcomingPayment !== null && rentAmount > 0;
+  // Show bottom footer whenever there's a tenancy with unpaid rent.
+  // alreadyPaid hides the CTA — without this the "Review & pay" pill stays
+  // visible after the user has paid for the current month, sending them
+  // into the rent modal which then blocks with "Rent for this month is
+  // already paid". The modal's block is a defense-in-depth; the home page
+  // shouldn't be offering the CTA at all in this state. The hero card
+  // already shows the "paid" stamp + "Next rent payment in X days" so the
+  // user has the relevant context without a misleading footer.
+  const showBottomFooter = upcomingPayment !== null && rentAmount > 0 && !alreadyPaid;
 
   // Helper: format month from ISO date to display format
   const formatMonth = useCallback((dateStr: string) => {
@@ -845,7 +852,7 @@ export default function HomeScreen() {
             <Marquee items={TOP_MARQUEE_ITEMS} backgroundColor={colors.black[600]} />
           </View>
           <View style={[styles.marqueeRotated, { transform: [{ rotate: '-0.48deg' }] }]}>
-            <Marquee items={BOTTOM_MARQUEE_ITEMS} backgroundColor={colors.brand[600]} reverse />
+            <Marquee items={BOTTOM_MARQUEE_ITEMS} backgroundColor={colors.brand[600]} textColor={colors.black[700]} reverse />
           </View>
         </View>
 
@@ -902,7 +909,9 @@ export default function HomeScreen() {
       {showBottomFooter ? (
         <View style={styles.bottomFooterContainer}>
           <BottomFooter
-            dueInDays={alreadyPaid ? daysUntilNextDue : daysUntilDue}
+            // showBottomFooter excludes alreadyPaid, so daysUntilDue is the
+            // current month's countdown (always meaningful here).
+            dueInDays={daysUntilDue}
             amount={rentAmount}
             buttonLabel="Review & pay"
             disabled={false} // All states can trigger payment — verification sheet gates if needed

@@ -18,15 +18,16 @@
  * functionality.
  */
 
-import React, { useCallback, useRef } from 'react';
-import { View, StyleSheet, ScrollView, Pressable, Image, Linking } from 'react-native';
+import React, { useCallback, useRef, useState } from 'react';
+import { View, StyleSheet, ScrollView, Pressable, Image, Linking, NativeSyntheticEvent, NativeScrollEvent } from 'react-native';
 import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
 import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons } from '@expo/vector-icons';
 
-import { Screen, Text, Logo, DottedGridPattern, BackButton } from '@/src/components';
+import { Screen, Text, Logo, DottedGridPattern, BackButton, ScrollDownIndicator } from '@/src/components';
 import { Marquee, TOP_MARQUEE_ITEMS, BOTTOM_MARQUEE_ITEMS } from '@/src/components/auth/landing-decor';
 import { LandlordBenefitCard, landlordCardBodyStyle } from '@/src/components/setup/LandlordBenefitCard';
 import { colors } from '@/src/theme';
@@ -34,7 +35,7 @@ import { s, sf, sv } from '@/src/theme/scale';
 
 const BG_SHAPE = require('../../assets/images/background_shape.png');
 
-const LEARN_MORE_URL = 'https://flent.in/secured/landlords';
+const LEARN_MORE_URL = 'https://flent.in/secured/landlord';
 
 // ── Step icons (24×24) — exact paths supplied for Figma parity. Solid
 // white fills, even-odd path geometry that matches the Figma asset family
@@ -73,11 +74,13 @@ function AlertHexIcon() {
 }
 
 // "Why this helps them?" card content. Visual chrome (notepad bg, paperclip,
-// scratch marks, house+shield icon, perforations) all lives in
-// `LandlordBenefitCard` so the waitlist + this screen share one component.
-const CARDS: { id: string; text: React.ReactNode }[] = [
+// scratch marks, perforations) lives in `LandlordBenefitCard`. Each card
+// passes its own icon so the carousel doesn't repeat the same glyph 4×.
+const CARD_ICON_SIZE = 40;
+const CARDS: { id: string; text: React.ReactNode; icon: React.ReactNode }[] = [
   {
     id: '1',
+    icon: <Ionicons name="shield-checkmark-outline" size={CARD_ICON_SIZE} color={colors.white} />,
     text: (
       <Text style={landlordCardBodyStyle.body}>
         Get guaranteed rent protection cover{' '}
@@ -87,6 +90,7 @@ const CARDS: { id: string; text: React.ReactNode }[] = [
   },
   {
     id: '2',
+    icon: <Ionicons name="home-outline" size={CARD_ICON_SIZE} color={colors.white} />,
     text: (
       <Text style={landlordCardBodyStyle.body}>
         If tenant abandons the property,{' '}
@@ -96,6 +100,7 @@ const CARDS: { id: string; text: React.ReactNode }[] = [
   },
   {
     id: '3',
+    icon: <Ionicons name="document-text-outline" size={CARD_ICON_SIZE} color={colors.white} />,
     text: (
       <Text style={landlordCardBodyStyle.body}>
         Complimentary tenant{' '}
@@ -106,6 +111,7 @@ const CARDS: { id: string; text: React.ReactNode }[] = [
   },
   {
     id: '4',
+    icon: <Ionicons name="people-outline" size={CARD_ICON_SIZE} color={colors.white} />,
     text: (
       <Text style={landlordCardBodyStyle.body}>
         We guarantee a tenant replacement{' '}
@@ -116,22 +122,21 @@ const CARDS: { id: string; text: React.ReactNode }[] = [
 ];
 
 // ── Step row (icon + title + body) ─────────────────────────────────────
+// Title is a React node so call sites can place the orange accent at the
+// start, end, or middle of the line — required for "Call your landlord
+// once" where the accent sits at the END.
 interface StepRowProps {
   icon: React.ReactNode;
-  titleAccent: string;
-  titleRest: string;
+  title: React.ReactNode;
   body: string;
 }
 
-function StepRow({ icon, titleAccent, titleRest, body }: StepRowProps) {
+function StepRow({ icon, title, body }: StepRowProps) {
   return (
     <View style={stepStyles.row}>
       <View style={stepStyles.icon}>{icon}</View>
       <View style={stepStyles.textCol}>
-        <Text style={stepStyles.title}>
-          <Text inherit style={stepStyles.titleAccent}>{titleAccent}</Text>
-          <Text inherit style={stepStyles.titleRest}>{titleRest}</Text>
-        </Text>
+        <Text style={stepStyles.title}>{title}</Text>
         <Text style={stepStyles.body}>{body}</Text>
       </View>
     </View>
@@ -237,6 +242,28 @@ export default function InviteLandlordIntroScreen() {
   routerRef.current = router;
   const insets = useSafeAreaInsets();
 
+  // Scroll-down indicator visibility — hides once the user scrolls within
+  // ~60px of the bottom (or if content fits without scrolling).
+  const [showScrollHint, setShowScrollHint] = useState(true);
+  const scrollViewHeightRef = useRef(0);
+  const contentHeightRef = useRef(0);
+
+  const updateScrollHint = useCallback(() => {
+    const sv = scrollViewHeightRef.current;
+    const ch = contentHeightRef.current;
+    // Need both measurements before deciding — otherwise the layout-event
+    // race hides the hint before contentSize is known.
+    if (sv === 0 || ch === 0) return;
+    // Content fits without scrolling → nothing to hint at.
+    if (ch <= sv + 8) setShowScrollHint(false);
+  }, []);
+
+  const handleScroll = useCallback((e: NativeSyntheticEvent<NativeScrollEvent>) => {
+    const { contentOffset, layoutMeasurement, contentSize } = e.nativeEvent;
+    const distanceFromBottom = contentSize.height - (contentOffset.y + layoutMeasurement.height);
+    setShowScrollHint(distanceFromBottom > 60);
+  }, []);
+
   const handleBack = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     if (routerRef.current.canGoBack()) routerRef.current.back();
@@ -269,6 +296,10 @@ export default function InviteLandlordIntroScreen() {
       <ScrollView
         contentContainerStyle={[styles.scrollContent, { paddingTop: insets.top + sv(36) }]}
         showsVerticalScrollIndicator={false}
+        onScroll={handleScroll}
+        scrollEventThrottle={32}
+        onLayout={(e) => { scrollViewHeightRef.current = e.nativeEvent.layout.height; updateScrollHint(); }}
+        onContentSizeChange={(_, h) => { contentHeightRef.current = h; updateScrollHint(); }}
       >
         {/* Marquees */}
         <View style={styles.marqueeStack} pointerEvents="none">
@@ -276,7 +307,7 @@ export default function InviteLandlordIntroScreen() {
             <Marquee items={TOP_MARQUEE_ITEMS} backgroundColor={colors.black[600]} />
           </View>
           <View style={[styles.marqueeRow, { transform: [{ rotate: '-0.48deg' }] }]}>
-            <Marquee items={BOTTOM_MARQUEE_ITEMS} backgroundColor={colors.brand[600]} reverse />
+            <Marquee items={BOTTOM_MARQUEE_ITEMS} backgroundColor={colors.brand[600]} textColor={colors.black[700]} reverse />
           </View>
         </View>
 
@@ -313,20 +344,32 @@ export default function InviteLandlordIntroScreen() {
           <View style={styles.stepStack}>
             <StepRow
               icon={<HeadsetIcon />}
-              titleAccent="Call your landlord "
-              titleRest="once"
+              title={
+                <>
+                  <Text inherit style={stepStyles.titleRest}>Call your landlord </Text>
+                  <Text inherit style={stepStyles.titleAccent}>once</Text>
+                </>
+              }
               body="We'll explain Flent Secured, how rent payments work, and answer any questions they may have."
             />
             <StepRow
               icon={<BankIcon />}
-              titleAccent="Verify your landlord's bank details"
-              titleRest=" for payments"
+              title={
+                <>
+                  <Text inherit style={stepStyles.titleAccent}>Verify your landlord&apos;s bank details</Text>
+                  <Text inherit style={stepStyles.titleRest}> for payments</Text>
+                </>
+              }
               body="We'll securely check their account details so your rent always goes to the right person."
             />
             <StepRow
               icon={<AlertHexIcon />}
-              titleAccent="No spam calls"
-              titleRest=", we promise"
+              title={
+                <>
+                  <Text inherit style={stepStyles.titleAccent}>No spam calls</Text>
+                  <Text inherit style={stepStyles.titleRest}>, we promise</Text>
+                </>
+              }
               body="We'll only reach out once to get things set up, no follow-ups or unnecessary messages."
             />
           </View>
@@ -345,7 +388,7 @@ export default function InviteLandlordIntroScreen() {
             snapToInterval={LandlordBenefitCard.WIDTH + s(16)}
           >
             {CARDS.map((c) => (
-              <LandlordBenefitCard key={c.id} body={c.text} />
+              <LandlordBenefitCard key={c.id} body={c.text} icon={c.icon} />
             ))}
           </ScrollView>
         </View>
@@ -355,6 +398,10 @@ export default function InviteLandlordIntroScreen() {
           <Text style={styles.footerPillText}>Learn more about Secured for landlords →</Text>
         </Pressable>
       </ScrollView>
+
+      {/* Bouncing chevron — anchored to the screen, hidden once the user
+          scrolls within 60px of the bottom. Sits above the home indicator. */}
+      <ScrollDownIndicator visible={showScrollHint} bottom={insets.bottom + sv(12)} />
     </Screen>
   );
 }

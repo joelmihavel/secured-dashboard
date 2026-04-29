@@ -174,7 +174,7 @@ export default function InviteLandlordFormScreen() {
               <Marquee items={TOP_MARQUEE_ITEMS} backgroundColor={colors.black[600]} />
             </View>
             <View style={[styles.marqueeRow, { transform: [{ rotate: '-0.48deg' }] }]}>
-              <Marquee items={BOTTOM_MARQUEE_ITEMS} backgroundColor={colors.brand[600]} reverse />
+              <Marquee items={BOTTOM_MARQUEE_ITEMS} backgroundColor={colors.brand[600]} textColor={colors.black[700]} reverse />
             </View>
           </View>
 

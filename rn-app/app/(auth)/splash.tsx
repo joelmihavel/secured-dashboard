@@ -118,7 +118,7 @@ const styles = StyleSheet.create({
     color: colors.white,
   },
   brandName: {
-    fontFamily: 'PlusJakartaSans-Regular',
+    fontFamily: 'PlusJakartaSans-Bold',
     fontSize: sf(40),
     lineHeight: sf(56),
     letterSpacing: -1,
