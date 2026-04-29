@@ -42,6 +42,10 @@ const ALL_KEYCHAIN_KEYS = [
   `${SUPABASE_SESSION_STORAGE_KEY}_chunks`,
   `${SUPABASE_SESSION_STORAGE_KEY}_gen`,
   `${SUPABASE_SESSION_STORAGE_KEY}-code-verifier`,
+  // Pending offline-signOut revocation queue (Gap #6).
+  // Hardcoded (not imported) to avoid an import cycle with api/auth.ts.
+  // Must match PENDING_REVOCATION_KEY in src/services/api/auth.ts.
+  'flent_pending_revocation',
 ];
 
 /**

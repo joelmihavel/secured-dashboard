@@ -20,6 +20,7 @@ import { isJourneyMode, deactivateJourneyMode } from '@/src/review/journeyMode';
 import { useSessionMonitor } from '@/src/hooks/useSessionMonitor';
 import { beginTokenRefreshTracking, endTokenRefreshTracking, OTA_RELOAD_MARKER_KEY } from '@/src/config/updates';
 import { detectAndHandleFreshInstall, detectAndHandleVersionChange } from '@/src/utils/installDetection';
+import { drainPendingRevocations } from '@/src/services/api/auth';
 import type { Session } from '@supabase/supabase-js';
 
 /**
@@ -149,6 +150,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   // Subscribe once — never re-subscribe. Uses refs for mutable values.
   useEffect(() => {
+    // Drain any pending refresh-token revocations from prior offline sign-outs.
+    // Fire-and-forget — uses raw fetch (no SDK state mutation) so it can't
+    // race with initSession below. (Gap #6)
+    drainPendingRevocations().catch(() => {});
+
     // 1. Get initial session
     const initSession = async () => {
       try {
