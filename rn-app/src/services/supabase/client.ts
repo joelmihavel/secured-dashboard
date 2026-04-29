@@ -77,7 +77,7 @@ async function deleteGen(key: string, gen: number): Promise<void> {
 /** Serializes setItem calls to prevent concurrent writes to the same generation */
 let _writeQueue: Promise<void> = Promise.resolve();
 
-const ExpoSecureStoreAdapter = {
+export const ExpoSecureStoreAdapter = {
   getItem: async (key: string): Promise<string | null> => {
     try {
       const gen = await readGen(key);
