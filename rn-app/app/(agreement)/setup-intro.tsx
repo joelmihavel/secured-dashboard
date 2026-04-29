@@ -9,7 +9,7 @@
 
 import React, { useCallback, useRef } from 'react';
 import { View, StyleSheet, ScrollView, Pressable, Linking, Image } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 
 import { Screen, Text, PrimaryButton, DottedGridPattern } from '@/src/components';
@@ -31,20 +31,25 @@ export default function SetupIntroScreen() {
   const routerRef = useRef(router);
   routerRef.current = router;
   const navigating = useRef(false);
+  // ?context=approved is set by the journey router for waitlist-approved users
+  // so this same intro screen can lead into /(setup)/add-bank instead of the
+  // pre-waitlist /(agreement)/add-bank-details. Default (unset) is pre-waitlist.
+  const { context } = useLocalSearchParams<{ context?: string }>();
+  const isPostApproval = context === 'approved';
 
   const handleAddDetails = useCallback(() => {
     if (navigating.current) return;
     navigating.current = true;
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    routerRef.current.push('/(agreement)/add-bank-details' as never);
+    const target = isPostApproval ? '/(setup)/add-bank' : '/(agreement)/add-bank-details';
+    routerRef.current.push(target as never);
     setTimeout(() => { navigating.current = false; }, 1000);
-  }, []);
+  }, [isPostApproval]);
 
   const handleDoItLater = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    // Skip → waitlist directly. Same destination AddBankForm.handleSkip uses.
-    // Going through the journey router (`/`) instead routes unauthenticated/dev
-    // users back to splash, which is wrong here.
+    // Pre-waitlist: skip → waitlist directly (same as AddBankForm.handleSkip).
+    // Post-approval: not shown (see render).
     routerRef.current.replace('/(waitlist)' as never);
   }, []);
 
@@ -113,13 +118,15 @@ export default function SetupIntroScreen() {
             showDivider
             testID="add-landlord-details-button"
           />
-          <Pressable
-            onPress={handleDoItLater}
-            hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-            testID="do-it-later"
-          >
-            <Text style={styles.skipLink}>Do it later</Text>
-          </Pressable>
+          {!isPostApproval && (
+            <Pressable
+              onPress={handleDoItLater}
+              hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+              testID="do-it-later"
+            >
+              <Text style={styles.skipLink}>Do it later</Text>
+            </Pressable>
+          )}
         </View>
 
         {/* Learn more card */}

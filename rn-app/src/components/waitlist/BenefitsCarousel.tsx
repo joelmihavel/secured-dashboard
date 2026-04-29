@@ -15,7 +15,7 @@ import {
   type ViewToken,
   type ListRenderItemInfo,
 } from 'react-native';
-import Svg, { Path } from 'react-native-svg';
+import Svg, { Path, Circle } from 'react-native-svg';
 import { Logo } from '@/src/components';
 import { colors } from '@/src/theme/colors';
 import { s, sv } from '@/src/theme/scale';
@@ -65,17 +65,58 @@ function PaperclipSvg() {
 }
 
 // ============================================
-// DECORATIVE PLUS / SPARKLE SVG
-// Figma 4651:78274 uses an orange diamond-cross marker centred in the card.
+// HALFTONE PIN MARKER — Figma 4837:78083
+// Orange dotted "cross" with decreasing dot sizes radiating from the
+// centre, matching the stippled sparkle on the benefit cards. Drawn in
+// a 28×28 viewBox so the rendered size is controlled by the wrapper.
 // ============================================
 
-function PlusMarkerSvg({ size = 28 }: { size?: number }) {
+function HalftonePin({ size = 28 }: { size?: number }) {
+  const c = colors.brand[500];
   return (
     <Svg width={size} height={size} viewBox="0 0 28 28" fill="none">
-      <Path
-        d="M14 4 L15 13 L24 14 L15 15 L14 24 L13 15 L4 14 L13 13 Z"
-        fill={colors.brand[500]}
-      />
+      {/* Centre cluster */}
+      <Circle cx={14} cy={14} r={2.4} fill={c} />
+      {/* North arm */}
+      <Circle cx={14} cy={11} r={2} fill={c} />
+      <Circle cx={14} cy={8} r={1.5} fill={c} />
+      <Circle cx={14} cy={5} r={1} fill={c} />
+      <Circle cx={14} cy={2.5} r={0.6} fill={c} />
+      {/* South arm */}
+      <Circle cx={14} cy={17} r={2} fill={c} />
+      <Circle cx={14} cy={20} r={1.5} fill={c} />
+      <Circle cx={14} cy={23} r={1} fill={c} />
+      <Circle cx={14} cy={25.5} r={0.6} fill={c} />
+      {/* East arm */}
+      <Circle cx={17} cy={14} r={2} fill={c} />
+      <Circle cx={20} cy={14} r={1.5} fill={c} />
+      <Circle cx={23} cy={14} r={1} fill={c} />
+      <Circle cx={25.5} cy={14} r={0.6} fill={c} />
+      {/* West arm */}
+      <Circle cx={11} cy={14} r={2} fill={c} />
+      <Circle cx={8} cy={14} r={1.5} fill={c} />
+      <Circle cx={5} cy={14} r={1} fill={c} />
+      <Circle cx={2.5} cy={14} r={0.6} fill={c} />
+      {/* Diagonal satellites */}
+      <Circle cx={11} cy={11} r={0.9} fill={c} />
+      <Circle cx={17} cy={11} r={0.9} fill={c} />
+      <Circle cx={11} cy={17} r={0.9} fill={c} />
+      <Circle cx={17} cy={17} r={0.9} fill={c} />
+    </Svg>
+  );
+}
+
+// ============================================
+// SCRATCH MARKS — same vector pair used on the landlord intro cards.
+// Two parallel diagonal lines, drawn at the two Figma-specified offsets
+// per card: (left:44, top:28) and (left:194, top:63).
+// ============================================
+
+function ScratchMarks() {
+  return (
+    <Svg width={s(20.5)} height={sv(35)} viewBox="0 0 20.7132 35.2132" fill="none">
+      <Path d="M20.6066 0.106586L0.106586 20.6066" stroke={colors.black[400]} strokeWidth={0.3} />
+      <Path d="M20.6066 14.6066L0.106586 35.1066" stroke={colors.black[400]} strokeWidth={0.3} />
     </Svg>
   );
 }
@@ -108,10 +149,18 @@ function BenefitCard({ item }: { item: BenefitCardData }) {
         <PaperclipSvg />
       </View>
 
-      {/* Centered content — Figma 4651:78274: orange + marker on top, text, Live Now badge */}
-      <View style={cardStyles.content}>
-        <PlusMarkerSvg size={28} />
+      {/* Two scratch-mark decorations — Figma layout per card:
+          (left:44, top:28) and (left:194, top:63). */}
+      <View style={cardStyles.scratchA} pointerEvents="none">
+        <ScratchMarks />
+      </View>
+      <View style={cardStyles.scratchB} pointerEvents="none">
+        <ScratchMarks />
+      </View>
 
+      {/* Centered content — halftone pin marker + text + Live Now badge */}
+      <View style={cardStyles.content}>
+        <HalftonePin size={28} />
         <RNText style={cardStyles.description}>{item.text}</RNText>
 
         <View style={cardStyles.badge}>
@@ -246,17 +295,20 @@ const cardStyles = StyleSheet.create({
     top: sv(-8), // Extends above card edge — pinned look
     transform: [{ rotate: '2.86deg' }], // Figma: rotation 2.856°
   },
-  sparkleTopLeft: {
+  // Two scratch-mark groups — Figma offsets per card.
+  scratchA: {
     position: 'absolute',
     left: s(44),
     top: sv(28),
-    opacity: 0.6,
+    width: s(20.5),
+    height: sv(35),
   },
-  sparkleTopRight: {
+  scratchB: {
     position: 'absolute',
     left: s(194),
     top: sv(63),
-    opacity: 0.6,
+    width: s(20.5),
+    height: sv(35),
   },
   content: {
     position: 'absolute',

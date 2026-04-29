@@ -608,6 +608,12 @@ export default function UploadScreen() {
     forceNew?: string;
   }>();
 
+  // Captured once at mount: did the user land here via journey-router replace
+  // (no back history), or did they actively navigate from intro? Used to gate
+  // the journey-resume notice — we only want it for users who were dropped here
+  // unexpectedly, not first-time-flow users coming from intro.
+  const [arrivedViaReplace] = useState(() => !router.canGoBack());
+
   // Persisted upload store — survives app kills
   const hasHydrated = useUploadStore((s) => s._hasHydrated);
   const queryClient = useQueryClient();
@@ -856,7 +862,7 @@ export default function UploadScreen() {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
 
         setTimeout(() => {
-          router.replace('/(agreement)/add-bank-details' as never);
+          router.replace('/(agreement)/upload-review' as never);
         }, FIGMA.animation.duration);
         break;
       }
@@ -987,7 +993,7 @@ export default function UploadScreen() {
       // Brief pause at 100% before navigating
       await new Promise((resolve) => setTimeout(resolve, 300));
       advanceJourneyStage(); // agreement_upload → setup
-      routerRef.current.replace('/(agreement)/add-bank-details' as never);
+      routerRef.current.replace('/(agreement)/upload-review' as never);
       return;
     }
 
@@ -1036,9 +1042,10 @@ export default function UploadScreen() {
         document.size ?? 0
       );
 
-      // Upload is done; backend extraction continues asynchronously.
-      // Route to bank details (user fills dead time while extraction runs).
-      routerRef.current.replace('/(agreement)/add-bank-details' as never);
+      // Upload is done; stay on this screen showing the verifying state.
+      // The extraction-status useEffect routes forward to /upload-review when
+      // extraction.status === 'completed'. This guarantees the user always
+      // passes through review → setup-intro → add-bank-details in order.
     } catch (error) {
       console.error('Upload error:', error);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
@@ -1198,7 +1205,14 @@ export default function UploadScreen() {
           <BackButton
             onPress={() => {
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-              routerRef.current.back();
+              if (routerRef.current.canGoBack()) {
+                routerRef.current.back();
+              } else {
+                // Journey-resume case — user landed here via router.replace from
+                // app/index.tsx, so there's no history. Send them to /intro so
+                // they can choose manual-entry as an alternative.
+                routerRef.current.replace('/(agreement)/intro' as never);
+              }
             }}
             color={colors.white}
             style={{ width: 32, height: 32, justifyContent: 'center' }}
@@ -1219,6 +1233,21 @@ export default function UploadScreen() {
               We&apos;ll auto-fill your details for verification. Takes ~10 seconds.
             </Text>
           </View>
+
+          {/* Journey-resume notice — only shows when:
+                (1) user got here via router.replace (no back history), AND
+                (2) the upload store has an errorMessage from a prior failure.
+              First-time flow users (push from intro) never see this; users who
+              successfully re-upload have errorMessage cleared on success. */}
+          {arrivedViaReplace && storeErrorMessage && (
+            <View style={styles.resumeNotice}>
+              <Text style={styles.resumeNoticeIcon}>⚠️</Text>
+              <View style={styles.resumeNoticeTextWrap}>
+                <Text style={styles.resumeNoticeTitle}>We need a re-upload</Text>
+                <Text style={styles.resumeNoticeBody}>{storeErrorMessage}</Text>
+              </View>
+            </View>
+          )}
 
           {/* Upload Card - Frame 1686557325 (node 1:29992) */}
           <View style={{ position: 'relative', zIndex: 0 }}>
@@ -1419,6 +1448,44 @@ const styles = StyleSheet.create({
   subtitle: {
     ...FIGMA.typography.subtitle,
     color: FIGMA.colors.subtitle, // #797979
+  },
+
+  // Journey-resume notice card — surfaced only when the user was dropped on
+  // /upload by the journey router due to a prior backend failure (failed
+  // extraction, invalid document, etc.). Soft brand-orange treatment so it
+  // reads as a heads-up, not a hard error.
+  resumeNotice: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 12,
+    backgroundColor: 'rgba(255,154,109,0.08)',
+    borderColor: 'rgba(255,154,109,0.32)',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    marginBottom: 24,
+    alignSelf: 'stretch',
+  },
+  resumeNoticeIcon: {
+    fontSize: 18,
+    lineHeight: 22,
+  },
+  resumeNoticeTextWrap: {
+    flex: 1,
+    gap: 4,
+  },
+  resumeNoticeTitle: {
+    fontFamily: 'PlusJakartaSans-SemiBold',
+    fontSize: 13,
+    lineHeight: 18,
+    color: '#FF9A6D',
+  },
+  resumeNoticeBody: {
+    fontFamily: 'PlusJakartaSans-Regular',
+    fontSize: 12,
+    lineHeight: 18,
+    color: '#A9A9A9',
   },
 
   // Upload card - Frame 1686557325 (node 1:29992)

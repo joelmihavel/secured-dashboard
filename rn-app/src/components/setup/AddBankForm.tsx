@@ -671,7 +671,15 @@ export default function AddBankScreen({ preWaitlist = false }: AddBankProps) {
             <BackButton
               onPress={() => {
                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                routerRef.current.back();
+                // After a cold restart the journey router lands the user
+                // directly on this screen with no back stack — `router.back()`
+                // is then a no-op. Fall back to a sensible "home": waitlist
+                // for pre-waitlist users, dashboard for approved users.
+                if (routerRef.current.canGoBack()) {
+                  routerRef.current.back();
+                } else {
+                  routerRef.current.replace((preWaitlist ? '/(waitlist)' : '/(main)') as never);
+                }
               }}
               style={styles.topRowBack}
               color={colors.white}
@@ -694,9 +702,9 @@ export default function AddBankScreen({ preWaitlist = false }: AddBankProps) {
               </Text>
             ) : (
               <Text style={styles.heading}>
-                <Text inherit style={styles.headingWhite}>Enter</Text>
+                <Text inherit style={styles.headingWhite}>Enter your</Text>
                 {'\n'}
-                <Text inherit style={styles.headingAccent}>bank details</Text>
+                <Text inherit style={styles.headingAccent}>Landlord&apos;s bank details</Text>
               </Text>
             )}
             {allVerified && verifiedName ? (
@@ -712,15 +720,6 @@ export default function AddBankScreen({ preWaitlist = false }: AddBankProps) {
           </View>
 
           <View style={styles.headerDivider} />
-
-          {/* Progress Bar — hidden in pre-waitlist mode */}
-          {!preWaitlist && (
-            <View style={[styles.progressContainer, { marginTop: 0 }]}>
-              <View style={styles.progressTrack}>
-                <View style={styles.progressFill} />
-              </View>
-            </View>
-          )}
 
           {/* Payment method selector — Bank Details / UPI Details pill tabs (full width) */}
           <View style={styles.selectorContainer}>
@@ -945,8 +944,10 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   heading: {
+    // Figma 4651:76469 — 28/40/-1 (was 32, which made "Landlord's bank details"
+    // wrap onto two lines on smaller devices).
     fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: 32, lineHeight: 40, letterSpacing: -1,
+    fontSize: 28, lineHeight: 40, letterSpacing: -1,
   },
   headingWhite: { color: colors.white },
   headingAccent: { color: colors.brand[500] },

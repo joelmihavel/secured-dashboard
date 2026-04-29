@@ -17,7 +17,7 @@
  *    instead of progressing forward, with a warning haptic
  */
 
-import React, { useCallback, useRef } from 'react';
+import React, { useCallback, useEffect, useRef } from 'react';
 import { View, StyleSheet, ScrollView, Image } from 'react-native';
 import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
@@ -32,6 +32,8 @@ import {
   validators,
   type ManualAgreementData,
 } from '@/src/stores/manualAgreement';
+import { useExtractedData } from '@/src/hooks/useAgreement';
+import { useUploadStore } from '@/src/stores/upload';
 import { GradientPill } from '@/src/components/agreement/GradientPill';
 import { ReviewRowSingle, ReviewRowMultiline } from '@/src/components/agreement/ReviewRow';
 import { colors } from '@/src/theme';
@@ -41,12 +43,54 @@ const BG_SHAPE = require('../../assets/images/background_shape.png');
 
 type FieldKey = keyof ManualAgreementData;
 
+/** Map paise → rupee digit string (store holds raw digits, formatRupees adds the ₹ + commas). */
+function paiseToRupeeDigits(paise: number | undefined): string {
+  if (!paise || paise <= 0) return '';
+  return String(Math.round(paise / 100));
+}
+
+/** "2026-11-30" → "30 Nov 2026". Falls back to the raw string if parsing fails. */
+function formatExitDate(iso: string | undefined): string {
+  if (!iso) return '';
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return iso;
+  return d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+}
+
 export default function UploadReviewScreen() {
   const router = useRouter();
   const routerRef = useRef(router);
   routerRef.current = router;
   const insets = useSafeAreaInsets();
   const data = useManualAgreementStore();
+  const setField = useManualAgreementStore((s) => s.setField);
+
+  // Hydrate the manual-agreement store from the completed extraction. The
+  // store is empty after a fresh upload (only manual-entry path writes to it
+  // directly), so without this the review screen renders every row as
+  // "missing" even though the DB has all the data.
+  const extractionId = useUploadStore((s) => s.extractionId);
+  const { data: extracted } = useExtractedData(extractionId, { enabled: !!extractionId });
+  const hydratedRef = useRef(false);
+  useEffect(() => {
+    if (!extracted || hydratedRef.current) return;
+    hydratedRef.current = true;
+    // registration_number is the editable target (only it's in update-extraction's
+    // MODIFIABLE_FIELDS whitelist). Prefer it on read so user edits round-trip
+    // cleanly; fall back to certificate_no since Gemini sometimes extracts only
+    // the cert and not the registration number.
+    setField('agreementId', extracted.registrationNumber ?? extracted.certificateNo ?? '');
+    setField('propertyName', extracted.propertyName ?? extracted.propertyAddress ?? '');
+    setField('tenants', (extracted.tenantNames ?? []).join(', '));
+    setField('landlords', (extracted.landlordNames ?? []).join(', '));
+    setField('monthlyRent', paiseToRupeeDigits(extracted.monthlyRentPaise));
+    setField('oneTimeDeposit', paiseToRupeeDigits(extracted.securityDepositPaise));
+    setField(
+      'rentDuration',
+      extracted.rentDurationMonths ? `${extracted.rentDurationMonths} months` : '',
+    );
+    setField('exitDate', formatExitDate(extracted.leaseEndDate));
+  }, [extracted, setField]);
 
   const valid = isAllValid(data);
   const isFieldMissing = (key: FieldKey): boolean => !validators[key](data[key]);

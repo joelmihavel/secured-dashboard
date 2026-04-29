@@ -80,8 +80,10 @@ export const SCREENSHOT_PARAMS: Record<string, string> | null = null;
 
 type JourneyTarget =
   | '/(auth)/splash'
+  | '/(agreement)/intro'
   | '/(agreement)/upload'
   | '/(agreement)/add-bank-details'
+  | '/(agreement)/setup-intro?context=approved'
   | '/(waitlist)'
   | '/(setup)/add-bank'
   | '/(main)'
@@ -320,7 +322,7 @@ export default function Index() {
               .eq('user_id', userId)
               .maybeSingle();
             // Always route approved users to setup — setup flow handles the full checklist
-            correctTarget = !tenancyRow ? '/(waitlist)' : '/(setup)/add-bank';
+            correctTarget = !tenancyRow ? '/(waitlist)' : '/(agreement)/setup-intro?context=approved';
           } else if (!correctTarget && (userStatus === 'waitlisted' || userStatus === 'agreement_confirmed')) {
             // Background validation for waitlisted — don't need reupload check here,
             // just default to waitlist (reupload redirect happens on the waitlist screen)
@@ -388,6 +390,11 @@ export default function Index() {
           setTarget(fallbackRoute);
         } else {
           console.warn('[journey-router] Routing failed, no cached route — defaulting to upload');
+          // Surface the silent-fallback case in the upload screen so the
+          // user understands why they're here when they reopen the app.
+          useUploadStore.getState().prepareForReupload({
+            errorMessage: "We couldn't confirm your status — please re-upload your agreement to continue.",
+          });
           setTarget('/(agreement)/upload');
         }
         setJourneyResolved(true);
@@ -411,7 +418,7 @@ export default function Index() {
         // Route to waitlist as safety net — extraction-recovery cron will fix the state.
         // Always route approved users to setup — even if bank is verified, they may
         // still need to complete utility/landlord steps. The setup flow handles the checklist.
-        setTarget(!tenancyRow ? '/(waitlist)' : '/(setup)/add-bank');
+        setTarget(!tenancyRow ? '/(waitlist)' : '/(agreement)/setup-intro?context=approved');
       } else if (userStatus === 'waitlisted' || userStatus === 'agreement_confirmed') {
         // waitlisted — check if extraction requires reupload (invalid document / failed).
         // Without this check, the waitlist screen loads → detects requiresReupload →
@@ -473,7 +480,10 @@ export default function Index() {
             if (uploadState.dismissedExtractionId && uploadState.extractionId === uploadState.dismissedExtractionId) {
               uploadState.reset();
             }
-            setTarget('/(agreement)/upload');
+            // No active upload + no completed extraction = fresh onboarding.
+            // Always pass through /intro before /upload so the user sees the
+            // "What we verify" pitch first (matches the signup post-OTP flow).
+            setTarget('/(agreement)/intro');
           }
         }
       }

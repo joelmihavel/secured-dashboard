@@ -1214,7 +1214,7 @@ const styles = StyleSheet.create({
     // rotated bands overflow horizontally without clipping.
     marginHorizontal: -220,
     marginTop: 8,
-    marginBottom: 12,
+    marginBottom: 24,
   },
   marqueeRotated: {
     width: 847,

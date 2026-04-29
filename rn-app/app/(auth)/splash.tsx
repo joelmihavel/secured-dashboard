@@ -123,13 +123,13 @@ const styles = StyleSheet.create({
     lineHeight: sf(56),
     letterSpacing: -1,
     color: colors.brand[500],
-    marginTop: sv(24),
+    marginTop: sv(4),
   },
   byFlentRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: s(4),
-    marginTop: sv(20),
+    marginTop: sv(30),
   },
   byText: {
     fontFamily: 'PlusJakartaSans-Regular',

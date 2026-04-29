@@ -34,7 +34,6 @@ import {
   ProgressArc,
   BenefitsCarousel,
   DottedGridPattern,
-  SkeletonLoader,
   BottomSheet,
 } from '@/src/components';
 // WaitlistRelease replaced by ProgressArc — the latter is the codebase's
@@ -164,9 +163,10 @@ const FIGMA = {
     // From node 41:11212 itemSpacing
     sectionGap: s(48), // 48
 
-    // Content gap: 40 → spacing.xxl
-    // From node 41:11213 itemSpacing
-    contentGap: s(40), // 40
+    // Content gap between top-level sections (timeline card → "Once
+    // you're in" → "Your benefits"). Bumped above the original 40 to
+    // give the sections room to breathe.
+    contentGap: s(56),
 
     // Header section gap: 48 → spacing.xxxl
     // From node 41:11214 itemSpacing
@@ -438,11 +438,14 @@ export default function WaitlistScreen() {
   }));
 
   // ============================================
-  // LOADING STATE
+  // LOADING STATE — render the screen immediately with safe defaults instead
+  // of a full-page skeleton. The header / title / timeline / benefits are all
+  // static; only the gauge depends on backend data, and it falls back to
+  // `0 / 500` while `getWaitlistStatus()` resolves (~500ms-1s on mobile).
+  // Once data arrives, the gauge populates seamlessly. This eliminates the
+  // ~700ms perceived load on cold-start without affecting redirect flows
+  // (the useEffects above still fade-and-navigate when status requires it).
   // ============================================
-  if (viewState === 'loading' || isLoading) {
-    return <SkeletonLoader backgroundShape="waitlist" />;
-  }
 
   // ============================================
   // ERROR STATE
@@ -665,10 +668,13 @@ export default function WaitlistScreen() {
             </Text>
 
             <View style={styles.stepsRow}>
+              {/* Single continuous track sits BEHIND the dots and runs from
+                  the centre of the first dot to the centre of the last
+                  dot — Figma 4651:78274 shows one connecting line, not
+                  per-segment dashes. */}
+              <View style={styles.stepsTrack} pointerEvents="none" />
               <StepDot index={1} label="Landlord's bank details and PAN" />
-              <View style={styles.stepConnector} />
               <StepDot index={2} label="Home electricity bill" />
-              <View style={styles.stepConnector} />
               <StepDot
                 index={3}
                 label={
@@ -995,6 +1001,9 @@ const styles = StyleSheet.create({
     width: '100%',
     alignItems: 'center',
     gap: 4,
+    // Pull the timeline card up — visual rhythm felt too loose between the
+    // "Get early access faster" CTA and the timeline that follows.
+    marginBottom: -24,
   },
   successPill: {
     width: '100%',
@@ -1017,6 +1026,10 @@ const styles = StyleSheet.create({
     width: '100%',
     gap: 24,
     paddingTop: 8,
+    // Extra breathing room around this section: more space between the
+    // timeline card above and the benefits carousel below per the
+    // requested layout adjustment.
+    marginVertical: 24,
   },
   stepsHeading: {
     fontFamily: FIGMA.typography.subtitle.fontFamily,
@@ -1027,20 +1040,27 @@ const styles = StyleSheet.create({
   stepsHeadingWhite: { color: colors.white },
   stepsHeadingAccent: { color: colors.brand[500] },
   stepsRow: {
+    // Position parent for the absolute track; flex-row layout for the
+    // three step columns evenly distributed across the width.
+    position: 'relative',
     flexDirection: 'row',
     alignItems: 'flex-start',
-    gap: 4,
   },
   stepDotWrap: {
     flex: 1,
     alignItems: 'center',
     gap: 8,
+    // Dot must paint above the absolute track behind the row.
+    zIndex: 1,
   },
   stepDot: {
     width: 14,
     height: 14,
     borderRadius: 7,
     borderWidth: 1.5,
+    // Card-like background so the track line is visually clipped to the
+    // edge of the circle (the line passes behind the dot, not through it).
+    backgroundColor: FIGMA.colors.screenBackground,
   },
   // Active step — solid orange fill with matching border
   stepDotActive: {
@@ -1048,10 +1068,9 @@ const styles = StyleSheet.create({
     borderColor: colors.brand[500],
   },
   // Inactive — hollow circle with orange ring per Figma 4651:78274
-  // (was grey ring; the brand-orange ring is what makes the connector dots
-  //  feel like part of the accent journey).
+  // (the brand-orange ring is what makes the connector dots feel like
+  //  part of the accent journey).
   stepDotInactive: {
-    backgroundColor: 'transparent',
     borderColor: colors.brand[500],
   },
   stepLabel: {
@@ -1061,11 +1080,18 @@ const styles = StyleSheet.create({
     color: colors.neutral[500],
     textAlign: 'center',
   },
-  stepConnector: {
-    flex: 0.6,
+  stepsTrack: {
+    // Single horizontal hairline behind the dots. With three flex:1 step
+    // columns, dot 1 centre sits at 16.67% from the left and dot 3 centre
+    // at 16.67% from the right, so anchoring left/right at 1/6 keeps the
+    // track flush with the dot centres — no per-segment connectors, no
+    // visible gaps. Top = (dotHeight - lineHeight) / 2 = 6.5 ≈ 6.
+    position: 'absolute',
+    top: 6,
+    left: '16.67%',
+    right: '16.67%',
     height: 1,
     backgroundColor: colors.black[400],
-    marginTop: 5,
   },
 
   // Invite Code Drawer — Figma 4651:98884 / 109194 / 119504 / 129815

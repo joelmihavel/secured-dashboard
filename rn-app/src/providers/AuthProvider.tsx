@@ -148,8 +148,16 @@ export function AuthProvider({ children }: AuthProviderProps) {
         // DB migration guard: clear stale keychain sessions from old Supabase project.
         // iOS Keychain persists across app uninstalls, so users who had the Dev DB build
         // and install the Main DB build would load a session signed by the wrong JWT secret.
+        //
+        // IMPORTANT: SecureStore returning null is ambiguous — it could mean "first launch"
+        // OR "keychain entitlement missing / read failed". We must distinguish these:
+        //   - First launch: no auth-token key exists either → fall through, set marker, continue
+        //   - Keychain failure: auth-token may exist in memory; preemptively signing out
+        //     cascades into PostgREST losing its JWT and RLS blocking the user from reading
+        //     their own records. Just continue without firing the migration guard.
+        // We only fire signOut when storedVersion is a *known different* value, never on null.
         const storedVersion = await SecureStore.getItemAsync(DB_MIGRATION_KEY).catch(() => null);
-        if (storedVersion !== CURRENT_DB_VERSION) {
+        if (storedVersion && storedVersion !== CURRENT_DB_VERSION) {
           console.log('[AuthProvider] DB migration detected — clearing stale keychain session');
           migrationGuardFiredRef.current = true; // Block INITIAL_SESSION from re-setting
           await supabase.auth.signOut({ scope: 'local' }).catch(() => {});
@@ -157,6 +165,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
           updateSession(null);
           setIsLoading(false);
           return;
+        }
+        // First launch (or keychain unreadable): just record the current version and continue.
+        // No preemptive signOut — let the normal getSession() flow below handle auth.
+        if (!storedVersion) {
+          await SecureStore.setItemAsync(DB_MIGRATION_KEY, CURRENT_DB_VERSION).catch(() => {});
         }
 
         const { data: { session: initialSession } } = await supabase.auth.getSession();

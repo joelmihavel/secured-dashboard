@@ -231,15 +231,17 @@ function useMountDiscovery(enabled: boolean) {
     const store = useUploadStore.getState();
 
     // If store has extractionId, verify it still exists in DB before resuming.
-    // The record may have been deleted (user re-created, admin cleanup, etc.)
-    // or belong to a different user (RLS blocks access).
     if (store.extractionId) {
       if (
         store.uploadPhase === 'requesting_url' ||
         store.uploadPhase === 'uploading_file'
       ) {
         // Client-side phases that didn't complete — file was never fully
-        // uploaded. Reset and let the user see the incomplete upload error.
+        // uploaded. Reset so the upload screen drops its 'uploading' UI
+        // state (the storePhase='idle' useEffect picks this up and shows
+        // the "Upload Interrupted" alert). Without this, a user who
+        // backgrounded mid-upload and cold-restarts within 10 min sees a
+        // stuck progress bar with no upload actually running.
         store.reset();
         return;
       }
@@ -259,12 +261,19 @@ function useMountDiscovery(enabled: boolean) {
             // Store was reset while we were fetching (forceNew / re-upload)
             if (currentStore.dismissedExtractionId === store.extractionId) return;
 
-            if (!status || status.userVerified) {
-              // Record doesn't exist, belongs to another user, or was already
-              // reviewed — reset so the user sees a fresh upload screen.
+            if (!status) {
+              // Record genuinely missing (RLS, admin cleanup, etc.). Reset
+              // so the upload screen renders the idle state instead of
+              // tracking a phantom extraction that will never complete.
               currentStore.reset();
               return;
             }
+            // NOTE: We deliberately do NOT reset on userVerified=true.
+            // The cloud-run extraction-service auto-sets user_verified=true on
+            // every successful extraction (see finalize.ts:149-152). Resetting
+            // the store on that signal stranded users on /upload after cold
+            // restart. Keep the store intact and let the waitlisted +
+            // !bankStepCompleted branch in app/index.tsx route them forward.
 
             // BUG FIX: If the stored extraction is in a terminal error state
             // (invalid_document or failed), check the DB for a NEWER extraction

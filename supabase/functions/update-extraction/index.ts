@@ -26,7 +26,9 @@ interface UpdateExtractionRequest {
   extraction_id: string;
   modifications: {
     tenant_name?: string;
+    tenant_names?: string[];
     landlord_name?: string;
+    landlord_names?: string[];
     property_address?: string;
     monthly_rent?: number; // In rupees
     security_deposit?: number; // In rupees
@@ -88,6 +90,16 @@ const requestSchema = {
         }
       }
 
+      const isStringArray = (v: unknown): v is string[] =>
+        Array.isArray(v) && v.every((x) => typeof x === "string");
+
+      if (mods.tenant_names !== undefined && !isStringArray(mods.tenant_names)) {
+        return "tenant_names must be an array of strings";
+      }
+      if (mods.landlord_names !== undefined && !isStringArray(mods.landlord_names)) {
+        return "landlord_names must be an array of strings";
+      }
+
       return true;
     },
   },
@@ -96,7 +108,9 @@ const requestSchema = {
 // Fields that can be modified by users
 const MODIFIABLE_FIELDS = [
   "tenant_name",
+  "tenant_names",
   "landlord_name",
+  "landlord_names",
   "property_address",
   "monthly_rent",
   "security_deposit",
@@ -114,6 +128,35 @@ const MODIFIABLE_FIELDS = [
   "stamp_paper_value",
   "registration_number",
 ];
+
+// Maps API field name → actual DB column on extracted_rental_info, with an
+// optional unit transform. Fields NOT in this map are kept in the
+// user_modified_data JSONB audit blob but never written to a real column —
+// either because (a) the API field accepts a synthetic key (e.g. monthly_rent
+// in rupees vs. monthly_rent_paise in paise) and we translate on the way in,
+// or (b) the column simply doesn't exist on the table yet.
+const COLUMN_MAP: Record<string, { column: string; transform?: (v: unknown) => unknown }> = {
+  tenant_name: { column: "tenant_name" },
+  tenant_names: { column: "tenant_names" },
+  landlord_name: { column: "landlord_name" },
+  landlord_names: { column: "landlord_names" },
+  property_address: { column: "property_address" },
+  monthly_rent: {
+    column: "monthly_rent_paise",
+    transform: (v: unknown) => Math.round((v as number) * 100),
+  },
+  security_deposit: {
+    column: "security_deposit_paise",
+    transform: (v: unknown) => Math.round((v as number) * 100),
+  },
+  lease_start_date: { column: "lease_start_date" },
+  lease_end_date: { column: "lease_end_date" },
+  rent_due_day: { column: "rent_due_day" },
+  landlord_phone: { column: "landlord_phone" },
+  landlord_email: { column: "landlord_email" },
+  agreement_date: { column: "agreement_date" },
+  registration_number: { column: "registration_number" },
+};
 
 // ==============================================
 // MAIN HANDLER
@@ -190,6 +233,18 @@ serve(async (req: Request) => {
       throw new ValidationError("No valid modifications provided");
     }
 
+    // Translate modifiable API fields to their actual DB columns (with unit
+    // conversion where needed — e.g. monthly_rent rupees → monthly_rent_paise).
+    // Edits used to live only in user_modified_data JSONB, which no consumer
+    // reads — meaning admin views, payment recipient names, and PAN matching
+    // all kept seeing the original Gemini extraction even after a user edit.
+    const columnUpdates: Record<string, unknown> = {};
+    for (const [apiKey, value] of Object.entries(filteredModifications)) {
+      const mapping = COLUMN_MAP[apiKey];
+      if (!mapping) continue;
+      columnUpdates[mapping.column] = mapping.transform ? mapping.transform(value) : value;
+    }
+
     // Get existing user_modified_data and modification_history
     const existingModifications = extraction.user_modified_data || {};
     const modificationHistory = extraction.modification_history || [];
@@ -213,6 +268,7 @@ serve(async (req: Request) => {
     const { data: updatedExtraction, error: updateError } = await supabase
       .from("extracted_rental_info")
       .update({
+        ...columnUpdates,
         user_modified_data: mergedModifications,
         modification_history: modificationHistory,
         // updated_at is auto-set by trigger — no need to set manually

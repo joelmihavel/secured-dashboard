@@ -427,7 +427,7 @@ export function useAgreement(options: UseAgreementOptions = {}) {
 
   // Update handler (save modifications before confirmation)
   const update = useCallback(
-    async (modifications: Record<string, string | number | boolean>) => {
+    async (modifications: Record<string, string | number | boolean | string[]>) => {
       if (!currentExtractionId) {
         throw new Error('No extraction to update');
       }

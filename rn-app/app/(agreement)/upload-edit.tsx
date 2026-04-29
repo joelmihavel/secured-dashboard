@@ -28,9 +28,66 @@ import {
   formatRupees,
   type ManualAgreementData,
 } from '@/src/stores/manualAgreement';
+import { useUpdateExtraction } from '@/src/hooks/useAgreement';
+import { useUploadStore } from '@/src/stores/upload';
 import { GradientPill } from '@/src/components/agreement/GradientPill';
 import { colors } from '@/src/theme';
 import { s, sf, sv } from '@/src/theme/scale';
+
+/** "30 Nov 2026" or "30/11/2026" → "2026-11-30". Returns null if unparseable. */
+function parseExitDateToISO(input: string): string | null {
+  if (!input) return null;
+  const d = new Date(input);
+  if (!Number.isNaN(d.getTime())) {
+    return d.toISOString().slice(0, 10);
+  }
+  // Fallback: dd/mm/yyyy or dd-mm-yyyy
+  const m = input.match(/^(\d{1,2})[/-](\d{1,2})[/-](\d{4})$/);
+  if (m) {
+    const [, dd, mm, yyyy] = m;
+    const iso = `${yyyy}-${mm.padStart(2, '0')}-${dd.padStart(2, '0')}`;
+    if (!Number.isNaN(new Date(iso).getTime())) return iso;
+  }
+  return null;
+}
+
+/** Split a comma-joined names field ("Alice, Bob, Carol") into a clean
+ *  array. Trims whitespace and drops empty segments. */
+function splitNames(input: string): string[] {
+  return input
+    .split(',')
+    .map((s) => s.trim())
+    .filter((s) => s.length > 0);
+}
+
+/** Build the update-extraction payload from the local manual-agreement store.
+ *  Only fields in MODIFIABLE_FIELDS (server-side whitelist) are included.
+ *  For tenants/landlords we send BOTH the singular `*_name` (joined string)
+ *  and the plural `*_names` (array) so the user's edit round-trips cleanly:
+ *  the read path in agreement.ts:extractNames prefers the array when present. */
+function buildUpdatePayload(
+  data: ManualAgreementData,
+): Record<string, string | number | string[]> {
+  const payload: Record<string, string | number | string[]> = {};
+  if (data.agreementId.trim()) payload.registration_number = data.agreementId.trim();
+  if (data.tenants.trim()) {
+    payload.tenant_name = data.tenants.trim();
+    payload.tenant_names = splitNames(data.tenants);
+  }
+  if (data.landlords.trim()) {
+    payload.landlord_name = data.landlords.trim();
+    payload.landlord_names = splitNames(data.landlords);
+  }
+  const rent = Number((data.monthlyRent || '').replace(/\D/g, ''));
+  if (Number.isFinite(rent) && rent > 0) payload.monthly_rent = rent;
+  const dep = Number((data.oneTimeDeposit || '').replace(/\D/g, ''));
+  if (Number.isFinite(dep) && dep > 0) payload.security_deposit = dep;
+  const iso = parseExitDateToISO(data.exitDate);
+  if (iso) payload.lease_end_date = iso;
+  // propertyName + rentDuration aren't in the server whitelist (no
+  // property_name or rent_duration write targets) — skipping silently.
+  return payload;
+}
 
 const BG_SHAPE = require('../../assets/images/background_shape.png');
 
@@ -76,18 +133,38 @@ export default function UploadEditScreen() {
   }, [focusKey]);
 
   const valid = isAllValid(data);
+  const extractionId = useUploadStore((s) => s.extractionId);
+  const updateMutation = useUpdateExtraction();
 
   const handleBack = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     routerRef.current.back();
   }, []);
 
-  const handleSave = useCallback(() => {
-    if (!valid) return;
+  const handleSave = useCallback(async () => {
+    if (!valid || updateMutation.isPending) return;
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    // Return to upload-review — the pill there will now show "Confirm & Continue".
+
+    // Persist whitelisted fields to extracted_rental_info before navigating
+    // back. Without this, edits live only in the local Zustand store and
+    // never reach the backend, so admin review and the rest of the flow see
+    // the original (possibly-empty) values.
+    if (extractionId) {
+      const modifications = buildUpdatePayload(data);
+      if (Object.keys(modifications).length > 0) {
+        try {
+          await updateMutation.mutateAsync({ extractionId, modifications });
+        } catch (err) {
+          console.warn('[upload-edit] Failed to persist edits:', err);
+          // Non-blocking — local store still has the values, user can retry
+          // later via re-edit. Falling through to back nav so they aren't
+          // stranded on this screen.
+        }
+      }
+    }
+
     routerRef.current.back();
-  }, [valid]);
+  }, [valid, extractionId, data, updateMutation]);
 
   return (
     <Screen padded={false} testID="upload-edit-screen" safeAreaTop={false} safeAreaBottom={false} style={styles.screen}>

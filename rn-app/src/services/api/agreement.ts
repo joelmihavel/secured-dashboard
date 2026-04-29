@@ -92,6 +92,7 @@ export interface ExtractedAgreementData {
   landlordNames: string[];
   confidenceScore: number;
   certificateNo?: string;
+  registrationNumber?: string;
   contractStatus: ContractStatus;
   isCitySupported: boolean;
   needsManualReview: boolean;
@@ -127,10 +128,12 @@ export interface ConfirmExtractionRequest {
   landlordEmail?: string;
 }
 
-/** Request to update extraction with user modifications */
+/** Request to update extraction with user modifications.
+ *  String[] values are used for the plural array columns (tenant_names,
+ *  landlord_names) so user edits to those fields actually round-trip. */
 export interface UpdateExtractionRequest {
   extractionId: string;
-  modifications: Record<string, string | number | boolean>;
+  modifications: Record<string, string | number | boolean | string[]>;
 }
 
 /** Result after updating extraction */
@@ -328,7 +331,11 @@ export async function uploadFileToSignedUrl(
       httpMethod: 'PUT',
       uploadType: FileSystemUploadType.BINARY_CONTENT,
       headers: { 'Content-Type': mimeType },
-      sessionType: FileSystemSessionType.BACKGROUND,
+      // iOS Simulator's NSURLSession background mode is broken (fails with
+      // NSURLErrorDomain -1). Use FOREGROUND in dev so simulator testing
+      // works; production keeps BACKGROUND so uploads continue if the user
+      // navigates away mid-transfer.
+      sessionType: __DEV__ ? FileSystemSessionType.FOREGROUND : FileSystemSessionType.BACKGROUND,
     });
 
     onProgress?.(100);
@@ -455,6 +462,7 @@ const EXTRACTION_SELECT_COLUMNS = [
   'landlord_name',
   'confidence_score',
   'certificate_no',
+  'registration_number',
   'extraction_status',
   'is_city_supported',
   'needs_manual_review',
@@ -514,6 +522,7 @@ export async function getExtractedAgreementData(
     landlordNames: extractNames(data.landlord_names, data.landlord_name),
     confidenceScore: (data.confidence_score as number) ?? 0,
     certificateNo: (data.certificate_no as string) ?? undefined,
+    registrationNumber: (data.registration_number as string) ?? undefined,
     contractStatus: (data.contract_status as string as ContractStatus) ?? (data.extraction_status === 'completed' ? 'user_review' : 'uploading'),
     isCitySupported: (data.is_city_supported as boolean) ?? false,
     needsManualReview: (data.needs_manual_review as boolean) ?? false,

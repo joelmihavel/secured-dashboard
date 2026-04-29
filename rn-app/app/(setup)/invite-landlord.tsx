@@ -1,382 +1,446 @@
 /**
- * Invite Landlord Screen
- * Figma Reference: 1-34150
+ * Invite Landlord — Intro Screen
+ * Figma Node: 4651:144441 ("Onboarding / address proof --1")
  *
- * Screen: "onboarding / Invite Landlord"
- * Blueprint: figma-1on1parity/data/1-34150-blueprint.json
+ * Entry point for the invite-landlord flow. Sells the "why" before asking
+ * for the landlord's phone. Layout (top→bottom, gap 32):
+ *  - Marquee bands (rotated)
+ *  - Header row: Logo + "Invite Landlord" gradient pill (CTA → form)
+ *  - Title "Invite\nyour landlord" + subtitle (gap 40 between header & title)
+ *  - Hairline divider
+ *  - "What we'll do?" + 3 stepped rows (icon + title + body)
+ *  - Hairline divider
+ *  - "Why this helps them?" + horizontal pager of 4 notepad benefit cards
+ *  - "Learn more about Secured for landlords →" footer pill
  *
- * Figma structure (dark area, node 1:34220):
- * - Frame column, gap 64
- *   - Status Bar (53px) -- handled by safe area
- *   - Frame 1686557268 (1:34222) -- main content
- *     - column, center, gap 40, padding 0 48 0 48
- *     - Back arrow (1:34224)
- *     - Frame 2095586383 (1:34229) -- title section, column, gap 16
- *       - Title: "One last step we promise" -- 48/64, letterSpacing -2
- *         - chars 0-13 "One last step" = #A9A9A9
- *         - chars 14-24 "we promise" = #FF9A6D
- *       - Subtitle: "Invite your landlord to Secured to activate your cashback."
- *         - 12/20, #A9A9A9, PlusJakartaSans-Regular
- *     - Progress bar (clipped to 3px visible, track #4D4D4D, fill #CC7B57)
- *     - Phone input (label + +91 dropdown + "Enter Number")
- *       - Label: "Invite your landlord to Secured to finish setup."
- *         - 12/20, #A9A9A9, PlusJakartaSans-Medium
- *     - Button section (column, gap 16)
- *       - "Save and invite" button -- disabled state, 297x56, #202020
- *       - "Skip" text -- centered, 14/20, #FFFFFF, PlusJakartaSans-Medium, underline
- *
- * Backend: send-landlord-invite edge function (POST, auth required)
+ * The "Invite Landlord" header CTA and the cards' tap target both push to
+ * `/(setup)/invite-landlord-form` which carries the existing send-invite
+ * functionality.
  */
 
-import React, { useCallback, useEffect, useRef, useState } from 'react';
-import {
-  View,
-  StyleSheet,
-  Dimensions,
-  ScrollView,
-  TouchableOpacity,
-  Platform,
-  Linking,
-} from 'react-native';
-import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
+import React, { useCallback, useRef } from 'react';
+import { View, StyleSheet, ScrollView, Pressable, Image, Linking } from 'react-native';
 import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import Svg, { Path } from 'react-native-svg';
+import { LinearGradient } from 'expo-linear-gradient';
 
-import { Screen, AlertBanner, Text, PhoneInput, PrimaryButton, ScreenTitle, BackButton } from '@/src/components';
-import { DottedGridPattern, DottedGridPresets } from '@/src/components/patterns/DottedGridPattern';
-import { useSendLandlordInvite, useDashboard } from '@/src/hooks';
-import Animated, { useSharedValue, useAnimatedStyle, withTiming } from 'react-native-reanimated';
-import type { SetupError } from '@/src/types/setup';
-import type { CountryData } from '@/src/components/ui/Input/PhoneInput';
+import { Screen, Text, Logo, DottedGridPattern, BackButton } from '@/src/components';
+import { Marquee, TOP_MARQUEE_ITEMS, BOTTOM_MARQUEE_ITEMS } from '@/src/components/auth/landing-decor';
+import { LandlordBenefitCard, landlordCardBodyStyle } from '@/src/components/setup/LandlordBenefitCard';
 import { colors } from '@/src/theme';
+import { s, sf, sv } from '@/src/theme/scale';
 
-// Figma exact values from 1-34150 blueprint
-const FIGMA_COLORS = {
-  background: colors.black[700],
-  title: colors.white,
-  titleGray: colors.neutral[500],
-  accent: colors.brand[500],
-  subtitle: colors.neutral[500],
-  progressTrack: colors.black[400],
-  progressFill: colors.brand[600],
-  label: colors.neutral[500],
-  skipText: colors.white,
-  buttonText: colors.neutral[800],
-  buttonBg: colors.black[500],
-} as const;
+const BG_SHAPE = require('../../assets/images/background_shape.png');
 
-export default function InviteLandlordScreen() {
+const LEARN_MORE_URL = 'https://flent.in/secured/landlords';
+
+// ── Step icons (24×24) — exact paths supplied for Figma parity. Solid
+// white fills, even-odd path geometry that matches the Figma asset family
+// (imgFrame / imgFrame1 / imgFrame2).
+function HeadsetIcon() {
+  return (
+    <Svg width={24} height={24} viewBox="0 0 24 24" fill="none">
+      <Path
+        d="M22 17.0022C21.999 19.8731 19.9816 22.2726 17.2872 22.8616L16.6492 20.9476C17.8532 20.7511 18.8765 20.0171 19.4649 19H17C15.8954 19 15 18.1046 15 17V13C15 11.8954 15.8954 11 17 11H19.9381C19.446 7.05369 16.0796 4 12 4C7.92038 4 4.55399 7.05369 4.06189 11H7C8.10457 11 9 11.8954 9 13V17C9 18.1046 8.10457 19 7 19H4C2.89543 19 2 18.1046 2 17V12C2 6.47715 6.47715 2 12 2C17.5228 2 22 6.47715 22 12V12.9987V13V17V17.0022ZM20 17V13H17V17H20ZM4 13V17H7V13H4Z"
+        fill={colors.white}
+      />
+    </Svg>
+  );
+}
+
+function BankIcon() {
+  return (
+    <Svg width={24} height={24} viewBox="0 0 24 24" fill="none">
+      <Path
+        d="M2 20H22V22H2V20ZM4 12H6V19H4V12ZM9 12H11V19H9V12ZM13 12H15V19H13V12ZM18 12H20V19H18V12ZM2 7L12 2L22 7V11H2V7ZM4 8.23607V9H20V8.23607L12 4.23607L4 8.23607ZM12 8C11.4477 8 11 7.55228 11 7C11 6.44772 11.4477 6 12 6C12.5523 6 13 6.44772 13 7C13 7.55228 12.5523 8 12 8Z"
+        fill={colors.white}
+      />
+    </Svg>
+  );
+}
+
+function AlertHexIcon() {
+  return (
+    <Svg width={24} height={24} viewBox="0 0 24 24" fill="none">
+      <Path
+        d="M17.5 2.5L23 12L17.5 21.5H6.5L1 12L6.5 2.5H17.5ZM16.3469 4.5H7.65311L3.311 12L7.65311 19.5H16.3469L20.689 12L16.3469 4.5ZM11 15H13V17H11V15ZM11 7H13V13H11V7Z"
+        fill={colors.white}
+      />
+    </Svg>
+  );
+}
+
+// "Why this helps them?" card content. Visual chrome (notepad bg, paperclip,
+// scratch marks, house+shield icon, perforations) all lives in
+// `LandlordBenefitCard` so the waitlist + this screen share one component.
+const CARDS: { id: string; text: React.ReactNode }[] = [
+  {
+    id: '1',
+    text: (
+      <Text style={landlordCardBodyStyle.body}>
+        Get guaranteed rent protection cover{' '}
+        <Text inherit style={landlordCardBodyStyle.bodyAccent}>upto INR 1.5 lakhs</Text>
+      </Text>
+    ),
+  },
+  {
+    id: '2',
+    text: (
+      <Text style={landlordCardBodyStyle.body}>
+        If tenant abandons the property,{' '}
+        <Text inherit style={landlordCardBodyStyle.bodyAccent}>get guaranteed rent placement within 30 days</Text>
+      </Text>
+    ),
+  },
+  {
+    id: '3',
+    text: (
+      <Text style={landlordCardBodyStyle.body}>
+        Complimentary tenant{' '}
+        <Text inherit style={landlordCardBodyStyle.bodyAccent}>background verification</Text>
+        {' '}report
+      </Text>
+    ),
+  },
+  {
+    id: '4',
+    text: (
+      <Text style={landlordCardBodyStyle.body}>
+        We guarantee a tenant replacement{' '}
+        <Text inherit style={landlordCardBodyStyle.bodyAccent}>in less than 30 days</Text>
+      </Text>
+    ),
+  },
+];
+
+// ── Step row (icon + title + body) ─────────────────────────────────────
+interface StepRowProps {
+  icon: React.ReactNode;
+  titleAccent: string;
+  titleRest: string;
+  body: string;
+}
+
+function StepRow({ icon, titleAccent, titleRest, body }: StepRowProps) {
+  return (
+    <View style={stepStyles.row}>
+      <View style={stepStyles.icon}>{icon}</View>
+      <View style={stepStyles.textCol}>
+        <Text style={stepStyles.title}>
+          <Text inherit style={stepStyles.titleAccent}>{titleAccent}</Text>
+          <Text inherit style={stepStyles.titleRest}>{titleRest}</Text>
+        </Text>
+        <Text style={stepStyles.body}>{body}</Text>
+      </View>
+    </View>
+  );
+}
+
+const stepStyles = StyleSheet.create({
+  row: { flexDirection: 'row', gap: s(24), alignItems: 'flex-start' },
+  icon: { width: 24, height: 24 },
+  textCol: { flex: 1, gap: sv(8) },
+  title: { fontFamily: 'PlusJakartaSans-Regular', fontSize: sf(14), lineHeight: sf(20) },
+  titleAccent: { color: colors.brand[500] },
+  titleRest: { color: colors.neutral[500] },
+  body: {
+    fontFamily: 'PlusJakartaSans-Regular',
+    fontSize: sf(12),
+    lineHeight: sf(20),
+    color: colors.black[200] ?? '#A6A6A6',
+  },
+});
+
+// ── Header CTA pill (gradient bg, brand stroke, 3D recess) ─────────────
+// Figma 4651:144470 layers (inside-out):
+//   1. outer container: 0.1px brand[500] border, radius 8, drop-shadow
+//      0 6px 12px rgba(153,92,65,0.24)
+//   2. linear gradient bg from black[500] (top) to black[800] (bottom 90%)
+//   3. inset shadows: -2/-4 black bottom-right + 0/-3 white@12 bottom
+//      → fakes a recessed 3D pill. RN can't render `box-shadow: inset`,
+//      so we approximate with a thin bottom-right black overlay and a
+//      faint top white highlight.
+function HeaderCtaPill({ onPress }: { onPress: () => void }) {
+  return (
+    <Pressable onPress={onPress} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} testID="invite-landlord-cta">
+      <View style={pillStyles.outer}>
+        <LinearGradient
+          colors={[colors.black[500], colors.black[800]]}
+          locations={[0, 0.9]}
+          start={{ x: 0.5, y: 0 }}
+          end={{ x: 0.5, y: 1 }}
+          style={StyleSheet.absoluteFillObject}
+        />
+        {/* Bottom-right inset (-2/-4 black) */}
+        <View pointerEvents="none" style={pillStyles.insetBR} />
+        {/* Bottom highlight (-3 white@12%) */}
+        <View pointerEvents="none" style={pillStyles.insetHighlight} />
+        <Text style={pillStyles.label}>Invite Landlord</Text>
+      </View>
+    </Pressable>
+  );
+}
+
+const pillStyles = StyleSheet.create({
+  outer: {
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.brand[500],
+    borderRadius: 8,
+    paddingHorizontal: s(16),
+    paddingVertical: sv(12),
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
+    // Figma: 0 6px 12px rgba(153,92,65,0.24)
+    shadowColor: '#995C41',
+    shadowOpacity: 0.24,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 6,
+  },
+  // Approx inset_-2px_-4px_0_0_black: dark ring along right + bottom edges
+  insetBR: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    bottom: 0,
+    width: 2,
+    backgroundColor: colors.black[900],
+    opacity: 0.6,
+  },
+  // Approx inset_0_-3px_4px_0_rgba(255,255,255,0.12): faint top highlight band
+  insetHighlight: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    top: 0,
+    height: 1,
+    backgroundColor: 'rgba(255,255,255,0.12)',
+  },
+  label: {
+    fontFamily: 'PlusJakartaSans-Regular',
+    fontSize: sf(14),
+    lineHeight: sf(20),
+    color: colors.white,
+    textAlign: 'center',
+  },
+});
+
+// ──────────────────────────────────────────────────────────────────────
+//                              SCREEN
+// ──────────────────────────────────────────────────────────────────────
+export default function InviteLandlordIntroScreen() {
   const router = useRouter();
   const routerRef = useRef(router);
   routerRef.current = router;
-  const sendLandlordInvite = useSendLandlordInvite();
-  const { tenancy } = useDashboard();
-
-  const [phoneNumber, setPhoneNumber] = useState('');
-  const [originalPhone, setOriginalPhone] = useState('');
-  const [countryCode, setCountryCode] = useState('+91');
-  const [maxDigits, setMaxDigits] = useState(10);
-  const [errors, setErrors] = useState<Record<string, string>>({});
-  const [apiError, setApiError] = useState<string | null>(null);
-  const [inviteSent, setInviteSent] = useState(false);
-
-  // Pre-fill phone on return visits (phone saved on tenancy from previous invite)
-  useEffect(() => {
-    if (tenancy?.landlord_phone && !phoneNumber) {
-      const raw = tenancy.landlord_phone.replace(/\D/g, '');
-      const digits = raw.length > 10 ? raw.slice(-10) : raw;
-      setPhoneNumber(digits);
-      setOriginalPhone(digits);
-    }
-  }, [tenancy?.landlord_phone]);
-
-  // Determine if this is a reminder (same number) or new invite (number changed)
-  const hasInviteBeenSent = tenancy?.verification_status?.landlord_status === 'invited'
-    || tenancy?.verification_status?.landlord_status === 'otp_confirmed'
-    || tenancy?.verification_status?.landlord_status === 'verified';
-  const cleaned = phoneNumber.replace(/\D/g, '');
-  const isNumberChanged = originalPhone.length > 0 && cleaned !== originalPhone;
-  const isReminder = hasInviteBeenSent && !isNumberChanged;
-
-  // Animated progress bar
-  const progress = useSharedValue(66.67);
-  React.useEffect(() => {
-    progress.value = withTiming(100, { duration: 500 });
-  }, []);
-  const animatedProgressStyle = useAnimatedStyle(() => {
-    return {
-      width: `${progress.value}%`,
-      height: '100%',
-      backgroundColor: FIGMA_COLORS.progressFill,
-    };
-  });
+  const insets = useSafeAreaInsets();
 
   const handleBack = useCallback(() => {
-    routerRef.current.back();
-  }, []);
-
-  const handlePhoneChange = useCallback((text: string) => {
-    setPhoneNumber(text);
-    setErrors((prev) => { const { phone: _, ...rest } = prev; return rest; });
-    setApiError(null);
-  }, []);
-
-  const handleCountryChange = useCallback((country: CountryData) => {
-    setCountryCode(country.code);
-    setMaxDigits(country.maxDigits);
-  }, []);
-
-  const handlePhoneBlur = useCallback(() => {
-    const cleaned = phoneNumber.replace(/\D/g, '');
-    if (cleaned.length > 0 && cleaned.length < maxDigits) {
-      setErrors((prev) => ({ ...prev, phone: `Enter ${maxDigits} digit number` }));
-    } else if (countryCode === '+91' && cleaned.length === maxDigits && !/^[6-9]/.test(cleaned)) {
-      setErrors((prev) => ({ ...prev, phone: 'Must start with 6-9' }));
-    }
-  }, [phoneNumber, maxDigits, countryCode]);
-
-  const validateForm = useCallback((): boolean => {
-    const newErrors: Record<string, string> = {};
-    const cleaned = phoneNumber.replace(/\D/g, '');
-    if (!cleaned) newErrors.phone = 'Required';
-    else if (cleaned.length < maxDigits) newErrors.phone = `Enter ${maxDigits} digit number`;
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  }, [phoneNumber, maxDigits]);
-
-  const handleSubmit = useCallback(() => {
-    if (!validateForm()) {
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-      return;
-    }
-
-    if (!tenancy?.id) {
-      setApiError('No active tenancy found. Please complete onboarding first.');
-      return;
-    }
-
-    setApiError(null);
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-
-    const mutateParams = isReminder
-      ? { tenancyId: tenancy.id }
-      : { tenancyId: tenancy.id, landlordPhone: cleaned, countryCode };
-
-    sendLandlordInvite.mutate(
-      mutateParams,
-      {
-        onSuccess: () => {
-          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-          setInviteSent(true);
-          if (!isReminder) setOriginalPhone(cleaned);
-          setTimeout(() => {
-            routerRef.current.replace('/(main)' as never);
-          }, 1500);
-        },
-        onError: (error: SetupError) => {
-          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-          setApiError(error.message || (isReminder ? 'Failed to send reminder. Please try again.' : 'Failed to send invite. Please try again.'));
-        },
-      }
-    );
-  }, [validateForm, sendLandlordInvite, cleaned, countryCode, tenancy?.id, isReminder]);
-
-  const handleSkip = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    routerRef.current.replace('/(main)' as never);
+    if (routerRef.current.canGoBack()) routerRef.current.back();
+    else routerRef.current.replace('/(main)' as never);
+  }, []);
+
+  const goToForm = useCallback(() => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    routerRef.current.push('/(setup)/invite-landlord-form' as never);
   }, []);
 
   const handleLearnMore = useCallback(() => {
-    Linking.openURL('https://flent.in/secured/how-it-works');
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    Linking.openURL(LEARN_MORE_URL).catch(() => {});
   }, []);
 
-  const isFormValid = cleaned.length >= maxDigits;
-
   return (
-    <Screen padded={false} testID="invite-landlord-screen">
-      {/* Background pattern */}
-      <DottedGridPattern fadeMask={false} />
+    <Screen padded={false} testID="invite-landlord-screen" safeAreaTop={false} safeAreaBottom={false} style={styles.screen}>
+      <Image
+        source={BG_SHAPE}
+        style={styles.bgShape}
+        resizeMode="cover"
+        accessibilityElementsHidden
+        importantForAccessibility="no"
+      />
+      <View style={StyleSheet.absoluteFill} pointerEvents="none">
+        <DottedGridPattern dotOpacity={0.08} animated={false} fadeMask={false} />
+      </View>
 
-      <KeyboardAvoidingView
-        style={styles.keyboardView}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      <ScrollView
+        contentContainerStyle={[styles.scrollContent, { paddingTop: insets.top + sv(36) }]}
+        showsVerticalScrollIndicator={false}
       >
-        <ScrollView
-          style={styles.scrollView}
-          contentContainerStyle={styles.scrollContent}
-          keyboardShouldPersistTaps="handled"
-          showsVerticalScrollIndicator={false}
-        >
-          {/* Back button -- Figma: back arrow at top of content area */}
-          <View style={styles.backButtonContainer}>
-            <BackButton
-              onPress={handleBack}
-              style={styles.backButton}
-              color={FIGMA_COLORS.title}
+        {/* Marquees */}
+        <View style={styles.marqueeStack} pointerEvents="none">
+          <View style={[styles.marqueeRow, { transform: [{ rotate: '0.22deg' }] }]}>
+            <Marquee items={TOP_MARQUEE_ITEMS} backgroundColor={colors.black[600]} />
+          </View>
+          <View style={[styles.marqueeRow, { transform: [{ rotate: '-0.48deg' }] }]}>
+            <Marquee items={BOTTOM_MARQUEE_ITEMS} backgroundColor={colors.brand[600]} reverse />
+          </View>
+        </View>
+
+        {/* Back button — Figma intro doesn't show one, but the user
+             needs a way back to /(main) when this screen is the cold-start
+             target. Sits above the Logo+CTA row. */}
+        <View style={[styles.backRow, { marginTop: sv(8) }]}>
+          <BackButton onPress={handleBack} style={styles.backButton} color={colors.white} />
+        </View>
+
+        {/* Header row — Figma 4651:144466: Logo (left) + Invite Landlord pill (right) */}
+        <View style={[styles.headerRow, { marginTop: sv(24) }]}>
+          <Logo size={32} />
+          <HeaderCtaPill onPress={goToForm} />
+        </View>
+
+        {/* Title — Figma 4651:144473: "Invite\nyour landlord" */}
+        <View style={styles.titleBlock}>
+          <Text style={styles.heading}>
+            <Text inherit style={styles.headingWhite}>Invite</Text>
+            {'\n'}
+            <Text inherit style={styles.headingAccent}>your landlord</Text>
+          </Text>
+          <Text style={styles.subtitle}>
+            To enable rent payments and cashback, we&apos;ll need to verify your landlord.
+          </Text>
+        </View>
+
+        <View style={styles.divider} />
+
+        {/* What we'll do? — Figma 4651:144476, 4679:152072 (stacks gap 32) */}
+        <View style={styles.sectionBlock}>
+          <Text style={styles.sectionHeading}>What we&apos;ll do?</Text>
+          <View style={styles.stepStack}>
+            <StepRow
+              icon={<HeadsetIcon />}
+              titleAccent="Call your landlord "
+              titleRest="once"
+              body="We'll explain Flent Secured, how rent payments work, and answer any questions they may have."
+            />
+            <StepRow
+              icon={<BankIcon />}
+              titleAccent="Verify your landlord's bank details"
+              titleRest=" for payments"
+              body="We'll securely check their account details so your rent always goes to the right person."
+            />
+            <StepRow
+              icon={<AlertHexIcon />}
+              titleAccent="No spam calls"
+              titleRest=", we promise"
+              body="We'll only reach out once to get things set up, no follow-ups or unnecessary messages."
             />
           </View>
+        </View>
 
-          {/* Title section -- Figma 1:34229: column, gap 16 */}
-          <View style={styles.titleSection}>
-            {/* Title: "Confirm your tenancy" */}
-            <ScreenTitle gray="Confirm " accent="your tenancy" />
+        <View style={styles.divider} />
 
-            {/* Subtitle: 12/20, #A9A9A9, PlusJakartaSans-Regular */}
-            <Text style={styles.subtitleText}>
-              Once confirmed, your landlord gets rent protection up to ₹1.5 lakh
-            </Text>
-          </View>
+        {/* Why this helps them? — Figma 4651:144485 + 151304 */}
+        <View style={[styles.sectionBlock, { gap: sv(16) }]}>
+          <Text style={styles.sectionHeading}>Why this helps them?</Text>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.cardsRow}
+            decelerationRate="fast"
+            snapToInterval={LandlordBenefitCard.WIDTH + s(16)}
+          >
+            {CARDS.map((c) => (
+              <LandlordBenefitCard key={c.id} body={c.text} />
+            ))}
+          </ScrollView>
+        </View>
 
-          {/* Progress bar -- Figma 1:34226: container 393x3 (clipped), track 393x12 #4D4D4D, fill 393x12 #CC7B57 */}
-          <View style={styles.progressContainer}>
-            <View style={styles.progressTrack}>
-              <Animated.View style={animatedProgressStyle} />
-            </View>
-          </View>
-
-          {/* API Error / Success Banners — constrained to content width */}
-          {apiError && <View style={styles.bannerContainer}><AlertBanner type="error" message={apiError} /></View>}
-          {inviteSent && <View style={styles.bannerContainer}><AlertBanner type="success" message={isReminder ? "Reminder sent successfully" : "Invite sent successfully"} /></View>}
-
-          {/* Phone Input -- Figma: label + phone input with country dropdown */}
-          <View style={styles.inputSection}>
-            <PhoneInput
-              label="Your landlord will receive a confirmation message on WhatsApp"
-              value={phoneNumber}
-              onChangeText={handlePhoneChange}
-              countryCode={countryCode}
-              onCountryChange={handleCountryChange}
-              onBlur={handlePhoneBlur}
-              placeholder="Enter Number"
-              error={errors.phone}
-              disabled={sendLandlordInvite.isPending}
-            />
-
-            <TouchableOpacity style={styles.inviteBanner} onPress={handleLearnMore}>
-              <Text style={styles.inviteBannerText}>What does my landlord get?</Text>
-              <Text style={styles.inviteBannerLink}>Learn more</Text>
-            </TouchableOpacity>
-          </View>
-
-          {/* Button section -- Figma 1:34233: column, gap 16 */}
-          <View style={styles.buttonSection}>
-            <PrimaryButton
-              title={isReminder ? "Send reminder" : "Save & invite"}
-              onPress={handleSubmit}
-              disabled={!isFormValid}
-              loading={sendLandlordInvite.isPending}
-            />
-
-            {/* Skip -- Figma 1:34235: centered, 14/20, #FFFFFF, Medium, underline */}
-            <TouchableOpacity onPress={handleSkip} style={styles.skipContainer}>
-              <Text style={styles.skipText}>Skip</Text>
-            </TouchableOpacity>
-          </View>
-        </ScrollView>
-      </KeyboardAvoidingView>
+        {/* Footer pill — Figma 4679:151843 */}
+        <Pressable style={styles.footerPill} onPress={handleLearnMore} accessibilityRole="link" testID="learn-more-secured-landlords">
+          <Text style={styles.footerPillText}>Learn more about Secured for landlords →</Text>
+        </Pressable>
+      </ScrollView>
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  keyboardView: {
-    flex: 1,
+  screen: { backgroundColor: colors.black[700], flex: 1 },
+  bgShape: {
+    position: 'absolute',
+    top: sv(-100),
+    left: '50%',
+    width: s(481),
+    height: sv(405),
+    marginLeft: -s(481) / 2,
+    opacity: 0.48,
   },
-  scrollView: {
-    flex: 1,
+  scrollContent: { paddingHorizontal: s(36), paddingBottom: sv(48), gap: sv(32) },
+
+  marqueeStack: { marginHorizontal: -s(227) },
+  marqueeRow: { width: s(847), alignSelf: 'center' },
+
+  backRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-start',
   },
-  // Figma 1:34222: column, center, gap 40, paddingHorizontal 48
-  scrollContent: {
-    paddingHorizontal: 48,
-    paddingTop: 16,
-    paddingBottom: 32,
-    gap: 40,
+  backButton: { width: 32, height: 32, justifyContent: 'center' },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
   },
-  // Back button area
-  backButtonContainer: {
-    alignSelf: 'flex-start',
-  },
-  backButton: {
-    // Figma: 32x32 back arrow icon area
-  },
-  // Title section -- Figma 1:34229: column, gap 16
-  titleSection: {
-    gap: 16,
-    width: '100%',
-  },
-  // Subtitle -- Figma: 12/20, #A9A9A9, PlusJakartaSans-Regular
-  subtitleText: {
+
+  titleBlock: { gap: sv(10) },
+  heading: {
     fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: 12,
-    lineHeight: 20,
+    fontSize: sf(28),
+    lineHeight: sf(40),
+    letterSpacing: -1,
+  },
+  headingWhite: { color: colors.white },
+  headingAccent: { color: colors.brand[500] },
+  subtitle: {
+    fontFamily: 'PlusJakartaSans-Regular',
+    fontSize: sf(12),
+    lineHeight: sf(20),
     color: colors.neutral[500],
   },
-  // Progress bar -- Figma: Full width
-  progressContainer: {
-    marginHorizontal: -48,
-    width: Dimensions.get('window').width,
-    height: 3,
-    overflow: 'hidden',
+
+  divider: {
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: colors.black[400],
   },
-  progressTrack: {
-    height: 12,
-    backgroundColor: FIGMA_COLORS.progressTrack,
-    width: '100%',
-  },
-  progressFill: {
-    width: '100%',
-    height: '100%',
-    backgroundColor: FIGMA_COLORS.progressFill,
-  },
-  // Input section
-  bannerContainer: {
-    width: '100%',
-  },
-  inputSection: {
-    width: '100%',
-    gap: 24,
-  },
-  // Invite banner -- Figma 1:34229
-  inviteBanner: {
-    backgroundColor: '#202020',
-    borderRadius: 12,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  inviteBannerText: {
+
+  sectionBlock: { gap: sv(32), alignItems: 'stretch' },
+  sectionHeading: {
+    // Figma 4651:144477 / 144486: parent is `items-start`, heading is
+    // `whitespace-nowrap shrink-0` → intrinsic width, aligned LEFT.
+    // We keep the section as `alignItems: 'stretch'` so the step rows
+    // (flexDirection: row + flex: 1 on the text column) actually have a
+    // width to fill — and pin only the heading to `alignSelf: 'flex-start'`
+    // so it shrinks to its own text width instead of stretching.
+    alignSelf: 'flex-start',
     fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: 12,
-    lineHeight: 20,
-    color: '#FF9A6D',
+    fontSize: sf(16),
+    lineHeight: sf(24),
+    color: colors.white,
+    textAlign: 'left',
   },
-  inviteBannerLink: {
-    fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: 12,
-    lineHeight: 20,
-    color: '#FF9A6D',
-    textAlign: 'center',
-    textDecorationLine: 'underline',
-  },
-  // Button section -- Figma 1:34233: column, gap 16
-  buttonSection: {
-    gap: 16,
-    width: '100%',
-  },
-  // Skip text -- Figma 1:34235: centered, 14/20, #FFFFFF, Medium, underline
-  skipContainer: {
+
+  stepStack: { gap: sv(32) },
+
+  cardsRow: { gap: s(16), paddingRight: s(16) },
+
+  footerPill: {
+    backgroundColor: colors.black[600],
+    borderRadius: 8,
+    paddingVertical: sv(8),
+    paddingHorizontal: s(12),
     alignItems: 'center',
-    width: '100%',
+    justifyContent: 'center',
   },
-  skipText: {
-    fontFamily: 'PlusJakartaSans-Medium',
-    fontSize: 14,
-    lineHeight: 20,
-    color: FIGMA_COLORS.skipText,
-    textDecorationLine: 'underline',
+  footerPillText: {
+    fontFamily: 'PlusJakartaSans-Regular',
+    fontSize: sf(12),
+    lineHeight: sf(20),
+    color: colors.brand[500],
     textAlign: 'center',
   },
 });

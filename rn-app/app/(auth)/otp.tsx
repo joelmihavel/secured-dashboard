@@ -73,8 +73,9 @@ async function resolvePostOtpTarget(userId: string): Promise<string> {
       .single();
 
     if (error || !data?.user_status) {
-      // New user row may not exist yet (RLS delay) — default to upload
-      return '/(agreement)/upload';
+      // New user row may not exist yet (RLS delay) — default to intro
+      // (so the user sees the verification pitch before the upload screen).
+      return '/(agreement)/intro';
     }
 
     switch (data.user_status) {
@@ -88,7 +89,7 @@ async function resolvePostOtpTarget(userId: string): Promise<string> {
         // No tenancy = broken state — route to waitlist as safety net.
         // Always route approved users to setup — even if bank verified, they
         // may still need utility/landlord steps. Aligned with index.tsx.
-        return !tenancyRow ? '/(waitlist)' : '/(setup)/add-bank';
+        return !tenancyRow ? '/(waitlist)' : '/(agreement)/setup-intro?context=approved';
       }
       case 'active':
         return '/(main)';
