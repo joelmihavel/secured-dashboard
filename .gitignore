@@ -40,6 +40,9 @@ playwright-report/
 # Stale agent / planning state
 .context/
 
+# Git worktrees (isolated dev workspaces)
+.worktrees/
+
 # v1 legacy reference (kept in git history pre-2026-04-25)
 screenshot-parity-v1/
 
