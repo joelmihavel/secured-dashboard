@@ -77,7 +77,7 @@ async function deleteGen(key: string, gen: number): Promise<void> {
 /** Serializes setItem calls to prevent concurrent writes to the same generation */
 let _writeQueue: Promise<void> = Promise.resolve();
 
-const ExpoSecureStoreAdapter = {
+export const ExpoSecureStoreAdapter = {
   getItem: async (key: string): Promise<string | null> => {
     try {
       const gen = await readGen(key);
@@ -246,10 +246,40 @@ export async function getSessionSafe() {
 let _cachedAccessToken: string | null = null;
 let _tokenUpdatedAt = 0;
 
+// ──────────────────────────────────────────────────────────────────────
+// ZOMBIE-SESSION CIRCUIT BREAKER (Gap #4)
+// ──────────────────────────────────────────────────────────────────────
+// SDK refresh failures are deliberately tolerated by AuthProvider's
+// SIGNED_OUT safety-net (line ~292): if a refresh token still sits in
+// SecureStore, we refuse to log the user out. That's correct for transient
+// network issues but produces a "zombie" state when the refresh token is
+// genuinely consumed/invalid: every authenticated API call returns 401,
+// the user looks logged in but can't do anything.
+//
+// This breaker counts consecutive auth failures where no fresh token
+// arrived. After MAX_CONSECUTIVE failures it forces a local sign-out so
+// the user can re-authenticate instead of staring at a broken UI.
+//
+// Counter only increments after the retry path could not recover.
+// Counter resets on ANY successful response (success means a token works
+// somewhere in the system). All transitions emit a breadcrumb for Sentry
+// observability so we can tune thresholds with real data.
+//
+// MIN_FAILURE_GAP_MS prevents concurrent in-flight calls from inflating
+// the counter on a single failed-refresh cycle. Without it, 5 simultaneous
+// 401s all increment in the same tick — counter jumps 0→5, breaker fires
+// after a single transient failure instead of 3 separate ones.
+const MAX_CONSECUTIVE_AUTH_FAILURES = 3;
+const MIN_FAILURE_GAP_MS = 1000;
+let _consecutiveAuthFailures = 0;
+let _lastAuthFailureAt = 0;
+
 /** Called by AuthProvider on every auth state change */
 export function updateCachedSession(session: { access_token: string } | null) {
   _cachedAccessToken = session?.access_token ?? null;
   _tokenUpdatedAt = Date.now();
+  // A new session means whatever was failing is fixed — clear the breaker.
+  if (session) _consecutiveAuthFailures = 0;
 }
 
 /**
@@ -318,6 +348,36 @@ export async function getAccessTokenSafe(): Promise<string | null> {
     _tokenUpdatedAt = Date.now();
   }
   return session?.access_token ?? null;
+}
+
+/**
+ * Wait for the next TOKEN_REFRESHED or SIGNED_OUT event, bounded by `maxWaitMs`.
+ *
+ * Used by the 401-retry path in callEdgeFunction to wait for the SDK's
+ * autoRefreshToken to land a fresh access token in our cache (via
+ * AuthProvider's TOKEN_REFRESHED handler → updateCachedSession). Replaces
+ * the previous fixed-duration sleep, which routinely expired before the
+ * refresh round-trip completed on slower mobile networks.
+ *
+ * Resolves on:
+ *  - TOKEN_REFRESHED (cache will have the new token)
+ *  - SIGNED_OUT (retry is pointless; caller will see auth error)
+ *  - timeout (caller falls back to old token; retry will fail again)
+ */
+async function waitForTokenChange(maxWaitMs: number): Promise<void> {
+  return new Promise<void>((resolve) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+      if (event === 'TOKEN_REFRESHED' || event === 'SIGNED_OUT') {
+        clearTimeout(timer);
+        subscription.unsubscribe();
+        resolve();
+      }
+    });
+    const timer = setTimeout(() => {
+      subscription.unsubscribe();
+      resolve();
+    }, maxWaitMs);
+  });
 }
 
 /**
@@ -436,9 +496,12 @@ export async function callEdgeFunction<T = unknown>(
     // to avoid triggering _callRefreshToken races.
     if (response.status === 401 && requireAuth) {
       const oldToken = headers['Authorization'];
-      // Wait for SDK's autoRefreshToken to fire and update our cache via
-      // onAuthStateChange → TOKEN_REFRESHED → updateCachedSession
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // Wait for SDK's autoRefreshToken to fire TOKEN_REFRESHED (or SIGNED_OUT,
+      // in which case retry would be pointless). Bounded to 8s — Indian 4G/3G
+      // refresh round-trips can take 3-6s, so the previous fixed 2s sleep
+      // routinely expired before the new token landed, leaving callers stuck
+      // with the old (rejected) token. (Gap #3)
+      await waitForTokenChange(8000);
       const newToken = _cachedAccessToken;
       // Only retry if cache has a DIFFERENT token (refresh succeeded)
       if (newToken && `Bearer ${newToken}` !== oldToken) {
@@ -452,6 +515,44 @@ export async function callEdgeFunction<T = unknown>(
           clearTimeout(retryTimeoutId);
         }
       }
+
+      // Zombie-session circuit breaker (Gap #4): if we still have a 401 after
+      // the retry path, count it. Three consecutive failures (across calls)
+      // means the SDK's refresh machinery is broken — force a local sign-out
+      // so the user re-authenticates instead of getting silent failures.
+      //
+      // Time-gap guard: concurrent in-flight calls all wake up from
+      // waitForTokenChange in the same tick. Without the gap, 5 simultaneous
+      // 401s would each increment the counter, jumping 0→5 in one cycle.
+      // The 1s gap means only the first concurrent call counts; the rest
+      // are part of the SAME refresh cycle, not separate failures.
+      if (response.status === 401) {
+        const now = Date.now();
+        if (now - _lastAuthFailureAt > MIN_FAILURE_GAP_MS) {
+          _consecutiveAuthFailures++;
+          _lastAuthFailureAt = now;
+          addBreadcrumb(
+            `Auth failure ${_consecutiveAuthFailures}/${MAX_CONSECUTIVE_AUTH_FAILURES}`,
+            'auth',
+            { functionName, tokenChanged: newToken !== null && `Bearer ${newToken}` !== oldToken }
+          );
+          if (_consecutiveAuthFailures >= MAX_CONSECUTIVE_AUTH_FAILURES) {
+            _consecutiveAuthFailures = 0;
+            addBreadcrumb('Zombie session detected — forcing local signOut', 'auth');
+            // scope: 'local' fires SIGNED_OUT without a server round-trip.
+            // AuthProvider's SIGNED_OUT handler runs its full flow (debounce,
+            // SecureStore check). If a refresh token was sitting unrevoked in
+            // storage, the safety-net would normally veto the logout — but
+            // here that's exactly the failure mode we're escaping.
+            supabase.auth.signOut({ scope: 'local' }).catch(() => {});
+          }
+        }
+      } else if (response.ok) {
+        _consecutiveAuthFailures = 0;
+      }
+    } else if (response.ok && requireAuth) {
+      // Authenticated success on the first try — clear the breaker.
+      _consecutiveAuthFailures = 0;
     }
 
     if (!response.ok) {

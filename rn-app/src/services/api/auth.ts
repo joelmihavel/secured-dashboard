@@ -12,11 +12,28 @@
  * to preserve identity data capture. Falls back to Supabase only if no M360 context.
  */
 
+import * as SecureStore from 'expo-secure-store';
 import { supabase } from '../supabase';
+import { ExpoSecureStoreAdapter, SUPABASE_SESSION_STORAGE_KEY } from '../supabase/client';
+import { env } from '@/src/config/env';
 import { tryCatch, logError, getErrorMessage } from '@/src/utils';
 import { isReviewPhone, activateReviewMode, isReviewMode, deactivateReviewMode, REVIEW_OTP } from '@/src/review/reviewMode';
 import { isJourneyPhone, activateJourneyMode, isJourneyMode, deactivateJourneyMode, REVIEW_OTP as JOURNEY_OTP } from '@/src/review/journeyMode';
 import { useAuthStore } from '@/src/stores/auth';
+
+/**
+ * SecureStore key holding a refresh token whose server-side revocation was
+ * queued because the original signOut() failed (typically: offline). Drained
+ * by AuthProvider on next cold start. Survives across signOut + clearAllStores
+ * so the entry isn't lost in the same flow that created it. Wiped on
+ * fresh-install detection (see installDetection.ts ALL_KEYCHAIN_KEYS).
+ *
+ * Format: JSON `{ refreshToken: string, queuedAt: number /* epoch ms *\/ }`
+ */
+export const PENDING_REVOCATION_KEY = 'flent_pending_revocation';
+
+/** Refresh tokens default to 30-day lifetime; drop queue entries older than 35d. */
+const PENDING_REVOCATION_MAX_AGE_MS = 35 * 24 * 60 * 60 * 1000;
 
 // ==============================================
 // TYPES
@@ -252,9 +269,14 @@ export async function resendOtp(
 }
 
 /**
- * Sign out the current user
+ * Sign out the current user.
+ *
+ * @param explicitUserId - Pre-snapshotted userId from the caller. Required when
+ *   signOut is called AFTER clearAllStores (the standard order in useAuth.signOut),
+ *   because the auth store has already been reset and `useAuthStore.getState().userId`
+ *   will be null at that point. Falls back to the store for backward compatibility.
  */
-export async function signOut(): Promise<{ success: boolean; error: string | null }> {
+export async function signOut(explicitUserId?: string): Promise<{ success: boolean; error: string | null }> {
   // Review mode: deactivate, then clear the fake session from SecureStore
   if (isReviewMode()) {
     deactivateReviewMode();
@@ -269,9 +291,10 @@ export async function signOut(): Promise<{ success: boolean; error: string | nul
   // Deactivate push token before signing out (H6: prevent ghost notifications)
   // NEVER use getSession() here — it triggers _callRefreshToken() which races
   // with autoRefreshToken and can cause double refresh token consumption (lesson #33).
-  // Read userId from the auth store instead (set during sign-in, cleared on sign-out).
+  // Use the explicit snapshot from the caller; fall back to the store only when
+  // signOut is invoked outside the standard useAuth flow (e.g. tests, legacy paths).
   try {
-    const userId = useAuthStore.getState().userId;
+    const userId = explicitUserId ?? useAuthStore.getState().userId;
     if (userId) {
       await supabase
         .from('device_tokens')
@@ -281,6 +304,10 @@ export async function signOut(): Promise<{ success: boolean; error: string | nul
   } catch {
     // Best-effort — don't block sign-out
   }
+
+  // Capture refresh_token BEFORE the SDK clears the session, so we can queue
+  // server-side revocation if signOut fails (e.g., offline). (Gap #6)
+  const refreshTokenSnapshot = await readRefreshTokenForRevocationQueue();
 
   const result = await tryCatch(
     async () => {
@@ -295,10 +322,136 @@ export async function signOut(): Promise<{ success: boolean; error: string | nul
 
   if (!result.success) {
     logError('signOut', result.error.originalError);
+    // Server-side revocation didn't happen. The local session is wiped by
+    // clearAllStores(), but the refresh token stays valid on the server for
+    // up to 30 days. Queue it for revocation on next online launch.
+    if (refreshTokenSnapshot) {
+      const entry = JSON.stringify({
+        refreshToken: refreshTokenSnapshot,
+        queuedAt: Date.now(),
+      });
+      await SecureStore.setItemAsync(PENDING_REVOCATION_KEY, entry).catch(() => {});
+    }
     return { success: false, error: getErrorMessage(result.error.originalError) || result.error.message };
   }
 
   return { success: true, error: null };
+}
+
+/**
+ * Read the refresh token from SecureStore via the SDK's adapter (handles
+ * generation-based chunking). Returns null if no session is persisted or the
+ * stored payload is unreadable. Side-effect-free — no SDK auth calls.
+ */
+async function readRefreshTokenForRevocationQueue(): Promise<string | null> {
+  try {
+    const raw = await ExpoSecureStoreAdapter.getItem(SUPABASE_SESSION_STORAGE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    const candidate = parsed?.currentSession ?? parsed;
+    return typeof candidate?.refresh_token === 'string' ? candidate.refresh_token : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Drain any queued refresh-token revocations from prior offline sign-outs.
+ *
+ * Called once on AuthProvider cold-start. Best-effort: if revocation fails
+ * (network error, GoTrue down) the queue entry stays for the next launch.
+ * If the entry is older than the max refresh-token lifetime it's dropped
+ * without an attempt (the token is already expired server-side anyway).
+ *
+ * Two-step revocation:
+ *  1. Exchange the queued refresh_token for a fresh access_token via
+ *     /auth/v1/token. Token rotation invalidates the queued refresh token —
+ *     this alone achieves the security goal.
+ *  2. Use the new access_token to call /auth/v1/logout?scope=global to
+ *     revoke ALL sessions for the user, killing the orphaned new refresh
+ *     token that step 1 minted.
+ *
+ * Uses raw fetch (not the SDK) so we don't disturb the SDK's session state —
+ * AuthProvider's own initSession runs in parallel and we must not flip the
+ * authenticated state during that window.
+ */
+export async function drainPendingRevocations(): Promise<void> {
+  let raw: string | null = null;
+  try {
+    raw = await SecureStore.getItemAsync(PENDING_REVOCATION_KEY);
+  } catch {
+    return;
+  }
+  if (!raw) return;
+
+  let entry: { refreshToken?: unknown; queuedAt?: unknown };
+  try {
+    entry = JSON.parse(raw);
+  } catch {
+    // Corrupt — drop
+    await SecureStore.deleteItemAsync(PENDING_REVOCATION_KEY).catch(() => {});
+    return;
+  }
+
+  const refreshToken = typeof entry.refreshToken === 'string' ? entry.refreshToken : null;
+  const queuedAt = typeof entry.queuedAt === 'number' ? entry.queuedAt : 0;
+
+  if (!refreshToken) {
+    await SecureStore.deleteItemAsync(PENDING_REVOCATION_KEY).catch(() => {});
+    return;
+  }
+
+  // TTL: drop entries older than the max refresh-token lifetime.
+  if (queuedAt && Date.now() - queuedAt > PENDING_REVOCATION_MAX_AGE_MS) {
+    await SecureStore.deleteItemAsync(PENDING_REVOCATION_KEY).catch(() => {});
+    return;
+  }
+
+  try {
+    // Step 1: rotation invalidates the queued refresh token.
+    const refreshResp = await fetch(
+      `${env.supabaseUrl}/auth/v1/token?grant_type=refresh_token`,
+      {
+        method: 'POST',
+        headers: {
+          'apikey': env.supabaseAnonKey,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ refresh_token: refreshToken }),
+      }
+    );
+
+    // 4xx (commonly 400/401) means the token is already invalid — security
+    // goal achieved by some other path, drop the queue entry.
+    if (refreshResp.status >= 400 && refreshResp.status < 500) {
+      await SecureStore.deleteItemAsync(PENDING_REVOCATION_KEY).catch(() => {});
+      return;
+    }
+
+    if (!refreshResp.ok) {
+      // 5xx — keep the entry, retry next launch.
+      return;
+    }
+
+    const tokens = await refreshResp.json().catch(() => null);
+    if (!tokens?.access_token) {
+      await SecureStore.deleteItemAsync(PENDING_REVOCATION_KEY).catch(() => {});
+      return;
+    }
+
+    // Step 2: revoke the orphaned new session.
+    await fetch(`${env.supabaseUrl}/auth/v1/logout?scope=global`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${tokens.access_token}`,
+        'apikey': env.supabaseAnonKey,
+      },
+    }).catch(() => {});
+
+    await SecureStore.deleteItemAsync(PENDING_REVOCATION_KEY).catch(() => {});
+  } catch {
+    // Network error — leave queue intact, retry on next launch.
+  }
 }
 
 // ==============================================

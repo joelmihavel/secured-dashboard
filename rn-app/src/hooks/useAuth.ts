@@ -255,6 +255,12 @@ export function useAuth() {
 
     if (isReviewMode()) deactivateReviewMode();
 
+    // Snapshot userId BEFORE clearAllStores resets the auth store.
+    // apiSignOut needs this to deactivate device push tokens server-side
+    // (H6: prevent ghost notifications). Without this snapshot, apiSignOut
+    // reads userId from the already-cleared store and skips deactivation.
+    const userId = authStore.userId;
+
     clearUserContext();
     // Nuclear cleanup FIRST — wipe all Zustand stores, SecureStore keys
     // (including Supabase session + chunks), WebSocket channels, and query cache.
@@ -264,8 +270,8 @@ export function useAuth() {
 
     // Then revoke the refresh token server-side. If this fails (network error),
     // the local session is already wiped by clearAllStores above.
-    await apiSignOut().catch(() => {});
-  }, []);
+    await apiSignOut(userId ?? undefined).catch(() => {});
+  }, [authStore.userId]);
 
   return {
     // State

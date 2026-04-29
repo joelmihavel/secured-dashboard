@@ -42,6 +42,10 @@ const ALL_KEYCHAIN_KEYS = [
   `${SUPABASE_SESSION_STORAGE_KEY}_chunks`,
   `${SUPABASE_SESSION_STORAGE_KEY}_gen`,
   `${SUPABASE_SESSION_STORAGE_KEY}-code-verifier`,
+  // Pending offline-signOut revocation queue (Gap #6).
+  // Hardcoded (not imported) to avoid an import cycle with api/auth.ts.
+  // Must match PENDING_REVOCATION_KEY in src/services/api/auth.ts.
+  'flent_pending_revocation',
 ];
 
 /**
@@ -60,12 +64,33 @@ export async function detectAndHandleFreshInstall(): Promise<boolean> {
       return false;
     }
 
-    // Sentinel missing — either first-ever install or reinstall.
-    // Check if ANY Keychain data exists to distinguish.
+    // Sentinel missing — either first-ever install, reinstall, or a prior
+    // sentinel-write failure (rare iOS sandbox edge cases). Check Keychain
+    // to distinguish first-install from reinstall.
     const hasKeychainData = await checkForKeychainData();
 
     if (hasKeychainData) {
-      // Keychain data exists but sentinel is gone → reinstall detected
+      // Keychain has data but sentinel is gone. Two possibilities:
+      //  (a) Genuine reinstall — old user's data must be wiped.
+      //  (b) Sentinel write failed on a previous boot — user is mid-session,
+      //      wiping would forcibly sign them out.
+      //
+      // APP_VERSION_KEY is the disambiguator: it's only set by
+      // detectAndHandleVersionChange after the *first successful* boot, and
+      // it IS cleared by clearAllKeychainData(). So its presence proves a
+      // prior boot completed init on the same Keychain — meaning case (b).
+      // (Gap #8)
+      const hasVersionKey = await SecureStore.getItemAsync(APP_VERSION_KEY).catch(() => null);
+      if (hasVersionKey) {
+        console.log(
+          '[install-detection] Sentinel missing but version key present — ' +
+          'treating as sentinel-write failure, NOT wiping Keychain'
+        );
+        await FileSystem.writeAsStringAsync(SENTINEL_PATH, Date.now().toString()).catch(() => {});
+        return false;
+      }
+
+      // No version key + Keychain data → genuine reinstall.
       console.log('[install-detection] Fresh install detected — clearing stale Keychain data');
       await clearAllKeychainData();
     }
