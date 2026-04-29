@@ -33,7 +33,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { KeyboardProvider } from 'react-native-keyboard-controller';
 
-import { Text as RNText, TextInput, AppState } from 'react-native';
+import { Text as RNText, TextInput, AppState, AppStateStatus } from 'react-native';
 
 import { DarkTheme, ThemeProvider } from '@react-navigation/native';
 import { colors } from '@/src/theme';
@@ -147,7 +147,7 @@ function RootLayoutInner() {
   // on foreground keeps the timer aligned with real elapsed time and forces an
   // immediate refresh tick. (Gap #1)
   useEffect(() => {
-    const handler = (state: string) => {
+    const handler = (state: AppStateStatus) => {
       if (state === 'active') {
         supabase.auth.startAutoRefresh();
       } else {
