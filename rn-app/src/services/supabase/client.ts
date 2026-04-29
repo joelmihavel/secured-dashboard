@@ -321,6 +321,36 @@ export async function getAccessTokenSafe(): Promise<string | null> {
 }
 
 /**
+ * Wait for the next TOKEN_REFRESHED or SIGNED_OUT event, bounded by `maxWaitMs`.
+ *
+ * Used by the 401-retry path in callEdgeFunction to wait for the SDK's
+ * autoRefreshToken to land a fresh access token in our cache (via
+ * AuthProvider's TOKEN_REFRESHED handler → updateCachedSession). Replaces
+ * the previous fixed-duration sleep, which routinely expired before the
+ * refresh round-trip completed on slower mobile networks.
+ *
+ * Resolves on:
+ *  - TOKEN_REFRESHED (cache will have the new token)
+ *  - SIGNED_OUT (retry is pointless; caller will see auth error)
+ *  - timeout (caller falls back to old token; retry will fail again)
+ */
+async function waitForTokenChange(maxWaitMs: number): Promise<void> {
+  return new Promise<void>((resolve) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+      if (event === 'TOKEN_REFRESHED' || event === 'SIGNED_OUT') {
+        clearTimeout(timer);
+        subscription.unsubscribe();
+        resolve();
+      }
+    });
+    const timer = setTimeout(() => {
+      subscription.unsubscribe();
+      resolve();
+    }, maxWaitMs);
+  });
+}
+
+/**
  * Get the Supabase functions URL for edge function calls
  */
 export const getFunctionsUrl = () => {
@@ -436,9 +466,12 @@ export async function callEdgeFunction<T = unknown>(
     // to avoid triggering _callRefreshToken races.
     if (response.status === 401 && requireAuth) {
       const oldToken = headers['Authorization'];
-      // Wait for SDK's autoRefreshToken to fire and update our cache via
-      // onAuthStateChange → TOKEN_REFRESHED → updateCachedSession
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // Wait for SDK's autoRefreshToken to fire TOKEN_REFRESHED (or SIGNED_OUT,
+      // in which case retry would be pointless). Bounded to 8s — Indian 4G/3G
+      // refresh round-trips can take 3-6s, so the previous fixed 2s sleep
+      // routinely expired before the new token landed, leaving callers stuck
+      // with the old (rejected) token. (Gap #3)
+      await waitForTokenChange(8000);
       const newToken = _cachedAccessToken;
       // Only retry if cache has a DIFFERENT token (refresh succeeded)
       if (newToken && `Bearer ${newToken}` !== oldToken) {
