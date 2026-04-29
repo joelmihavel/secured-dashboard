@@ -33,7 +33,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { KeyboardProvider } from 'react-native-keyboard-controller';
 
-import { Text as RNText, TextInput } from 'react-native';
+import { Text as RNText, TextInput, AppState } from 'react-native';
 
 import { DarkTheme, ThemeProvider } from '@react-navigation/native';
 import { colors } from '@/src/theme';
@@ -58,6 +58,7 @@ import { ErrorBoundary } from '@/src/components/ui';
 import { initSentry, wrapWithSentry, registerNavigationContainer } from '@/src/config/sentry';
 import { setupNotificationHandlers } from '@/src/services/notifications';
 import { setupAutoUpdateCheck, getEmergencyLaunchInfo } from '@/src/config/updates';
+import { supabase } from '@/src/services/supabase/client';
 import { OfflineBanner } from '@/src/components/ui';
 import { UpdateBanner } from '@/src/components/ui/Layout/UpdateBanner';
 import { useDeepLink } from '@/src/hooks/useDeepLink';
@@ -136,6 +137,31 @@ function RootLayoutInner() {
   // Detect emergency launch (fallback to embedded bundle after OTA crash)
   useEffect(() => {
     getEmergencyLaunchInfo();
+  }, []);
+
+  // Drive Supabase autoRefreshToken with AppState — required on React Native.
+  // Why: iOS suspends the JS thread on background; the SDK's setInterval pauses
+  // and may not fire promptly on foreground. After a long suspension, the cached
+  // refresh token can be near/past max-age — when the SDK finally ticks, GoTrue
+  // returns 401 and SIGNED_OUT fires. Explicitly stop on background and start
+  // on foreground keeps the timer aligned with real elapsed time and forces an
+  // immediate refresh tick. (Gap #1)
+  useEffect(() => {
+    const handler = (state: string) => {
+      if (state === 'active') {
+        supabase.auth.startAutoRefresh();
+      } else {
+        supabase.auth.stopAutoRefresh();
+      }
+    };
+    if (AppState.currentState === 'active') {
+      supabase.auth.startAutoRefresh();
+    }
+    const subscription = AppState.addEventListener('change', handler);
+    return () => {
+      subscription.remove();
+      supabase.auth.stopAutoRefresh();
+    };
   }, []);
 
   // Handle deep links (ST-107)
