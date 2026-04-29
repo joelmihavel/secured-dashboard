@@ -264,8 +264,15 @@ let _tokenUpdatedAt = 0;
 // Counter resets on ANY successful response (success means a token works
 // somewhere in the system). All transitions emit a breadcrumb for Sentry
 // observability so we can tune thresholds with real data.
+//
+// MIN_FAILURE_GAP_MS prevents concurrent in-flight calls from inflating
+// the counter on a single failed-refresh cycle. Without it, 5 simultaneous
+// 401s all increment in the same tick — counter jumps 0→5, breaker fires
+// after a single transient failure instead of 3 separate ones.
 const MAX_CONSECUTIVE_AUTH_FAILURES = 3;
+const MIN_FAILURE_GAP_MS = 1000;
 let _consecutiveAuthFailures = 0;
+let _lastAuthFailureAt = 0;
 
 /** Called by AuthProvider on every auth state change */
 export function updateCachedSession(session: { access_token: string } | null) {
@@ -513,22 +520,32 @@ export async function callEdgeFunction<T = unknown>(
       // the retry path, count it. Three consecutive failures (across calls)
       // means the SDK's refresh machinery is broken — force a local sign-out
       // so the user re-authenticates instead of getting silent failures.
+      //
+      // Time-gap guard: concurrent in-flight calls all wake up from
+      // waitForTokenChange in the same tick. Without the gap, 5 simultaneous
+      // 401s would each increment the counter, jumping 0→5 in one cycle.
+      // The 1s gap means only the first concurrent call counts; the rest
+      // are part of the SAME refresh cycle, not separate failures.
       if (response.status === 401) {
-        _consecutiveAuthFailures++;
-        addBreadcrumb(
-          `Auth failure ${_consecutiveAuthFailures}/${MAX_CONSECUTIVE_AUTH_FAILURES}`,
-          'auth',
-          { functionName, tokenChanged: newToken !== null && `Bearer ${newToken}` !== oldToken }
-        );
-        if (_consecutiveAuthFailures >= MAX_CONSECUTIVE_AUTH_FAILURES) {
-          _consecutiveAuthFailures = 0;
-          addBreadcrumb('Zombie session detected — forcing local signOut', 'auth');
-          // scope: 'local' fires SIGNED_OUT without a server round-trip.
-          // AuthProvider's SIGNED_OUT handler runs its full flow (debounce,
-          // SecureStore check). If a refresh token was sitting unrevoked in
-          // storage, the safety-net would normally veto the logout — but
-          // here that's exactly the failure mode we're escaping.
-          supabase.auth.signOut({ scope: 'local' }).catch(() => {});
+        const now = Date.now();
+        if (now - _lastAuthFailureAt > MIN_FAILURE_GAP_MS) {
+          _consecutiveAuthFailures++;
+          _lastAuthFailureAt = now;
+          addBreadcrumb(
+            `Auth failure ${_consecutiveAuthFailures}/${MAX_CONSECUTIVE_AUTH_FAILURES}`,
+            'auth',
+            { functionName, tokenChanged: newToken !== null && `Bearer ${newToken}` !== oldToken }
+          );
+          if (_consecutiveAuthFailures >= MAX_CONSECUTIVE_AUTH_FAILURES) {
+            _consecutiveAuthFailures = 0;
+            addBreadcrumb('Zombie session detected — forcing local signOut', 'auth');
+            // scope: 'local' fires SIGNED_OUT without a server round-trip.
+            // AuthProvider's SIGNED_OUT handler runs its full flow (debounce,
+            // SecureStore check). If a refresh token was sitting unrevoked in
+            // storage, the safety-net would normally veto the logout — but
+            // here that's exactly the failure mode we're escaping.
+            supabase.auth.signOut({ scope: 'local' }).catch(() => {});
+          }
         }
       } else if (response.ok) {
         _consecutiveAuthFailures = 0;
