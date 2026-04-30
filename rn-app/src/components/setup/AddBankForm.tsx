@@ -24,6 +24,7 @@ import {
   Easing,
   Linking,
   Image,
+  Alert,
 } from 'react-native';
 
 const BG_SHAPE = require('../../../assets/images/background_shape.png');
@@ -85,6 +86,24 @@ function isGenericApiError(code: string | undefined): boolean {
     code === 'EMPTY_RESPONSE' ||
     code === 'UNKNOWN_ERROR'
   );
+}
+
+/**
+ * Verification-failure codes that warrant the full-screen "We couldn't /
+ * Verify these Details" failure UI rather than a quiet inline field error.
+ *
+ * These are *content* errors (the bank holder doesn't match the agreement
+ * landlord, the VPA name is wrong, etc.) — not transient transport errors.
+ * Surfacing them on the failure screen makes the gate impossible to miss
+ * and forces the user to either fix the input or contact support.
+ *
+ * Pre-fix: NAME_MISMATCH was treated as a quiet inline error labeled
+ * "Invalid VPA". Users couldn't tell the VPA was fine and the *holder name*
+ * was the actual problem, and could press back to escape to /(waitlist)
+ * without ever seeing a clear failure.
+ */
+function isBlockingVerificationError(code: string | undefined): boolean {
+  return code === 'NAME_MISMATCH' || code === 'AGREEMENT_NAME_MISMATCH';
 }
 
 function isValidPanFormat(pan: string): boolean {
@@ -530,11 +549,22 @@ export default function AddBankScreen() {
           onError: (error: SetupError) => {
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
             setApiError(error.message || 'UPI verification failed');
+            // NAME_MISMATCH means the bank holder's name doesn't match the
+            // landlord. Calling that "Invalid VPA" misled users into trying
+            // the same VPA repeatedly. Use a label that points at the
+            // actual problem.
             const fieldHint = error.code === 'UPI_VPA_INVALID' ? 'Invalid VPA'
-              : error.code === 'NAME_MISMATCH' ? 'Invalid VPA'
+              : error.code === 'NAME_MISMATCH' ? "Name doesn't match"
               : 'Verification failed';
             setErrors((prev) => ({ ...prev, upiVpa: fieldHint }));
-            setScreenState(isGenericApiError(error.code) ? 'failure' : 'form');
+            // Treat NAME_MISMATCH as a full-screen failure (Try Again gate)
+            // rather than a quiet inline error — same severity as other
+            // verification blockers.
+            setScreenState(
+              (isGenericApiError(error.code) || isBlockingVerificationError(error.code))
+                ? 'failure'
+                : 'form'
+            );
             if (error.foundName) setFoundName(error.foundName);
           },
         }
@@ -566,15 +596,38 @@ export default function AddBankScreen() {
             } else {
               Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
               setApiError(data.message || 'Bank account verification failed');
-              setErrors((prev) => ({ ...prev, accountNumber: 'Invalid Bank A/C' }));
-              setScreenState('form');
+              // verify-bank returns 200 with verified=false on penny-drop
+              // failure or agreement-name mismatch. data.agreementNameMatched
+              // distinguishes the two: when false, surface the full-screen
+              // failure with the (descriptive) data.message rather than the
+              // misleading "Invalid Bank A/C" inline label that suggests
+              // the account number itself is wrong.
+              const isAgreementNameMismatch =
+                data.agreementNameMatched === false;
+              setErrors((prev) => ({
+                ...prev,
+                accountNumber: isAgreementNameMismatch
+                  ? "Name doesn't match"
+                  : 'Invalid Bank A/C',
+              }));
+              setScreenState(isAgreementNameMismatch ? 'failure' : 'form');
             }
           },
           onError: (error: SetupError) => {
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
             setApiError(error.message || 'Bank verification failed');
-            setErrors((prev) => ({ ...prev, accountNumber: 'Invalid Bank A/C' }));
-            setScreenState(isGenericApiError(error.code) ? 'failure' : 'form');
+            const isNameMismatch = isBlockingVerificationError(error.code);
+            setErrors((prev) => ({
+              ...prev,
+              accountNumber: isNameMismatch
+                ? "Name doesn't match"
+                : 'Invalid Bank A/C',
+            }));
+            setScreenState(
+              (isGenericApiError(error.code) || isNameMismatch)
+                ? 'failure'
+                : 'form'
+            );
           },
         }
       );
@@ -767,13 +820,41 @@ export default function AddBankScreen() {
                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                 // After a cold restart the journey router lands the user
                 // directly on this screen with no back stack — `router.back()`
-                // is then a no-op. Fall back to a sensible "home": waitlist
-                // for pre-waitlist users, dashboard for approved users.
+                // is then a no-op. The previous behavior fell back to /(waitlist)
+                // / /(main) unconditionally, but for an unsettled user that
+                // silently escaped the gate (e.g. they entered a wrong-holder
+                // bank, got NAME_MISMATCH, then back-pressed and landed on the
+                // waitlist screen without ever verifying). Now we only fall
+                // back when bank-details have actually settled.
                 if (routerRef.current.canGoBack()) {
                   routerRef.current.back();
-                } else {
-                  routerRef.current.replace((isPreWaitlist ? '/(waitlist)' : '/(main)') as never);
+                  return;
                 }
+                const settled = useUploadStore.getState().bankDetailsCompleted;
+                if (settled) {
+                  routerRef.current.replace((isPreWaitlist ? '/(waitlist)' : '/(main)') as never);
+                  return;
+                }
+                // Unsettled + no back stack: warn the user before letting
+                // them walk away from the verification gate. They can still
+                // leave (some users genuinely want to come back later) but
+                // the friction is intentional so they understand the state.
+                Alert.alert(
+                  'Verification incomplete',
+                  "Your landlord's bank details aren't verified yet. " +
+                  'You can stay here to retry, or go to the waitlist and ' +
+                  'come back later — but until verification is complete, ' +
+                  "you won't be able to set up rent payments.",
+                  [
+                    { text: 'Stay and retry', style: 'cancel' },
+                    {
+                      text: 'Go to waitlist',
+                      onPress: () => {
+                        routerRef.current.replace((isPreWaitlist ? '/(waitlist)' : '/(main)') as never);
+                      },
+                    },
+                  ],
+                );
               }}
               style={styles.topRowBack}
               color={colors.white}

@@ -9,11 +9,12 @@
  *   - app/(auth)/otp.tsx      (post-OTP routing)
  *   - app/(waitlist)/approved.tsx ("Step inside" button)
  *
- * Rule: BOTH the persisted `bankDetailsCompleted` flag AND a verified
+ * Rule: BOTH the persisted `bankDetailsCompleted` flag AND a *verified*
  * `bank_accounts.party_type='landlord'` row must be present. The flag
- * prevents the partial-row case (verifyBank can create a row before the
- * user taps "Confirm & continue" — if they kill the app mid-flow we'd
- * otherwise treat them as done).
+ * prevents the partial-row case (verifyBank/verifyUpiVpa can create a row
+ * with verified=false on NAME_MISMATCH — if we accepted any row, a user
+ * who entered a wrong-holder bank could be treated as "settled"). The
+ * verified=true filter closes that leak.
  *
  * Backwards-compat: legacy users on builds before the flag existed have
  * `bankDetailsCompleted=false` even when their bank row is fully verified.
@@ -24,6 +25,15 @@
 import { supabase } from '@/src/services/supabase/client';
 import { useUploadStore } from '@/src/stores/upload';
 
+/**
+ * Returns true only if the user has a *verified* landlord bank row. A row
+ * with verified=false (NAME_MISMATCH or failed penny-drop) does NOT count.
+ *
+ * Pre-fix this was a verified-agnostic existence check, which let the
+ * journey router route a user with a wrong-holder unverified row straight
+ * to /(main) (decideApprovedTarget) or /(waitlist) (waitlisted branch),
+ * skipping the verification gate.
+ */
 export async function userHasLandlordBankRow(userId: string): Promise<boolean> {
   try {
     const { data } = await supabase
@@ -31,6 +41,7 @@ export async function userHasLandlordBankRow(userId: string): Promise<boolean> {
       .select('id')
       .eq('user_id', userId)
       .eq('party_type', 'landlord')
+      .eq('verified', true)
       .limit(1)
       .maybeSingle();
     return !!data;
