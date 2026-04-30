@@ -749,7 +749,7 @@ export function createMockSetupProgress(
         subtitle: 'For rent payouts',
         icon: 'building-columns',
         isCompleted: true,
-        route: '/(setup)/add-bank',
+        route: '/(agreement)/add-bank-details',
       },
       {
         id: 'utility',

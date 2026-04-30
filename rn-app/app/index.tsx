@@ -47,7 +47,6 @@ const LAST_ROUTE_KEY = 'flent_last_journey_target';
  *  from user_status on each cold start and should NOT be cached. */
 const VALID_CACHED_ROUTES = new Set<string>([
   '/(main)',
-  '/(setup)/add-bank',
   '/(waitlist)',
 ]);
 
@@ -84,9 +83,7 @@ type JourneyTarget =
   | '/(agreement)/intro'
   | '/(agreement)/upload'
   | '/(agreement)/add-bank-details'
-  | '/(agreement)/setup-intro?context=approved'
   | '/(waitlist)'
-  | '/(setup)/add-bank'
   | '/(main)'
   | '/(dev)/screen-picker';
 
@@ -151,27 +148,39 @@ async function queryUserStatus(userId: string): Promise<string | null> {
 }
 
 /**
- * Approved-user routing helper. Returns `/(main)` if the user has a landlord
- * bank-account row, else `/(agreement)/add-bank-details`. Replaces the old
- * setup-intro?context=approved hop. The bank-row presence is the new gate
- * (formerly `bankStepCompleted` on the upload store).
+ * Bank-row presence check. The new gate for routing decisions — replaces the
+ * old `bankStepCompleted` boolean on the upload store. A landlord bank row
+ * means the user has finished the bank-details step at least once.
+ *
+ * Conservative on failure: returns false (forces bank-details on errors).
+ * Worse to skip a missing-bank user into /(main) than to re-prompt one
+ * who already has a row.
  */
-async function decideApprovedTarget(userId: string): Promise<string> {
+async function userHasLandlordBankRow(userId: string): Promise<boolean> {
   try {
-    const { data: bankRow } = await supabase
+    const { data } = await supabase
       .from('bank_accounts')
       .select('id')
       .eq('user_id', userId)
       .eq('party_type', 'landlord')
       .limit(1)
       .maybeSingle();
-    return bankRow ? '/(main)' : '/(agreement)/add-bank-details';
+    return !!data;
   } catch (err) {
-    console.warn('[journey-router] decideApprovedTarget query failed:', err);
-    // Conservative fallback: route to bank entry. Worse to skip a missing-bank
-    // user into /(main) than to over-collect from someone who already has one.
-    return '/(agreement)/add-bank-details';
+    console.warn('[journey-router] bank-row query failed:', err);
+    return false;
   }
+}
+
+/**
+ * Approved-user routing helper. Returns `/(main)` if the user has a landlord
+ * bank-account row, else `/(agreement)/add-bank-details`. Replaces the old
+ * setup-intro?context=approved hop.
+ */
+async function decideApprovedTarget(userId: string): Promise<string> {
+  return (await userHasLandlordBankRow(userId))
+    ? '/(main)'
+    : '/(agreement)/add-bank-details';
 }
 
 /**
@@ -188,16 +197,12 @@ function statusToTarget(userStatus: string): JourneyTarget | null {
     // ^ No production code sets this status, but it exists as a defensive enum value.
     // Backend recovery crons (extraction-recovery, pre-approval-audit) treat it
     // the same as signed_up and auto-advance to waitlisted. Handle same as waitlisted.
-    case 'waitlisted': {
-      // If user is in an active upload flow and hasn't done bank step,
-      // show bank screen before waitlist. Only applies to users currently
-      // going through onboarding (uploadPhase not idle), not pre-existing users.
-      const { bankStepCompleted, uploadPhase, extractionId } = useUploadStore.getState();
-      if (!bankStepCompleted && uploadPhase !== 'idle' && extractionId) {
-        return '/(agreement)/add-bank-details';
-      }
-      return null; // Deferred — caller checks requiresReupload via extraction query
-    }
+    case 'waitlisted':
+      // Always defer — caller does the async bank-row + extraction-reupload checks.
+      // The old `bankStepCompleted`/`uploadPhase`/`extractionId` fast-path was
+      // removed: presence of a `bank_accounts.party_type='landlord'` row is now
+      // the gate (handled in the deferred branch below).
+      return null;
     case 'not_eligible':
       return '/(waitlist)';
     case 'signed_up':
@@ -331,7 +336,7 @@ export default function Index() {
         // Validate in background — if user_status changed, redirect
         queryUserStatus(userId).then(async (userStatus) => {
           if (!userStatus) return; // Network failed, keep cached route
-          // Wait for upload store hydration before reading bankStepCompleted
+          // Wait for upload store hydration before reading extractionId / dismissedExtractionId
           if (!useUploadStore.getState()._hasHydrated) {
             await new Promise<void>((resolve) => {
               const unsub = useUploadStore.subscribe((s) => {
@@ -340,21 +345,26 @@ export default function Index() {
               setTimeout(() => { unsub(); resolve(); }, 500);
             });
           }
-          let correctTarget = statusToTarget(userStatus);
+          let correctTarget: string | null = statusToTarget(userStatus);
 
           // statusToTarget returns null for deferred statuses (need async checks)
           if (!correctTarget && userStatus === 'approved') {
             const { data: tenancyRow } = await supabase
               .from('tenancies')
-              .select('bank_verified')
+              .select('id')
               .eq('user_id', userId)
               .maybeSingle();
-            // Always route approved users to setup — setup flow handles the full checklist
-            correctTarget = !tenancyRow ? '/(waitlist)' : '/(agreement)/setup-intro?context=approved';
+            // No tenancy = broken state — route to waitlist as safety net.
+            // Otherwise: bank row present → /(main); absent → /(agreement)/add-bank-details.
+            correctTarget = !tenancyRow ? '/(waitlist)' : await decideApprovedTarget(userId);
           } else if (!correctTarget && (userStatus === 'waitlisted' || userStatus === 'agreement_confirmed')) {
-            // Background validation for waitlisted — don't need reupload check here,
-            // just default to waitlist (reupload redirect happens on the waitlist screen)
-            correctTarget = '/(waitlist)';
+            // Background validation for waitlisted — bank-row check covers the
+            // legacy skip cohort (bankStepCompleted=true but no bank row) by
+            // forcing them back to the bank-details screen. The reupload-on-
+            // invalid-extraction redirect still happens on the waitlist screen.
+            correctTarget = (await userHasLandlordBankRow(userId))
+              ? '/(waitlist)'
+              : '/(agreement)/add-bank-details';
           }
 
           if (correctTarget && correctTarget !== cachedRoute) {
@@ -436,18 +446,17 @@ export default function Index() {
       if (resolved) {
         setTarget(resolved);
       } else if (userStatus === 'approved') {
-        // approved — check if bank already verified (deferred name matching succeeded)
+        // approved — check tenancy exists, then route by bank-row presence.
         const { data: tenancyRow } = await supabase
           .from('tenancies')
-          .select('bank_verified')
+          .select('id')
           .eq('user_id', userId)
           .maybeSingle();
 
         // No tenancy = broken state (approved requires tenancy from extraction flow).
         // Route to waitlist as safety net — extraction-recovery cron will fix the state.
-        // Always route approved users to setup — even if bank is verified, they may
-        // still need to complete utility/landlord steps. The setup flow handles the checklist.
-        setTarget(!tenancyRow ? '/(waitlist)' : '/(agreement)/setup-intro?context=approved');
+        // Otherwise: bank row present → /(main); absent → /(agreement)/add-bank-details.
+        setTarget(!tenancyRow ? '/(waitlist)' : await decideApprovedTarget(userId));
       } else if (userStatus === 'waitlisted' || userStatus === 'agreement_confirmed') {
         // waitlisted — check if extraction requires reupload (invalid document / failed).
         // Without this check, the waitlist screen loads → detects requiresReupload →
@@ -466,6 +475,9 @@ export default function Index() {
             errorMessage: 'Please upload a valid rental agreement to continue.',
           });
           setTarget('/(agreement)/upload');
+        } else if (!await userHasLandlordBankRow(userId)) {
+          // Legacy skip cohort: waitlisted but no bank row → force back to bank-details.
+          setTarget('/(agreement)/add-bank-details');
         } else {
           setTarget('/(waitlist)');
         }
@@ -475,13 +487,10 @@ export default function Index() {
         // If so, the upload is done — route to waitlist, not back to upload.
         const manualReview = await checkPendingExtraction(userId);
         if (manualReview) {
-          // Extraction complete — but check if bank step was done first
-          const { bankStepCompleted } = useUploadStore.getState();
-          if (bankStepCompleted) {
-            setTarget('/(waitlist)');
-          } else {
-            setTarget('/(agreement)/add-bank-details');
-          }
+          // Extraction complete — bank row present? → waitlist; absent → bank-details.
+          setTarget((await userHasLandlordBankRow(userId))
+            ? '/(waitlist)'
+            : '/(agreement)/add-bank-details');
         } else {
           // Check upload store for async-processing vs upload
           const uploadState = useUploadStore.getState();
@@ -498,12 +507,10 @@ export default function Index() {
             // persisted state may still have both fields set.
             uploadState.dismissedExtractionId !== uploadState.extractionId
           ) {
-            // Upload done — check if bank step completed/skipped
-            if (uploadState.bankStepCompleted) {
-              setTarget('/(waitlist)');
-            } else {
-              setTarget('/(agreement)/add-bank-details');
-            }
+            // Upload done — bank row present? → waitlist; absent → bank-details.
+            setTarget((await userHasLandlordBankRow(userId))
+              ? '/(waitlist)'
+              : '/(agreement)/add-bank-details');
           } else {
             // If extraction was dismissed but store wasn't fully persisted, clean up
             if (uploadState.dismissedExtractionId && uploadState.extractionId === uploadState.dismissedExtractionId) {

@@ -857,14 +857,14 @@ export default function UploadScreen() {
 
         // All other cases (expired, manual_review, unsupported city) proceed
         // forward. Fire-and-forget flow: skip the review screen and land on
-        // setup-intro. Manual-review / expired states are surfaced later by
+        // bank-details. Manual-review / expired states are surfaced later by
         // the waitlist banner + the claim-invite-code extraction gate.
         setUploadState('success');
         setErrorOverrideMessage(null);
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
 
         setTimeout(() => {
-          router.replace('/(agreement)/setup-intro' as never);
+          router.replace('/(agreement)/add-bank-details' as never);
         }, FIGMA.animation.duration);
         break;
       }
@@ -995,7 +995,7 @@ export default function UploadScreen() {
       // Brief pause at 100% before navigating
       await new Promise((resolve) => setTimeout(resolve, 300));
       advanceJourneyStage(); // agreement_upload → setup
-      routerRef.current.replace('/(agreement)/setup-intro' as never);
+      routerRef.current.replace('/(agreement)/add-bank-details' as never);
       return;
     }
 
@@ -1045,16 +1045,15 @@ export default function UploadScreen() {
       );
 
       // Fire-and-forget: as soon as the upload API confirms, jump the user
-      // forward to setup-intro and let the cloud extraction job run in the
-      // background. The waitlist screen surfaces extraction failures (and
-      // offers a re-upload CTA), and the claim-invite-code edge function
-      // gates approval on extraction completion. This avoids a "wait while
-      // we scan" screen entirely.
+      // forward to the bank-details screen and let the cloud extraction job
+      // run in the background. The bank-details screen drives its own UI by
+      // extraction status (CTA gates on completion; agreement-invalid overlay
+      // on terminal-error). This avoids a "wait while we scan" screen entirely.
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       setUploadProgress(100);
       setUploadState('success');
       setTimeout(() => {
-        routerRef.current.replace('/(agreement)/setup-intro' as never);
+        routerRef.current.replace('/(agreement)/add-bank-details' as never);
       }, FIGMA.animation.duration);
     } catch (error) {
       console.error('Upload error:', error);
@@ -1149,10 +1148,10 @@ export default function UploadScreen() {
 
   const handleGetNotified = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    // Fire-and-forget flow: send the user straight to setup-intro. The
-    // extraction job runs in the background; the waitlist screen and the
-    // claim-invite-code edge function gate on its completion.
-    routerRef.current.replace('/(agreement)/setup-intro' as never);
+    // Fire-and-forget flow: send the user straight to bank-details. The
+    // extraction job runs in the background; the bank-details screen drives
+    // its own UI by extraction status (CTA gating + agreement-invalid overlay).
+    routerRef.current.replace('/(agreement)/add-bank-details' as never);
   }, []);
 
   // Get current state config

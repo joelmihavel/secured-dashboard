@@ -92,7 +92,7 @@ const SECTIONS: Section[] = [
     label: 'Setup',
     icon: 'S',
     screens: [
-      { name: 'Add Bank (Post-Approval)', path: '/(setup)/add-bank', description: 'Mandatory — Bank/UPI + PAN + name check → dashboard' },
+      { name: 'Add Bank (Post-Approval)', path: '/(agreement)/add-bank-details', description: 'Mandatory — Bank/UPI + PAN + name check → dashboard' },
       { name: 'Verify Your Address', path: '/(setup)/add-utility', description: 'Upload utility bill for address proof' },
       { name: 'Invite Landlord', path: '/(setup)/invite-landlord', description: 'Send WhatsApp invite to landlord' },
     ],

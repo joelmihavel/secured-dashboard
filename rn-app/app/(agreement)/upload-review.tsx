@@ -10,7 +10,7 @@
  * "- (missing)". Tap any row to edit that specific field via manual-entry.
  *
  * Edge cases handled:
- *  - All fields valid → pill is "Confirm & Continue", confirms to setup-intro
+ *  - All fields valid → pill is "Confirm & Continue", confirms to add-bank-details
  *  - Some fields missing → pill is "Edit Missing Details", routes to manual-entry
  *  - Tap any row (filled or empty) → manual-entry?focus=<fieldKey>
  *  - Confirm pressed when invalid (e.g. via deep-link) → routes to manual-entry
@@ -98,13 +98,13 @@ export default function UploadReviewScreen() {
     routerRef.current.back();
   }, []);
 
-  // Edit screens deferred for this release. Pill always proceeds to setup-
-  // intro and rows are non-interactive — user reviews extracted data and
-  // confirms whatever the extraction returned. Re-enable per-field edits
-  // by restoring the upload-edit branch when those screens ship.
+  // Edit screens deferred for this release. Pill always proceeds to the
+  // bank-details screen and rows are non-interactive — user reviews
+  // extracted data and confirms whatever the extraction returned. Re-enable
+  // per-field edits by restoring the upload-edit branch when those screens ship.
   const handlePillPress = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    routerRef.current.push('/(agreement)/setup-intro' as never);
+    routerRef.current.push('/(agreement)/add-bank-details' as never);
   }, []);
 
   return (

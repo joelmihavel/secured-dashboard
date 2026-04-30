@@ -46,7 +46,7 @@ export default function ReviewScreen() {
 
   const handleConfirm = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    routerRef.current.push('/(agreement)/setup-intro' as never);
+    routerRef.current.push('/(agreement)/add-bank-details' as never);
   }, []);
 
   const handleEditField = useCallback((focus: FieldKey) => {

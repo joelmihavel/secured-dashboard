@@ -167,7 +167,7 @@ const SECTIONS: Section[] = [
   {
     label: 'Setup',
     screens: [
-      { name: 'Add Bank (Post-Approval)', path: '/(setup)/add-bank' },
+      { name: 'Add Bank (Post-Approval)', path: '/(agreement)/add-bank-details' },
       { name: 'Add Utility Bill', path: '/(setup)/add-utility' },
       { name: 'Invite Landlord', path: '/(setup)/invite-landlord' },
     ],
@@ -197,7 +197,6 @@ const SECTIONS: Section[] = [
       { name: 'Manual Entry Review', path: '/(agreement)/review' },
       { name: 'Upload Review (Extracted)', path: '/(agreement)/upload-review' },
       { name: 'Upload Edit', path: '/(agreement)/upload-edit' },
-      { name: 'Setup Intro', path: '/(agreement)/setup-intro' },
       { name: 'Add Bank (Pre-Waitlist)', path: '/(agreement)/add-bank-details' },
     ],
   },

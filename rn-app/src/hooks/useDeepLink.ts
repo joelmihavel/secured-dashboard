@@ -84,8 +84,8 @@ const DEEP_LINK_ROUTES: Record<string, string> = {
 
   // Setup
   '/setup': '/(main)',
-  '/setup/onboarding': '/(setup)/add-bank',
-  '/setup/bank': '/(setup)/add-bank',
+  '/setup/onboarding': '/(agreement)/add-bank-details',
+  '/setup/bank': '/(agreement)/add-bank-details',
   '/setup/utility': '/(setup)/add-utility',
   '/setup/landlord': '/(setup)/invite-landlord',
 

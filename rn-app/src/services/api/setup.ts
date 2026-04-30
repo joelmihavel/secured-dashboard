@@ -699,7 +699,7 @@ export function buildSetupSteps(
       subtitle: 'For rent payouts',
       icon: 'building-columns',
       isCompleted: bankDone,
-      route: '/(setup)/add-bank',
+      route: '/(agreement)/add-bank-details',
     },
     {
       id: 'utility',

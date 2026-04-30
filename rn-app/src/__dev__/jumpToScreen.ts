@@ -50,7 +50,7 @@ interface DevSeedResponse {
  * Seeds backend state and authenticates for a target screen.
  * Does NOT navigate — caller handles navigation on success.
  *
- * @param targetPath - Expo Router path, e.g. '/(setup)/add-bank'
+ * @param targetPath - Expo Router path, e.g. '/(agreement)/add-bank-details'
  * @returns JumpResult with success status and any warnings
  */
 export async function jumpToScreen(targetPath: string): Promise<JumpResult> {

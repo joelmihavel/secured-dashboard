@@ -39,9 +39,9 @@ export const SCREEN_STATE_MAP: Record<string, ScreenSeedConfig> = {
   '/(waitlist)/rejected': { targetState: 'waitlisted_rejected' },
 
   // Setup
-  '/(setup)/add-bank':       { targetState: 'approved' },
-  '/(setup)/add-utility':    { targetState: 'approved' },
-  '/(setup)/invite-landlord':{ targetState: 'approved' },
+  '/(agreement)/add-bank-details': { targetState: 'approved' },
+  '/(setup)/add-utility':          { targetState: 'approved' },
+  '/(setup)/invite-landlord':      { targetState: 'approved' },
 
   // Main
   '/(main)': {

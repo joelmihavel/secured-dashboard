@@ -586,7 +586,7 @@ export default function HomeScreen() {
         const handleFinishSetup = useCallback(() => {
           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
           if (!verificationStatus?.bank_verified) {
-            routerRef.current.push('/(setup)/add-bank' as never);
+            routerRef.current.push('/(agreement)/add-bank-details' as never);
           } else if (!verificationStatus?.utility_verified) {
             routerRef.current.push('/(setup)/add-utility' as never);
           } else if (!verificationStatus?.landlord_approved) {
@@ -755,7 +755,7 @@ export default function HomeScreen() {
   const handleSetupStepPress = useCallback((step: SetupStep) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     const routeMap: Record<string, string> = {
-      bank: '/(setup)/add-bank',
+      bank: '/(agreement)/add-bank-details',
       utility: '/(setup)/add-utility',
       landlord: '/(setup)/invite-landlord',
     };

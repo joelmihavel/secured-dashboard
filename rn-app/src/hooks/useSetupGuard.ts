@@ -18,9 +18,10 @@ import type { SetupStepId } from '../stores/setup';
 // Ordered setup steps -- must complete in this sequence
 const SETUP_STEP_ORDER: SetupStepId[] = ['bank', 'utility', 'landlord'];
 
-// Route map for each setup step
+// Route map for each setup step. Bank lives at /(agreement)/add-bank-details
+// (single source of truth for landlord bank entry, pre- or post-waitlist).
 const STEP_ROUTES: Record<SetupStepId, string> = {
-  bank: '/(setup)/add-bank',
+  bank: '/(agreement)/add-bank-details',
   utility: '/(setup)/add-utility',
   landlord: '/(setup)/invite-landlord',
 };

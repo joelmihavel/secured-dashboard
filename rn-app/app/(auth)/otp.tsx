@@ -83,27 +83,28 @@ async function resolvePostOtpTarget(userId: string): Promise<string> {
 
     switch (data.user_status) {
       case 'approved': {
-        // Check if bank already verified (deferred name matching succeeded)
+        // Confirm tenancy exists, then route by bank-row presence.
         const { data: tenancyRow } = await supabase
           .from('tenancies')
-          .select('bank_verified')
+          .select('id')
           .eq('user_id', userId)
           .maybeSingle();
-        // No tenancy = broken state — route to waitlist as safety net.
-        // Always route approved users to setup — even if bank verified, they
-        // may still need utility/landlord steps. Aligned with index.tsx.
-        return !tenancyRow ? '/(waitlist)' : '/(agreement)/setup-intro?context=approved';
+        if (!tenancyRow) return '/(waitlist)'; // Safety net for broken state
+        // Bank row present → /(main); absent (legacy skip cohort) → bank-details.
+        const { data: bankRow } = await supabase
+          .from('bank_accounts')
+          .select('id')
+          .eq('user_id', userId)
+          .eq('party_type', 'landlord')
+          .limit(1)
+          .maybeSingle();
+        return bankRow ? '/(main)' : '/(agreement)/add-bank-details';
       }
       case 'active':
         return '/(main)';
       case 'agreement_confirmed':
       // ^ Defensive enum value — no code sets it, backend crons auto-advance to waitlisted
       case 'waitlisted': {
-        // Check if user is in active upload flow and hasn't done bank step
-        const { bankStepCompleted, uploadPhase, extractionId } = useUploadStore.getState();
-        if (!bankStepCompleted && uploadPhase !== 'idle' && extractionId) {
-          return '/(agreement)/add-bank-details';
-        }
         // Check if extraction requires reupload (invalid document / failed).
         // Route directly to upload instead of waitlist → upload flicker.
         const { data: extraction } = await supabase
@@ -119,7 +120,17 @@ async function resolvePostOtpTarget(userId: string): Promise<string> {
           });
           return '/(agreement)/upload';
         }
-        return '/(waitlist)';
+        // Bank-row check covers the legacy skip cohort: waitlisted user with no
+        // bank row gets force-routed to bank-details regardless of any persisted
+        // bankStepCompleted=true on the upload store.
+        const { data: bankRow } = await supabase
+          .from('bank_accounts')
+          .select('id')
+          .eq('user_id', userId)
+          .eq('party_type', 'landlord')
+          .limit(1)
+          .maybeSingle();
+        return bankRow ? '/(waitlist)' : '/(agreement)/add-bank-details';
       }
       case 'not_eligible':
         return '/(waitlist)';
@@ -333,7 +344,10 @@ export default function OTPScreen() {
       if (authUserId) {
         resolvePostOtpTarget(authUserId).then((target) => {
           addBreadcrumb('OTP verified — navigating', 'navigation', { target });
-          if (target === '/(main)' || target === '/(setup)/add-bank' || target === '/(waitlist)') {
+          // Only /(main) and /(waitlist) are cacheable. Agreement routes (incl.
+          // /(agreement)/add-bank-details) deliberately re-resolve from
+          // user_status on each cold start — see app/index.tsx VALID_CACHED_ROUTES.
+          if (target === '/(main)' || target === '/(waitlist)') {
             // Write cache in same "route|userId" format as index.tsx (M-3 fix).
             // Without userId suffix, the cached route has no user scoping —
             // a different user signing in on the same device would inherit it.

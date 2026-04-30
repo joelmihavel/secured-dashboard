@@ -48,6 +48,8 @@ import {
   DottedGridPattern,
 } from '@/src/components';
 import { useWaitlist } from '@/src/hooks';
+import { useAuthStore } from '@/src/stores/auth';
+import { supabase } from '@/src/services/supabase/client';
 import { isJourneyMode, advanceJourneyStage } from '@/src/review/journeyMode';
 import { colors } from '@/src/theme/colors';
 import { typography } from '@/src/theme/typography';
@@ -232,12 +234,28 @@ export default function WaitlistApprovedScreen() {
     opacity: transitionOpacity.value,
   }));
 
-  // Stable navigation callback for runOnJS (Reanimated v4 requires standalone functions, not method refs)
-  // Route through the setup-intro screen first so the user sees the
-  // "Set up rent payments" pitch before the bank form — matching the
-  // journey-router behaviour for cold-start approved users.
-  const navigateToSetup = useCallback(() => {
-    routerRef.current.replace('/(agreement)/setup-intro?context=approved' as never);
+  // Stable navigation callback for runOnJS (Reanimated v4 requires standalone functions, not method refs).
+  // Route by bank-row presence: /(main) if the user already has a landlord
+  // bank row, /(agreement)/add-bank-details otherwise (legacy skip cohort
+  // approved without ever completing bank entry).
+  const navigateAfterApproval = useCallback(async () => {
+    const userId = useAuthStore.getState().userId;
+    let target = '/(agreement)/add-bank-details';
+    if (userId) {
+      try {
+        const { data: bankRow } = await supabase
+          .from('bank_accounts')
+          .select('id')
+          .eq('user_id', userId)
+          .eq('party_type', 'landlord')
+          .limit(1)
+          .maybeSingle();
+        if (bankRow) target = '/(main)';
+      } catch {
+        // Conservative on failure: route to bank-details.
+      }
+    }
+    routerRef.current.replace(target as never);
   }, []);
 
   // Handle "Step Inside" button
@@ -248,10 +266,10 @@ export default function WaitlistApprovedScreen() {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     transitionOpacity.value = withTiming(1, { duration: 300 }, (finished) => {
       if (finished) {
-        runOnJS(navigateToSetup)();
+        runOnJS(navigateAfterApproval)();
       }
     });
-  }, [navigateToSetup, isNavigating, transitionOpacity]);
+  }, [navigateAfterApproval, isNavigating, transitionOpacity]);
 
   return (
     <View style={styles.screen}>
