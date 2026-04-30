@@ -279,9 +279,6 @@ export default function AddBankScreen() {
   // Screen state
   const [screenState, setScreenState] = useState<ScreenState>('form');
 
-  // Upload store — needed by redirect effect + handleConfirm
-  const completeBankStep = useUploadStore((s) => s.completeBankStep);
-
   // user_status (cached by journey router / OTP handler) determines whether
   // we treat this mount as pre-waitlist or post-approval. Single source of
   // truth — replaces the old isPreWaitlist prop.
@@ -306,7 +303,6 @@ export default function AddBankScreen() {
     if (bankAlreadyVerifiedOnMount.current && !hasRedirectedRef.current) {
       hasRedirectedRef.current = true;
       if (isPreWaitlist) {
-        completeBankStep();
         routerRef.current.replace('/(waitlist)' as never);
       } else {
         routerRef.current.replace('/(main)' as never);
@@ -590,12 +586,11 @@ export default function AddBankScreen() {
   const handleConfirm = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     if (isPreWaitlist) {
-      completeBankStep();
       routerRef.current.replace('/(waitlist)' as never);
     } else {
       routerRef.current.replace('/(main)' as never);
     }
-  }, [isPreWaitlist, completeBankStep]);
+  }, [isPreWaitlist]);
 
   // "Try again" on failure screen — reset everything so fields are editable
   const handleRetry = useCallback(() => {
