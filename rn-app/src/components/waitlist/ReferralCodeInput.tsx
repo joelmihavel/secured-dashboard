@@ -65,9 +65,13 @@ const FIGMA = {
   },
 
   // Input text (node I41:11253;50:331;1106:66617)
+  // lineHeight matches the box height so the flex-centered line-box
+  // sits flush in the middle. Figma spec said 60 but the actual box
+  // is 64 — on iOS the 60 line-box bottom-aligns descenders (Q, 9)
+  // below the visible box. Using 64 puts the glyph in the geometric centre.
   inputText: {
     fontSize: sv(48),
-    lineHeight: sv(60),
+    lineHeight: sv(64),
     fontFamily: 'Inter-Medium',
     letterSpacing: -0.96,
   },
