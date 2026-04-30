@@ -21,6 +21,7 @@ import { useSessionMonitor } from '@/src/hooks/useSessionMonitor';
 import { beginTokenRefreshTracking, endTokenRefreshTracking, OTA_RELOAD_MARKER_KEY } from '@/src/config/updates';
 import { detectAndHandleFreshInstall, detectAndHandleVersionChange } from '@/src/utils/installDetection';
 import { drainPendingRevocations } from '@/src/services/api/auth';
+import { addBreadcrumb } from '@/src/config/sentry';
 import type { Session } from '@supabase/supabase-js';
 
 /**
@@ -273,12 +274,27 @@ export function AuthProvider({ children }: AuthProviderProps) {
             try {
               const markerTs = await SecureStore.getItemAsync(OTA_RELOAD_MARKER_KEY);
               if (markerTs) {
-                // Consume-on-read — prevents stale marker from affecting future sign-outs
-                SecureStore.deleteItemAsync(OTA_RELOAD_MARKER_KEY).catch(() => {});
-                const elapsed = Date.now() - parseInt(markerTs, 10);
-                if (elapsed < 15000) {
+                // Consume-on-read. If delete fails (rare: SecureStore permission/disk),
+                // surface it via Sentry so we can detect persistent corruption rather
+                // than silently swallowing. Even if delete fails, the elapsed check
+                // below rejects markers older than 15s.
+                SecureStore.deleteItemAsync(OTA_RELOAD_MARKER_KEY).catch((err) => {
+                  addBreadcrumb('OTA marker delete failed', 'auth', {
+                    error: err instanceof Error ? err.message : String(err),
+                  });
+                });
+                // Defensive parse: NaN (corrupt) and negative elapsed (clock-skew —
+                // user manually rolled back system clock) are both treated as stale,
+                // so the 8s debounce extension is never applied to a poisoned marker.
+                const parsed = parseInt(markerTs, 10);
+                const elapsed = Number.isFinite(parsed) ? Date.now() - parsed : Infinity;
+                if (elapsed >= 0 && elapsed < 15000) {
                   debounceMs = 8000; // Post-OTA: 8s for recovery (Indian 4G refresh can take 3-6s)
                   console.log('[AuthProvider] Post-OTA reload — extending SIGNED_OUT debounce to 8s');
+                } else if (elapsed < 0) {
+                  addBreadcrumb('OTA marker rejected: negative elapsed (clock skew)', 'auth', {
+                    markerTs, elapsed,
+                  });
                 }
               }
             } catch {

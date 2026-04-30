@@ -28,7 +28,19 @@ import { useAuthStore } from '@/src/stores/auth';
  * so the entry isn't lost in the same flow that created it. Wiped on
  * fresh-install detection (see installDetection.ts ALL_KEYCHAIN_KEYS).
  *
- * Format: JSON `{ refreshToken: string, queuedAt: number /* epoch ms *\/ }`
+ * Format (two shapes — drainPendingRevocations handles both):
+ *   - Initial entry (offline signOut):
+ *     `{ refreshToken: string, queuedAt: number, retryStep?: undefined }`
+ *     drain runs step 1 (rotate to invalidate the queued refresh token) then
+ *     step 2 (global logout to kill the orphaned new session).
+ *   - Step-2 retry entry (step 1 succeeded but step 2 failed transiently):
+ *     `{ accessToken: string, refreshToken: string, queuedAt: number,
+ *        retryStep: 'logout' }`
+ *     drain skips step 1. If the cached access_token is still fresh, retries
+ *     the global logout directly. If expired, mints a new access_token via the
+ *     stored refresh token (which consumes the orphan refresh_token in one go),
+ *     persists the rotated pair, then logs out globally to revoke the freshly-
+ *     minted session too.
  */
 export const PENDING_REVOCATION_KEY = 'flent_pending_revocation';
 
@@ -384,7 +396,12 @@ export async function drainPendingRevocations(): Promise<void> {
   }
   if (!raw) return;
 
-  let entry: { refreshToken?: unknown; queuedAt?: unknown };
+  let entry: {
+    refreshToken?: unknown;
+    accessToken?: unknown;
+    queuedAt?: unknown;
+    retryStep?: unknown;
+  };
   try {
     entry = JSON.parse(raw);
   } catch {
@@ -393,16 +410,73 @@ export async function drainPendingRevocations(): Promise<void> {
     return;
   }
 
-  const refreshToken = typeof entry.refreshToken === 'string' ? entry.refreshToken : null;
   const queuedAt = typeof entry.queuedAt === 'number' ? entry.queuedAt : 0;
 
-  if (!refreshToken) {
+  // TTL: drop entries older than the max refresh-token lifetime.
+  if (queuedAt && Date.now() - queuedAt > PENDING_REVOCATION_MAX_AGE_MS) {
     await SecureStore.deleteItemAsync(PENDING_REVOCATION_KEY).catch(() => {});
     return;
   }
 
-  // TTL: drop entries older than the max refresh-token lifetime.
-  if (queuedAt && Date.now() - queuedAt > PENDING_REVOCATION_MAX_AGE_MS) {
+  // Step-2 retry entry: step 1 (rotation) already succeeded on a prior launch;
+  // we only need to retry the global logout. If the cached access_token has
+  // expired since we stored it, re-mint via the stored refresh_token first —
+  // otherwise GoTrue's logout endpoint returns 401 (expired), which we'd
+  // ambiguously interpret as "already revoked" and prematurely drop the entry.
+  if (entry.retryStep === 'logout') {
+    const cachedAccess = typeof entry.accessToken === 'string' ? entry.accessToken : null;
+    const cachedRefresh = typeof entry.refreshToken === 'string' ? entry.refreshToken : null;
+
+    let usableAccessToken: string | null = null;
+    if (cachedAccess && !isAccessTokenLikelyExpired(cachedAccess)) {
+      usableAccessToken = cachedAccess;
+    } else if (cachedRefresh) {
+      // Mint a fresh access_token. This rotation consumes the stored
+      // refresh_token and produces a new (access, refresh) orphan pair which
+      // the global logout below revokes. CRITICAL: persist the new tokens
+      // BEFORE attempting logout — if logout fails and the JS runtime exits,
+      // the next launch would otherwise lose the chain (the consumed refresh
+      // token would 4xx on retry, and we'd drop the entry leaking the new
+      // orphan).
+      const fresh = await mintAccessToken(cachedRefresh);
+      if (fresh.status === 'invalid') {
+        // Refresh token already invalid → orphan is gone server-side.
+        await SecureStore.deleteItemAsync(PENDING_REVOCATION_KEY).catch(() => {});
+        return;
+      }
+      if (fresh.status === 'transient') {
+        // 5xx / network — leave entry as-is, retry next launch.
+        return;
+      }
+      const rotatedEntry = JSON.stringify({
+        accessToken: fresh.accessToken,
+        refreshToken: fresh.refreshToken,
+        queuedAt: Date.now(),
+        retryStep: 'logout' as const,
+      });
+      await SecureStore.setItemAsync(PENDING_REVOCATION_KEY, rotatedEntry).catch(() => {});
+      usableAccessToken = fresh.accessToken;
+    }
+
+    if (!usableAccessToken) {
+      // No usable token (no refresh token cached and access expired).
+      // We can't reach the logout endpoint; the orphan will TTL out on its
+      // own (refresh tokens expire ~30d, queue TTL is 35d).
+      await SecureStore.deleteItemAsync(PENDING_REVOCATION_KEY).catch(() => {});
+      return;
+    }
+
+    const logoutOk = await performGlobalLogout(usableAccessToken);
+    if (logoutOk) {
+      await SecureStore.deleteItemAsync(PENDING_REVOCATION_KEY).catch(() => {});
+    }
+    // On failure: leave the (already-rotated) entry in place; next launch
+    // retries logout with the freshly-stored tokens.
+    return;
+  }
+
+  const refreshToken = typeof entry.refreshToken === 'string' ? entry.refreshToken : null;
+  if (!refreshToken) {
     await SecureStore.deleteItemAsync(PENDING_REVOCATION_KEY).catch(() => {});
     return;
   }
@@ -429,7 +503,7 @@ export async function drainPendingRevocations(): Promise<void> {
     }
 
     if (!refreshResp.ok) {
-      // 5xx — keep the entry, retry next launch.
+      // 5xx — keep the entry, retry step 1 next launch.
       return;
     }
 
@@ -440,17 +514,120 @@ export async function drainPendingRevocations(): Promise<void> {
     }
 
     // Step 2: revoke the orphaned new session.
-    await fetch(`${env.supabaseUrl}/auth/v1/logout?scope=global`, {
+    // Step 1 minted a new (refresh, access) pair which nobody is going to use
+    // — we MUST revoke it server-side, otherwise it sits valid for ~30 days.
+    // If logout fails (network/5xx), persist a step-2 retry entry so the next
+    // launch can retry just the logout — without this we used to silently
+    // drop the queue entry and leak the orphan refresh_token.
+    const logoutOk = await performGlobalLogout(tokens.access_token);
+    if (logoutOk) {
+      await SecureStore.deleteItemAsync(PENDING_REVOCATION_KEY).catch(() => {});
+    } else {
+      const retryEntry = JSON.stringify({
+        accessToken: tokens.access_token,
+        refreshToken: tokens.refresh_token,
+        queuedAt: Date.now(),
+        retryStep: 'logout' as const,
+      });
+      await SecureStore.setItemAsync(PENDING_REVOCATION_KEY, retryEntry).catch(() => {});
+    }
+  } catch {
+    // Network error during step 1 — leave queue intact, retry on next launch.
+  }
+}
+
+/**
+ * Approximate JWT expiry check used by the revocation-retry path.
+ *
+ * Decodes the `exp` claim with a 30-second safety margin so we don't try to
+ * call /auth/v1/logout with a token that's about to expire mid-flight (which
+ * would return 401 and leak as "already revoked" to performGlobalLogout).
+ *
+ * Returns true on any parse failure — safer to re-mint than to send a
+ * potentially expired token to the logout endpoint.
+ */
+function isAccessTokenLikelyExpired(token: string): boolean {
+  try {
+    const payload = token.split('.')[1];
+    if (!payload) return true;
+    const json = atob(payload.replace(/-/g, '+').replace(/_/g, '/'));
+    const { exp } = JSON.parse(json);
+    if (typeof exp !== 'number') return true;
+    return Date.now() > (exp - 30) * 1000;
+  } catch {
+    return true;
+  }
+}
+
+/**
+ * Mint a fresh access_token via /auth/v1/token?grant_type=refresh_token.
+ *
+ * Used only by the step-2 retry path when the cached access_token has expired
+ * since the orphan was first queued. Distinguishes three outcomes so the
+ * caller can decide whether to retry next launch or drop the queue entry.
+ */
+async function mintAccessToken(refreshToken: string): Promise<
+  | { status: 'ok'; accessToken: string; refreshToken: string }
+  | { status: 'invalid' } // 4xx — refresh token already revoked
+  | { status: 'transient' } // 5xx / network — retry next launch
+> {
+  try {
+    const r = await fetch(
+      `${env.supabaseUrl}/auth/v1/token?grant_type=refresh_token`,
+      {
+        method: 'POST',
+        headers: {
+          'apikey': env.supabaseAnonKey,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ refresh_token: refreshToken }),
+      }
+    );
+    if (r.status >= 400 && r.status < 500) return { status: 'invalid' };
+    if (!r.ok) return { status: 'transient' };
+    const tokens = await r.json().catch(() => null);
+    if (
+      typeof tokens?.access_token === 'string' &&
+      typeof tokens?.refresh_token === 'string'
+    ) {
+      return {
+        status: 'ok',
+        accessToken: tokens.access_token,
+        refreshToken: tokens.refresh_token,
+      };
+    }
+    return { status: 'transient' };
+  } catch {
+    return { status: 'transient' };
+  }
+}
+
+/**
+ * Best-effort global logout via raw fetch.
+ *
+ * Returns true if the orphaned session is confirmed revoked (logout 2xx, or
+ * 4xx meaning the token was already invalid server-side). Returns false on
+ * 5xx or network error so the caller can re-queue for retry.
+ *
+ * IMPORTANT: callers must ensure the access_token isn't expired before
+ * calling — a 401 from the logout endpoint is indistinguishable between
+ * "expired token" and "session already revoked", and we'd leak the orphan
+ * by treating expiry as success.
+ */
+async function performGlobalLogout(accessToken: string): Promise<boolean> {
+  try {
+    const resp = await fetch(`${env.supabaseUrl}/auth/v1/logout?scope=global`, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${tokens.access_token}`,
+        'Authorization': `Bearer ${accessToken}`,
         'apikey': env.supabaseAnonKey,
       },
-    }).catch(() => {});
-
-    await SecureStore.deleteItemAsync(PENDING_REVOCATION_KEY).catch(() => {});
+    });
+    if (resp.ok) return true;
+    if (resp.status >= 400 && resp.status < 500) return true;
+    return false;
   } catch {
-    // Network error — leave queue intact, retry on next launch.
+    return false;
   }
 }
 

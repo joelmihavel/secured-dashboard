@@ -46,6 +46,11 @@ const ALL_KEYCHAIN_KEYS = [
   // Hardcoded (not imported) to avoid an import cycle with api/auth.ts.
   // Must match PENDING_REVOCATION_KEY in src/services/api/auth.ts.
   'flent_pending_revocation',
+  // Last-good update-policy fallback. Hardcoded (not imported) to avoid an
+  // import cycle with hooks/useUpdatePolicy.ts. Must match LAST_GOOD_POLICY_KEY
+  // in that file. Without this, a stale "blocking native" policy could
+  // survive delete+reinstall and lock out a fresh user offline.
+  'flent_update_policy_last_good',
 ];
 
 /**
