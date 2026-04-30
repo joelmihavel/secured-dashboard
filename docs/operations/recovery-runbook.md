@@ -31,6 +31,7 @@
 | Bad UPDATE wiped 1000 `payments` rows from minutes ago | Daily snapshot — yesterday's data | Acceptance: 24h of writes between yesterday's snapshot and now will be re-replayed manually if needed |
 | Bad DELETE on `audit_logs` (recent rows) | This shouldn't happen — `audit_logs_service_cleanup_only` policy prevents DELETE on non-old rows | If somehow it does, daily snapshot is the only path |
 | Bad code deploy returning 500s | Edge function rollback (`gh workflow run rollback.yml -f surface=edge-fns`) | DB isn't corrupted; this is a code issue |
+| Migration history out-of-sync (CI fails with "Remote migration versions not found") | `supabase migration repair` — see "Migration history repair" section below | Schema is fine; only the `supabase_migrations.schema_migrations` table is mislabelled |
 | Bad webhook handler corrupting `payments.status` | Daily snapshot for old corrupt rows; fix code; re-process webhook events from `processed_webhooks` log | The dedup table tells you which events to re-process |
 | Storage bucket files (rent agreements) deleted | Not recoverable today (Supabase Storage doesn't retain deleted objects) | Out-of-scope follow-up: enable GCS object versioning |
 | Supabase project unhealthy | Restore from daily snapshot or contact Supabase support | Support is the actual escalation path |
@@ -141,6 +142,74 @@ If the corruption is from a bad migration (column dropped, table renamed, etc.),
 | GCS Storage objects (rent agreements) | Not currently recoverable — GCS object versioning is NOT enabled on the `rent-agreements` bucket. Out-of-scope follow-up. |
 | Cloud Run revisions | `gcloud run services update-traffic --to-revisions=<good-rev>=100` |
 | Cron schedules | `cron.job` baseline snapshot at `/tmp/prod-cron-baseline.sql` from Phase 0 |
+
+---
+
+## Migration history repair
+
+> **Symptom:** `deploy-dev` (or `deploy-prod`) workflow fails on the Migrations job with
+> `Remote migration versions not found in local migrations directory.` followed by a list of orphan
+> versions. Cascading failure: Edge functions / Cloud Run / EAS Update jobs are skipped because
+> they're gated on Migrations succeeding.
+>
+> **Blast radius if untreated:** EVERY function that was modified in the failing merge (and any
+> commits dependent on the same migration tree) silently stays on the previous version. The CI
+> appears green for subsequent commits because their changed-files filter doesn't include the
+> stale function dirs — but the runtime is half-deployed.
+
+**Root cause classes:**
+1. Someone applied a migration directly to remote (dashboard SQL editor, manual `psql`, hot-fix script) — the row exists in `supabase_migrations.schema_migrations` with a timestamp that has no matching file in `supabase/migrations/`.
+2. A migration file was renamed in git (e.g. timestamp bumped) without the corresponding `repair` against the remote — remote still records the old timestamp.
+3. A migration was rolled back manually but the history row wasn't cleared.
+
+**Diagnosis:**
+```bash
+supabase link --project-ref <project-ref>
+supabase migration list
+```
+Look for asymmetric rows:
+```
+   <local>       | <remote>     | <date>
+   20260430130000 | 20260430130000 | ...    ← matched
+                 | 20260430204520 | ...    ← REMOTE-ONLY (orphan)
+   20260501130000 |               | ...    ← LOCAL-ONLY (not yet applied)
+```
+
+**Fix — Case A: schema changes already applied, only history is mislabelled**
+(common when someone applied via dashboard, then committed the file with a different timestamp)
+```bash
+# 1. Mark the orphan remote version as not-applied (clears the bad row)
+supabase migration repair --status reverted <orphan-remote-version>
+
+# 2. Mark our local version as applied (tells remote: this is what's live, don't re-push it)
+supabase migration repair --status applied <local-version>
+
+# 3. Verify
+supabase migration list             # should show all rows in both columns
+supabase db push --dry-run          # should print "Remote database is up to date."
+```
+
+**Fix — Case B: orphan remote was a real change, we need to capture it locally**
+```bash
+supabase db pull                    # generates a local file matching the orphan remote version
+git add supabase/migrations/<new-file>
+git commit -m "chore(migrations): capture remote drift <orphan-version>"
+```
+
+**After history is repaired, redeploy any functions that were skipped:**
+```bash
+# Identify stale functions: compare last commit time per function dir to live UPDATED_AT.
+# Then deploy each (or push a no-op commit touching them so CI handles it):
+supabase functions deploy <fn-1> <fn-2> ... --project-ref <project-ref> --no-verify-jwt
+```
+
+**Real incident — 2026-05-01:** PR #29 (cashback rules revamp) merged to `dev`. The Migrations job
+in `deploy-dev` failed with orphan remote `20260430204520` and local-only `20260501130000`. Edge
+functions job was skipped, leaving 11 payment-path functions running pre-overhaul code on
+`v2-backend-dev` (`abandon-payment`, `calculate-cashback`, `cashfree-split-webhook`,
+`check-payment-status`, `cleanup-stale-payments`, `dashboard-data`, `get-cashback-history`,
+`initiate-payment`, `initiate-refund`, `payment-webhook`, `poll-settlement-status`). Resolved
+via Case A above plus per-function `supabase functions deploy` for each of the 11.
 
 ---
 
