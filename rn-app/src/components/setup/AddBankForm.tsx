@@ -40,8 +40,10 @@ import { AlertBanner, Text, TextInput, PrimaryButton, ScreenTitle, Logo, BackBut
 import { GradientPill } from '@/src/components/agreement/GradientPill';
 import { TabSwitcher } from '@/src/components/home';
 import { DottedGridPattern } from '@/src/components/patterns/DottedGridPattern';
-import { useVerifyBank, useVerifyUpiVpa, useVerifyPan, useDashboard, validateAccountNumber, validateIfscCode, validateUpiVpa } from '@/src/hooks';
+import { useVerifyBank, useVerifyUpiVpa, useVerifyPan, useDashboard, useExtractionStatus, validateAccountNumber, validateIfscCode, validateUpiVpa } from '@/src/hooks';
 import { useUploadStore } from '@/src/stores/upload';
+import { useAuthStore } from '@/src/stores/auth';
+import { resetForReupload } from '@/src/services/agreement/resetForReupload';
 import type { BankVerificationResponse, UpiVerificationResponse, PanVerificationResponse, SetupError, SetupPaymentMethodType } from '@/src/types/setup';
 import { colors } from '@/src/theme';
 
@@ -50,7 +52,11 @@ const PAYMENT_METHOD_TABS = [
   { id: 'upi', label: 'UPI Details' },
 ];
 
-type ScreenState = 'form' | 'loading' | 'success' | 'failure';
+// 'agreement_invalid' = full-screen "We couldn't read your agreement" overlay
+//   shown when the extraction pipeline reaches a terminal error
+//   (extraction_status ∈ {failed, extraction_failed} OR contract_status === 'invalid_document').
+//   Replaces the form entirely; the only escape is "Upload again".
+type ScreenState = 'form' | 'loading' | 'success' | 'failure' | 'agreement_invalid';
 
 // Figma exact color values
 const FIGMA = {
@@ -297,6 +303,40 @@ export default function AddBankScreen({ preWaitlist = false }: AddBankProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // ── Extraction-state gating ──────────────────────────────────────────────
+  // The bank/PAN name match relies on landlord names from the agreement scan.
+  // Three relevant outcomes:
+  //   pending/processing → form editable, Verify CTA disabled w/ "Verifying agreement…"
+  //   completed          → form editable, Verify CTA enabled (current default)
+  //   failed/extraction_failed/invalid_document → flip screenState to
+  //                                               'agreement_invalid' overlay
+  const extraction = useExtractionStatus({ enabled: true });
+  const userStatus = useAuthStore((s) => s.userStatus);
+  const userId = useAuthStore((s) => s.userId);
+
+  const hasExtractionContext = !!extraction.extractionId || !!extraction.data;
+  const isExtractionInFlight =
+    hasExtractionContext &&
+    (extraction.isLoading ||
+      extraction.data?.extractionStatus === 'pending' ||
+      extraction.data?.extractionStatus === 'processing');
+  const isAgreementInvalid =
+    !!extraction.data &&
+    (extraction.data.extractionStatus === 'failed' ||
+      extraction.data.extractionStatus === 'extraction_failed' ||
+      extraction.data.contractStatus === 'invalid_document');
+
+  // Flip to the agreement-invalid overlay as soon as a terminal-error state is
+  // observed — wins over any in-progress bank/UPI verify (the agreement is
+  // moot anyway). Only flips once; "Upload again" navigates the user out.
+  const flippedToInvalidRef = useRef(false);
+  useEffect(() => {
+    if (isAgreementInvalid && !flippedToInvalidRef.current) {
+      flippedToInvalidRef.current = true;
+      setScreenState('agreement_invalid');
+    }
+  }, [isAgreementInvalid]);
+
   const bankVerified = verificationResult?.verified === true;
   const panVerified = panResult?.panVerified === true;
 
@@ -535,16 +575,30 @@ export default function AddBankScreen({ preWaitlist = false }: AddBankProps) {
     }
   }, [firePanVerification, preWaitlist]);
 
-  // "Confirm and continue" → dashboard (post-approval) or waitlist (pre-waitlist)
+  // "Confirm and continue" → route by user_status (cached in auth store).
+  // Pre-waitlist (signed_up / waitlisted / agreement_confirmed) → /(waitlist).
+  // Post-approval (approved / active) → /(main).
+  // Falls back to the preWaitlist prop if userStatus is null (cold cache before
+  // the journey router has resolved).
   const handleConfirm = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    if (preWaitlist) {
+    const isApprovedOrActive = userStatus === 'approved' || userStatus === 'active';
+    const isPreWaitlistByStatus =
+      userStatus === 'signed_up' ||
+      userStatus === 'waitlisted' ||
+      userStatus === 'agreement_confirmed';
+    const target = isApprovedOrActive
+      ? '/(main)'
+      : isPreWaitlistByStatus
+        ? '/(waitlist)'
+        : preWaitlist
+          ? '/(waitlist)'
+          : '/(main)';
+    if (target === '/(waitlist)') {
       completeBankStep();
-      routerRef.current.replace('/(waitlist)' as never);
-    } else {
-      routerRef.current.replace('/(main)' as never);
     }
-  }, [preWaitlist, completeBankStep]);
+    routerRef.current.replace(target as never);
+  }, [userStatus, preWaitlist, completeBankStep]);
 
   // Skip — pre-waitlist only
   const handleSkip = useCallback(() => {
@@ -563,6 +617,22 @@ export default function AddBankScreen({ preWaitlist = false }: AddBankProps) {
     setUpiVerificationResult(null);
     setPanResult(null);
   }, []);
+
+  // "Upload again" — shown on the agreement_invalid overlay when the
+  // extraction pipeline failed or the doc isn't a rental agreement. Clears
+  // the in-flight extraction + any pre-waitlist landlord bank rows + manual
+  // form store, then routes to upload with ?forceNew=true so the upload
+  // screen resets to idle on mount.
+  const handleUploadAgain = useCallback(async () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    if (userId) {
+      await resetForReupload({
+        userId,
+        extractionId: extraction.extractionId ?? undefined,
+      });
+    }
+    routerRef.current.replace('/(agreement)/upload?forceNew=true' as never);
+  }, [userId, extraction.extractionId]);
 
   const isUpi = paymentMethod === 'upi';
   const upiVerified = upiVerificationResult?.verified === true;
@@ -610,6 +680,37 @@ export default function AddBankScreen({ preWaitlist = false }: AddBankProps) {
               ? 'Verifying the UPI ID and PAN with our partners. This takes few seconds.'
               : 'Verifying the bank account and PAN with our partners. This takes few seconds.'}
           </Text>
+        </View>
+      </View>
+    );
+  }
+
+  // ── AGREEMENT_INVALID STATE ──────────────────────────────────────────────
+  // Reached when the extraction pipeline reports a terminal error
+  // (extraction_status ∈ {failed, extraction_failed} OR contract_status === 'invalid_document').
+  // The agreement is unusable — landlord-name match would never resolve — so
+  // the only path forward is to re-upload. Mirrors the failure-state layout
+  // but uses the failure spinner colours and an "Upload again" CTA.
+  if (screenState === 'agreement_invalid') {
+    const errorBody =
+      extraction.data?.extractionError ||
+      "We couldn't read your rental agreement. Please upload a clearer copy to continue.";
+    return (
+      <View style={styles.container}>
+        <DottedGridPattern fadeMask={false} />
+        <View style={[styles.loadingLogoRow, { paddingTop: insets.top + 48 }]}>
+          <Logo size={40} />
+        </View>
+        <View style={styles.loadingContent}>
+          <Text style={styles.loadingTitle}>
+            <Text style={styles.loadingTitleGray}>We couldn&apos;t{'\n'}</Text>
+            <Text style={styles.failureTitleAccent}>read your agreement</Text>
+          </Text>
+          <VerificationSpinner failed />
+          <Text style={styles.loadingBody}>{errorBody}</Text>
+        </View>
+        <View style={[styles.failureCtaWrap, { paddingBottom: insets.bottom + 24 }]}>
+          <PrimaryButton title="Upload again" onPress={handleUploadAgain} showDivider />
         </View>
       </View>
     );
@@ -867,9 +968,9 @@ export default function AddBankScreen({ preWaitlist = false }: AddBankProps) {
               />
             ) : (
               <PrimaryButton
-                title="Verify details"
+                title={isExtractionInFlight ? 'Verifying agreement…' : 'Verify details'}
                 onPress={handleSubmit}
-                disabled={!allFieldsFilled}
+                disabled={!allFieldsFilled || isExtractionInFlight}
               />
             )}
 
@@ -880,7 +981,9 @@ export default function AddBankScreen({ preWaitlist = false }: AddBankProps) {
             )}
 
             <Text style={styles.footerText}>
-              PAN is required for rent compliance and verification.
+              {isExtractionInFlight
+                ? "We're checking your agreement. This usually takes a couple of minutes."
+                : 'PAN is required for rent compliance and verification.'}
             </Text>
           </View>
         )}
