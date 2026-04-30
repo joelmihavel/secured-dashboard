@@ -11,7 +11,7 @@ import { View, StyleSheet, Image, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import Svg, { Path, Defs, ClipPath, Rect } from 'react-native-svg';
+import Svg, { Path } from 'react-native-svg';
 
 import { Screen, Logo, Text, PrimaryButton } from '@/src/components';
 import { BgLine, MarqueeStack, Plus } from '@/src/components/auth/landing-decor';
@@ -126,21 +126,24 @@ function Paperclip() {
   );
 }
 
-/** Folded-corner / dog-ear at top-right of card — page bg shows through with a triangle of card-back. */
+/**
+ * Folded-corner / dog-ear at top-right of card. Matches the upload-agreement
+ * implementation: Vector 44 SVG path (67×60) sits on top of the card corner,
+ * fill #1A1A1A (black[600]) + stroke #202020 (black[500] = card bg). The
+ * card's underlying rectangle stays a full rounded rectangle — the fold is a
+ * visual overlay, not a clip.
+ */
 function CornerFlap() {
-  const size = s(54);
+  // Vector 44 path from upload.tsx (Figma 1:29998).
+  const svgPath = 'M67 60L0 0L0 48C0 54.6274 5.37258 60 12 60L67 60Z';
   return (
-    <Svg width={size} height={size} viewBox="0 0 54 54" fill="none">
-      <Defs>
-        <ClipPath id="flap-clip">
-          <Rect width={54} height={54} fill="white" />
-        </ClipPath>
-      </Defs>
-      {/* Rounded back showing page bg through the fold */}
+    <Svg width={s(67)} height={sv(60)} viewBox="0 0 67 60" fill="none">
       <Path
-        d="M0 12C0 5.37258 5.37258 0 12 0H42C48.6274 0 54 5.37258 54 12V42C54 48.6274 48.6274 54 42 54H12C5.37258 54 0 48.6274 0 42V12Z"
-        fill={colors.black[700]}
-        clipPath="url(#flap-clip)"
+        d={svgPath}
+        fill={colors.black[600]}
+        stroke={colors.black[500]}
+        strokeWidth={1}
+        strokeLinejoin="round"
       />
     </Svg>
   );
@@ -201,9 +204,12 @@ const styles = StyleSheet.create({
     overflow: 'visible',
   },
   cornerFlapSlot: {
+    // Match upload.tsx: shape extends 13px past card right edge and 6.4px
+    // above card top, so the diagonal fold reaches into the corner cleanly.
     position: 'absolute',
-    right: 0,
-    top: 0,
+    right: s(-13),
+    top: sv(-6.4),
+    overflow: 'visible',
   },
   // Heading
   headingBlock: {

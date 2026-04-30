@@ -270,9 +270,9 @@ serve(async (req: Request) => {
       // The real bank UTR from Cashfree — this is the bank transfer reference
       const bankUtr = settlement?.utr ?? null;
 
-      // Amount guard: with 15-min settlement cycles, a newer adjustment could be
-      // in "processing" but NOT included in this bank transfer. Use amount_settled
-      // from the webhook to determine which payments are in this batch.
+      // Amount guard: with the every-3-hours settlement cycle, a newer adjustment
+      // could be in "processing" but NOT included in this bank transfer. Use
+      // amount_settled from the webhook to determine which payments are in this batch.
       // Sort by landlord_payout_at ascending (FIFO — oldest adjustments settle first),
       // accumulate payout amounts, and stop when we'd exceed amount_settled.
       const amountSettledPaise = Math.round(amountSettled * 100);
