@@ -42,8 +42,14 @@ const withTimeout = <T>(promise: Promise<T>, ms: number = QUERY_TIMEOUT_MS): Pro
 // TYPES -- RN App UI Contract (camelCase)
 // ==============================================
 
-/** Status of the document extraction pipeline */
-export type ExtractionStatus = 'pending' | 'processing' | 'completed' | 'failed';
+/**
+ * Status of the document extraction pipeline.
+ * Keep in sync with cloud-run/extraction-service writes:
+ *  - 'failed'            — generic failure / client-side staleness fallback
+ *  - 'extraction_failed' — pipeline catch-block (extraction-pipeline.ts:200)
+ * Both are terminal-error states; consumers should treat them equivalently.
+ */
+export type ExtractionStatus = 'pending' | 'processing' | 'completed' | 'failed' | 'extraction_failed';
 
 /** Status of the contract review */
 export type ContractStatus = 'uploading' | 'user_review' | 'manual_review' | 'expired' | 'invalid_document' | 'confirmed';

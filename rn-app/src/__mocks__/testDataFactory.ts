@@ -438,6 +438,16 @@ export function createMockExtractionStatus(
       updatedAt: isoNow(),
       userVerified: false,
     },
+    extraction_failed: {
+      extractionId: nextId('ext'),
+      extractionStatus: 'extraction_failed',
+      contractStatus: 'uploading',
+      isCitySupported: true,
+      extractionError: 'Pipeline error',
+      needsManualReview: false,
+      updatedAt: isoNow(),
+      userVerified: false,
+    },
   };
 
   return { ...defaults[status], ...overrides };

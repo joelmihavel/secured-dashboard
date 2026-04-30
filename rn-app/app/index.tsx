@@ -33,6 +33,7 @@ import { useAuthContext } from '@/src/providers';
 import { useUpdatePolicy, clearUpdatePolicyCache } from '@/src/hooks/useUpdatePolicy';
 import { useUploadStore } from '@/src/stores/upload';
 import { usePaymentStore } from '@/src/stores/payment';
+import { useAuthStore } from '@/src/stores/auth';
 import { isReviewMode } from '@/src/review/reviewMode';
 import { isJourneyMode, getJourneyRouteTarget } from '@/src/review/journeyMode';
 import { addBreadcrumb } from '@/src/config/sentry';
@@ -138,11 +139,38 @@ async function queryUserStatus(userId: string): Promise<string | null> {
       return null;
     }
 
-    console.log('[journey-router] PostgREST user_status:', userRecord.user_status);
-    return userRecord.user_status;
+    const status = userRecord.user_status;
+    console.log('[journey-router] PostgREST user_status:', status);
+    // Cache for non-router consumers (e.g., AddBankForm post-submit nav).
+    useAuthStore.getState().setUserStatus(status);
+    return status;
   } catch (err) {
     console.warn('[journey-router] PostgREST error:', err);
     return null;
+  }
+}
+
+/**
+ * Approved-user routing helper. Returns `/(main)` if the user has a landlord
+ * bank-account row, else `/(agreement)/add-bank-details`. Replaces the old
+ * setup-intro?context=approved hop. The bank-row presence is the new gate
+ * (formerly `bankStepCompleted` on the upload store).
+ */
+async function decideApprovedTarget(userId: string): Promise<string> {
+  try {
+    const { data: bankRow } = await supabase
+      .from('bank_accounts')
+      .select('id')
+      .eq('user_id', userId)
+      .eq('party_type', 'landlord')
+      .limit(1)
+      .maybeSingle();
+    return bankRow ? '/(main)' : '/(agreement)/add-bank-details';
+  } catch (err) {
+    console.warn('[journey-router] decideApprovedTarget query failed:', err);
+    // Conservative fallback: route to bank entry. Worse to skip a missing-bank
+    // user into /(main) than to over-collect from someone who already has one.
+    return '/(agreement)/add-bank-details';
   }
 }
 
@@ -350,6 +378,7 @@ export default function Index() {
         if (!error && data?.userStatus) {
           console.log('[journey-router] edge function userStatus:', data.userStatus);
           userStatus = data.userStatus;
+          useAuthStore.getState().setUserStatus(userStatus);
         } else {
           console.warn('[journey-router] edge function also failed:', { error, hasData: !!data });
           addBreadcrumb('both routing paths failed', 'navigation', { error: error ?? 'no data' });
@@ -519,6 +548,8 @@ export default function Index() {
       setTarget(null);
       hasNavigatedRef.current = false;
       isResolvingRef.current = false;
+      // Clear cached user_status so it doesn't leak across sign-outs.
+      useAuthStore.getState().setUserStatus(null);
     }
     wasAuthenticatedRef.current = isAuthenticated;
   }, [isAuthenticated, authLoading]);

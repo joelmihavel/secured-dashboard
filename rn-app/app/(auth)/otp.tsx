@@ -78,6 +78,9 @@ async function resolvePostOtpTarget(userId: string): Promise<string> {
       return '/(agreement)/intro';
     }
 
+    // Cache for non-router consumers (e.g., AddBankForm post-submit nav).
+    useAuthStore.getState().setUserStatus(data.user_status);
+
     switch (data.user_status) {
       case 'approved': {
         // Check if bank already verified (deferred name matching succeeded)

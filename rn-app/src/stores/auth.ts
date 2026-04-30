@@ -35,6 +35,10 @@ interface AuthState {
   otpRequestId: string | null;       // Opaque server ref for OTP routing
   otpMethod: OtpMethod;              // Which OTP path is active
   identityStatus: IdentityStatus;    // M360 identity verification result
+  // Last-known users.user_status from PostgREST. Populated by journey router
+  // and OTP handler after each queryUserStatus(). Read by AddBankForm to pick
+  // post-submit destination without a re-query. Null if never resolved.
+  userStatus: string | null;
   error: {
     code: string;
     message: string;
@@ -57,6 +61,9 @@ interface AuthActions {
 
   // Identity status (post-verify update)
   setIdentityStatus: (status: IdentityStatus) => void;
+
+  // user_status cache (set after queryUserStatus resolves)
+  setUserStatus: (status: string | null) => void;
 
   // Error handling
   setError: (code: string, message: string) => void;
@@ -84,6 +91,7 @@ const initialState: AuthState = {
   otpRequestId: null,
   otpMethod: null,
   identityStatus: null,
+  userStatus: null,
   error: null,
 };
 
@@ -152,6 +160,11 @@ export const useAuthStore = create<AuthStore>()(
         state.identityStatus = status;
       }),
 
+    setUserStatus: (status) =>
+      set((state) => {
+        state.userStatus = status;
+      }),
+
     setError: (code, message) =>
       set((state) => {
         state.error = { code, message };
@@ -181,3 +194,4 @@ export const selectAuthError = (state: AuthStore) => state.error;
 export const selectOtpRequestId = (state: AuthStore) => state.otpRequestId;
 export const selectOtpMethod = (state: AuthStore) => state.otpMethod;
 export const selectIdentityStatus = (state: AuthStore) => state.identityStatus;
+export const selectUserStatus = (state: AuthStore) => state.userStatus;

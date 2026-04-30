@@ -285,6 +285,7 @@ function useMountDiscovery(enabled: boolean) {
             // the status effect shows the old error, ignoring B entirely.
             const isTerminalError =
               status.extractionStatus === 'failed' ||
+              status.extractionStatus === 'extraction_failed' ||
               status.contractStatus === 'invalid_document';
 
             if (isTerminalError) {
