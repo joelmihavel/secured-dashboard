@@ -211,37 +211,21 @@ serve(async (req) => {
     }
 
     // ==============================================
-    // VIP AUTO-APPROVE CHECK
-    // ==============================================
-
-    // Check if this was a VIP code — auto-approve from waitlist
-    const { data: codeRecord } = await adminClient
-      .from("invite_codes")
-      .select("is_vip")
-      .eq("code", code.toUpperCase())
-      .maybeSingle();
-
-    let autoApproved = false;
-    if (codeRecord?.is_vip) {
-      // Update waitlist entry to approved
-      await adminClient
-        .from("waitlist_entries")
-        .update({ admin_review: "approved" })
-        .eq("user_id", user.id);
-
-      // Update user status to approved
-      await adminClient
-        .from("users")
-        .update({ user_status: "approved", status_updated_at: new Date().toISOString() })
-        .eq("id", user.id);
-
-      autoApproved = true;
-      console.log(`[claim-invite-code] VIP code ${code} — auto-approved user ${user.id}`);
-    }
-
-    // ==============================================
     // SUCCESS
     // ==============================================
+    //
+    // VIP promotion is now handled atomically inside the claim_invite_code RPC.
+    // The RPC has already done all of:
+    //   - waitlist_entries.admin_review = 'approved'
+    //   - users.user_status = 'approved' (with NOT IN-terminal guard)
+    //   - check_and_advance_to_active() — flips to 'active' if bank already verified
+    // …all in the same transaction as code consumption. The result row tells us
+    // whether the user was actually promoted (auto_approved=true) so we can
+    // surface the correct copy. Migration 20260501160000 owns this contract.
+    const autoApproved = result.auto_approved === true;
+    if (autoApproved) {
+      console.log(`[claim-invite-code] VIP code ${code} — auto-approved user ${user.id}`);
+    }
 
     return jsonResponse(
       {
