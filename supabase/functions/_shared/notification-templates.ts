@@ -261,37 +261,69 @@ export const DB_TYPE_MAP: Record<NotificationType, string> = {
 };
 
 // ==============================================
-// WHATSAPP TEMPLATE MAP
+// WHATSAPP TEMPLATES (DB-DRIVEN)
 // ==============================================
 
 /**
- * Maps notification type → Twilio WhatsApp Content Template.
- * ContentSids are stored as env vars for easy updates without code deploys.
- * Only types with WhatsApp templates are included (Partial).
+ * The set of notification types that have WhatsApp templates configured.
+ * O(1) presence check used by callers to decide whether to attempt a WA
+ * dispatch at all (avoids reserving a slot for types that have no template).
+ *
+ * Authoritative SID + variable_keys live in `notification_policy` (seeded by
+ * migration 20260430120002). Use `getWhatsAppTemplate()` to fetch them.
+ *
+ * `reminder_agreement` is intentionally absent: no approved Twilio template;
+ * push-only for now (decision 2026-04-30).
  */
+export const WHATSAPP_TEMPLATE_TYPES: ReadonlySet<NotificationType> = new Set<NotificationType>([
+  "onboarding_dropoff",
+  "agreement_upload_failed",
+  "under_review",
+  "waitlist_approved",
+  "waitlist_rejected",
+  "setup_incomplete",
+  "landlord_pending",
+  "rent_due",
+  "rent_overdue",
+  "payment_success",
+  "payment_failed",
+  "payment_processing",
+  "payment_refunded",
+  "milestone_streak",
+  "settlement_complete",
+]);
+
 export interface WhatsAppTemplateConfig {
-  contentSidEnvVar: string;    // Env var name holding the HXxxxxxxxxx ContentSid
-  variableKeys: string[];      // Keys from template_vars to map to {{1}}, {{2}}, ...
+  contentSid: string;       // Twilio Content Template SID (HX...)
+  variableKeys: string[];   // Order-sensitive keys for {{1}}, {{2}}, ...
 }
 
-export const WHATSAPP_TEMPLATE_MAP: Partial<Record<NotificationType, WhatsAppTemplateConfig>> = {
-  onboarding_dropoff:      { contentSidEnvVar: "WA_TPL_ONBOARDING_DROPOFF",  variableKeys: ["name"] },
-  agreement_upload_failed: { contentSidEnvVar: "WA_TPL_AGREEMENT_FAILED",    variableKeys: [] },
-  under_review:            { contentSidEnvVar: "WA_TPL_UNDER_REVIEW",        variableKeys: [] },
-  waitlist_approved:       { contentSidEnvVar: "WA_TPL_APPROVED",            variableKeys: [] },
-  waitlist_rejected:       { contentSidEnvVar: "WA_TPL_AGREEMENT_REJECTED",  variableKeys: [] },
-  setup_incomplete:        { contentSidEnvVar: "WA_TPL_SETUP_INCOMPLETE",    variableKeys: [] },
-  landlord_pending:        { contentSidEnvVar: "WA_TPL_LANDLORD_PENDING",    variableKeys: [] },
-  rent_due:                { contentSidEnvVar: "WA_TPL_RENT_DUE",            variableKeys: [] },
-  rent_overdue:            { contentSidEnvVar: "WA_TPL_MISSED_PAYMENT",      variableKeys: [] },
-  payment_success:         { contentSidEnvVar: "WA_TPL_PAYMENT_SUCCESS",     variableKeys: ["cashback"] },
-  payment_failed:          { contentSidEnvVar: "WA_TPL_PAYMENT_FAILED",      variableKeys: [] },
-  payment_processing:      { contentSidEnvVar: "WA_TPL_PAYMENT_PROCESSING", variableKeys: [] },
-  payment_refunded:        { contentSidEnvVar: "WA_TPL_PAYMENT_REFUNDED",    variableKeys: [] },
-  milestone_streak:        { contentSidEnvVar: "WA_TPL_MILESTONE_STREAK",    variableKeys: ["streak_months", "total_cashback"] },
-  // reminder_agreement: no approved Twilio template; push-only for now (decision 2026-04-30).
-  settlement_complete:     { contentSidEnvVar: "WA_TPL_SETTLEMENT_COMPLETE", variableKeys: ["utr"] },
-};
+/**
+ * Fetches the WhatsApp template configuration for a notification type from
+ * `notification_policy`. Returns null if the row is missing OR
+ * content_template_sid is NULL (template not yet wired up — visible in audit
+ * via `SELECT notification_type FROM notification_policy WHERE channel='whatsapp' AND content_template_sid IS NULL`).
+ *
+ * Hot path: single indexed lookup on a ~17-row table. Sub-millisecond.
+ */
+export async function getWhatsAppTemplate(
+  supabase: { from: (table: string) => any },
+  notificationType: NotificationType,
+): Promise<WhatsAppTemplateConfig | null> {
+  const { data, error } = await supabase
+    .from("notification_policy")
+    .select("content_template_sid, content_variable_keys")
+    .eq("notification_type", notificationType)
+    .eq("channel", "whatsapp")
+    .maybeSingle();
+
+  if (error || !data || !data.content_template_sid) return null;
+
+  return {
+    contentSid: data.content_template_sid,
+    variableKeys: data.content_variable_keys ?? [],
+  };
+}
 
 // ==============================================
 // NOTIFICATION TIMING CONFIG

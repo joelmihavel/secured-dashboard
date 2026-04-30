@@ -247,17 +247,12 @@ export async function sendWhatsAppForUser(
   notificationType: NotificationType,
   templateVars: Record<string, string> = {},
 ): Promise<NotificationResult> {
-  const waConfig = WHATSAPP_TEMPLATE_MAP[notificationType];
+  const waConfig = await getWhatsAppTemplate(supabase, notificationType);
   if (!waConfig) {
-    return { success: false, error: `No WA template for ${notificationType}` };
+    console.warn(`[WA] No template configured for ${notificationType} in notification_policy`);
+    return { success: false, error: "Missing template SID" };
   }
-
-  // Resolve ContentSid from env var
-  const contentSid = Deno.env.get(waConfig.contentSidEnvVar);
-  if (!contentSid) {
-    console.warn(`[WA] Missing env var: ${waConfig.contentSidEnvVar}`);
-    return { success: false, error: "Missing template SID env var" };
-  }
+  const contentSid = waConfig.contentSid;
 
   // Fetch user phone
   const { data: user, error: userError } = await supabase
@@ -481,7 +476,7 @@ export async function sendPushNotification(
 // ==============================================
 
 import {
-  WHATSAPP_TEMPLATE_MAP,
+  getWhatsAppTemplate,
   NOTIFICATION_TIMING,
   type NotificationType,
 } from "./notification-templates.ts";

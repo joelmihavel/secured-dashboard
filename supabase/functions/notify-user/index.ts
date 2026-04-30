@@ -30,7 +30,7 @@ import {
   PREFERENCE_MAP,
   DB_TYPE_MAP,
   interpolateTemplate,
-  WHATSAPP_TEMPLATE_MAP,
+  WHATSAPP_TEMPLATE_TYPES,
   type NotificationType,
 } from "../_shared/notification-templates.ts";
 import { sendWhatsAppForUser } from "../_shared/notifications.ts";
@@ -296,7 +296,7 @@ serve(async (req: Request) => {
     }
 
     // WhatsApp — race-safe slot reservation, then send, then release.
-    if (WHATSAPP_TEMPLATE_MAP[notification_type]) {
+    if (WHATSAPP_TEMPLATE_TYPES.has(notification_type)) {
       const waPromise = (async () => {
         // Short-circuit before reserving a slot: when the master kill is on,
         // the slot would just be reserved and immediately released as
