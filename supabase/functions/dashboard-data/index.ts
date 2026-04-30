@@ -26,6 +26,16 @@ import { handleError } from "../_shared/errors.ts";
 
 const CACHE_TTL_SECONDS = 300; // 5 minutes
 
+// Flat ₹1000 cashback promo — mirrors initiate-payment env config so the
+// home hero card can preview the same eligibility the server will enforce
+// at payment time. Default off (env unset → no promo).
+const FLAT_BONUS_PROMO_MONTH = Deno.env.get("FLAT_BONUS_PROMO_MONTH") ?? null;
+const FLAT_BONUS_AMOUNT_PAISE = (() => {
+  const raw = Deno.env.get("FLAT_BONUS_AMOUNT_PAISE") ?? "100000";
+  const parsed = parseInt(raw, 10);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : 100000;
+})();
+
 // ==============================================
 // TYPES
 // ==============================================
@@ -82,6 +92,8 @@ interface DashboardData {
     past_cutoff: boolean;
     cutoff_day: number;
     rent_month: string;
+    flat_bonus_eligible: boolean;
+    flat_bonus_paise: number;
   } | null;
   cashback: {
     discount_rate: number;
@@ -275,7 +287,7 @@ serve(async (req: Request) => {
       // 1. User profile
       supabase
         .from("users")
-        .select("id, first_name, last_name, phone, email, role, is_role_locked, user_status, kyc_status, cashback_balance_paise, avatar_url, created_at")
+        .select("id, first_name, last_name, phone, email, role, is_role_locked, user_status, kyc_status, cashback_balance_paise, flat_bonus_claimed_at, avatar_url, created_at")
         .eq("id", userId)
         .single(),
 
@@ -427,6 +439,16 @@ serve(async (req: Request) => {
       const cutoffDate = new Date(Date.UTC(currentYear, currentMonth, cutoffDay, 18, 29, 59, 999));
       const pastCutoff = nowUTC > cutoffDate;
 
+      // Flat-bonus eligibility preview. Mirrors initiate-payment's checks so
+      // the home hero chip stays in sync with what the server will actually
+      // award at payment time. Promo month + cutoff + once-ever marker.
+      const flatPromoActive = Boolean(FLAT_BONUS_PROMO_MONTH) && rentMonthYYYYMM === FLAT_BONUS_PROMO_MONTH;
+      const flatAlreadyClaimed = Boolean(userProfile?.flat_bonus_claimed_at);
+      const flatBonusEligible = flatPromoActive && !pastCutoff && !flatAlreadyClaimed;
+      const flatBonusPaise = flatBonusEligible
+        ? Math.min(FLAT_BONUS_AMOUNT_PAISE, tenancy.monthly_rent_paise)
+        : 0;
+
       upcomingPayment = {
         due_date: dueDate.toISOString().split("T")[0],
         amount: tenancy.monthly_rent_paise / 100,
@@ -438,6 +460,8 @@ serve(async (req: Request) => {
         cutoff_day: cutoffDay,
         rent_month: rentMonthYYYYMM,
         already_paid: !!existingPayment,
+        flat_bonus_eligible: flatBonusEligible,
+        flat_bonus_paise: flatBonusPaise,
       };
     }
 

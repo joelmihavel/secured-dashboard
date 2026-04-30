@@ -509,18 +509,40 @@ serve(async (req: Request) => {
 
         if (cfUserId && cfPayment.cashback_applied_paise > 0) {
           try {
-            await supabase.from("cashback_ledger").insert({
-              user_id: cfUserId,
-              transaction_type: "discount",
-              amount_paise: cfPayment.cashback_applied_paise,
-              balance_after_paise: 0,
-              payment_id: cfPayment.id,
-              tenancy_id: cfPayment.tenancy_id,
-              reference_type: "payment",
-              reference_id: cfPayment.id,
-              description: `1% instant discount on rent payment`,
-            });
-            const accumulatedUsed = cfPayment.accumulated_redeemed_paise ?? 0;
+            // Split the total cashback into its components for the ledger so
+            // each transaction_type carries its real meaning.
+            const cfFlatBonusPaise = cfPayment.flat_bonus_paise ?? 0;
+            const cfAccumulatedUsed = cfPayment.accumulated_redeemed_paise ?? 0;
+            const cfOnePctPaise = cfPayment.cashback_applied_paise - cfFlatBonusPaise - cfAccumulatedUsed;
+
+            if (cfOnePctPaise > 0) {
+              await supabase.from("cashback_ledger").insert({
+                user_id: cfUserId,
+                transaction_type: "discount",
+                amount_paise: cfOnePctPaise,
+                balance_after_paise: 0,
+                payment_id: cfPayment.id,
+                tenancy_id: cfPayment.tenancy_id,
+                reference_type: "payment",
+                reference_id: cfPayment.id,
+                description: `1% instant discount on rent payment`,
+              });
+            }
+
+            if (cfFlatBonusPaise > 0) {
+              await supabase.from("cashback_ledger").insert({
+                user_id: cfUserId,
+                transaction_type: "flat_bonus",
+                amount_paise: cfFlatBonusPaise,
+                balance_after_paise: 0,
+                payment_id: cfPayment.id,
+                tenancy_id: cfPayment.tenancy_id,
+                reference_type: "payment",
+                reference_id: cfPayment.id,
+                description: `Flat ₹1000 cashback (promo)`,
+              });
+            }
+            const accumulatedUsed = cfAccumulatedUsed;
             if (accumulatedUsed > 0) {
               await supabase.from("cashback_ledger").insert({
                 user_id: cfUserId,
@@ -926,10 +948,22 @@ serve(async (req: Request) => {
             cashback_earned_paise: 0,
             intended_cashback_paise: 0,
             accumulated_redeemed_paise: 0,
+            flat_bonus_paise: 0,
           })
           .eq("id", payment.id);
         if (cutoffErr) {
           console.error(`[payment-webhook] Failed to zero cashback for payment ${payment.id}:`, cutoffErr);
+        }
+        // Release the flat-bonus reservation: the trigger only fires on
+        // status='failed', but here we've kept status='success' and just
+        // zeroed the cashback. The user didn't actually get their bonus,
+        // so they retain eligibility for a future on-time payment.
+        if ((payment.flat_bonus_paise ?? 0) > 0 && userId) {
+          await supabase
+            .from("users")
+            .update({ flat_bonus_claimed_at: null, flat_bonus_claimed_payment_id: null })
+            .eq("id", userId)
+            .eq("flat_bonus_claimed_payment_id", payment.id);
         }
       }
     }
@@ -937,20 +971,42 @@ serve(async (req: Request) => {
     // PATH A: Verified user — instant discount was applied at initiation
     if (isSuccess && payment.cashback_applied_paise > 0 && userId && !cashbackBlockedByCutoff) {
       try {
-        await supabase.from("cashback_ledger").insert({
-          user_id: userId,
-          transaction_type: "discount",
-          amount_paise: payment.cashback_applied_paise,
-          balance_after_paise: 0,
-          payment_id: payment.id,
-          tenancy_id: payment.tenancy_id,
-          reference_type: "payment",
-          reference_id: payment.id,
-          description: `1% instant discount on rent payment`,
-        });
+        // Split the total cashback into component ledger rows. The same total
+        // sits in payment.cashback_applied_paise; this just disaggregates the
+        // ledger so each transaction_type carries its real meaning.
+        const flatBonusPaise = payment.flat_bonus_paise ?? 0;
+        const accumulatedUsed = payment.accumulated_redeemed_paise ?? 0;
+        const onePctPaise = payment.cashback_applied_paise - flatBonusPaise - accumulatedUsed;
+
+        if (onePctPaise > 0) {
+          await supabase.from("cashback_ledger").insert({
+            user_id: userId,
+            transaction_type: "discount",
+            amount_paise: onePctPaise,
+            balance_after_paise: 0,
+            payment_id: payment.id,
+            tenancy_id: payment.tenancy_id,
+            reference_type: "payment",
+            reference_id: payment.id,
+            description: `1% instant discount on rent payment`,
+          });
+        }
+
+        if (flatBonusPaise > 0) {
+          await supabase.from("cashback_ledger").insert({
+            user_id: userId,
+            transaction_type: "flat_bonus",
+            amount_paise: flatBonusPaise,
+            balance_after_paise: 0,
+            payment_id: payment.id,
+            tenancy_id: payment.tenancy_id,
+            reference_type: "payment",
+            reference_id: payment.id,
+            description: `Flat ₹1000 cashback (promo)`,
+          });
+        }
 
         // Debit accumulated balance if it was redeemed as part of this discount
-        const accumulatedUsed = payment.accumulated_redeemed_paise ?? 0;
         if (accumulatedUsed > 0) {
           await supabase.from("cashback_ledger").insert({
             user_id: userId,

@@ -72,6 +72,10 @@ export interface UpcomingPayment {
   past_cutoff: boolean;
   cutoff_day: number; // Day of month (1-28), defaults to 7
   rent_month: string; // ISO date string "YYYY-MM-DD" from edge function
+  /** Flat ₹1000 promo bonus eligibility for this rent_month + user. */
+  flat_bonus_eligible?: boolean;
+  /** Paise the flat bonus would deduct on this payment if eligible. 0 otherwise. */
+  flat_bonus_paise?: number;
 }
 
 export interface CashbackBalance {

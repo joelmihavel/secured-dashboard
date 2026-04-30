@@ -40,6 +40,10 @@ interface ReceiptData {
     cashback_applied_paise: number;
     cashback_earned: number;
     cashback_earned_paise: number;
+    flat_bonus: number;
+    flat_bonus_paise: number;
+    one_pct_cashback: number;
+    one_pct_cashback_paise: number;
     convenience_fee: number;
     convenience_fee_paise: number;
     fee_billing_model: string;
@@ -158,7 +162,7 @@ serve(async (req: Request) => {
           payment_gateway, gateway_payment_id, cf_order_id, cf_adjustment_id, payment_method_details,
           landlord_payout_status, landlord_payout_at, landlord_payout_paise,
           rent_amount_paise, pg_fee_paise, convenience_fee_paise, fee_billing_model,
-          cashback_applied_paise, cashback_earned_paise,
+          cashback_applied_paise, cashback_earned_paise, flat_bonus_paise, accumulated_redeemed_paise,
           payment_method, status, payment_month, paid_at, created_at, due_date,
           tenancies (
             id, property_address, property_city, property_state, property_pincode,
@@ -316,6 +320,14 @@ serve(async (req: Request) => {
     const cashbackEarnedPaise = rawEarnedPaise > 0
       ? rawEarnedPaise
       : (payment.status === "success" ? Math.floor(amountPaise * 0.01) : 0);
+    const flatBonusPaise = payment.flat_bonus_paise ?? 0;
+    const accumulatedRedeemedPaise = payment.accumulated_redeemed_paise ?? 0;
+    // The remaining cashback portion (i.e. excluding the flat bonus and any
+    // accumulated balance redemption) is the 1% instant discount.
+    const onePctCashbackPaise = Math.max(
+      0,
+      cashbackAppliedPaise - flatBonusPaise - accumulatedRedeemedPaise,
+    );
     const netAmountPaise = amountPaise - cashbackAppliedPaise;
 
     const receiptData: ReceiptData = {
@@ -334,6 +346,10 @@ serve(async (req: Request) => {
         cashback_applied_paise: cashbackAppliedPaise,
         cashback_earned: cashbackEarnedPaise / 100,
         cashback_earned_paise: cashbackEarnedPaise,
+        flat_bonus: flatBonusPaise / 100,
+        flat_bonus_paise: flatBonusPaise,
+        one_pct_cashback: onePctCashbackPaise / 100,
+        one_pct_cashback_paise: onePctCashbackPaise,
         convenience_fee: convenienceFeePaise / 100,
         convenience_fee_paise: convenienceFeePaise,
         fee_billing_model: paymentFeeBillingModel,

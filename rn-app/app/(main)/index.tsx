@@ -430,12 +430,24 @@ export default function HomeScreen() {
           ? ((isMissed || isMultipleOverdue) ? 'missed' : 'late')
           : 'upcoming';
 
+        // Cashback potential = 1% on rent + flat ₹1000 promo if eligible.
+        // Eligibility is server-derived (upcoming_payment.flat_bonus_eligible),
+        // so this stays correct as soon as FLAT_BONUS_PROMO_MONTH is set on
+        // the deployed dashboard-data edge function.
+        const onePctPotential = Math.round(rentAmount * (cashbackRate / 100));
+        const flatBonusRupees = (!pastCutoff && (upcomingPayment.flat_bonus_eligible ?? false))
+          ? (upcomingPayment.flat_bonus_paise != null
+              ? Math.floor(upcomingPayment.flat_bonus_paise / 100)
+              : Math.min(1000, Math.max(0, rentAmount - onePctPotential)))
+          : 0;
+        const upcomingCashbackPotential = onePctPotential + flatBonusRupees;
+
         items.push({
           type: 'payment',
           id: 'upcoming',
           data: {
             monthName: formatMonth(upcomingPayment.rent_month),
-            cashbackEarned: Math.round(rentAmount * (cashbackRate / 100)),
+            cashbackEarned: upcomingCashbackPotential,
             status: unpaidStatus,
             yearlyStamps,
             lateCount: summaryLate,

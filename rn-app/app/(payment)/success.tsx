@@ -241,10 +241,16 @@ export default function PaymentSuccessScreen() {
       const { payment: rp, landlord, agreement } = receiptData;
       const paid = rp.amount;
       const cb = rp.cashback_applied ?? (Number(cashback) || 0);
+      // Server returns the explicit split. Fallback for old receipts that
+      // pre-date this column: assume the whole cashback was the 1% line.
+      const flat = rp.flat_bonus ?? 0;
+      const onePct = rp.one_pct_cashback ?? Math.max(0, cb - flat);
       const net = Math.max(paid - cb, 0);
       return {
         amount: formatRupees(paid),
-        cashbackApplied: `- ${formatRupees(cb)}`,
+        flatBonus: flat > 0 ? `- ${formatRupees(flat)}` : null,
+        cashbackApplied: onePct > 0 ? `- ${formatRupees(onePct)}` : null,
+        cashbackTotalRupees: cb,
         date: formatDisplayDate(rp.paidAt),
         method: rp.paymentMethod ?? (method ? method.toUpperCase() : '—'),
         transactionId: rp.transactionId || transactionId || '—',
@@ -259,7 +265,9 @@ export default function PaymentSuccessScreen() {
     const net = Math.max(paidNum - cbNum, 0);
     return {
       amount: formatRupees(paidNum),
-      cashbackApplied: `- ${formatRupees(cbNum)}`,
+      flatBonus: null as string | null,
+      cashbackApplied: cbNum > 0 ? `- ${formatRupees(cbNum)}` : null,
+      cashbackTotalRupees: cbNum,
       date: formatDisplayDate(new Date().toISOString()),
       method: method ? method.toUpperCase() : '—',
       transactionId: transactionId || '—',
@@ -313,7 +321,16 @@ export default function PaymentSuccessScreen() {
             <Text style={styles.sectionHeader}>Transaction Details</Text>
             <Divider />
             <ReceiptRow label="Amount paid" value={displayData.amount} />
-            <ReceiptRow label="Cashback Applied" value={displayData.cashbackApplied} variant="cashback" />
+            {displayData.flatBonus !== null && (
+              <ReceiptRow label="Flat ₹1000 Cashback" value={displayData.flatBonus} variant="cashback" />
+            )}
+            {displayData.cashbackApplied !== null && (
+              <ReceiptRow
+                label={displayData.flatBonus !== null ? 'Cashback (1%)' : 'Cashback Applied'}
+                value={displayData.cashbackApplied}
+                variant="cashback"
+              />
+            )}
             <ReceiptRow label="Date" value={displayData.date} />
             <ReceiptRow label="Method" value={displayData.method} />
             <ReceiptRow label="Transaction ID" value={displayData.transactionId} />

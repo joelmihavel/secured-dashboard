@@ -135,8 +135,25 @@ export function ConfirmPaymentContent({
   // Accumulated balance from previous unverified payments (stored in paise)
   const accumulatedBalanceRupees = pastCutoff ? 0 : Math.floor((user?.cashback_balance_paise ?? 0) / 100);
 
-  // Always apply cashback as instant discount (1% + any accumulated balance, capped at rent)
-  const appliedCashback = pastCutoff ? 0 : Math.min(cashbackAmount + accumulatedBalanceRupees, rentAmount);
+  // Flat ₹1000 promo bonus — gated by upcoming_payment.flat_bonus_eligible
+  // (server is source of truth). Cap at remaining rent room with a ₹1 floor
+  // so the gateway always has > 0 to charge — matches initiate-payment.
+  const flatBonusEligible = !pastCutoff && (upcomingPayment?.flat_bonus_eligible ?? false);
+  const flatBonusBaseRupees = upcomingPayment?.flat_bonus_paise != null
+    ? Math.floor(upcomingPayment.flat_bonus_paise / 100)
+    : 1000;
+  const onePctApplied = Math.min(cashbackAmount, rentAmount);
+  const accumulatedAfterOnePct = Math.max(
+    0,
+    Math.min(accumulatedBalanceRupees, rentAmount - onePctApplied),
+  );
+  const headroom = Math.max(0, rentAmount - onePctApplied - accumulatedAfterOnePct - 1);
+  const flatBonusApplied = flatBonusEligible
+    ? Math.min(flatBonusBaseRupees, headroom)
+    : 0;
+
+  // Always apply cashback as instant discount (1% + any accumulated + flat)
+  const appliedCashback = onePctApplied + accumulatedAfterOnePct + flatBonusApplied;
   const earnedCashback = 0;
 
   // Fee computed on net rent (AFTER cashback) — matches backend formula
@@ -242,17 +259,24 @@ export function ConfirmPaymentContent({
                 label="Convenience fees"
                 value={convenienceFee === 0 ? 'Free' : `\u20B9 ${fmt(convenienceFee)}`}
               />
-              {!pastCutoff && cashbackAmount > 0 && (
+              {!pastCutoff && flatBonusApplied > 0 && (
                 <BreakdownRow
-                  label="Cashback (1%)"
-                  value={`-\u20B9 ${fmt(cashbackAmount)}`}
+                  label="Flat ₹1000 Cashback"
+                  value={`-₹ ${fmt(flatBonusApplied)}`}
                   isCashback
                 />
               )}
-              {!pastCutoff && accumulatedBalanceRupees > 0 && (
+              {!pastCutoff && onePctApplied > 0 && (
+                <BreakdownRow
+                  label="Cashback (1%)"
+                  value={`-\u20B9 ${fmt(onePctApplied)}`}
+                  isCashback
+                />
+              )}
+              {!pastCutoff && accumulatedAfterOnePct > 0 && (
                 <BreakdownRow
                   label="Cashback balance"
-                  value={`-\u20B9 ${fmt(accumulatedBalanceRupees)}`}
+                  value={`-\u20B9 ${fmt(accumulatedAfterOnePct)}`}
                   isCashback
                 />
               )}

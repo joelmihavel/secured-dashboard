@@ -41,6 +41,21 @@ import {
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 
+// Flat ₹1000 cashback promo — layered on top of the existing 1% discount.
+// Active only when FLAT_BONUS_PROMO_MONTH (YYYY-MM) matches the rent month
+// being paid for. Once-ever per user, gated on the same cutoff day as 1%.
+// Default off (env unset → no promo).
+const FLAT_BONUS_PROMO_MONTH = Deno.env.get("FLAT_BONUS_PROMO_MONTH") ?? null;
+const FLAT_BONUS_AMOUNT_PAISE = (() => {
+  const raw = Deno.env.get("FLAT_BONUS_AMOUNT_PAISE") ?? "100000";
+  const parsed = parseInt(raw, 10);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : 100000;
+})();
+
+function isFlatBonusPromoActive(rentMonth: string): boolean {
+  return Boolean(FLAT_BONUS_PROMO_MONTH) && rentMonth === FLAT_BONUS_PROMO_MONTH;
+}
+
 // PG fee rates — read from env vars, fallback to defaults
 function getPgFeeRates(): Record<string, number> {
   return {
@@ -429,6 +444,36 @@ serve(async (req: Request) => {
       const demoRentPaise = validatedBody.amount_paise ?? tenancy.monthly_rent_paise;
       const demoDueDate = calculateDueDate(rent_month, tenancy.rent_due_day);
 
+      // Test users opt into the flat ₹1000 bonus on the same cutoff terms as
+      // real users. 1% remains zero for test users (preserves prior demo
+      // behaviour). cashback caps at full rent here — demo skips the gateway
+      // so total_amount_paise = 0 is fine.
+      const demoCutoffDay = tenancy.cashback_cutoff_day ?? tenancy.rent_due_day ?? 7;
+      const [demoYear, demoMonthNum] = rent_month.split("-").map(Number);
+      const demoCutoffDate = new Date(Date.UTC(demoYear, demoMonthNum - 1, demoCutoffDay, 18, 29, 59, 999));
+      const demoIsPastCutoff = new Date() > demoCutoffDate;
+
+      let demoFlatBonusPaise = 0;
+      let demoFlatReservedAt: string | null = null;
+      if (!demoIsPastCutoff && isFlatBonusPromoActive(rent_month) && demoRentPaise > 0) {
+        const candidate = Math.min(FLAT_BONUS_AMOUNT_PAISE, demoRentPaise);
+        const claimedAt = new Date().toISOString();
+        const { data: reserved } = await supabase
+          .from("users")
+          .update({ flat_bonus_claimed_at: claimedAt })
+          .eq("id", userId)
+          .is("flat_bonus_claimed_at", null)
+          .select("id")
+          .maybeSingle();
+        if (reserved) {
+          demoFlatBonusPaise = candidate;
+          demoFlatReservedAt = claimedAt;
+        }
+      }
+
+      const demoTotalCashback = demoFlatBonusPaise;
+      const demoTotalPaise = demoRentPaise - demoTotalCashback;
+
       const { data: demoPayment, error: demoError } = await supabase
         .from("payments")
         .insert({
@@ -436,12 +481,13 @@ serve(async (req: Request) => {
           user_id: userId,
           rent_amount_paise: demoRentPaise,
           pg_fee_paise: 0,
-          cashback_applied_paise: 0,
+          cashback_applied_paise: demoTotalCashback,
+          flat_bonus_paise: demoFlatBonusPaise,
           intended_cashback_paise: 0,
-          total_amount_paise: demoRentPaise,
+          total_amount_paise: demoTotalPaise,
           landlord_payout_paise: demoRentPaise,
-          net_rent_paise: demoRentPaise,
-          flent_subsidy_paise: 0,
+          net_rent_paise: demoTotalPaise,
+          flent_subsidy_paise: demoTotalCashback,
           status: "success",
           payment_gateway: "demo",
           gateway_order_id: demoTxnId,
@@ -457,12 +503,51 @@ serve(async (req: Request) => {
         .single();
 
       if (demoError || !demoPayment) {
+        // Roll back the flat-bonus reservation since no payment row exists
+        // (release trigger needs a row transitioning to 'failed').
+        if (demoFlatReservedAt) {
+          await supabase
+            .from("users")
+            .update({ flat_bonus_claimed_at: null, flat_bonus_claimed_payment_id: null })
+            .eq("id", userId)
+            .eq("flat_bonus_claimed_at", demoFlatReservedAt);
+        }
         console.error("[initiate-payment] Demo insert error:", JSON.stringify(demoError));
         throw new PaymentError(`Failed to create demo payment: ${demoError?.message ?? "unknown"}`, "DB_ERROR");
       }
 
+      // Demo skips the webhook — write the flat-bonus ledger row + bind the
+      // reservation to the payment id ourselves so the consume is permanent.
+      if (demoFlatReservedAt && demoFlatBonusPaise > 0) {
+        await supabase
+          .from("users")
+          .update({ flat_bonus_claimed_payment_id: demoPayment.id })
+          .eq("id", userId)
+          .eq("flat_bonus_claimed_at", demoFlatReservedAt);
+
+        try {
+          await supabase.from("cashback_ledger").insert({
+            user_id: userId,
+            transaction_type: "flat_bonus",
+            amount_paise: demoFlatBonusPaise,
+            balance_after_paise: 0,
+            payment_id: demoPayment.id,
+            tenancy_id,
+            reference_type: "payment",
+            reference_id: demoPayment.id,
+            description: "Flat ₹1000 cashback (promo)",
+          });
+        } catch (e) {
+          console.error("[initiate-payment] demo flat-bonus ledger insert failed:", e);
+        }
+      }
+
       await audit!.logSuccess("PAYMENT_DEMO_BYPASS", "payment", "payment", demoPayment.id, {
-        demo: true, rent_paise: demoRentPaise, payment_method, rent_month,
+        demo: true,
+        rent_paise: demoRentPaise,
+        flat_bonus_paise: demoFlatBonusPaise,
+        payment_method,
+        rent_month,
       });
 
       await idempotencyManager.complete(idempotencyKey, 200, {
@@ -478,10 +563,11 @@ serve(async (req: Request) => {
           demo_mode: true,
           status: "success",
           original_rent_paise: demoRentPaise,
-          cashback_applied_paise: 0,
-          net_rent_paise: demoRentPaise,
+          cashback_applied_paise: demoTotalCashback,
+          flat_bonus_paise: demoFlatBonusPaise,
+          net_rent_paise: demoTotalPaise,
           pg_fee_paise: 0,
-          total_amount_paise: demoRentPaise,
+          total_amount_paise: demoTotalPaise,
           landlord_payout_paise: demoRentPaise,
           payment_method,
         },
@@ -519,20 +605,59 @@ serve(async (req: Request) => {
       Math.floor(tenancy.monthly_rent_paise * 0.01)
     );
 
-    let cashbackDiscountPaise = 0;
+    let onePctDiscount = 0;
     let cashbackEarnedPaise = 0;
     let accumulatedRedeemed = 0;
 
     if (!isPastCutoff && !cashbackAlreadyApplied) {
       // UNIVERSAL: instant 1% discount + redeem accumulated balance
       const accumulatedBalance = userProfile?.cashback_balance_paise ?? 0;
-      cashbackDiscountPaise = cashbackOnePct + accumulatedBalance;
-      cashbackDiscountPaise = Math.min(cashbackDiscountPaise, originalRentPaise);
-      accumulatedRedeemed = Math.min(accumulatedBalance, cashbackDiscountPaise - cashbackOnePct);
-      accumulatedRedeemed = Math.max(0, accumulatedRedeemed);
+      let combined = cashbackOnePct + accumulatedBalance;
+      combined = Math.min(combined, originalRentPaise);
+      onePctDiscount = Math.min(cashbackOnePct, combined);
+      accumulatedRedeemed = Math.max(0, combined - onePctDiscount);
       cashbackEarnedPaise = 0; // Never accumulate — always instant discount
     }
 
+    // ── FLAT ₹1000 BONUS — once-ever per user, atomically reserved ──────
+    // Eligibility: same cutoff as 1% + promo month match + never claimed.
+    // Order of cap: 1% first, then accumulated balance, then flat fills the
+    // remainder up to (rent - GATEWAY_MIN). For real (non-demo) users we
+    // hold back GATEWAY_MIN (₹1) so Cashfree always has a non-zero amount;
+    // demo users can hit zero since they skip the gateway entirely.
+    const GATEWAY_MIN_PAISE = 100; // Cashfree minimum order ≈ ₹1
+    let flatBonusDiscount = 0;
+    let flatBonusReservedAt: string | null = null;
+    if (
+      !isPastCutoff &&
+      isFlatBonusPromoActive(rent_month)
+    ) {
+      const headroom =
+        originalRentPaise - onePctDiscount - accumulatedRedeemed - GATEWAY_MIN_PAISE;
+      if (headroom > 0) {
+        const candidate = Math.min(FLAT_BONUS_AMOUNT_PAISE, headroom);
+        // Atomic reservation. The partial-update predicate (claimed_at IS NULL)
+        // makes concurrent claims impossible — only one in-flight payment per
+        // user wins. The trigger on payments.status='failed' releases the
+        // reservation if THIS payment never completes.
+        const claimedAt = new Date().toISOString();
+        const { data: reserved, error: reserveErr } = await supabase
+          .from("users")
+          .update({ flat_bonus_claimed_at: claimedAt })
+          .eq("id", userId)
+          .is("flat_bonus_claimed_at", null)
+          .select("id")
+          .maybeSingle();
+        if (reserveErr) {
+          console.error("[initiate-payment] flat-bonus reserve error:", reserveErr);
+        } else if (reserved) {
+          flatBonusDiscount = candidate;
+          flatBonusReservedAt = claimedAt;
+        }
+      }
+    }
+
+    const cashbackDiscountPaise = onePctDiscount + accumulatedRedeemed + flatBonusDiscount;
     const netRentPaise = originalRentPaise - cashbackDiscountPaise;
 
     // Estimate PG fee for display/records — NOT added to PayU amount
@@ -639,6 +764,7 @@ serve(async (req: Request) => {
         cashback_applied_paise: cashbackDiscountPaise,
         cashback_earned_paise: cashbackEarnedPaise,
         accumulated_redeemed_paise: accumulatedRedeemed,
+        flat_bonus_paise: flatBonusDiscount,
         intended_cashback_paise: cashbackEarnedPaise,
         total_amount_paise: totalAmountPaise,
         landlord_payout_paise: landlordPayoutPaise,
@@ -677,12 +803,31 @@ serve(async (req: Request) => {
       .single();
 
     if (paymentError || !payment) {
+      // No payment row was created → release-on-failure trigger can never fire.
+      // Manually release the flat-bonus reservation we held above.
+      if (flatBonusReservedAt) {
+        await supabase
+          .from("users")
+          .update({ flat_bonus_claimed_at: null, flat_bonus_claimed_payment_id: null })
+          .eq("id", userId)
+          .eq("flat_bonus_claimed_at", flatBonusReservedAt);
+      }
       // Unique constraint violation = concurrent duplicate (TOCTOU race)
       if (paymentError?.code === "23505") {
         throw new PaymentError("Payment already in progress for this month", "PAYMENT_IN_PROGRESS");
       }
       console.error("Failed to create payment:", paymentError);
       throw new PaymentError("Failed to initiate payment", "DB_ERROR");
+    }
+
+    // Link the held reservation to the payment row so the
+    // release-on-failure trigger only releases on THIS payment failing.
+    if (flatBonusReservedAt) {
+      await supabase
+        .from("users")
+        .update({ flat_bonus_claimed_payment_id: payment.id })
+        .eq("id", userId)
+        .eq("flat_bonus_claimed_at", flatBonusReservedAt);
     }
 
     // Log audit
@@ -763,6 +908,7 @@ serve(async (req: Request) => {
         cashback_applied_paise: cashbackDiscountPaise,
         cashback_earned_paise: cashbackEarnedPaise,
         accumulated_redeemed_paise: accumulatedRedeemed,
+        flat_bonus_paise: flatBonusDiscount,
         net_rent_paise: netRentPaise,
         pg_fee_paise: 0,
         estimated_pg_fee_paise: estimatedPgFeePaise,

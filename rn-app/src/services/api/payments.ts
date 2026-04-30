@@ -284,6 +284,8 @@ interface RawReceiptData {
     pg_fee: number;
     cashback_applied: number;
     cashback_earned: number;
+    flat_bonus?: number;
+    one_pct_cashback?: number;
     net_amount_paid: number;
     payment_method: string | null;
     status: string;
@@ -361,6 +363,10 @@ export interface ReceiptData {
     pgFee: number;
     cashback_applied: number;
     cashback_earned: number;
+    /** Portion of cashback_applied that came from the ₹1000 flat-bonus promo. */
+    flat_bonus: number;
+    /** Portion of cashback_applied that came from the 1% instant discount. */
+    one_pct_cashback: number;
     paymentMethod: string | null;
     status: string;
     rentMonth: string;
@@ -472,6 +478,9 @@ function mapRawReceiptData(raw: RawReceiptData): ReceiptData {
       pgFee: raw.payment.pg_fee,
       cashback_applied: raw.payment.cashback_applied ?? 0,
       cashback_earned: raw.payment.cashback_earned ?? 0,
+      flat_bonus: raw.payment.flat_bonus ?? 0,
+      one_pct_cashback: raw.payment.one_pct_cashback
+        ?? Math.max(0, (raw.payment.cashback_applied ?? 0) - (raw.payment.flat_bonus ?? 0)),
       paymentMethod: raw.payment.payment_method,
       status: raw.payment.status,
       rentMonth: raw.payment.rent_month,
