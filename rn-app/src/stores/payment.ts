@@ -81,6 +81,18 @@ interface PaymentState {
   // Persisted recovery fields
   lastPaymentId: string | null;
   lastPaymentTimestamp: number | null;
+  /**
+   * Payments the user explicitly walked away from on the pending status screen
+   * ("Leave" on the back-press alert). Maps payment id → expiry epoch ms. Used
+   * by notifications.handleNotificationResponse to suppress the auto-redirect
+   * to /(payment)/status when a webhook-triggered push arrives — the user
+   * already chose not to wait, so dragging them back is disorienting.
+   *
+   * Persisted so the suppression survives an app kill + re-open via push tap.
+   * Each entry auto-expires (default 10 min) so a stale notification tapped
+   * a week later still navigates normally.
+   */
+  abandonedPaymentIds: Record<string, number>;
   // Core SDK fields (in-memory only, never persisted)
   payuSessionParams: PayUSessionParams | null;
   selectedInstrument: { type: PaymentMethodType; bankCode?: string } | null;
@@ -113,6 +125,8 @@ interface PaymentActions {
   reset: () => void;
   setLastPayment: (id: string) => void;
   clearLastPayment: () => void;
+  /** Mark a payment as user-abandoned so its notification doesn't auto-redirect. */
+  markPaymentAbandoned: (paymentId: string, ttlMs?: number) => void;
   // Core SDK actions
   setPayuSessionParams: (params: PayUSessionParams) => void;
   clearPayuSessionParams: () => void;
@@ -145,6 +159,7 @@ const initialState: PaymentState = {
   error: null,
   lastPaymentId: null,
   lastPaymentTimestamp: null,
+  abandonedPaymentIds: {},
   // Core SDK fields — never persisted (card data security)
   payuSessionParams: null,
   selectedInstrument: null,
@@ -279,6 +294,19 @@ export const usePaymentStore = create<PaymentStore>()(
           state.lastPaymentTimestamp = null;
         }),
 
+      markPaymentAbandoned: (paymentId, ttlMs = 10 * 60 * 1000) =>
+        set((state) => {
+          // Opportunistic cleanup: drop any expired entries while we're here so
+          // the persisted blob doesn't grow unbounded across many payments.
+          const now = Date.now();
+          for (const [id, expiry] of Object.entries(state.abandonedPaymentIds)) {
+            if (expiry <= now) {
+              delete state.abandonedPaymentIds[id];
+            }
+          }
+          state.abandonedPaymentIds[paymentId] = now + ttlMs;
+        }),
+
       // Core SDK actions — memory only, never persisted
       setPayuSessionParams: (params) =>
         set((state) => {
@@ -339,18 +367,28 @@ export const usePaymentStore = create<PaymentStore>()(
     })),
     {
       name: 'payment-recovery',
-      version: 1,
+      version: 2,
       storage: createJSONStorage(() => secureStoreAdapter),
       partialize: (state) => ({
         lastPaymentId: state.lastPaymentId,
         lastPaymentTimestamp: state.lastPaymentTimestamp,
+        abandonedPaymentIds: state.abandonedPaymentIds,
       }),
       migrate: (persisted, version) => {
         // Version 0 (or unknown): nuke to defaults — forced update gives clean slate
         if (version === 0 || version === undefined) {
-          return { lastPaymentId: null, lastPaymentTimestamp: null };
+          return {
+            lastPaymentId: null,
+            lastPaymentTimestamp: null,
+            abandonedPaymentIds: {},
+          };
         }
-        return persisted as Partial<PaymentState>;
+        // v1 → v2: ensure abandonedPaymentIds exists (added in v2).
+        const p = (persisted ?? {}) as Partial<PaymentState>;
+        return {
+          ...p,
+          abandonedPaymentIds: p.abandonedPaymentIds ?? {},
+        };
       },
     }
   )
@@ -378,3 +416,24 @@ export const selectEnteredAmount = (state: PaymentStore) => state.enteredAmount;
 export const selectCashfreeSessionId = (state: PaymentStore) => state.cashfreeSessionId;
 export const selectCfOrderId = (state: PaymentStore) => state.cfOrderId;
 export const selectPaymentGateway = (state: PaymentStore) => state.paymentGateway;
+
+/**
+ * Returns true if the user explicitly walked away from this payment on the
+ * status screen (and the suppression hasn't expired yet). Used by the push
+ * notification handler to decide whether to honor the auto-redirect.
+ *
+ * Lazily prunes the stored entry if it's expired so the persisted blob
+ * doesn't accumulate dead ids over time.
+ */
+export function isPaymentAbandoned(paymentId: string | null | undefined): boolean {
+  if (!paymentId) return false;
+  const entry = usePaymentStore.getState().abandonedPaymentIds[paymentId];
+  if (!entry) return false;
+  if (Date.now() > entry) {
+    usePaymentStore.setState((state) => {
+      delete state.abandonedPaymentIds[paymentId];
+    });
+    return false;
+  }
+  return true;
+}

@@ -29,6 +29,7 @@ import Constants from 'expo-constants';
 import { Platform, Linking, AppState } from 'react-native';
 import { router } from 'expo-router';
 import { addBreadcrumb } from '../config/sentry';
+import { isPaymentAbandoned } from '../stores/payment';
 
 const APP_STORE_URL = 'https://apps.apple.com/in/app/secured-by-flent/id6757275258';
 
@@ -287,6 +288,26 @@ export function handleNotificationResponse(data: Record<string, unknown>): void 
   if (!route) return;
 
   addBreadcrumb('Notification tapped', 'notifications', { route });
+
+  // Suppress auto-redirect to /(payment)/* when the user explicitly walked
+  // away from this exact payment via the status-screen "Leave" alert. The
+  // payment-failed push from Cashfree's webhook used to drag the user back
+  // to the failed screen seconds after they chose to leave. The dashboard's
+  // recent-payments list still reflects the failure via the realtime UPDATE
+  // → query invalidation path — only this navigation is dropped.
+  if (route.startsWith('/(payment)/')) {
+    const paymentId =
+      (data?.related_entity_id as string | undefined) ??
+      (params?.paymentId as string | undefined) ??
+      null;
+    if (paymentId && isPaymentAbandoned(paymentId)) {
+      addBreadcrumb('Payment notification redirect suppressed (user-abandoned)', 'notifications', {
+        route,
+        paymentId,
+      });
+      return;
+    }
+  }
 
   try {
     // Use navigate (not push) to avoid stale screens in back stack

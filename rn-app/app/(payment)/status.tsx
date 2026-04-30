@@ -651,6 +651,12 @@ export default function PaymentStatusScreen() {
                 // Abandon the stuck payment in background so it doesn't block retries
                 if (paymentId) {
                   abandonPayment(paymentId).catch(() => {});
+                  // Suppress auto-redirect from a later payment_failed push:
+                  // the user explicitly walked away from this payment, so the
+                  // webhook-driven banner shouldn't drag them back here.
+                  // The payment still updates in the dashboard's recent-payments
+                  // list via the usual realtime UPDATE → query invalidation.
+                  usePaymentStore.getState().markPaymentAbandoned(paymentId);
                 }
                 clearLastPayment();
                 routerRef.current.replace('/(main)' as never);
@@ -725,6 +731,9 @@ export default function PaymentStatusScreen() {
             onPress: () => {
               if (paymentId) {
                 abandonPayment(paymentId).catch(() => {});
+                // Same suppression as the hardware-back path — see the
+                // detailed comment above. Keep the two paths in sync.
+                usePaymentStore.getState().markPaymentAbandoned(paymentId);
               }
               clearLastPayment();
               routerRef.current.replace('/(main)' as never);
