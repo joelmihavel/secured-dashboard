@@ -28,7 +28,6 @@ import { Marquee, TOP_MARQUEE_ITEMS, BOTTOM_MARQUEE_ITEMS } from '@/src/componen
 import {
   useManualAgreementStore,
   formatRupees,
-  isAllValid,
   validators,
   type ManualAgreementData,
 } from '@/src/stores/manualAgreement';
@@ -92,7 +91,6 @@ export default function UploadReviewScreen() {
     setField('exitDate', formatExitDate(extracted.leaseEndDate));
   }, [extracted, setField]);
 
-  const valid = isAllValid(data);
   const isFieldMissing = (key: FieldKey): boolean => !validators[key](data[key]);
 
   const handleBack = useCallback(() => {
@@ -100,30 +98,13 @@ export default function UploadReviewScreen() {
     routerRef.current.back();
   }, []);
 
+  // Edit screens deferred for this release. Pill always proceeds to setup-
+  // intro and rows are non-interactive — user reviews extracted data and
+  // confirms whatever the extraction returned. Re-enable per-field edits
+  // by restoring the upload-edit branch when those screens ship.
   const handlePillPress = useCallback(() => {
-    if (!valid) {
-      // "Edit Missing Details" branch — open manual-entry on the first missing field.
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-      const firstMissing = (Object.keys(validators) as FieldKey[]).find(
-        (k) => !validators[k](data[k]),
-      );
-      routerRef.current.push({
-        pathname: '/(agreement)/upload-edit',
-        params: firstMissing ? { focus: firstMissing } : undefined,
-      } as never);
-      return;
-    }
-    // "Confirm & Continue" — only reachable when every field validates.
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     routerRef.current.push('/(agreement)/setup-intro' as never);
-  }, [valid, data]);
-
-  const handleEditField = useCallback((focus: FieldKey) => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    routerRef.current.push({
-      pathname: '/(agreement)/upload-edit',
-      params: { focus },
-    } as never);
   }, []);
 
   return (
@@ -155,9 +136,9 @@ export default function UploadReviewScreen() {
         <View style={[styles.headerRow, { marginTop: sv(40) }]}>
           <BackButton onPress={handleBack} style={styles.backButton} color={colors.white} />
           <GradientPill
-            label={valid ? 'Confirm & Continue' : 'Edit Missing Details'}
+            label="Confirm & Continue"
             onPress={handlePillPress}
-            testID={valid ? 'confirm-continue' : 'edit-missing-details'}
+            testID="confirm-continue"
           />
         </View>
 
@@ -168,66 +149,61 @@ export default function UploadReviewScreen() {
             <Text inherit style={styles.headingWhite}>your details</Text>
           </Text>
           <Text style={styles.subtitle}>
-            We&apos;ve filled this from your agreement. You can edit anything.
+            We&apos;ve filled this from your agreement.
           </Text>
         </View>
 
         <View style={styles.rowsStack}>
+          {/* Rows are non-interactive — onPress omitted so ReviewRow falls
+              back to a plain View. Re-add onPress callbacks when edit
+              screens ship. */}
           <ReviewRowSingle
             icon="hash"
             label="Agreement ID"
             value={data.agreementId}
             missing={isFieldMissing('agreementId')}
-            onPress={() => handleEditField('agreementId')}
           />
           <ReviewRowMultiline
             icon="building"
             label="Property Name"
             value={data.propertyName}
             missing={isFieldMissing('propertyName')}
-            onPress={() => handleEditField('propertyName')}
           />
           <ReviewRowMultiline
             icon="person"
             label="Tenant(s)"
             value={data.tenants}
             missing={isFieldMissing('tenants')}
-            onPress={() => handleEditField('tenants')}
           />
           <ReviewRowMultiline
             icon="people"
             label="Landlord(s)"
             value={data.landlords}
             missing={isFieldMissing('landlords')}
-            onPress={() => handleEditField('landlords')}
           />
           <ReviewRowSingle
             icon="hash"
             label="Monthly Rent"
             value={formatRupees(data.monthlyRent)}
             missing={isFieldMissing('monthlyRent')}
-            onPress={() => handleEditField('monthlyRent')}
           />
           <ReviewRowSingle
             icon="hash"
             label="One-Time Deposit"
             value={formatRupees(data.oneTimeDeposit)}
             missing={isFieldMissing('oneTimeDeposit')}
-            onPress={() => handleEditField('oneTimeDeposit')}
           />
           <ReviewRowSingle
             icon="hash"
             label="Rent Duration"
             value={data.rentDuration}
             missing={isFieldMissing('rentDuration')}
-            onPress={() => handleEditField('rentDuration')}
           />
           <ReviewRowSingle
             icon="hash"
             label="Exit Date"
             value={data.exitDate}
             missing={isFieldMissing('exitDate')}
-            onPress={() => handleEditField('exitDate')}
           />
         </View>
       </ScrollView>

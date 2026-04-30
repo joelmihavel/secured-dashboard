@@ -714,7 +714,7 @@ export default function AddBankScreen({ preWaitlist = false }: AddBankProps) {
               </Text>
             ) : (
               <Text style={styles.subtitleText}>
-                We&apos;ll confirm that these details match your landlord before enabling payments
+                Setup your rent payments by verifying the bank details of your landlord.
               </Text>
             )}
           </View>

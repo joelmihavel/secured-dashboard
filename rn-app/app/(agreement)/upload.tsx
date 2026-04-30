@@ -1191,8 +1191,10 @@ export default function UploadScreen() {
   };
 
   return (
-    <Screen testID="upload-screen" padded={false} safeAreaTop={false} style={{ backgroundColor: 'transparent' }}>
-      {/* Background Pattern - DottedPattern component with agreement-specific shape */}
+    <Screen testID="upload-screen" padded={false} safeAreaTop={false} safeAreaBottom={false} style={{ backgroundColor: 'transparent' }}>
+      {/* Background Pattern - DottedPattern component with agreement-specific shape.
+          safeAreaBottom={false} so the dot grid extends behind the home
+          indicator instead of stopping above it (visible black band). */}
       <DottedGridPattern fadeMask={false} />
 
       <ScrollView
@@ -1382,24 +1384,9 @@ export default function UploadScreen() {
             testID="proceed-button"
           />
 
-          {/* "Don't have a rent agreement?" — Figma 4651:76276
-              Only shown in idle state before upload starts. Routes to manual entry. */}
-          {uploadState === 'idle' && !document && (
-            <TouchableOpacity
-              onPress={() => {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                routerRef.current.push('/(agreement)/manual-entry' as never);
-              }}
-              style={styles.manualLinkRow}
-              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-              testID="manual-entry-link"
-            >
-              <Text style={styles.manualLinkText}>
-                Don&apos;t have a rent agreement?{' '}
-                <Text inherit style={styles.manualLinkAccent}>Enter details manually</Text>
-              </Text>
-            </TouchableOpacity>
-          )}
+          {/* Manual-entry link removed — manual-entry / upload-edit flows
+              are not shipping in this release. Re-enable when those screens
+              are ready (the link routed to /(agreement)/manual-entry). */}
         </View>
       </ScrollView>
     </Screen>
