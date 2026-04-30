@@ -222,14 +222,21 @@ serve(async (req: Request) => {
       });
     }
 
-    // If we discovered the payment actually succeeded, handle cashback
-    if (finalStatus === "success") {
-      if (payment.cashback_applied_paise > 0) {
+    // If we discovered the payment actually succeeded, mirror the
+    // live-webhook ledger shape: split cashback_applied_paise into
+    // 'discount' (1%) and 'flat_bonus' rows. The partial unique indexes
+    // on cashback_ledger (payment_id, transaction_type) make these inserts
+    // idempotent against a webhook that fires concurrently.
+    if (finalStatus === "success" && payment.cashback_applied_paise > 0) {
+      const flatBonusPaise = (payment as Record<string, any>).flat_bonus_paise ?? 0;
+      const onePctPaise = payment.cashback_applied_paise - flatBonusPaise;
+
+      if (onePctPaise > 0) {
         try {
           await supabase.from("cashback_ledger").insert({
             user_id: userId,
             transaction_type: "discount",
-            amount_paise: payment.cashback_applied_paise,
+            amount_paise: onePctPaise,
             balance_after_paise: 0,
             payment_id: payment.id,
             tenancy_id: payment.tenancy_id,
@@ -237,44 +244,26 @@ serve(async (req: Request) => {
             reference_id: payment.id,
             description: "1% instant discount on rent payment (abandon-verify)",
           });
-          const accumulatedUsed = payment.accumulated_redeemed_paise ?? 0;
-          if (accumulatedUsed > 0) {
-            await supabase.from("cashback_ledger").insert({
-              user_id: userId,
-              transaction_type: "applied",
-              amount_paise: accumulatedUsed,
-              balance_after_paise: 0,
-              payment_id: payment.id,
-              tenancy_id: payment.tenancy_id,
-              reference_type: "payment",
-              reference_id: payment.id,
-              description: "Accumulated cashback redeemed (abandon-verify)",
-            });
-            await supabase.rpc("decrement_cashback_balance", {
-              p_user_id: userId,
-              p_amount: accumulatedUsed,
-            });
-          }
         } catch (e) {
-          console.error("Failed to log cashback discount on abandon-verify:", e);
+          console.error("Failed to log discount on abandon-verify:", e);
         }
       }
 
-      if (payment.cashback_earned_paise > 0) {
+      if (flatBonusPaise > 0) {
         try {
           await supabase.from("cashback_ledger").insert({
             user_id: userId,
-            transaction_type: "earned",
-            amount_paise: payment.cashback_earned_paise,
+            transaction_type: "flat_bonus",
+            amount_paise: flatBonusPaise,
             balance_after_paise: 0,
             payment_id: payment.id,
             tenancy_id: payment.tenancy_id,
             reference_type: "payment",
             reference_id: payment.id,
-            description: "1% cashback earned (abandon-verify)",
+            description: "Flat cashback (promo) (abandon-verify)",
           });
         } catch (e) {
-          console.error("Failed to credit earned cashback on abandon-verify:", e);
+          console.error("Failed to log flat bonus on abandon-verify:", e);
         }
       }
     }

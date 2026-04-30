@@ -11,7 +11,10 @@
  * - page: Page number (default: 1)
  * - limit: Items per page (default: 20, max: 100)
  * - tenancy_id: Filter by tenancy (optional)
- * - type: Filter by transaction_type (earned, redeemed, reversed, expired) (optional)
+ * - type: Filter by transaction_type. Valid values match the
+ *   cashback_ledger CHECK constraint: discount, flat_bonus, applied,
+ *   reversal, expired, reinstatement, earned, bonus, referral_bonus,
+ *   promotional, adjustment.
  */
 
 import { serve } from "https://deno.land/std@0.208.0/http/server.ts";
@@ -71,7 +74,20 @@ serve(async (req: Request) => {
     }
 
     if (txType) {
-      const validTypes = ["earned", "redeemed", "reversed", "expired"];
+      // Match the cashback_ledger CHECK constraint values.
+      const validTypes = [
+        "discount",
+        "flat_bonus",
+        "applied",
+        "reversal",
+        "expired",
+        "reinstatement",
+        "earned",
+        "bonus",
+        "referral_bonus",
+        "promotional",
+        "adjustment",
+      ];
       if (validTypes.includes(txType)) {
         query = query.eq("transaction_type", txType);
       }

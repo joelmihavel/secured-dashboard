@@ -12,7 +12,6 @@ import { serve } from "https://deno.land/std@0.208.0/http/server.ts";
 import { createServiceClient } from "../_shared/supabase.ts";
 import { handleCors, jsonResponse, errorResponse } from "../_shared/cors.ts";
 import { AppError, PaymentError, handleError } from "../_shared/errors.ts";
-import { parseRentMonth } from "../_shared/validation.ts";
 import { AuditLogger, AuditActions } from "../_shared/audit.ts";
 import { scheduleNotification } from "../_shared/notifications.ts";
 import { verifyPayUWebhookHashWithCharges, sha512, hmacSha256Base64, timingSafeCompare } from "../_shared/crypto.ts";
@@ -267,44 +266,20 @@ serve(async (req: Request) => {
             }
           }
 
-          // If refund FAILED — revert payment status and re-credit reversed cashback
+          // If refund FAILED — revert payment status. No wallet reinstate
+          // needed under the instant-discount-only model: the original
+          // refund flow no longer reverses cashback to the wallet (see
+          // initiate-refund.reverseCashback), so cashback_reversed_paise
+          // is 0 for new refunds. The auto_reverse_cashback_on_refund
+          // trigger only writes 'reversal' rows for legacy 'earned'
+          // entries; no compensating 'reinstatement' is required because
+          // the trigger doesn't touch instant-discount audit rows.
           if (refundStatus === 'FAILED' || refundStatus === 'CANCELLED') {
             await supabase.from('payments').update({
               status: 'success',
               refund_amount_paise: 0,
               refund_reason: null,
             }).eq('id', refundRecord.payment_id);
-
-            // Re-credit cashback that was reversed when the refund was initiated
-            const reversedAmount = (refundRecord as any).cashback_reversed_paise ?? 0;
-            if (reversedAmount > 0) {
-              // Find the payment's user_id
-              const { data: paymentData } = await supabase
-                .from('payments')
-                .select('user_id, tenancy_id')
-                .eq('id', refundRecord.payment_id)
-                .single();
-
-              if (paymentData) {
-                try {
-                  // sync_cashback_balance trigger on cashback_ledger handles users.cashback_balance_paise
-                  await supabase.from('cashback_ledger').insert({
-                    user_id: paymentData.user_id,
-                    transaction_type: 'reinstatement',
-                    amount_paise: reversedAmount,
-                    balance_after_paise: 0, // approximate
-                    payment_id: refundRecord.payment_id,
-                    tenancy_id: paymentData.tenancy_id,
-                    reference_type: 'refund',
-                    reference_id: refundRecord.id,
-                    description: 'Cashback reinstated — refund failed',
-                  });
-                  console.log(`[webhook] Re-credited ${reversedAmount} paise cashback for failed refund ${refundId}`);
-                } catch (cbErr) {
-                  console.error(`[webhook] Cashback reinstatement failed:`, cbErr);
-                }
-              }
-            }
 
             console.warn(`[webhook] Refund ${refundId} FAILED — reverted payment ${refundRecord.payment_id} to success`);
           }
@@ -509,11 +484,8 @@ serve(async (req: Request) => {
 
         if (cfUserId && cfPayment.cashback_applied_paise > 0) {
           try {
-            // Split the total cashback into its components for the ledger so
-            // each transaction_type carries its real meaning.
             const cfFlatBonusPaise = cfPayment.flat_bonus_paise ?? 0;
-            const cfAccumulatedUsed = cfPayment.accumulated_redeemed_paise ?? 0;
-            const cfOnePctPaise = cfPayment.cashback_applied_paise - cfFlatBonusPaise - cfAccumulatedUsed;
+            const cfOnePctPaise = cfPayment.cashback_applied_paise - cfFlatBonusPaise;
 
             if (cfOnePctPaise > 0) {
               await supabase.from("cashback_ledger").insert({
@@ -539,48 +511,11 @@ serve(async (req: Request) => {
                 tenancy_id: cfPayment.tenancy_id,
                 reference_type: "payment",
                 reference_id: cfPayment.id,
-                description: `Flat ₹1000 cashback (promo)`,
-              });
-            }
-            const accumulatedUsed = cfAccumulatedUsed;
-            if (accumulatedUsed > 0) {
-              await supabase.from("cashback_ledger").insert({
-                user_id: cfUserId,
-                transaction_type: "applied",
-                amount_paise: accumulatedUsed,
-                balance_after_paise: 0,
-                payment_id: cfPayment.id,
-                tenancy_id: cfPayment.tenancy_id,
-                reference_type: "payment",
-                reference_id: cfPayment.id,
-                description: `Accumulated cashback redeemed`,
-              });
-              await supabase.rpc("decrement_cashback_balance", {
-                p_user_id: cfUserId,
-                p_amount: accumulatedUsed,
+                description: `Flat cashback (promo)`,
               });
             }
           } catch (e) {
             console.error("[webhook] Failed to log Cashfree cashback discount:", e);
-          }
-        }
-
-        if (cfUserId && cfPayment.cashback_earned_paise > 0) {
-          try {
-            await supabase.from("cashback_ledger").insert({
-              user_id: cfUserId,
-              transaction_type: "earned",
-              amount_paise: cfPayment.cashback_earned_paise,
-              balance_after_paise: 0,
-              payment_id: cfPayment.id,
-              tenancy_id: cfPayment.tenancy_id,
-              reference_type: "payment",
-              reference_id: cfPayment.id,
-              description: `1% cashback earned (pending verification)`,
-            });
-            // sync_cashback_balance trigger on cashback_ledger handles users.cashback_balance_paise
-          } catch (e) {
-            console.error("[webhook] Failed to credit Cashfree earned cashback:", e);
           }
         }
 
@@ -924,59 +859,18 @@ serve(async (req: Request) => {
       }
     }
 
-    // Cutoff re-validation: ensure payment was completed before the cashback cutoff
-    // This prevents edge cases where payment was initiated before cutoff but completed after
-    let cashbackBlockedByCutoff = false;
-    if (isSuccess && (payment.cashback_applied_paise > 0 || payment.cashback_earned_paise > 0)) {
-      const tenancyData = payment.tenancy as Record<string, any> | null;
-      const cutoffDay = tenancyData?.cashback_cutoff_day ?? tenancyData?.rent_due_day ?? 7;
-      const { year: rentYear, month: rentMonthNum } = parseRentMonth(payment.payment_month as string);
-      // End of cutoff day in IST (UTC+05:30) → 18:29:59 UTC
-      const cutoffDate = new Date(Date.UTC(rentYear, rentMonthNum - 1, cutoffDay, 18, 29, 59, 999));
-      // Use the payment timestamp from PayU (addedon) stored in updateData.paid_at,
-      // NOT Date.now() which is the webhook arrival time
-      const paidAt = new Date((updateData.paid_at as string) ?? payment.paid_at ?? new Date().toISOString());
-
-      if (paidAt > cutoffDate) {
-        console.warn(`[payment-webhook] Payment ${payment.id} completed past cutoff (paid: ${paidAt.toISOString()}, cutoff: ${cutoffDate.toISOString()}). Zeroing cashback.`);
-        cashbackBlockedByCutoff = true;
-        // Persist zeroed cashback — main update already ran, so issue a second update
-        const { error: cutoffErr } = await supabase
-          .from("payments")
-          .update({
-            cashback_applied_paise: 0,
-            cashback_earned_paise: 0,
-            intended_cashback_paise: 0,
-            accumulated_redeemed_paise: 0,
-            flat_bonus_paise: 0,
-          })
-          .eq("id", payment.id);
-        if (cutoffErr) {
-          console.error(`[payment-webhook] Failed to zero cashback for payment ${payment.id}:`, cutoffErr);
-        }
-        // Release the flat-bonus reservation: the trigger only fires on
-        // status='failed', but here we've kept status='success' and just
-        // zeroed the cashback. The user didn't actually get their bonus,
-        // so they retain eligibility for a future on-time payment.
-        if ((payment.flat_bonus_paise ?? 0) > 0 && userId) {
-          await supabase
-            .from("users")
-            .update({ flat_bonus_claimed_at: null, flat_bonus_claimed_payment_id: null })
-            .eq("id", userId)
-            .eq("flat_bonus_claimed_payment_id", payment.id);
-        }
-      }
-    }
-
-    // PATH A: Verified user — instant discount was applied at initiation
-    if (isSuccess && payment.cashback_applied_paise > 0 && userId && !cashbackBlockedByCutoff) {
+    // ── Cashback ledger writes ──────────────────────────────────────────
+    // Policy under the instant-discount-only model:
+    //   - Cashback is committed at initiation (gateway charge already
+    //     reflects the discount). The webhook does not re-validate the
+    //     cutoff at completion time — once the user has paid the
+    //     discounted amount, Flent honors it.
+    //   - Each component of cashback_applied_paise gets its own ledger row
+    //     with the right transaction_type so audit/display can disaggregate.
+    if (isSuccess && payment.cashback_applied_paise > 0 && userId) {
       try {
-        // Split the total cashback into component ledger rows. The same total
-        // sits in payment.cashback_applied_paise; this just disaggregates the
-        // ledger so each transaction_type carries its real meaning.
         const flatBonusPaise = payment.flat_bonus_paise ?? 0;
-        const accumulatedUsed = payment.accumulated_redeemed_paise ?? 0;
-        const onePctPaise = payment.cashback_applied_paise - flatBonusPaise - accumulatedUsed;
+        const onePctPaise = payment.cashback_applied_paise - flatBonusPaise;
 
         if (onePctPaise > 0) {
           await supabase.from("cashback_ledger").insert({
@@ -1002,50 +896,11 @@ serve(async (req: Request) => {
             tenancy_id: payment.tenancy_id,
             reference_type: "payment",
             reference_id: payment.id,
-            description: `Flat ₹1000 cashback (promo)`,
-          });
-        }
-
-        // Debit accumulated balance if it was redeemed as part of this discount
-        if (accumulatedUsed > 0) {
-          await supabase.from("cashback_ledger").insert({
-            user_id: userId,
-            transaction_type: "applied",
-            amount_paise: accumulatedUsed,
-            balance_after_paise: 0,
-            payment_id: payment.id,
-            tenancy_id: payment.tenancy_id,
-            reference_type: "payment",
-            reference_id: payment.id,
-            description: `Accumulated cashback redeemed`,
-          });
-          await supabase.rpc("decrement_cashback_balance", {
-            p_user_id: userId,
-            p_amount: accumulatedUsed,
+            description: `Flat cashback (promo)`,
           });
         }
       } catch (e) {
         console.error("Failed to log cashback discount:", e);
-      }
-    }
-
-    // PATH B: Unverified user — earn 1% into balance
-    if (isSuccess && payment.cashback_earned_paise > 0 && userId && !cashbackBlockedByCutoff) {
-      try {
-        await supabase.from("cashback_ledger").insert({
-          user_id: userId,
-          transaction_type: "earned",
-          amount_paise: payment.cashback_earned_paise,
-          balance_after_paise: 0,
-          payment_id: payment.id,
-          tenancy_id: payment.tenancy_id,
-          reference_type: "payment",
-          reference_id: payment.id,
-          description: `1% cashback earned (pending verification)`,
-        });
-        // sync_cashback_balance trigger on cashback_ledger handles users.cashback_balance_paise
-      } catch (e) {
-        console.error("Failed to credit earned cashback:", e);
       }
     }
 

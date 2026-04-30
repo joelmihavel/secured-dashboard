@@ -26,15 +26,47 @@ import { handleError } from "../_shared/errors.ts";
 
 const CACHE_TTL_SECONDS = 300; // 5 minutes
 
-// Flat ₹1000 cashback promo — mirrors initiate-payment env config so the
-// home hero card can preview the same eligibility the server will enforce
-// at payment time. Default off (env unset → no promo).
-const FLAT_BONUS_PROMO_MONTH = Deno.env.get("FLAT_BONUS_PROMO_MONTH") ?? null;
-const FLAT_BONUS_AMOUNT_PAISE = (() => {
-  const raw = Deno.env.get("FLAT_BONUS_AMOUNT_PAISE") ?? "100000";
-  const parsed = parseInt(raw, 10);
-  return Number.isFinite(parsed) && parsed > 0 ? parsed : 100000;
-})();
+// Flat cashback promo — sourced from app_config.flat_bonus_promo via the
+// get_flat_bonus_promo() helper so the home hero chip mirrors the realtime
+// state initiate-payment will see. See migration 20260501130000.
+type FlatBonusPromo = {
+  enabled: boolean;
+  rent_month: string | null;
+  amount_paise: number;
+  min_payment_paise: number;
+};
+
+const FLAT_BONUS_PROMO_FALLBACK: FlatBonusPromo = {
+  enabled: false,
+  rent_month: null,
+  amount_paise: 100000,
+  min_payment_paise: 3000000,
+};
+
+async function getFlatBonusPromo(
+  supabase: ReturnType<typeof createServiceClient>,
+): Promise<FlatBonusPromo> {
+  try {
+    const { data } = await supabase.rpc("get_flat_bonus_promo");
+    if (!data || typeof data !== "object") return FLAT_BONUS_PROMO_FALLBACK;
+    const cfg = data as Record<string, unknown>;
+    return {
+      enabled: cfg.enabled === true,
+      rent_month: typeof cfg.rent_month === "string" ? cfg.rent_month : null,
+      amount_paise:
+        Number.isFinite(cfg.amount_paise as number) && (cfg.amount_paise as number) > 0
+          ? (cfg.amount_paise as number)
+          : FLAT_BONUS_PROMO_FALLBACK.amount_paise,
+      min_payment_paise:
+        Number.isFinite(cfg.min_payment_paise as number) && (cfg.min_payment_paise as number) >= 0
+          ? (cfg.min_payment_paise as number)
+          : FLAT_BONUS_PROMO_FALLBACK.min_payment_paise,
+    };
+  } catch (e) {
+    console.error("[dashboard-data] get_flat_bonus_promo failed:", e);
+    return FLAT_BONUS_PROMO_FALLBACK;
+  }
+}
 
 // ==============================================
 // TYPES
@@ -287,7 +319,7 @@ serve(async (req: Request) => {
       // 1. User profile
       supabase
         .from("users")
-        .select("id, first_name, last_name, phone, email, role, is_role_locked, user_status, kyc_status, cashback_balance_paise, flat_bonus_claimed_at, avatar_url, created_at")
+        .select("id, first_name, last_name, phone, email, role, is_role_locked, user_status, kyc_status, cashback_balance_paise, avatar_url, created_at")
         .eq("id", userId)
         .single(),
 
@@ -439,14 +471,37 @@ serve(async (req: Request) => {
       const cutoffDate = new Date(Date.UTC(currentYear, currentMonth, cutoffDay, 18, 29, 59, 999));
       const pastCutoff = nowUTC > cutoffDate;
 
-      // Flat-bonus eligibility preview. Mirrors initiate-payment's checks so
-      // the home hero chip stays in sync with what the server will actually
-      // award at payment time. Promo month + cutoff + once-ever marker.
-      const flatPromoActive = Boolean(FLAT_BONUS_PROMO_MONTH) && rentMonthYYYYMM === FLAT_BONUS_PROMO_MONTH;
-      const flatAlreadyClaimed = Boolean(userProfile?.flat_bonus_claimed_at);
-      const flatBonusEligible = flatPromoActive && !pastCutoff && !flatAlreadyClaimed;
+      // Flat-bonus eligibility preview. Mirrors initiate-payment exactly so
+      // the home hero chip stays in sync with what the server will award at
+      // payment time. Gates: promo enabled + matching rent_month + cutoff +
+      // amount threshold + no prior bonus this rent_month for this user.
+      const flatPromo = await getFlatBonusPromo(supabase);
+      const flatPromoActive = flatPromo.enabled
+        && (flatPromo.rent_month == null || flatPromo.rent_month === rentMonthYYYYMM);
+
+      // "First-payment-of-month-global" check: any prior success in this
+      // rent_month (across tenancies) with flat_bonus_paise > 0 burns the
+      // user's slot for the month.
+      let flatBonusAlreadyGiven = false;
+      if (flatPromoActive) {
+        const { data: priorFlat } = await supabase
+          .from("payments")
+          .select("id")
+          .eq("user_id", userId)
+          .eq("payment_month", `${rentMonthYYYYMM}-01`)
+          .eq("status", "success")
+          .gt("flat_bonus_paise", 0)
+          .limit(1)
+          .maybeSingle();
+        flatBonusAlreadyGiven = !!priorFlat;
+      }
+
+      const flatBonusEligible = flatPromoActive
+        && !pastCutoff
+        && !flatBonusAlreadyGiven
+        && tenancy.monthly_rent_paise >= flatPromo.min_payment_paise;
       const flatBonusPaise = flatBonusEligible
-        ? Math.min(FLAT_BONUS_AMOUNT_PAISE, tenancy.monthly_rent_paise)
+        ? Math.min(flatPromo.amount_paise, tenancy.monthly_rent_paise)
         : 0;
 
       upcomingPayment = {
