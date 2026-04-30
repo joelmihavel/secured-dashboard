@@ -46,6 +46,8 @@ import { typography } from '@/src/theme/typography';
 import { spacing, radius } from '@/src/theme';
 import type { TimelineItemData } from '@/src/components/waitlist/ApplicationTimeline';
 import { useUploadStore } from '@/src/stores/upload';
+import { resetForReupload } from '@/src/services/agreement/resetForReupload';
+import { useAuthContext } from '@/src/providers';
 
 // ============================================
 // FIGMA EXTRACTED CONSTANTS
@@ -324,30 +326,49 @@ export default function WaitlistScreen() {
     }
   }, [viewState, navigateToRejected, isNavigating, transitionOpacity]);
 
+  const { session: authSession } = useAuthContext();
   useEffect(() => {
     if (!status?.requiresReupload || isNavigating) {
       return;
     }
 
     setIsNavigating(true);
-    useUploadStore.getState().prepareForReupload({
-      extractionId: status.extractionId,
-      fileName: status.fileName,
-      errorMessage:
-        status.reuploadMessage ??
-        'Please upload a valid rental agreement to continue.',
-    });
 
-    transitionOpacity.value = withTiming(1, { duration: 300 }, (finished) => {
-      if (finished) {
-        runOnJS(navigateToAgreement)();
-      }
+    // Cleanup before re-upload: delete the user's pre-waitlist landlord
+    // bank_accounts row + reset both upload and manual stores. The bank
+    // delete MUST complete before we navigate, otherwise the next "Add
+    // landlord details" insert can race against a leftover row and trip
+    // the unique(user_id, party_type) WHERE is_primary=true partial index.
+    const userId = authSession?.user?.id;
+    const cleanup = userId
+      ? resetForReupload({ userId, extractionId: status.extractionId }).catch((err) => {
+          console.warn('[waitlist] resetForReupload failed (non-fatal):', err);
+        })
+      : Promise.resolve(
+          // No session — fall back to in-memory cleanup only. Bank delete
+          // would fail anyway without auth.
+          useUploadStore.getState().prepareForReupload({
+            extractionId: status.extractionId,
+            fileName: status.fileName,
+            errorMessage:
+              status.reuploadMessage ??
+              'Please upload a valid rental agreement to continue.',
+          }),
+        );
+
+    cleanup.finally(() => {
+      transitionOpacity.value = withTiming(1, { duration: 300 }, (finished) => {
+        if (finished) {
+          runOnJS(navigateToAgreement)();
+        }
+      });
     });
   }, [
     status?.requiresReupload,
     status?.reuploadMessage,
     status?.extractionId,
     status?.fileName,
+    authSession?.user?.id,
     navigateToAgreement,
     isNavigating,
     transitionOpacity,
@@ -734,9 +755,9 @@ export default function WaitlistScreen() {
         <View style={styles.drawerContent}>
           <View style={styles.drawerHeader}>
             <Text style={styles.drawerTitle}>
-              <Text inherit style={styles.drawerTitleWhite}>Use a</Text>
+              <Text inherit style={styles.drawerTitleWhite}>Use an</Text>
               {'\n'}
-              <Text inherit style={styles.drawerTitleAccent}>Referral Code</Text>
+              <Text inherit style={styles.drawerTitleAccent}>Invite Code</Text>
             </Text>
             <Text style={styles.drawerSubtitle}>(+{referralSpots} spots)</Text>
           </View>
@@ -746,7 +767,7 @@ export default function WaitlistScreen() {
           <View style={styles.drawerBody}>
             <Text style={styles.drawerLabel}>Have an Invite Code?</Text>
             <Text style={styles.drawerDescription}>
-              Get priority access to the platform if you use a referral code
+              Get priority access to the platform if you use an Invite Code
             </Text>
 
             {referralApplied || inviteCodeClaimed ? (
@@ -1026,10 +1047,10 @@ const styles = StyleSheet.create({
     width: '100%',
     gap: 24,
     paddingTop: 8,
-    // Extra breathing room around this section: more space between the
-    // timeline card above and the benefits carousel below per the
-    // requested layout adjustment.
-    marginVertical: 24,
+    // No extra marginVertical — parent's contentGap already separates this
+    // from the timeline above and benefits carousel below. The previous
+    // 24-each-side margin compounded with contentGap=56 to ~80px of air
+    // on each side, which read as a layout hole.
   },
   stepsHeading: {
     fontFamily: FIGMA.typography.subtitle.fontFamily,

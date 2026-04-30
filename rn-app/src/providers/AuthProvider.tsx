@@ -12,7 +12,7 @@ import React, { createContext, useContext, useEffect, useState, useRef, useMemo,
 import { useRouter } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
 import { env } from '@/src/config/env';
-import { supabase, updateCachedSession, SUPABASE_SESSION_STORAGE_KEY, ExpoSecureStoreAdapter } from '@/src/services/supabase/client';
+import { supabase, updateCachedSession, SUPABASE_SESSION_STORAGE_KEY } from '@/src/services/supabase/client';
 import { clearAllStores } from '@/src/stores/resetAll';
 import { registerForPushNotifications } from '@/src/services/notifications';
 import { isReviewMode, deactivateReviewMode } from '@/src/review/reviewMode';
@@ -32,29 +32,6 @@ import type { Session } from '@supabase/supabase-js';
  */
 const DB_MIGRATION_KEY = 'flent_db_migration';
 const CURRENT_DB_VERSION = 'main_v3'; // Only bump when Supabase project changes — NOT for code fixes
-
-/**
- * Read the persisted Supabase session directly from SecureStore via the SDK's
- * own storage adapter. Side-effect-free: does NOT call _callRefreshToken or
- * any SDK auth method. The SDK's _initialize will still run asynchronously
- * and emit INITIAL_SESSION/TOKEN_REFRESHED, which our listener handles.
- *
- * Returns null if no session is persisted or the payload is corrupt.
- */
-async function readPersistedSession(): Promise<Session | null> {
-  try {
-    const raw = await ExpoSecureStoreAdapter.getItem(SUPABASE_SESSION_STORAGE_KEY);
-    if (!raw) return null;
-    const parsed = JSON.parse(raw);
-    // GoTrue stores either { currentSession, expiresAt } or the raw Session
-    // depending on version — handle both.
-    const candidate = parsed?.currentSession ?? parsed;
-    if (!candidate?.access_token || !candidate?.refresh_token) return null;
-    return candidate as Session;
-  } catch {
-    return null;
-  }
-}
 
 /**
  * Validates a user exists on the server via direct fetch.
@@ -201,21 +178,13 @@ export function AuthProvider({ children }: AuthProviderProps) {
           await SecureStore.setItemAsync(DB_MIGRATION_KEY, CURRENT_DB_VERSION).catch(() => {});
         }
 
-        // Read the persisted session DIRECTLY from SecureStore via the SDK's
-        // own adapter — NOT supabase.auth.getSession(). (Gap #2)
-        // Why: getSession() in auth-js v2.65.1 calls _callRefreshToken() when
-        // the JWT is expired. The SDK's autoRefreshToken timer is already
-        // running by the time AuthProvider mounts. Both consuming the same
-        // refresh token via GoTrue's rotation kills the session → SIGNED_OUT.
-        // The 3s SIGNED_OUT debounce + SecureStore safety-net usually catches
-        // this, but on slow networks (4G/3G) the refresh round-trip exceeds
-        // the debounce and a real logout fires.
-        // Reading through ExpoSecureStoreAdapter (not raw SecureStore) is
-        // important — the adapter handles generation-based chunked storage,
-        // raw reads would only see legacy gen-0 data.
-        // The SDK still runs its internal _initialize asynchronously and will
-        // fire INITIAL_SESSION + TOKEN_REFRESHED, which our listener handles.
-        const initialSession = await readPersistedSession();
+        // Use the SDK's own getSession(). It reads via the configured storage
+        // adapter (so chunking + generation handling works) under the SDK's
+        // internal storage key. Manual SecureStore reads with a hardcoded
+        // key constant don't match the SDK's actual key (sb-<ref>-auth-token,
+        // derived from URL) and silently return null → cold-start latches
+        // to /(auth)/splash before INITIAL_SESSION can rescue.
+        const { data: { session: initialSession } } = await supabase.auth.getSession();
         if (!initialSession) {
           // No session found. This can happen normally (first launch) or due to a
           // Supabase URL mismatch: the SDK stores sessions under a key derived from

@@ -76,59 +76,88 @@ export default function EditBankDetailsScreen() {
             <ScreenTitle gray="Your landlord's " accent="bank details" />
           </View>
 
-          {/* Form — all fields read-only, adapts to bank vs UPI */}
-          <View style={styles.formContainer}>
-            <TextInput
-              label="Account holder name"
-              value={landlordBank?.account_holder_name ?? ''}
-              onChangeText={() => {}}
-              disabled
-            />
-
-            {landlordBank?.verification_method === 'upi' ? (
-              <TextInput
-                label="UPI ID"
-                value={landlordBank?.upi_vpa ?? ''}
-                onChangeText={() => {}}
-                disabled
-              />
-            ) : (
-              <>
+          {/* Only show the form when the landlord's bank/UPI is actually
+              verified. Failed-validation attempts can leave stale rows in
+              the table (sometimes with the VPA written into the
+              account_number column), and showing those reads as "the wrong
+              account is on file". Empty state below is the safer default. */}
+          {landlordBank?.verified ? (
+            <>
+              {/* Form — all fields read-only, adapts to bank vs UPI.
+                  Use the presence of upi_vpa as the source of truth for
+                  which fields to render — the verification_method column
+                  is sometimes inconsistent with the data actually stored. */}
+              <View style={styles.formContainer}>
                 <TextInput
-                  label="Account number"
-                  value={landlordBank?.account_number_masked ?? ''}
+                  label="Account holder name"
+                  value={landlordBank.account_holder_name ?? ''}
                   onChangeText={() => {}}
                   disabled
                 />
 
+                {landlordBank.upi_vpa ? (
+                  <TextInput
+                    label="UPI ID"
+                    value={landlordBank.upi_vpa}
+                    onChangeText={() => {}}
+                    disabled
+                  />
+                ) : (
+                  <>
+                    <TextInput
+                      label="Account number"
+                      value={landlordBank.account_number_masked ?? ''}
+                      onChangeText={() => {}}
+                      disabled
+                    />
+
+                    <TextInput
+                      label="IFSC code"
+                      value={landlordBank.ifsc_code ?? ''}
+                      onChangeText={() => {}}
+                      disabled
+                    />
+                  </>
+                )}
+
                 <TextInput
-                  label="IFSC code"
-                  value={landlordBank?.ifsc_code ?? ''}
+                  label="PAN card"
+                  value={landlordBank.pan_number_masked ?? ''}
                   onChangeText={() => {}}
                   disabled
                 />
-              </>
-            )}
+              </View>
 
-            <TextInput
-              label="PAN card"
-              value={landlordBank?.pan_number_masked ?? ''}
-              onChangeText={() => {}}
-              disabled
-            />
-          </View>
+              {/* Contact Support */}
+              <View style={styles.buttonSection}>
+                <PrimaryButton
+                  title="Contact support"
+                  onPress={handleContactSupport}
+                />
 
-          {/* Contact Support */}
-          <View style={styles.buttonSection}>
-            <PrimaryButton
-              title="Contact support"
-              onPress={handleContactSupport}
-            />
-
-            <Text style={styles.footerText}>
-              To update your landlord's bank details, please contact support.
-            </Text>
-          </View>
+                <Text style={styles.footerText}>
+                  To update your landlord's bank details, please contact support.
+                </Text>
+              </View>
+            </>
+          ) : (
+            <View style={styles.emptyState}>
+              <Text style={styles.emptyTitle}>
+                No verified bank details yet
+              </Text>
+              <Text style={styles.emptyBody}>
+                Your landlord's bank details haven't been verified. Complete
+                the bank-verification step from the setup flow to add them,
+                or contact support if you've already tried and need help.
+              </Text>
+              <View style={styles.emptyButton}>
+                <PrimaryButton
+                  title="Contact support"
+                  onPress={handleContactSupport}
+                />
+              </View>
+            </View>
+          )}
         </ScrollView>
       </KeyboardAvoidingView>
     </Screen>
@@ -160,5 +189,27 @@ const styles = StyleSheet.create({
     lineHeight: 20,
     color: FIGMA_COLORS.footer,
     textAlign: 'center',
+  },
+  // Empty state — shown when no verified bank details exist (failed-
+  // validation rows are filtered out by the verified flag).
+  emptyState: {
+    gap: 16,
+    paddingVertical: 24,
+  },
+  emptyTitle: {
+    fontFamily: 'PlusJakartaSans-Medium',
+    fontSize: 18,
+    lineHeight: 24,
+    color: FIGMA_COLORS.white,
+  },
+  emptyBody: {
+    fontFamily: 'PlusJakartaSans-Regular',
+    fontSize: 14,
+    lineHeight: 22,
+    color: FIGMA_COLORS.footer,
+  },
+  emptyButton: {
+    marginTop: 16,
+    alignItems: 'center',
   },
 });

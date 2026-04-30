@@ -82,7 +82,7 @@ export default function WelcomeScreen() {
           <Plus style={{ left: s(307.5), top: sv(99) }} />
 
           <View style={styles.headingBlock}>
-            <Text style={styles.heading}>Make your Rent</Text>
+            <Text style={styles.heading}>Make your rent</Text>
             <Text style={styles.headingAccent}>work for you</Text>
           </View>
 
@@ -140,13 +140,6 @@ function CornerFlap() {
       <Path
         d="M0 12C0 5.37258 5.37258 0 12 0H42C48.6274 0 54 5.37258 54 12V42C54 48.6274 48.6274 54 42 54H12C5.37258 54 0 48.6274 0 42V12Z"
         fill={colors.black[700]}
-        clipPath="url(#flap-clip)"
-      />
-      {/* Triangle representing the underside of the fold */}
-      <Path
-        d="M65.6924 53.5H12C5.64873 53.5 0.5 48.3513 0.5 42V-4.88184L65.6924 53.5Z"
-        fill={colors.black[600]}
-        stroke={colors.black[500]}
         clipPath="url(#flap-clip)"
       />
     </Svg>

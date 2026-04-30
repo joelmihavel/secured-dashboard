@@ -15,8 +15,7 @@ import {
   type ViewToken,
   type ListRenderItemInfo,
 } from 'react-native';
-import Svg, { Path, Circle } from 'react-native-svg';
-import { Logo } from '@/src/components';
+import Svg, { Path } from 'react-native-svg';
 import { colors } from '@/src/theme/colors';
 import { s, sv } from '@/src/theme/scale';
 
@@ -28,13 +27,17 @@ interface BenefitCardData {
   id: string;
   text: string;
   status: 'live' | 'coming_soon';
+  icon: React.ReactNode;
 }
 
+// Icon→position mapping follows the order you specified: 1→Cashback,
+// 2→Exit, 3→HouseSparkle, 4→Building, 5→Bank.
 const BENEFITS: BenefitCardData[] = [
-  { id: '1', text: '1% cashback on timely rental payment', status: 'live' },
-  { id: '2', text: 'Zero Security Deposits', status: 'coming_soon' },
-  { id: '3', text: 'Guaranteed tenant replacement on your exit', status: 'live' },
-  { id: '4', text: 'Rental home design at zero service fee', status: 'coming_soon' },
+  { id: '1', text: '1% cashback on timely rental payment', status: 'live', icon: <CashbackIcon /> },
+  { id: '2', text: 'Get ₹15,000 cash when you move out', status: 'live', icon: <ExitIcon /> },
+  { id: '3', text: 'Zero Security Deposits', status: 'coming_soon', icon: <HouseSparkleIcon /> },
+  { id: '4', text: 'Guaranteed tenant replacement on your exit', status: 'live', icon: <BuildingIcon /> },
+  { id: '5', text: 'Rental home design at zero service fee', status: 'coming_soon', icon: <BankIcon /> },
 ];
 
 // ============================================
@@ -65,43 +68,80 @@ function PaperclipSvg() {
 }
 
 // ============================================
-// HALFTONE PIN MARKER — Figma 4837:78083
-// Orange dotted "cross" with decreasing dot sizes radiating from the
-// centre, matching the stippled sparkle on the benefit cards. Drawn in
-// a 28×28 viewBox so the rendered size is controlled by the wrapper.
+// PER-CARD ICONS (32×32, brand-orange stroke 2px, round caps & joins).
+// One distinct icon per benefit card — replaces the previous shared
+// halftone-cross sparkle so each card's intent reads at a glance.
 // ============================================
 
-function HalftonePin({ size = 28 }: { size?: number }) {
-  const c = colors.brand[500];
+const ICON_STROKE = colors.brand[500];
+const ICON_PROPS = {
+  stroke: ICON_STROKE,
+  strokeWidth: 2,
+  strokeLinecap: 'round' as const,
+  strokeLinejoin: 'round' as const,
+  fill: 'none' as const,
+};
+
+/** Card 1 — coin / piggy-bank silhouette. Pairs with "1% cashback". */
+function CashbackIcon({ size = 32 }: { size?: number }) {
   return (
-    <Svg width={size} height={size} viewBox="0 0 28 28" fill="none">
-      {/* Centre cluster */}
-      <Circle cx={14} cy={14} r={2.4} fill={c} />
-      {/* North arm */}
-      <Circle cx={14} cy={11} r={2} fill={c} />
-      <Circle cx={14} cy={8} r={1.5} fill={c} />
-      <Circle cx={14} cy={5} r={1} fill={c} />
-      <Circle cx={14} cy={2.5} r={0.6} fill={c} />
-      {/* South arm */}
-      <Circle cx={14} cy={17} r={2} fill={c} />
-      <Circle cx={14} cy={20} r={1.5} fill={c} />
-      <Circle cx={14} cy={23} r={1} fill={c} />
-      <Circle cx={14} cy={25.5} r={0.6} fill={c} />
-      {/* East arm */}
-      <Circle cx={17} cy={14} r={2} fill={c} />
-      <Circle cx={20} cy={14} r={1.5} fill={c} />
-      <Circle cx={23} cy={14} r={1} fill={c} />
-      <Circle cx={25.5} cy={14} r={0.6} fill={c} />
-      {/* West arm */}
-      <Circle cx={11} cy={14} r={2} fill={c} />
-      <Circle cx={8} cy={14} r={1.5} fill={c} />
-      <Circle cx={5} cy={14} r={1} fill={c} />
-      <Circle cx={2.5} cy={14} r={0.6} fill={c} />
-      {/* Diagonal satellites */}
-      <Circle cx={11} cy={11} r={0.9} fill={c} />
-      <Circle cx={17} cy={11} r={0.9} fill={c} />
-      <Circle cx={11} cy={17} r={0.9} fill={c} />
-      <Circle cx={17} cy={17} r={0.9} fill={c} />
+    <Svg width={size} height={size} viewBox="0 0 32 32" fill="none">
+      <Path d="M20 14.6667V14.6801" {...ICON_PROPS} />
+      <Path d="M6.89841 11.1705C6.31361 10.7211 5.86446 10.1187 5.60062 9.4299C5.33678 8.74114 5.26851 7.99283 5.40336 7.2677C5.53821 6.54256 5.87093 5.86883 6.36474 5.32096C6.85856 4.7731 7.49424 4.37244 8.20152 4.16326C8.90881 3.95408 9.66016 3.94453 10.3725 4.13567C11.0849 4.32681 11.7306 4.71119 12.2381 5.24633C12.7457 5.78147 13.0954 6.44654 13.2487 7.16801C13.4019 7.88949 13.3527 8.63928 13.1064 9.33453" {...ICON_PROPS} />
+      <Path d="M21.334 5.33325V10.4039C22.9842 11.3587 24.2405 12.8698 24.878 14.6666H26.666C27.0196 14.6666 27.3588 14.8071 27.6088 15.0571C27.8589 15.3072 27.9993 15.6463 27.9993 15.9999V18.6666C27.9993 19.0202 27.8589 19.3593 27.6088 19.6094C27.3588 19.8594 27.0196 19.9999 26.666 19.9999H24.8767C24.4287 21.2666 23.6673 22.3999 22.666 23.2973V25.9999C22.666 26.5304 22.4553 27.0391 22.0802 27.4141C21.7051 27.7892 21.1964 27.9999 20.666 27.9999C20.1356 27.9999 19.6269 27.7892 19.2518 27.4141C18.8767 27.0391 18.666 26.5304 18.666 25.9999V25.2226C18.2254 25.2964 17.7794 25.3334 17.3327 25.3333H11.9993C11.5526 25.3334 11.1066 25.2964 10.666 25.2226V25.9999C10.666 26.5304 10.4553 27.0391 10.0802 27.4141C9.70514 27.7892 9.19644 27.9999 8.666 27.9999C8.13557 27.9999 7.62686 27.7892 7.25179 27.4141C6.87672 27.0391 6.666 26.5304 6.666 25.9999V23.3333V23.2973C5.45795 22.2172 4.60637 20.7958 4.22398 19.2211C3.84159 17.6464 3.94642 15.9927 4.52459 14.4789C5.10276 12.9651 6.12702 11.6625 7.46178 10.7437C8.79655 9.82484 10.3789 9.33299 11.9993 9.33325H15.3327L21.3327 5.33325" {...ICON_PROPS} />
+    </Svg>
+  );
+}
+
+/** Card 2 — exit/door with arrow. */
+function ExitIcon({ size = 32 }: { size?: number }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 32 32" fill="none">
+      <Path d="M17.334 16V16.0133" {...ICON_PROPS} />
+      <Path d="M4 28H28" {...ICON_PROPS} />
+      <Path d="M6.66602 28V6.66667C6.66602 5.95942 6.94697 5.28115 7.44706 4.78105C7.94716 4.28095 8.62544 4 9.33268 4H19.3327M22.666 18V28" {...ICON_PROPS} />
+      <Path d="M18.666 9.33325H27.9993M27.9993 9.33325L23.9993 5.33325M27.9993 9.33325L23.9993 13.3333" {...ICON_PROPS} />
+    </Svg>
+  );
+}
+
+/** Card 3 — house with sparkle accent. */
+function HouseSparkleIcon({ size = 32 }: { size?: number }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 32 32" fill="none">
+      <Path d="M6.66667 16H4L16 4L26.1813 14.1813" {...ICON_PROPS} />
+      <Path d="M6.66602 16V25.3333C6.66602 26.0406 6.94697 26.7189 7.44706 27.219C7.94716 27.719 8.62544 28 9.33268 28H15.9993" {...ICON_PROPS} />
+      <Path d="M12 27.9999V19.9999C12 19.2927 12.281 18.6144 12.781 18.1143C13.2811 17.6142 13.9594 17.3333 14.6667 17.3333H16.6667" {...ICON_PROPS} />
+      <Path d="M29.3333 21.3333C29.3333 26.6666 26 29.3333 24.6667 29.3333C23.3333 29.3333 20 26.6666 20 21.3333C21.3333 21.3333 23.3333 20.6666 24.6667 19.3333C26 20.6666 28 21.3333 29.3333 21.3333Z" {...ICON_PROPS} />
+    </Svg>
+  );
+}
+
+/** Card 4 — apartment building with windows. */
+function BuildingIcon({ size = 32 }: { size?: number }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 32 32" fill="none">
+      <Path d="M4 28H28" {...ICON_PROPS} />
+      <Path d="M12 10.6667H13.3333" {...ICON_PROPS} />
+      <Path d="M12 16H13.3333" {...ICON_PROPS} />
+      <Path d="M12 21.3333H13.3333" {...ICON_PROPS} />
+      <Path d="M18.666 10.6667H19.9993" {...ICON_PROPS} />
+      <Path d="M18.666 16H19.9993" {...ICON_PROPS} />
+      <Path d="M18.666 21.3333H19.9993" {...ICON_PROPS} />
+      <Path d="M6.66602 28V6.66667C6.66602 5.95942 6.94697 5.28115 7.44706 4.78105C7.94716 4.28095 8.62544 4 9.33268 4H22.666C23.3733 4 24.0515 4.28095 24.5516 4.78105C25.0517 5.28115 25.3327 5.95942 25.3327 6.66667V28" {...ICON_PROPS} />
+    </Svg>
+  );
+}
+
+/** Card 5 — bank/government building with archway. */
+function BankIcon({ size = 32 }: { size?: number }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 32 32" fill="none">
+      <Path d="M6.66602 13.3333V8C6.66602 6.93913 7.08744 5.92172 7.83759 5.17157C8.58773 4.42143 9.60515 4 10.666 4H21.3327C22.3935 4 23.411 4.42143 24.1611 5.17157C24.9113 5.92172 25.3327 6.93913 25.3327 8V13.3333" {...ICON_PROPS} />
+      <Path d="M21.3327 19.9999V17.3333C21.3327 16.5421 21.5673 15.7688 22.0068 15.111C22.4463 14.4532 23.071 13.9405 23.802 13.6377C24.5329 13.335 25.3371 13.2558 26.113 13.4101C26.889 13.5645 27.6017 13.9454 28.1611 14.5048C28.7205 15.0642 29.1015 15.777 29.2558 16.5529C29.4102 17.3288 29.331 18.1331 29.0282 18.864C28.7255 19.5949 28.2128 20.2196 27.555 20.6591C26.8972 21.0987 26.1238 21.3333 25.3327 21.3333V25.3333H6.66602V21.3333C5.87489 21.3333 5.10153 21.0987 4.44374 20.6591C3.78594 20.2196 3.27325 19.5949 2.9705 18.864C2.66775 18.1331 2.58854 17.3288 2.74288 16.5529C2.89722 15.777 3.27818 15.0642 3.83759 14.5048C4.397 13.9454 5.10973 13.5645 5.88566 13.4101C6.66158 13.2558 7.46585 13.335 8.19675 13.6377C8.92766 13.9405 9.55237 14.4532 9.9919 15.111C10.4314 15.7688 10.666 16.5421 10.666 17.3333V19.9999" {...ICON_PROPS} />
+      <Path d="M10.666 16H21.3327" {...ICON_PROPS} />
+      <Path d="M9.33398 25.3333V27.9999" {...ICON_PROPS} />
+      <Path d="M22.666 25.3333V27.9999" {...ICON_PROPS} />
     </Svg>
   );
 }
@@ -158,9 +198,9 @@ function BenefitCard({ item }: { item: BenefitCardData }) {
         <ScratchMarks />
       </View>
 
-      {/* Centered content — halftone pin marker + text + Live Now badge */}
+      {/* Centered content — per-card icon + text + Live Now badge */}
       <View style={cardStyles.content}>
-        <HalftonePin size={28} />
+        {item.icon}
         <RNText style={cardStyles.description}>{item.text}</RNText>
 
         <View style={cardStyles.badge}>

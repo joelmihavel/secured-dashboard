@@ -271,14 +271,17 @@ export default function AddBankScreen({ preWaitlist = false }: AddBankProps) {
   const completeBankStep = useUploadStore((s) => s.completeBankStep);
 
   // If bank was ALREADY verified when this screen mounted (e.g., deferred name
-  // match succeeded in background), redirect away. Captures the initial value
-  // once — ignores changes from optimistic updates during the current session,
-  // which would otherwise redirect before the user sees the success state and
-  // taps "Confirm & continue".
+  // match succeeded in background), and the user landed here via journey
+  // router (no back stack, ex: cold-start straight onto /add-bank), redirect
+  // away. If the user pushed here from another screen (e.g. tapped "Add
+  // landlord details" on setup-intro), DO NOT redirect — they explicitly
+  // came to view/edit, bouncing them to the dashboard surprises them.
   // Pre-waitlist → waitlist (user isn't approved yet, dashboard would be empty).
   // Post-approval → main dashboard.
   const bankAlreadyVerifiedOnMount = useRef(
-    !__DEV__ && (tenancy?.verification_status?.bank_verified || landlordBank?.verified)
+    !__DEV__ &&
+    !routerRef.current.canGoBack() &&
+    (tenancy?.verification_status?.bank_verified || landlordBank?.verified)
   );
   const hasRedirectedRef = useRef(false);
   useEffect(() => {
@@ -666,7 +669,9 @@ export default function AddBankScreen({ preWaitlist = false }: AddBankProps) {
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
-          {/* Top row — back arrow + primary action pill */}
+          {/* Top row — back arrow only. The action button moved back to the
+              sticky bottom bar (see below the ScrollView) for visibility —
+              the top-right gradient pill was hard to discover. */}
           <View style={styles.topRow}>
             <BackButton
               onPress={() => {
@@ -683,11 +688,6 @@ export default function AddBankScreen({ preWaitlist = false }: AddBankProps) {
               }}
               style={styles.topRowBack}
               color={colors.white}
-            />
-            <GradientPill
-              label={allVerified ? 'Confirm & Continue' : 'Verify Details'}
-              onPress={allVerified ? handleConfirm : handleSubmit}
-              disabled={!allVerified && !allFieldsFilled}
             />
           </View>
 
@@ -850,11 +850,40 @@ export default function AddBankScreen({ preWaitlist = false }: AddBankProps) {
             </Text>
           )}
 
-          {/* Skip link removed — Figma 4651:76437 doesn't show "I'll do this later"
-              on the form. Skip is available on the setup-intro screen instead. */}
-
-          <View style={{ height: 48 }} />
+          {/* Bottom spacer — taller when verified info is showing so it
+              scrolls clear of the sticky bottom button. */}
+          <View style={{ height: allVerified ? 200 : 150 }} />
         </ScrollView>
+
+        {/* Sticky bottom — primary action sits here so it's always visible.
+            Hidden when keyboard is open so it doesn't cover inputs. The
+            previous gradient pill at the top of the form was hard to spot. */}
+        {!keyboardVisible && (
+          <View style={[styles.stickyBottom, { paddingBottom: insets.bottom + 16 }]}>
+            {allVerified ? (
+              <PrimaryButton
+                title="Confirm & continue"
+                onPress={handleConfirm}
+              />
+            ) : (
+              <PrimaryButton
+                title="Verify details"
+                onPress={handleSubmit}
+                disabled={!allFieldsFilled}
+              />
+            )}
+
+            {preWaitlist && (
+              <TouchableOpacity onPress={handleSkip} style={styles.skipButton}>
+                <Text style={styles.skipText}>I&apos;ll do this later</Text>
+              </TouchableOpacity>
+            )}
+
+            <Text style={styles.footerText}>
+              PAN is required for rent compliance and verification.
+            </Text>
+          </View>
+        )}
       </KeyboardAvoidingView>
     </View>
   );
@@ -925,11 +954,10 @@ const styles = StyleSheet.create({
   // Logo (legacy — unused after redesign, kept for any other referrers)
   logoContainer: { alignSelf: 'flex-start', marginBottom: 40 },
 
-  // Top row — back arrow + Verify Details / Confirm pill
+  // Top row — back arrow only (action button is in stickyBottom now)
   topRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
     marginBottom: 32,
   },
   topRowBack: {

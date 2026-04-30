@@ -38,6 +38,7 @@ import { Text as RNText, TextInput, AppState, AppStateStatus } from 'react-nativ
 import { DarkTheme, ThemeProvider } from '@react-navigation/native';
 import { colors } from '@/src/theme';
 import { QueryProvider, AuthProvider } from '@/src/providers';
+import { ExtractionHydrationMount } from '@/src/hooks/useExtractionHydration';
 
 // Custom dark theme to prevent white flashes during navigation transitions
 const AppDarkTheme = {
@@ -188,6 +189,7 @@ function RootLayoutInner() {
       <ErrorBoundary>
         <QueryProvider>
           <AuthProvider>
+            <ExtractionHydrationMount />
             <GestureHandlerRootView style={{ flex: 1, backgroundColor: colors.black[700] }}>
               <ThemeProvider value={AppDarkTheme}>
                 <SafeAreaProvider>

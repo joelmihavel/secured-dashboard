@@ -8,7 +8,7 @@
  */
 
 import React, { useCallback, useRef } from 'react';
-import { View, StyleSheet, ScrollView, Pressable, Linking } from 'react-native';
+import { View, StyleSheet, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 
@@ -23,8 +23,6 @@ const VERIFY_CHIPS = [
   { emoji: '👤', label: 'Your rental agreement' },
   { emoji: '🔐', label: 'Eligibility for Flent Secured' },
 ] as const;
-
-const RBI_KYC_URL = 'https://www.rbi.org.in/Scripts/BS_ViewMasDirections.aspx?id=11566';
 
 export default function AgreementIntroScreen() {
   const router = useRouter();
@@ -43,11 +41,6 @@ export default function AgreementIntroScreen() {
   const handleManual = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     routerRef.current.push('/(agreement)/manual-entry' as never);
-  }, []);
-
-  const handleLearnMore = useCallback(() => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    Linking.openURL(RBI_KYC_URL);
   }, []);
 
   return (
@@ -104,15 +97,6 @@ export default function AgreementIntroScreen() {
           </Pressable>*/}
         </View>
 
-        {/* Learn more — RBI KYC link */}
-        <Pressable
-          style={styles.learnMoreCard}
-          onPress={handleLearnMore}
-          accessibilityRole="link"
-          testID="rbi-kyc-link"
-        >
-          <Text style={styles.learnMoreText}>Learn more about RBI guidelines on KYC →</Text>
-        </Pressable>
       </ScrollView>
     </Screen>
   );
@@ -127,6 +111,7 @@ const styles = StyleSheet.create({
     paddingTop: sv(78),
     paddingBottom: sv(48),
     paddingHorizontal: s(40),
+    // Section gap. Controls both subtitle→divider AND chips→Upload-Agreement.
     gap: sv(40),
   },
 
@@ -167,7 +152,9 @@ const styles = StyleSheet.create({
   // Verify chips
   verifyBlock: {
     gap: sv(16),
-    paddingTop: sv(8),
+    // paddingTop matches scrollContent.gap so the divider line has equal
+    // breathing room on both sides (subtitle → line = line → title).
+    paddingTop: sv(40),
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: colors.black[400],
   },
@@ -197,8 +184,12 @@ const styles = StyleSheet.create({
     gap: s(8),
   },
   chipEmoji: {
-    fontSize: sf(15),
-    lineHeight: sf(18),
+    // iOS emoji glyphs render taller than their reported lineHeight box —
+    // an 18-line-height clipped the top of 📍/💰/💼/🔐. Drop fontSize
+    // slightly and grow lineHeight so the glyph sits centered with room
+    // on top + bottom.
+    fontSize: sf(14),
+    lineHeight: sf(22),
   },
   chipLabel: {
     fontFamily: 'PlusJakartaSans-Regular',
@@ -221,20 +212,4 @@ const styles = StyleSheet.create({
     textDecorationLine: 'underline',
   },
 
-  // Learn more card
-  learnMoreCard: {
-    backgroundColor: colors.black[500],
-    borderRadius: 12,
-    paddingVertical: sv(14),
-    paddingHorizontal: s(20),
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  learnMoreText: {
-    fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: sf(13),
-    lineHeight: sf(18),
-    color: colors.brand[500],
-    textDecorationLine: 'underline',
-  },
 });

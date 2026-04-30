@@ -103,6 +103,65 @@ serve(async (req) => {
     }
 
     // ==============================================
+    // EXTRACTION READINESS GATE
+    // ==============================================
+    //
+    // Fire-and-forget upload flow: the user may submit an invite code while
+    // the agreement scan is still running in the background, has failed, or
+    // was flagged for manual review. In any of those states we MUST NOT
+    // consume the code or auto-approve — return EXTRACTION_NOT_READY so the
+    // client shows the user-friendly retry message and the code stays unused.
+    const { data: extraction, error: extractionLookupError } = await adminClient
+      .from("extracted_rental_info")
+      .select("extraction_status, contract_status")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (extractionLookupError) {
+      console.error("[claim-invite-code] extraction lookup failed:", extractionLookupError);
+      return jsonResponse(
+        {
+          success: false,
+          error: true,
+          code: "INTERNAL_ERROR",
+          message: "Could not verify your agreement status. Please try again.",
+        },
+        500,
+        headers
+      );
+    }
+
+    const extractionReady =
+      !!extraction &&
+      extraction.extraction_status === "completed" &&
+      extraction.contract_status !== "manual_review" &&
+      extraction.contract_status !== "invalid_document" &&
+      extraction.contract_status !== "expired";
+
+    if (!extractionReady) {
+      // Log the attempt so it shows up in rate-limit accounting (the user is
+      // hitting the endpoint legitimately, just early). Do NOT consume the code.
+      await adminClient.from("invite_code_attempts").insert({
+        user_id: user.id,
+        code_attempted: code,
+        was_valid: false,
+      }).catch(() => {});
+
+      return jsonResponse(
+        {
+          success: false,
+          error: true,
+          code: "EXTRACTION_NOT_READY",
+          message: "Your scan is in progress, please try again in 2 minutes.",
+        },
+        409,
+        headers
+      );
+    }
+
+    // ==============================================
     // CLAIM CODE (atomic via RPC)
     // ==============================================
 

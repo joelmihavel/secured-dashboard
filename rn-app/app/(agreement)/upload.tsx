@@ -855,14 +855,16 @@ export default function UploadScreen() {
           return;
         }
 
-        // All other cases (expired, manual_review, unsupported city) proceed to waitlist.
-        // Backend handles extraction in background. Admin reviews flagged cases.
+        // All other cases (expired, manual_review, unsupported city) proceed
+        // forward. Fire-and-forget flow: skip the review screen and land on
+        // setup-intro. Manual-review / expired states are surfaced later by
+        // the waitlist banner + the claim-invite-code extraction gate.
         setUploadState('success');
         setErrorOverrideMessage(null);
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
 
         setTimeout(() => {
-          router.replace('/(agreement)/upload-review' as never);
+          router.replace('/(agreement)/setup-intro' as never);
         }, FIGMA.animation.duration);
         break;
       }
@@ -993,7 +995,7 @@ export default function UploadScreen() {
       // Brief pause at 100% before navigating
       await new Promise((resolve) => setTimeout(resolve, 300));
       advanceJourneyStage(); // agreement_upload → setup
-      routerRef.current.replace('/(agreement)/upload-review' as never);
+      routerRef.current.replace('/(agreement)/setup-intro' as never);
       return;
     }
 
@@ -1042,10 +1044,18 @@ export default function UploadScreen() {
         document.size ?? 0
       );
 
-      // Upload is done; stay on this screen showing the verifying state.
-      // The extraction-status useEffect routes forward to /upload-review when
-      // extraction.status === 'completed'. This guarantees the user always
-      // passes through review → setup-intro → add-bank-details in order.
+      // Fire-and-forget: as soon as the upload API confirms, jump the user
+      // forward to setup-intro and let the cloud extraction job run in the
+      // background. The waitlist screen surfaces extraction failures (and
+      // offers a re-upload CTA), and the claim-invite-code edge function
+      // gates approval on extraction completion. This avoids a "wait while
+      // we scan" screen entirely.
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      setUploadProgress(100);
+      setUploadState('success');
+      setTimeout(() => {
+        routerRef.current.replace('/(agreement)/setup-intro' as never);
+      }, FIGMA.animation.duration);
     } catch (error) {
       console.error('Upload error:', error);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
@@ -1139,10 +1149,10 @@ export default function UploadScreen() {
 
   const handleGetNotified = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    // Figma 4651:76829 — after a successful upload + extraction, the user
-    // reviews the auto-filled fields. From there: Confirm & Continue → setup-intro,
-    // or "Edit Missing Details" / tap a row → manual-entry.
-    routerRef.current.replace('/(agreement)/upload-review' as never);
+    // Fire-and-forget flow: send the user straight to setup-intro. The
+    // extraction job runs in the background; the waitlist screen and the
+    // claim-invite-code edge function gate on its completion.
+    routerRef.current.replace('/(agreement)/setup-intro' as never);
   }, []);
 
   // Get current state config

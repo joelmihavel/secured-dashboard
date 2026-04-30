@@ -116,6 +116,7 @@ export type WaitlistErrorCode =
   | 'INVALID_INVITE_CODE'
   | 'INVITE_CODE_USED'
   | 'INVITE_CODE_ALREADY_CLAIMED'
+  | 'EXTRACTION_NOT_READY'
   | 'RATE_LIMITED'
   | 'NETWORK_ERROR'
   | 'UNKNOWN_ERROR';
@@ -856,6 +857,11 @@ function mapInviteCodeErrorFromCode(code: string | undefined, message: string): 
       return { code: 'INVALID_INVITE_CODE', message };
     case 'RATE_LIMITED':
       return { code: 'RATE_LIMITED', message: 'Too many attempts. Please wait a moment' };
+    case 'EXTRACTION_NOT_READY':
+      return {
+        code: 'EXTRACTION_NOT_READY',
+        message: message || 'Your scan is in progress, please try again in 2 minutes.',
+      };
     case 'AUTH_ERROR':
       return { code: 'NOT_AUTHENTICATED', message: 'Please sign in to continue' };
     default:

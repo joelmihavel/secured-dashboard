@@ -25,7 +25,6 @@ import * as Haptics from 'expo-haptics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Ionicons } from '@expo/vector-icons';
 
 import { Screen, Text, Logo, DottedGridPattern, BackButton, ScrollDownIndicator } from '@/src/components';
 import { Marquee, TOP_MARQUEE_ITEMS, BOTTOM_MARQUEE_ITEMS } from '@/src/components/auth/landing-decor';
@@ -73,14 +72,71 @@ function AlertHexIcon() {
   );
 }
 
-// "Why this helps them?" card content. Visual chrome (notepad bg, paperclip,
-// scratch marks, perforations) lives in `LandlordBenefitCard`. Each card
-// passes its own icon so the carousel doesn't repeat the same glyph 4×.
+// Per-card icons (40×40, brand-orange stroke 2px). Cards 2/3/4 use the
+// custom SVGs supplied with the latest design pass; card 1 still uses the
+// shield Ionicon until its replacement icon is confirmed.
 const CARD_ICON_SIZE = 40;
+const CARD_ICON_STROKE_PROPS = {
+  stroke: colors.brand[500],
+  strokeWidth: 2,
+  strokeLinecap: 'round' as const,
+  strokeLinejoin: 'round' as const,
+  fill: 'none' as const,
+};
+
+/** Card 1 — house roof with sparkle accent (rent protection / home safety). */
+function HouseSparkleIcon({ size = CARD_ICON_SIZE }: { size?: number }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 32 32" fill="none">
+      <Path d="M6.66667 16H4L16 4L26.1813 14.1813" {...CARD_ICON_STROKE_PROPS} />
+      <Path d="M6.6665 16V25.3333C6.6665 26.0406 6.94746 26.7189 7.44755 27.219C7.94765 27.719 8.62593 28 9.33317 28H15.9998" {...CARD_ICON_STROKE_PROPS} />
+      <Path d="M12 27.9997V19.9997C12 19.2924 12.281 18.6142 12.781 18.1141C13.2811 17.614 13.9594 17.333 14.6667 17.333H16.6667" {...CARD_ICON_STROKE_PROPS} />
+      <Path d="M29.3333 21.333C29.3333 26.6663 26 29.333 24.6667 29.333C23.3333 29.333 20 26.6663 20 21.333C21.3333 21.333 23.3333 20.6663 24.6667 19.333C26 20.6663 28 21.333 29.3333 21.333Z" {...CARD_ICON_STROKE_PROPS} />
+    </Svg>
+  );
+}
+
+/** Card 2 — laptop / window with two right-pointing arrows. */
+function LaptopTransferIcon({ size = CARD_ICON_SIZE }: { size?: number }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 32 32" fill="none">
+      <Path d="M18.6667 10.6663V7.99967C18.6667 7.29243 18.3857 6.61415 17.8856 6.11406C17.3855 5.61396 16.7072 5.33301 16 5.33301H6.66667C5.95942 5.33301 5.28115 5.61396 4.78105 6.11406C4.28095 6.61415 4 7.29243 4 7.99967V23.9997C4 24.7069 4.28095 25.3852 4.78105 25.8853C5.28115 26.3854 5.95942 26.6663 6.66667 26.6663H16C16.7072 26.6663 17.3855 26.3854 17.8856 25.8853C18.3857 25.3852 18.6667 24.7069 18.6667 23.9997V21.333" {...CARD_ICON_STROKE_PROPS} />
+      <Path d="M12 16H28L24 12" {...CARD_ICON_STROKE_PROPS} />
+      <Path d="M24 20L28 16" {...CARD_ICON_STROKE_PROPS} />
+    </Svg>
+  );
+}
+
+/** Card 3 — concentric arcs / signal-broadcast pattern. */
+function BroadcastIcon({ size = CARD_ICON_SIZE }: { size?: number }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 32 32" fill="none">
+      <Path d="M25.1997 9.33301C26.4056 11.3346 26.9209 13.6768 26.6664 15.9997V17.333C26.6648 18.7368 27.0327 20.1164 27.733 21.333" {...CARD_ICON_STROKE_PROPS} />
+      <Path d="M10.6665 14.6663C10.6665 13.2519 11.2284 11.8953 12.2286 10.8951C13.2288 9.89491 14.5853 9.33301 15.9998 9.33301C17.4143 9.33301 18.7709 9.89491 19.7711 10.8951C20.7713 11.8953 21.3332 13.2519 21.3332 14.6663V15.9997C21.3332 18.8846 22.2689 21.6917 23.9998 23.9997" {...CARD_ICON_STROKE_PROPS} />
+      <Path d="M16 14.667V17.3337C15.9958 21.1462 17.159 24.8686 19.3333 28.0003" {...CARD_ICON_STROKE_PROPS} />
+      <Path d="M10.6665 20C10.9928 22.7864 11.8051 25.4941 13.0665 28" {...CARD_ICON_STROKE_PROPS} />
+      <Path d="M6.53309 25.3341C5.63342 22.3078 5.2282 19.1562 5.33309 16.0008V14.6674C5.32797 12.7926 5.81712 10.9495 6.75123 9.32391C7.68534 7.69832 9.03141 6.34765 10.6538 5.40801C12.2762 4.46837 14.1176 3.97295 15.9925 3.97168C17.8673 3.97041 19.7094 4.46333 21.3331 5.40077" {...CARD_ICON_STROKE_PROPS} />
+    </Svg>
+  );
+}
+
+/** Card 4 — calendar with date marker. */
+function CalendarIcon({ size = CARD_ICON_SIZE }: { size?: number }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 32 32" fill="none">
+      <Path d="M5.3335 9.33366C5.3335 8.62641 5.61445 7.94814 6.11454 7.44804C6.61464 6.94794 7.29292 6.66699 8.00016 6.66699H24.0002C24.7074 6.66699 25.3857 6.94794 25.8858 7.44804C26.3859 7.94814 26.6668 8.62641 26.6668 9.33366V25.3337C26.6668 26.0409 26.3859 26.7192 25.8858 27.2193C25.3857 27.7194 24.7074 28.0003 24.0002 28.0003H8.00016C7.29292 28.0003 6.61464 27.7194 6.11454 27.2193C5.61445 26.7192 5.3335 26.0409 5.3335 25.3337V9.33366Z" {...CARD_ICON_STROKE_PROPS} />
+      <Path d="M21.3335 4V9.33333" {...CARD_ICON_STROKE_PROPS} />
+      <Path d="M10.6665 4V9.33333" {...CARD_ICON_STROKE_PROPS} />
+      <Path d="M5.3335 14.667H26.6668" {...CARD_ICON_STROKE_PROPS} />
+      <Path d="M10.6665 20H13.3332V22.6667H10.6665V20Z" {...CARD_ICON_STROKE_PROPS} />
+    </Svg>
+  );
+}
+
 const CARDS: { id: string; text: React.ReactNode; icon: React.ReactNode }[] = [
   {
     id: '1',
-    icon: <Ionicons name="shield-checkmark-outline" size={CARD_ICON_SIZE} color={colors.white} />,
+    icon: <HouseSparkleIcon />,
     text: (
       <Text style={landlordCardBodyStyle.body}>
         Get guaranteed rent protection cover{' '}
@@ -90,7 +146,7 @@ const CARDS: { id: string; text: React.ReactNode; icon: React.ReactNode }[] = [
   },
   {
     id: '2',
-    icon: <Ionicons name="home-outline" size={CARD_ICON_SIZE} color={colors.white} />,
+    icon: <LaptopTransferIcon />,
     text: (
       <Text style={landlordCardBodyStyle.body}>
         If tenant abandons the property,{' '}
@@ -100,7 +156,7 @@ const CARDS: { id: string; text: React.ReactNode; icon: React.ReactNode }[] = [
   },
   {
     id: '3',
-    icon: <Ionicons name="document-text-outline" size={CARD_ICON_SIZE} color={colors.white} />,
+    icon: <BroadcastIcon />,
     text: (
       <Text style={landlordCardBodyStyle.body}>
         Complimentary tenant{' '}
@@ -111,7 +167,7 @@ const CARDS: { id: string; text: React.ReactNode; icon: React.ReactNode }[] = [
   },
   {
     id: '4',
-    icon: <Ionicons name="people-outline" size={CARD_ICON_SIZE} color={colors.white} />,
+    icon: <CalendarIcon />,
     text: (
       <Text style={landlordCardBodyStyle.body}>
         We guarantee a tenant replacement{' '}
