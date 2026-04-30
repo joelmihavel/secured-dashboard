@@ -289,17 +289,26 @@ serve(async (req: Request) => {
     const receiptNumber = generateReceiptNumber(payment.id, payment.paid_at);
 
     // Get landlord bank account (masked) — fetched separately since bank_accounts
-    // has FK to users, not tenancies (PostgREST can't join through tenancies)
+    // has FK to users, not tenancies (PostgREST can't join through tenancies).
+    //
+    // The bank row is owned by whoever created it: when a landlord finishes their
+    // own OTP onboarding the row sits under landlord_user_id, but in the common
+    // case the tenant adds the landlord's bank during their setup, so the row
+    // sits under the TENANT's user_id with party_type='landlord'. Fall back to
+    // payment.user_id (the tenant) so the receipt picks up bank/PAN/holder name
+    // even when landlord_user_id is null (e.g. landlord hasn't OTP'd yet, or the
+    // tenant is acting as their own landlord for testing).
     const tenancy = payment.tenancies as any;
     const landlordUserId = tenancy?.landlord_user_id ?? null;
+    const bankOwnerId = landlordUserId ?? payment.user_id;
     let landlordBankMasked: string | null = null;
     let landlordBankHolderName: string | null = null;
     let landlordBankPanMasked: string | null = null;
-    if (landlordUserId) {
+    if (bankOwnerId) {
       const { data: landlordBank } = await supabase
         .from("bank_accounts")
         .select("account_number_masked, account_holder_name, pan_number_masked")
-        .eq("user_id", landlordUserId)
+        .eq("user_id", bankOwnerId)
         .eq("party_type", "landlord")
         .eq("is_primary", true)
         .maybeSingle();
