@@ -26,13 +26,11 @@ import {
   Pressable,
   Alert,
   Linking,
-  FlatList,
 } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import * as StoreReview from 'expo-store-review';
-import Svg, { Path } from 'react-native-svg';
 
 import {
   Screen,
@@ -42,16 +40,10 @@ import {
   PrimaryButton,
   BottomSheet,
 } from '@/src/components';
+import { BenefitsCarousel } from '@/src/components/waitlist/BenefitsCarousel';
 import { useDashboard, useAuth, useDeleteAccount } from '@/src/hooks';
 import { colors } from '@/src/theme';
 import { s, sf, sv } from '@/src/theme/scale';
-
-const SECURED_BENEFITS = [
-  '1% cashback on timely rental payment',
-  'Zero Security Deposits',
-  'First dibs on upcoming flent homes (coming soon)',
-  'Home design @zero service fee (coming soon)',
-] as const;
 
 export default function ProfileScreen() {
   const router = useRouter();
@@ -222,92 +214,20 @@ function MenuPill({
   );
 }
 
-/** "What are my Secured Benefits?" bottom sheet with notepad-style benefit cards. */
+/** "Secured Benefits" bottom sheet — uses the waitlist BenefitsCarousel. */
 function SecuredBenefitsSheet({ visible, onClose }: { visible: boolean; onClose: () => void }) {
-  const renderItem = useCallback(({ item }: { item: string }) => (
-    <BenefitCard label={item} />
-  ), []);
-
   return (
     <BottomSheet visible={visible} onClose={onClose} paddingHorizontal={0}>
       <View style={styles.sheetContent}>
-        <View style={styles.sheetHeader}>
-          <Text style={styles.sheetTitle}>
-            What are my{'\n'}
-            <Text inherit style={styles.sheetTitleAccent}>Secured Benefits?</Text>
-          </Text>
+        <View style={styles.benefitsCarouselWrap}>
+          <BenefitsCarousel />
         </View>
-
-        <FlatList
-          data={SECURED_BENEFITS as unknown as string[]}
-          renderItem={renderItem}
-          keyExtractor={(item) => item}
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.benefitsTrack}
-          ItemSeparatorComponent={() => <View style={{ width: s(16) }} />}
-          decelerationRate="fast"
-          snapToInterval={s(244 + 16)}
-          snapToAlignment="start"
-        />
 
         <View style={styles.sheetFooter}>
           <PrimaryButton title="Close" onPress={onClose} showDivider testID="close-benefits" />
         </View>
       </View>
     </BottomSheet>
-  );
-}
-
-/** Notepad-style benefit card — spiral binding dots, paperclip, + marker, label. */
-function BenefitCard({ label }: { label: string }) {
-  return (
-    <View style={styles.benefitCard}>
-      {/* Spiral binding dots across the top */}
-      <View style={styles.spiralRow} pointerEvents="none">
-        {Array.from({ length: 11 }).map((_, i) => (
-          <View key={i} style={styles.spiralDot} />
-        ))}
-      </View>
-
-      {/* Paperclip top-left */}
-      <View style={styles.paperclipSlot} pointerEvents="none">
-        <Paperclip />
-      </View>
-
-      {/* Center content: + marker + label */}
-      <View style={styles.benefitCenter}>
-        <View style={styles.benefitPlus}>
-          <PlusMark />
-        </View>
-        <Text style={styles.benefitLabel}>{label}</Text>
-      </View>
-    </View>
-  );
-}
-
-/** Slim metallic paperclip — same SVG path as welcome screen. */
-function Paperclip() {
-  return (
-    <Svg width={s(20)} height={s(36)} viewBox="0 0 12.1221 39.5877" fill="none">
-      <Path
-        d="M12.0001 20.8239C12.0001 15.5157 12.1835 10.1714 12.0001 4.86609C11.857 0.724895 6.1445 -1.82115 3.22934 1.58326C2.3663 2.59126 2.21666 3.8089 2.20034 5.06962C2.17106 7.33714 2.20034 9.60693 2.20034 11.8746C2.20034 17.1129 2.0327 22.3811 2.20034 27.6169C2.36222 32.6708 9.82718 32.346 10.1837 27.4668C10.5562 22.3691 10.2333 30.9269 10.2333 25.8133C10.2333 25.0327 9.02024 25.0314 9.02024 25.8133C9.02024 29.978 8.97062 20.3351 8.97062 24.4997C8.97062 25.6405 9.18746 27.0356 8.87054 28.1604C8.05334 31.0607 3.54926 30.6122 3.41342 27.617C3.2297 23.5658 3.41342 19.4643 3.41342 15.4098C3.41342 11.8165 3.1589 8.12025 3.41342 4.53381C3.65042 1.19457 8.21282 0.0791738 10.1784 2.81721C10.8033 3.68769 10.7871 4.32034 10.7871 5.29294C10.7871 9.74602 10.7871 14.1992 10.7871 18.6524C10.7871 23.1055 10.7871 27.5588 10.7871 32.0119C10.7871 33.8964 10.7515 35.9761 9.22094 37.3217C7.48142 38.8511 4.38386 38.6648 2.74286 37.1162C0.414742 34.919 1.30802 29.6012 1.30802 26.7913C1.30802 22.2481 1.30802 17.705 1.30802 13.1619C1.30802 12.3813 0.0949403 12.3801 0.0949403 13.1619C0.0949403 18.1381 0.0949403 23.1143 0.0949403 28.0905C0.0949403 31.1371 -0.592898 35.4086 1.73426 37.8296C3.22178 39.377 5.73938 39.923 7.7981 39.3878C10.4531 38.6976 11.7851 36.3359 11.9769 33.722C12.2895 29.4637 12.0001 25.0897 12.0001 20.8239Z"
-        fill={colors.black[400]}
-      />
-    </Svg>
-  );
-}
-
-/** Decorative "+" cross used as benefit-card glyph (orange sparkle). */
-function PlusMark() {
-  const size = s(28);
-  return (
-    <Svg width={size} height={size} viewBox="0 0 28 28" fill="none">
-      <Path
-        d="M14 4 L15 13 L24 14 L15 15 L14 24 L13 15 L4 14 L13 13 Z"
-        fill={colors.brand[500]}
-      />
-    </Svg>
   );
 }
 
@@ -461,77 +381,10 @@ const styles = StyleSheet.create({
     paddingBottom: sv(24),
     gap: sv(30),
   },
-  sheetHeader: {
-    paddingHorizontal: s(48),
-  },
-  sheetTitle: {
-    fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: sf(28),
-    lineHeight: sf(40),
-    letterSpacing: -1,
-    color: colors.white,
-  },
-  sheetTitleAccent: {
-    color: colors.brand[500],
-  },
-  benefitsTrack: {
-    paddingHorizontal: s(48),
+  benefitsCarouselWrap: {
+    paddingLeft: s(48),
   },
   sheetFooter: {
     paddingHorizontal: s(48),
-  },
-
-  // Benefit card (notepad)
-  benefitCard: {
-    width: s(244),
-    height: sv(321),
-    backgroundColor: colors.black[500],
-    overflow: 'hidden',
-    position: 'relative',
-  },
-  spiralRow: {
-    position: 'absolute',
-    top: -s(4),
-    left: s(4),
-    right: s(4),
-    height: s(14),
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  spiralDot: {
-    width: s(14),
-    height: s(14),
-    borderRadius: s(7),
-    backgroundColor: colors.black[700],
-  },
-  paperclipSlot: {
-    position: 'absolute',
-    top: -s(4),
-    left: s(8),
-    transform: [{ rotate: '163.65deg' }, { scaleY: -1 }],
-  },
-  benefitCenter: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    top: '50%',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: sv(16),
-    transform: [{ translateY: -s(36) }],
-    paddingHorizontal: s(22),
-  },
-  benefitPlus: {
-    width: s(28),
-    height: s(28),
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  benefitLabel: {
-    fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: sf(16),
-    lineHeight: sf(24),
-    color: colors.neutral[500],
-    textAlign: 'center',
   },
 });

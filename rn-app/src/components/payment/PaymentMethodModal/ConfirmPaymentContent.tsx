@@ -261,7 +261,7 @@ export function ConfirmPaymentContent({
               />
               {!pastCutoff && flatBonusApplied > 0 && (
                 <BreakdownRow
-                  label="Flat ₹1000 Cashback"
+                  label="Bonus Cashback"
                   value={`-₹ ${fmt(flatBonusApplied)}`}
                   isCashback
                 />

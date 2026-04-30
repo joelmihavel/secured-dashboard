@@ -49,6 +49,7 @@ import * as DocumentPicker from 'expo-document-picker';
 import Svg, { Path } from 'react-native-svg';
 
 import { Screen, Text, PrimaryButton, Logo, BackButton } from '@/src/components';
+import { SkeletonLoader } from '@/src/components/ui/SkeletonLoader';
 import { isJourneyMode, advanceJourneyStage } from '@/src/review/journeyMode';
 import { DottedGridPattern } from '@/src/components/patterns';
 import { useAgreement, useNetworkStatus } from '@/src/hooks';
@@ -1188,6 +1189,13 @@ export default function UploadScreen() {
         handleUpload();
     }
   };
+
+  // Once extraction completes the user is being routed to add-bank-details.
+  // Show a skeleton during the brief navigation window so the upload screen
+  // doesn't flash one final "success" frame.
+  if (uploadState === 'success') {
+    return <SkeletonLoader backgroundShape="agreement" />;
+  }
 
   return (
     <Screen testID="upload-screen" padded={false} safeAreaTop={false} safeAreaBottom={false} style={{ backgroundColor: 'transparent' }}>

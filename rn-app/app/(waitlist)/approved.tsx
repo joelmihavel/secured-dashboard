@@ -49,7 +49,7 @@ import {
 } from '@/src/components';
 import { useWaitlist } from '@/src/hooks';
 import { useAuthStore } from '@/src/stores/auth';
-import { supabase } from '@/src/services/supabase/client';
+import { bankDetailsAreSettled } from '@/src/services/agreement/bankDetailsGate';
 import { isJourneyMode, advanceJourneyStage } from '@/src/review/journeyMode';
 import { colors } from '@/src/theme/colors';
 import { typography } from '@/src/theme/typography';
@@ -235,25 +235,15 @@ export default function WaitlistApprovedScreen() {
   }));
 
   // Stable navigation callback for runOnJS (Reanimated v4 requires standalone functions, not method refs).
-  // Route by bank-row presence: /(main) if the user already has a landlord
-  // bank row, /(agreement)/add-bank-details otherwise (legacy skip cohort
-  // approved without ever completing bank entry).
+  // Use the shared bank-details gate so the rule "bank-details before
+  // anything else" is enforced consistently with the journey router and
+  // post-OTP routing — a partial verifyBank row (or legacy data) does
+  // NOT count as completed.
   const navigateAfterApproval = useCallback(async () => {
     const userId = useAuthStore.getState().userId;
     let target = '/(agreement)/add-bank-details';
-    if (userId) {
-      try {
-        const { data: bankRow } = await supabase
-          .from('bank_accounts')
-          .select('id')
-          .eq('user_id', userId)
-          .eq('party_type', 'landlord')
-          .limit(1)
-          .maybeSingle();
-        if (bankRow) target = '/(main)';
-      } catch {
-        // Conservative on failure: route to bank-details.
-      }
+    if (userId && (await bankDetailsAreSettled(userId))) {
+      target = '/(main)';
     }
     routerRef.current.replace(target as never);
   }, []);

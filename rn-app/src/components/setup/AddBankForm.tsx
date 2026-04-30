@@ -585,6 +585,9 @@ export default function AddBankScreen() {
   // Pre-waitlist → /(waitlist). Post-approval → /(main).
   const handleConfirm = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    // Mark bank-details flow as completed BEFORE navigating so a kill+resume
+    // race during navigation doesn't bounce the user back here.
+    useUploadStore.getState().setBankDetailsCompleted(true);
     if (isPreWaitlist) {
       routerRef.current.replace('/(waitlist)' as never);
     } else {
@@ -928,13 +931,6 @@ export default function AddBankScreen() {
 
           {/* "Payments will be sent to ..." line under heading once verified */}
           {/* (rendered via subtitle replacement below — see titleBlock) */}
-
-          {/* Bottom helper — only shows once user starts filling */}
-          {(accountNumber || ifscCode || upiVpa || panCard) && (
-            <Text style={styles.bottomHelper}>
-              Required for landlord verification and compliance (not stored publicly)
-            </Text>
-          )}
 
           {/* Bottom spacer — taller when verified info is showing so it
               scrolls clear of the sticky bottom button. */}

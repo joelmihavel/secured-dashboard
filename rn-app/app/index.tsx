@@ -38,6 +38,10 @@ import { isReviewMode } from '@/src/review/reviewMode';
 import { isJourneyMode, getJourneyRouteTarget } from '@/src/review/journeyMode';
 import { addBreadcrumb } from '@/src/config/sentry';
 import { supabase } from '@/src/services/supabase/client';
+import {
+  bankDetailsAreSettled,
+  userHasLandlordBankRow,
+} from '@/src/services/agreement/bankDetailsGate';
 // OTA updates handled by useOTAUpdates hook — no cold-start blocking
 
 const LAST_ROUTE_KEY = 'flent_last_journey_target';
@@ -181,37 +185,12 @@ async function queryUserStatus(userId: string): Promise<string | null> {
 }
 
 /**
- * Bank-row presence check. The new gate for routing decisions — replaces the
- * old `bankStepCompleted` boolean on the upload store. A landlord bank row
- * means the user has finished the bank-details step at least once.
- *
- * Conservative on failure: returns false (forces bank-details on errors).
- * Worse to skip a missing-bank user into /(main) than to re-prompt one
- * who already has a row.
- */
-async function userHasLandlordBankRow(userId: string): Promise<boolean> {
-  try {
-    const { data } = await supabase
-      .from('bank_accounts')
-      .select('id')
-      .eq('user_id', userId)
-      .eq('party_type', 'landlord')
-      .limit(1)
-      .maybeSingle();
-    return !!data;
-  } catch (err) {
-    console.warn('[journey-router] bank-row query failed:', err);
-    return false;
-  }
-}
-
-/**
  * Approved-user routing helper. Returns `/(main)` if the user has a landlord
  * bank-account row, else `/(agreement)/add-bank-details`. Replaces the old
  * setup-intro?context=approved hop.
  */
 async function decideApprovedTarget(userId: string): Promise<string> {
-  return (await userHasLandlordBankRow(userId))
+  return (await bankDetailsAreSettled(userId))
     ? '/(main)'
     : '/(agreement)/add-bank-details';
 }
@@ -394,11 +373,12 @@ export default function Index() {
             // Otherwise: bank row present → /(main); absent → /(agreement)/add-bank-details.
             correctTarget = !tenancyRow ? '/(waitlist)' : await decideApprovedTarget(userId);
           } else if (!correctTarget && (userStatus === 'waitlisted' || userStatus === 'agreement_confirmed')) {
-            // Background validation for waitlisted — bank-row check covers the
-            // legacy skip cohort (bankStepCompleted=true but no bank row) by
-            // forcing them back to the bank-details screen. The reupload-on-
-            // invalid-extraction redirect still happens on the waitlist screen.
-            correctTarget = (await userHasLandlordBankRow(userId))
+            // Background validation for waitlisted — bank-details gate covers
+            // both the legacy skip cohort and the kill-mid-flow case (partial
+            // bank_accounts row from verifyBank but user never tapped Confirm).
+            // The reupload-on-invalid-extraction redirect still happens on the
+            // waitlist screen.
+            correctTarget = (await bankDetailsAreSettled(userId))
               ? '/(waitlist)'
               : '/(agreement)/add-bank-details';
           }
@@ -511,8 +491,10 @@ export default function Index() {
             errorMessage: 'Please upload a valid rental agreement to continue.',
           });
           setTarget('/(agreement)/upload');
-        } else if (!await userHasLandlordBankRow(userId)) {
-          // Legacy skip cohort: waitlisted but no bank row → force back to bank-details.
+        } else if (!await bankDetailsAreSettled(userId)) {
+          // Bank-details not completed (no row, partial row, or flag never set) →
+          // force back to bank-details. Covers the legacy skip cohort and the
+          // kill-mid-flow case.
           setTarget('/(agreement)/add-bank-details');
         } else {
           setTarget('/(waitlist)');
@@ -523,8 +505,8 @@ export default function Index() {
         // If so, the upload is done — route to waitlist, not back to upload.
         const manualReview = await checkPendingExtraction(userId);
         if (manualReview) {
-          // Extraction complete — bank row present? → waitlist; absent → bank-details.
-          setTarget((await userHasLandlordBankRow(userId))
+          // Extraction complete — bank-details gate decides waitlist vs bank-details.
+          setTarget((await bankDetailsAreSettled(userId))
             ? '/(waitlist)'
             : '/(agreement)/add-bank-details');
         } else {
@@ -543,8 +525,8 @@ export default function Index() {
             // persisted state may still have both fields set.
             uploadState.dismissedExtractionId !== uploadState.extractionId
           ) {
-            // Upload done — bank row present? → waitlist; absent → bank-details.
-            setTarget((await userHasLandlordBankRow(userId))
+            // Upload done — bank-details gate decides waitlist vs bank-details.
+            setTarget((await bankDetailsAreSettled(userId))
               ? '/(waitlist)'
               : '/(agreement)/add-bank-details');
           } else {

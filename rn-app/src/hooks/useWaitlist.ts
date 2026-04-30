@@ -27,6 +27,7 @@ import {
 import { useAuthStore } from '../stores/auth';
 import { useAuthContext } from '../providers/AuthProvider';
 import { useRealtimeQuery } from './useRealtimeQuery';
+import { supabase } from '../services/supabase/client';
 
 // ==============================================
 // QUERY KEYS
@@ -336,16 +337,34 @@ export function useWaitlist(options: UseWaitlistStatusOptions = {}) {
   // but the name was saved to user_metadata during sign-up.
   // NEVER call supabase.auth.getSession() — it triggers _callRefreshToken()
   // which races with autoRefreshToken causing spurious SIGNED_OUT events.
+  // Final fallback: query users.first_name when neither store nor session
+  // metadata holds a name (e.g., user_metadata not seeded by older sign-ups).
   const [sessionName, setSessionName] = useState('');
   useEffect(() => {
-    if (!authUserName && authSession) {
-      const name = authSession.user?.user_metadata?.name;
-      if (name) {
-        setSessionName(name);
-        // Also sync back to auth store so other screens pick it up
-        useAuthStore.getState().setUserName(name);
-      }
+    if (authUserName) return;
+    const metaName = authSession?.user?.user_metadata?.name;
+    if (metaName) {
+      setSessionName(metaName);
+      useAuthStore.getState().setUserName(metaName);
+      return;
     }
+    const userId = authSession?.user?.id;
+    if (!userId) return;
+    let cancelled = false;
+    (async () => {
+      const { data } = await supabase
+        .from('users')
+        .select('first_name,last_name')
+        .eq('id', userId)
+        .maybeSingle();
+      if (cancelled || !data) return;
+      const fallback = [data.first_name, data.last_name].filter(Boolean).join(' ').trim();
+      if (fallback) {
+        setSessionName(fallback);
+        useAuthStore.getState().setUserName(fallback);
+      }
+    })();
+    return () => { cancelled = true; };
   }, [authUserName, authSession]);
 
   // Status query

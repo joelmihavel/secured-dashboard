@@ -39,6 +39,11 @@ interface UploadState {
   /** User ID that owns this upload state. Used to detect cross-user state
    *  leakage (e.g., device shared between users or stale Keychain data). */
   ownerId: string | null;
+  /** Set to true once the user has successfully verified + confirmed
+   *  landlord bank details. The journey router uses this as the gate
+   *  for moving past /(agreement)/add-bank-details into /(waitlist) or
+   *  /(main) — a partial bank_accounts row is no longer enough. */
+  bankDetailsCompleted: boolean;
   _hasHydrated: boolean;
 }
 
@@ -47,6 +52,7 @@ interface UploadActions {
   setExtractionId: (id: string) => void;
   setPhase: (phase: UploadPhase) => void;
   setError: (code: string, message: string) => void;
+  setBankDetailsCompleted: (v: boolean) => void;
   prepareForReupload: (params: {
     extractionId?: string | null;
     fileName?: string | null;
@@ -146,6 +152,7 @@ const initialState: UploadState = {
   errorMessage: null,
   dismissedExtractionId: null,
   ownerId: null,
+  bankDetailsCompleted: false,
   _hasHydrated: false,
 };
 
@@ -200,6 +207,11 @@ export const useUploadStore = create<UploadStore>()(
           state.lastUpdatedAt = Date.now();
         }),
 
+      setBankDetailsCompleted: (v) =>
+        set((state) => {
+          state.bankDetailsCompleted = v;
+        }),
+
       prepareForReupload: ({ extractionId, fileName, errorCode = 'REUPLOAD_REQUIRED', errorMessage }) =>
         set((state) => {
           const dismissedId = extractionId ?? state.extractionId;
@@ -238,6 +250,7 @@ export const useUploadStore = create<UploadStore>()(
           state.errorCode = null;
           state.errorMessage = null;
           state.ownerId = null;
+          state.bankDetailsCompleted = false;
           // Note: _hasHydrated is NOT reset — it stays true once set
         }),
 
@@ -282,6 +295,7 @@ export const useUploadStore = create<UploadStore>()(
         errorMessage: state.errorMessage,
         dismissedExtractionId: state.dismissedExtractionId,
         ownerId: state.ownerId,
+        bankDetailsCompleted: state.bankDetailsCompleted,
       }),
       migrate: (persisted, version) => {
         // Version 0 (or unknown): nuke to defaults — forced update gives clean slate
@@ -295,6 +309,7 @@ export const useUploadStore = create<UploadStore>()(
             errorMessage: null,
             dismissedExtractionId: null,
             ownerId: null,
+            bankDetailsCompleted: false,
           };
         }
         return persisted as Partial<UploadState>;

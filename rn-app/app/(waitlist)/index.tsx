@@ -760,7 +760,7 @@ export default function WaitlistScreen() {
               {'\n'}
               <Text inherit style={styles.drawerTitleAccent}>Invite Code</Text>
             </Text>
-            <Text style={styles.drawerSubtitle}>(+{referralSpots} spots)</Text>
+            <Text style={styles.drawerSubtitle}>(Get pre-approved access)</Text>
           </View>
 
           <View style={styles.drawerDivider} />
@@ -871,12 +871,14 @@ const styles = StyleSheet.create({
     width: FIGMA.layout.contentWidth,
     alignSelf: 'center',
     gap: FIGMA.layout.headerGap,
+    alignItems: 'center',
   },
 
   // Logo container - Frame 1686557264 (node 41:11215)
   logoContainer: {
     width: s(32),
     height: s(38),
+    alignSelf: 'center',
   },
 
   // Text block - Frame 2095586319 (node 41:11217)
@@ -884,6 +886,7 @@ const styles = StyleSheet.create({
   textBlock: {
     width: FIGMA.layout.contentWidth,
     gap: FIGMA.layout.textGap,
+    alignItems: 'center',
   },
 
   // Title base - node 41:11218
@@ -894,6 +897,7 @@ const styles = StyleSheet.create({
     fontSize: 28,
     lineHeight: 36,
     letterSpacing: -0.6,
+    textAlign: 'center',
   },
 
   // Title gray part - "Welcome,"
@@ -1125,12 +1129,14 @@ const styles = StyleSheet.create({
   drawerHeader: {
     paddingHorizontal: 24,
     gap: 4,
+    alignItems: 'center',
   },
   drawerTitle: {
     fontFamily: 'PlusJakartaSans-Regular',
     fontSize: 28,
     lineHeight: 36,
     letterSpacing: -1,
+    textAlign: 'center',
   },
   drawerTitleWhite: { color: colors.white },
   drawerTitleAccent: { color: colors.brand[500] },
@@ -1140,6 +1146,7 @@ const styles = StyleSheet.create({
     lineHeight: 18,
     color: colors.neutral[500],
     marginTop: 4,
+    textAlign: 'center',
   },
   drawerDivider: {
     height: StyleSheet.hairlineWidth,
@@ -1156,14 +1163,16 @@ const styles = StyleSheet.create({
     fontSize: 12,
     lineHeight: 16,
     color: colors.neutral[600],
-    alignSelf: 'flex-start',
+    alignSelf: 'center',
+    textAlign: 'center',
   },
   drawerDescription: {
     fontFamily: 'PlusJakartaSans-Regular',
     fontSize: 14,
     lineHeight: 20,
     color: colors.white,
-    alignSelf: 'flex-start',
+    alignSelf: 'center',
+    textAlign: 'center',
   },
   drawerSuccessBanner: {
     width: '100%',

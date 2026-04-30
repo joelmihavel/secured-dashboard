@@ -56,6 +56,7 @@ import { isReviewMode } from '@/src/review/reviewMode';
 import { isJourneyMode } from '@/src/review/journeyMode';
 import { addBreadcrumb } from '@/src/config/sentry';
 import { useUploadStore } from '@/src/stores/upload';
+import { bankDetailsAreSettled } from '@/src/services/agreement/bankDetailsGate';
 
 const LAST_ROUTE_KEY = 'flent_last_journey_target';
 
@@ -83,22 +84,17 @@ async function resolvePostOtpTarget(userId: string): Promise<string> {
 
     switch (data.user_status) {
       case 'approved': {
-        // Confirm tenancy exists, then route by bank-row presence.
+        // Confirm tenancy exists, then route by the bank-details gate.
         const { data: tenancyRow } = await supabase
           .from('tenancies')
           .select('id')
           .eq('user_id', userId)
           .maybeSingle();
         if (!tenancyRow) return '/(waitlist)'; // Safety net for broken state
-        // Bank row present → /(main); absent (legacy skip cohort) → bank-details.
-        const { data: bankRow } = await supabase
-          .from('bank_accounts')
-          .select('id')
-          .eq('user_id', userId)
-          .eq('party_type', 'landlord')
-          .limit(1)
-          .maybeSingle();
-        return bankRow ? '/(main)' : '/(agreement)/add-bank-details';
+        // Bank-details fully settled → /(main); otherwise force the form.
+        return (await bankDetailsAreSettled(userId))
+          ? '/(main)'
+          : '/(agreement)/add-bank-details';
       }
       case 'active':
         return '/(main)';
@@ -120,17 +116,12 @@ async function resolvePostOtpTarget(userId: string): Promise<string> {
           });
           return '/(agreement)/upload';
         }
-        // Bank-row check covers the legacy skip cohort: waitlisted user with no
-        // bank row gets force-routed to bank-details regardless of any persisted
-        // bankStepCompleted=true on the upload store.
-        const { data: bankRow } = await supabase
-          .from('bank_accounts')
-          .select('id')
-          .eq('user_id', userId)
-          .eq('party_type', 'landlord')
-          .limit(1)
-          .maybeSingle();
-        return bankRow ? '/(waitlist)' : '/(agreement)/add-bank-details';
+        // Bank-details gate: waitlisted user without a settled bank entry
+        // (no row OR row from verifyBank but never confirmed) gets force-
+        // routed to bank-details. Settled = flag + verified row.
+        return (await bankDetailsAreSettled(userId))
+          ? '/(waitlist)'
+          : '/(agreement)/add-bank-details';
       }
       case 'not_eligible':
         return '/(waitlist)';
