@@ -346,7 +346,7 @@ export default function InviteLandlordIntroScreen() {
         importantForAccessibility="no"
       />
       <View style={StyleSheet.absoluteFill} pointerEvents="none">
-        <DottedGridPattern dotOpacity={0.08} animated={false} fadeMask={false} />
+        <DottedGridPattern dotOpacity={0.08} fadeMask={false} />
       </View>
 
       <ScrollView

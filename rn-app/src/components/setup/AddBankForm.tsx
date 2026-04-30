@@ -740,7 +740,7 @@ export default function AddBankScreen() {
         accessibilityElementsHidden
         importantForAccessibility="no"
       />
-      <DottedGridPattern dotOpacity={0.08} fadeMask={false} animated={false} />
+      <DottedGridPattern dotOpacity={0.08} fadeMask={false} />
       <KeyboardAvoidingView
         style={styles.flex}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}

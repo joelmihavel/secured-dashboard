@@ -11,8 +11,14 @@ import React from 'react';
 import { Stack } from 'expo-router';
 
 import { colors } from '@/src/theme';
+import { useUtilityOperators } from '@/src/hooks';
 
 export default function SetupLayout() {
+  // Warm the electricity-operators cache as soon as the user enters the setup
+  // flow, so by the time they reach Verify-Your-Address the BESCOM record is
+  // already resolved and the optimistic stub swaps over invisibly.
+  useUtilityOperators();
+
   return (
     <Stack
       screenOptions={{

@@ -53,6 +53,14 @@ import Animated, { useSharedValue, useAnimatedStyle, withTiming } from 'react-na
 import type { UtilityOperator, SetupError } from '@/src/types/setup';
 import { colors } from '@/src/theme';
 
+// Optimistic default shown before the operator API resolves. Replaced silently
+// with the canonical record once useUtilityOperators() returns.
+const BESCOM_STUB: UtilityOperator = {
+  operatorCode: 'BESC',
+  operatorName: 'Bangalore Electricity Supply Co. Ltd.',
+  state: 'Karnataka',
+};
+
 // Figma exact color values from 1-34343 blueprint
 const FIGMA_COLORS = {
   background: colors.black[700],
@@ -78,7 +86,12 @@ export default function AddUtilityScreen() {
   const { tenancy } = useDashboard();
   const { data: operators, isLoading: operatorsLoading, isError: operatorsError, refetch: refetchOperators } = useUtilityOperators();
 
-  const [selectedOperator, setSelectedOperator] = useState<UtilityOperator | null>(null);
+  // Pre-seed with a BESCOM stub so the selector shows the correct text on first
+  // paint (no "Select Operator" placeholder flash). The effect below silently
+  // swaps in the canonical API record once operators resolve, or clears the
+  // stub if the API doesn't return BESCOM.
+  const [selectedOperator, setSelectedOperator] = useState<UtilityOperator | null>(BESCOM_STUB);
+  const [operatorConfirmed, setOperatorConfirmed] = useState(false);
   const [consumerNumber, setConsumerNumber] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [apiError, setApiError] = useState<string | null>(null);
@@ -100,21 +113,21 @@ export default function AddUtilityScreen() {
     };
   });
 
-  // Set default operator to BESCOM / Bangalore Electricity when operators are loaded
+  // Replace the BESCOM stub with the canonical API record once operators load.
+  // Skips if the user has already confirmed a selection. If the API doesn't
+  // return BESCOM, clear the stub so the user is forced to pick.
   React.useEffect(() => {
-    if (operators && !selectedOperator) {
-      const name = (n: string) => n.toUpperCase();
-      const defaultOp = operators.find(op =>
-        name(op.operatorName).includes('BESCOM') ||
-        name(op.operatorName).includes('BESSCOM') ||
-        name(op.operatorName).includes('BANGALORE ELECTRICITY') ||
-        op.operatorCode === 'BESC'
-      );
-      if (defaultOp) {
-        setSelectedOperator(defaultOp);
-      }
-    }
-  }, [operators, selectedOperator]);
+    if (!operators || operatorConfirmed) return;
+    const name = (n: string) => n.toUpperCase();
+    const defaultOp = operators.find(op =>
+      name(op.operatorName).includes('BESCOM') ||
+      name(op.operatorName).includes('BESSCOM') ||
+      name(op.operatorName).includes('BANGALORE ELECTRICITY') ||
+      op.operatorCode === 'BESC'
+    );
+    setSelectedOperator(defaultOp ?? null);
+    setOperatorConfirmed(true);
+  }, [operators, operatorConfirmed]);
 
   const landlordApproved = tenancy?.verification_status?.landlord_approved ?? false;
   landlordApprovedRef.current = landlordApproved;
@@ -140,6 +153,7 @@ export default function AddUtilityScreen() {
 
   const handleSelectOperator = useCallback((operator: UtilityOperator) => {
     setSelectedOperator(operator);
+    setOperatorConfirmed(true);
     setShowOperatorPicker(false);
     setErrors((prev) => { const { operator: _, ...rest } = prev; return rest; });
     setApiError(null);
@@ -205,7 +219,9 @@ export default function AddUtilityScreen() {
     );
   }, [validateForm, verifyUtility, selectedOperator, consumerNumber, tenancy?.id]);
 
-  const isFormValid = !!selectedOperator && validateConsumerNumber(consumerNumber);
+  // Block submit until we've matched the stub against the real operator list —
+  // submitting with the stub's 'BESC' code would fail if API uses a different code.
+  const isFormValid = !!selectedOperator && operatorConfirmed && validateConsumerNumber(consumerNumber);
   const operatorDisplayName = selectedOperator?.operatorName ?? 'Select Operator';
 
   return (
