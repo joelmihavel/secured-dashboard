@@ -24,7 +24,16 @@
 import React, { memo, useMemo } from 'react';
 import { View, StyleSheet, Text as RNText } from 'react-native';
 import Svg, { Path, Line, G } from 'react-native-svg';
+import { Skeleton } from 'moti/skeleton';
 import { sv } from '@/src/theme/scale';
+import { colors as themeColors } from '@/src/theme';
+
+/** Shimmer colors matched to the gauge text area (sits on screen bg #131313). */
+const SKELETON_COLORS: string[] = [
+  themeColors.black[500],
+  themeColors.black[400],
+  themeColors.black[500],
+];
 
 // ============================================
 // FIGMA EXTRACTED CONSTANTS
@@ -121,6 +130,11 @@ export interface ProgressArcProps {
   total: number;
   label?: string;
   testID?: string;
+  /** When true, hide the progress fill + count text and show a skeleton in
+   *  the count's place. Used while waitlist status is fetching — without
+   *  this, the gauge briefly reads "0 / 500 members onboarded" which is
+   *  misleading. */
+  loading?: boolean;
 }
 
 // ============================================
@@ -185,6 +199,7 @@ function ProgressArcComponent({
   current,
   total,
   testID,
+  loading = false,
 }: Omit<ProgressArcProps, 'label'>) {
   const progress = Math.min(current / Math.max(total, 1), 1);
 
@@ -212,8 +227,9 @@ function ProgressArcComponent({
             strokeLinecap="round"
           />
 
-          {/* Progress ring arc — node 41:11545 */}
-          {progress > 0 && (
+          {/* Progress ring arc — node 41:11545. Hidden while loading so the
+              gauge doesn't briefly render at 0%. */}
+          {!loading && progress > 0 && (
             <Path
               d={progressPath}
               fill="none"
@@ -224,21 +240,31 @@ function ProgressArcComponent({
           )}
         </Svg>
 
-        {/* Members text — node 41: sv(11546), centered within gauge */}
+        {/* Members text — node 41: sv(11546), centered within gauge.
+            Replaced by a skeleton while waitlist status is fetching. */}
         <View
           style={[
             styles.textContainer,
             { left: TEXT_REL_X, top: TEXT_REL_Y, width: TEXT_W, height: TEXT_H },
           ]}
         >
-          <RNText style={styles.membersText}>
-            <RNText style={styles.textGray}>
-              {current} / {total}{'  '}
+          {loading ? (
+            <Skeleton.Group show={true}>
+              <View style={styles.skeletonStack}>
+                <Skeleton width={120} height={16} radius={4} colors={SKELETON_COLORS} />
+                <Skeleton width={90} height={14} radius={4} colors={SKELETON_COLORS} />
+              </View>
+            </Skeleton.Group>
+          ) : (
+            <RNText style={styles.membersText}>
+              <RNText style={styles.textGray}>
+                {current} / {total}{'  '}
+              </RNText>
+              <RNText style={styles.textOrange}>
+                {'members\nonboarded'}
+              </RNText>
             </RNText>
-            <RNText style={styles.textOrange}>
-              {'members\nonboarded'}
-            </RNText>
-          </RNText>
+          )}
         </View>
       </View>
     </View>
@@ -269,6 +295,11 @@ const styles = StyleSheet.create({
   textContainer: {
     position: 'absolute',
     justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  skeletonStack: {
+    gap: 4,
     alignItems: 'center',
   },
 

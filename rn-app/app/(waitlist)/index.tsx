@@ -637,6 +637,7 @@ export default function WaitlistScreen() {
             <ProgressArc
               current={membersOnboarded}
               total={totalSlots}
+              loading={isLoading || !status}
             />
           </Animated.View>
 

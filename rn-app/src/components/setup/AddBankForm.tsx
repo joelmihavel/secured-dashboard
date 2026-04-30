@@ -702,9 +702,9 @@ export default function AddBankScreen({ preWaitlist = false }: AddBankProps) {
               </Text>
             ) : (
               <Text style={styles.heading}>
-                <Text inherit style={styles.headingWhite}>Enter your</Text>
+                <Text inherit style={styles.headingWhite}>Enter your Landlord&apos;s</Text>
                 {'\n'}
-                <Text inherit style={styles.headingAccent}>Landlord&apos;s bank details</Text>
+                <Text inherit style={styles.headingAccent}>bank details</Text>
               </Text>
             )}
             {allVerified && verifiedName ? (
@@ -972,13 +972,18 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   heading: {
-    // Figma 4651:76469 — 28/40/-1 (was 32, which made "Landlord's bank details"
-    // wrap onto two lines on smaller devices).
+    // Figma 4651:76469 — 28/40/-1. Tightened lineHeight to 34 so the two
+    // heading lines sit closer. Dropped the -1 tracking entirely — at 28pt
+    // it visibly squashed words together. Wrap is "Enter your Landlord's"
+    // / "bank details" (line break is in JSX).
     fontFamily: 'PlusJakartaSans-Regular',
-    fontSize: 28, lineHeight: 40, letterSpacing: -1,
+    fontSize: 28, lineHeight: 34, letterSpacing: 0.8,
   },
-  headingWhite: { color: colors.white },
-  headingAccent: { color: colors.brand[500] },
+  // letterSpacing is repeated on the inner spans because nested <Text>
+  // doesn't always inherit it from the parent on iOS — without this, bumping
+  // styles.heading.letterSpacing has no visible effect.
+  headingWhite: { color: colors.white, letterSpacing: 0.8 },
+  headingAccent: { color: colors.brand[500], letterSpacing: 0.8 },
   subtitleText: {
     fontFamily: 'PlusJakartaSans-Regular',
     fontSize: 13, lineHeight: 18,
