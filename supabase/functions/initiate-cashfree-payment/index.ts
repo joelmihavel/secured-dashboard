@@ -37,6 +37,55 @@ import { createOrder, CashfreeError } from "../_shared/cashfree-pg-vendors.ts";
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const BUILD_MARKER = "2026-03-27T16:00-cf-v3-clean";
 
+// Flat cashback promo — layered on top of the 1% instant discount.
+// Mirror of initiate-payment's logic so PayU and Cashfree apply the
+// SAME bonus deduction. Driven by `app_config.flat_bonus_promo`
+// (read per request, real-time).
+type FlatBonusPromo = {
+  enabled: boolean;
+  rent_month: string | null;
+  amount_paise: number;
+  min_payment_paise: number;
+};
+
+const FLAT_BONUS_PROMO_FALLBACK: FlatBonusPromo = {
+  enabled: false,
+  rent_month: null,
+  amount_paise: 100000,
+  min_payment_paise: 3000000,
+};
+
+async function getFlatBonusPromo(
+  supabase: ReturnType<typeof createServiceClient>,
+): Promise<FlatBonusPromo> {
+  try {
+    const { data } = await supabase.rpc("get_flat_bonus_promo");
+    if (!data || typeof data !== "object") return FLAT_BONUS_PROMO_FALLBACK;
+    const cfg = data as Record<string, unknown>;
+    return {
+      enabled: cfg.enabled === true,
+      rent_month: typeof cfg.rent_month === "string" ? cfg.rent_month : null,
+      amount_paise:
+        Number.isFinite(cfg.amount_paise as number) && (cfg.amount_paise as number) > 0
+          ? (cfg.amount_paise as number)
+          : FLAT_BONUS_PROMO_FALLBACK.amount_paise,
+      min_payment_paise:
+        Number.isFinite(cfg.min_payment_paise as number) && (cfg.min_payment_paise as number) >= 0
+          ? (cfg.min_payment_paise as number)
+          : FLAT_BONUS_PROMO_FALLBACK.min_payment_paise,
+    };
+  } catch (e) {
+    console.error("[initiate-cashfree-payment] get_flat_bonus_promo failed:", e);
+    return FLAT_BONUS_PROMO_FALLBACK;
+  }
+}
+
+function isFlatBonusPromoActive(cfg: FlatBonusPromo, rentMonth: string): boolean {
+  if (!cfg.enabled) return false;
+  if (cfg.rent_month && cfg.rent_month !== rentMonth) return false;
+  return true;
+}
+
 // PG fee rates — read from env vars, fallback to defaults
 function getPgFeeRates(): Record<string, number> {
   return {
@@ -294,6 +343,23 @@ serve(async (req: Request) => {
 
     const cashbackAlreadyApplied = !!cashbackAlreadyGiven;
 
+    // Flat-bonus gate: one-per-(user, rent_month) GLOBALLY across tenancies.
+    // Mirrors the PayU flow in initiate-payment so a user can't double-claim
+    // the bonus by switching gateways mid-flow.
+    const { data: flatBonusAlreadyGivenRow } = await supabase
+      .from("payments")
+      .select("id")
+      .eq("user_id", userId)
+      .eq("payment_month", rentMonthDate)
+      .eq("status", "success")
+      .gt("flat_bonus_paise", 0)
+      .limit(1)
+      .maybeSingle();
+    const flatBonusAlreadyGiven = !!flatBonusAlreadyGivenRow;
+
+    // Realtime promo flag (DB-backed kill switch).
+    const flatBonusPromo = await getFlatBonusPromo(supabase);
+
     // ── DEMO BYPASS ──
     if (await isTestUser(userId, supabase)) {
       const demoTxnId = `DEMO-CF-${crypto.randomUUID()}`;
@@ -381,19 +447,37 @@ serve(async (req: Request) => {
       Math.floor(tenancy.monthly_rent_paise * 0.01)
     );
 
-    let cashbackDiscountPaise = 0;
-    let cashbackEarnedPaise = 0;
+    let onePctDiscount = 0;
     let accumulatedRedeemed = 0;
+    let cashbackEarnedPaise = 0;
 
     if (!isPastCutoff && !cashbackAlreadyApplied) {
       const accumulatedBalance = userProfile?.cashback_balance_paise ?? 0;
-      cashbackDiscountPaise = cashbackOnePct + accumulatedBalance;
-      cashbackDiscountPaise = Math.min(cashbackDiscountPaise, originalRentPaise);
-      accumulatedRedeemed = Math.min(accumulatedBalance, cashbackDiscountPaise - cashbackOnePct);
-      accumulatedRedeemed = Math.max(0, accumulatedRedeemed);
+      const onePctPlusAccum = Math.min(cashbackOnePct + accumulatedBalance, originalRentPaise);
+      onePctDiscount = Math.min(cashbackOnePct, onePctPlusAccum);
+      accumulatedRedeemed = Math.max(0, onePctPlusAccum - onePctDiscount);
       cashbackEarnedPaise = 0; // Never accumulate — always instant discount
     }
 
+    // Flat bonus — eligibility mirrors initiate-payment exactly so PayU
+    // and Cashfree apply identical deductions. Cap leaves at least
+    // GATEWAY_MIN_PAISE (Cashfree minimum order ≈ ₹1) for the gateway.
+    const GATEWAY_MIN_PAISE = 100;
+    let flatBonusDiscount = 0;
+    if (
+      !isPastCutoff &&
+      !flatBonusAlreadyGiven &&
+      isFlatBonusPromoActive(flatBonusPromo, rent_month) &&
+      originalRentPaise >= flatBonusPromo.min_payment_paise
+    ) {
+      const headroom =
+        originalRentPaise - onePctDiscount - accumulatedRedeemed - GATEWAY_MIN_PAISE;
+      if (headroom > 0) {
+        flatBonusDiscount = Math.min(flatBonusPromo.amount_paise, headroom);
+      }
+    }
+
+    const cashbackDiscountPaise = onePctDiscount + accumulatedRedeemed + flatBonusDiscount;
     const netRentPaise = originalRentPaise - cashbackDiscountPaise;
 
     const feeRateKey = (payment_method === "card" && card_type) ? `${card_type}_card` : payment_method;
@@ -434,6 +518,7 @@ serve(async (req: Request) => {
         cashback_applied_paise: cashbackDiscountPaise,
         cashback_earned_paise: cashbackEarnedPaise,
         accumulated_redeemed_paise: accumulatedRedeemed,
+        flat_bonus_paise: flatBonusDiscount,
         intended_cashback_paise: cashbackEarnedPaise,
         total_amount_paise: totalAmountPaise,
         landlord_payout_paise: landlordPayoutPaise,
@@ -472,6 +557,7 @@ serve(async (req: Request) => {
       cashback_discount_paise: cashbackDiscountPaise,
       cashback_earned_paise: cashbackEarnedPaise,
       accumulated_redeemed_paise: accumulatedRedeemed,
+      flat_bonus_paise: flatBonusDiscount,
       total_amount_paise: totalAmountPaise,
       landlord_payout_paise: landlordPayoutPaise,
       payment_method,
@@ -540,6 +626,7 @@ serve(async (req: Request) => {
       cashback_applied_paise: cashbackDiscountPaise,
       cashback_earned_paise: cashbackEarnedPaise,
       accumulated_redeemed_paise: accumulatedRedeemed,
+      flat_bonus_paise: flatBonusDiscount,
       net_rent_paise: netRentPaise,
       pg_fee_paise: 0,
       estimated_pg_fee_paise: convenienceFeePaise,
