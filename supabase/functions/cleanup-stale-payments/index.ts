@@ -304,66 +304,47 @@ async function handleCashbackOnSuccess(
 ): Promise<void> {
   const userId = payment.user_id;
 
-  // PATH A: Verified — log instant discount
+  // Mirror the live-webhook ledger shape: split cashback_applied_paise into
+  // its 'discount' (1%) and 'flat_bonus' components so audit/display stays
+  // consistent across reconciliation and live paths.
   if (payment.cashback_applied_paise > 0) {
-    try {
-      await supabase.from("cashback_ledger").insert({
-        user_id: userId,
-        transaction_type: "discount",
-        amount_paise: payment.cashback_applied_paise,
-        balance_after_paise: 0,
-        payment_id: payment.id,
-        tenancy_id: payment.tenancy_id,
-        reference_type: "payment",
-        reference_id: payment.id,
-        description: "1% instant discount on rent payment (reconciliation)",
-      });
-    } catch (e) {
-      console.error("Failed to log cashback discount on reconciliation:", e);
-    }
-  }
+    const flatBonusPaise = (payment as Record<string, any>).flat_bonus_paise ?? 0;
+    const onePctPaise = payment.cashback_applied_paise - flatBonusPaise;
 
-  // PATH A2: Debit accumulated cashback redeemed (independent of instant discount)
-  const accumulatedUsed = payment.accumulated_redeemed_paise ?? 0;
-  if (accumulatedUsed > 0) {
-    try {
-      await supabase.from("cashback_ledger").insert({
-        user_id: userId,
-        transaction_type: "applied",
-        amount_paise: accumulatedUsed,
-        balance_after_paise: 0,
-        payment_id: payment.id,
-        tenancy_id: payment.tenancy_id,
-        reference_type: "payment",
-        reference_id: payment.id,
-        description: "Accumulated cashback redeemed (reconciliation)",
-      });
-      await supabase.rpc("decrement_cashback_balance", {
-        p_user_id: userId,
-        p_amount: accumulatedUsed,
-      });
-    } catch (e) {
-      console.error("Failed to debit accumulated cashback on reconciliation:", e);
+    if (onePctPaise > 0) {
+      try {
+        await supabase.from("cashback_ledger").insert({
+          user_id: userId,
+          transaction_type: "discount",
+          amount_paise: onePctPaise,
+          balance_after_paise: 0,
+          payment_id: payment.id,
+          tenancy_id: payment.tenancy_id,
+          reference_type: "payment",
+          reference_id: payment.id,
+          description: "1% instant discount on rent payment (reconciliation)",
+        });
+      } catch (e) {
+        console.error("Failed to log discount on reconciliation:", e);
+      }
     }
-  }
 
-  // PATH B: Unverified — credit earned cashback to balance
-  if (payment.cashback_earned_paise > 0) {
-    try {
-      await supabase.from("cashback_ledger").insert({
-        user_id: userId,
-        transaction_type: "earned",
-        amount_paise: payment.cashback_earned_paise,
-        balance_after_paise: 0,
-        payment_id: payment.id,
-        tenancy_id: payment.tenancy_id,
-        reference_type: "payment",
-        reference_id: payment.id,
-        description: "1% cashback earned (reconciliation)",
-      });
-      // sync_cashback_balance trigger on cashback_ledger handles users.cashback_balance_paise
-    } catch (e) {
-      console.error("Failed to credit earned cashback on reconciliation:", e);
+    if (flatBonusPaise > 0) {
+      try {
+        await supabase.from("cashback_ledger").insert({
+          user_id: userId,
+          transaction_type: "flat_bonus",
+          amount_paise: flatBonusPaise,
+          balance_after_paise: 0,
+          payment_id: payment.id,
+          tenancy_id: payment.tenancy_id,
+          reference_type: "payment",
+          reference_id: payment.id,
+          description: "Flat cashback (promo) (reconciliation)",
+        });
+      } catch (e) {
+        console.error("Failed to log flat bonus on reconciliation:", e);
+      }
     }
   }
 }

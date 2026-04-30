@@ -143,46 +143,33 @@ async function initiatePayURefund(
 // ==============================================
 
 async function reverseCashback(
-  supabase: ReturnType<typeof createServiceClient>,
-  userId: string,
-  paymentId: string,
-  cashbackEarnedPaise: number,
-  cashbackAppliedPaise: number
+  _supabase: ReturnType<typeof createServiceClient>,
+  _userId: string,
+  _paymentId: string,
+  _cashbackEarnedPaise: number,
+  _cashbackAppliedPaise: number,
 ): Promise<number> {
-  let totalReversed = 0;
-
-  // 1. Reverse earned cashback (if any)
-  if (cashbackEarnedPaise > 0) {
-    // Get current balance
-    const { data: currentBalance } = await supabase.rpc("get_cashback_balance", {
-      p_user_id: userId,
-    });
-
-    const newBalance = Math.max((currentBalance ?? 0) - cashbackEarnedPaise, 0);
-
-    await supabase.from("cashback_ledger").insert({
-      user_id: userId,
-      transaction_type: "reversal",
-      amount_paise: cashbackEarnedPaise,
-      balance_after_paise: newBalance,
-      payment_id: paymentId,
-      description: "Cashback reversed due to refund",
-    });
-
-    // Debit the reversed amount from user's cashback balance
-    await supabase.rpc("decrement_cashback_balance", {
-      p_user_id: userId,
-      p_amount: cashbackEarnedPaise,
-    });
-
-    totalReversed += cashbackEarnedPaise;
-  }
-
-  // 2. If cashback was applied to this payment, it's already factored into refund amount
-  // The user gets back what they paid, which was reduced by cashback
-  // We don't re-credit applied cashback as that would be double-dipping
-
-  return totalReversed;
+  // Under the instant-discount-only model, refund handling is structural,
+  // not ledger-side:
+  //
+  //   * cashback_applied_paise reduced what the user paid at the gateway
+  //     up front. On refund the user gets back exactly that lower amount —
+  //     no double-dipping is possible. There is nothing to "reverse" in
+  //     the wallet because the discount never credited the wallet.
+  //   * cashback_earned_paise (legacy "earn into wallet") is permanently
+  //     pinned at 0 by initiate-payment under the new model. The single
+  //     legacy outlier wallet (₹330 on prod) was drained by migration
+  //     20260501130000_cashback_rules_revamp.sql.
+  //
+  // The auto_reverse_cashback_on_refund trigger (post-fix) still inserts a
+  // 'reversal' row for any pre-existing 'earned' ledger entries on a
+  // refunded payment — purely defensive for legacy data; no new payment
+  // will exercise that path.
+  //
+  // We keep this function as a no-op stub so existing callers (the refund
+  // success block) compile without churn. cashback_reversed_paise on the
+  // refunds row stays at 0, which is the correct value for the new model.
+  return 0;
 }
 
 // ==============================================

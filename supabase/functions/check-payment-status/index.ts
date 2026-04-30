@@ -161,60 +161,7 @@ serve(async (req: Request) => {
             .maybeSingle();
 
           if (lockResult && newStatus === "success") {
-            // Cashback handling (same as PayU reconciliation below)
-            if (payment.cashback_applied_paise > 0) {
-              try {
-                await supabase.from("cashback_ledger").insert({
-                  user_id: userId,
-                  transaction_type: "discount",
-                  amount_paise: payment.cashback_applied_paise,
-                  balance_after_paise: 0,
-                  payment_id: payment.id,
-                  tenancy_id: payment.tenancy_id,
-                  reference_type: "payment",
-                  reference_id: payment.id,
-                  description: "1% instant discount on rent payment (reconciliation)",
-                });
-                const accumulatedUsed = payment.accumulated_redeemed_paise ?? 0;
-                if (accumulatedUsed > 0) {
-                  await supabase.from("cashback_ledger").insert({
-                    user_id: userId,
-                    transaction_type: "applied",
-                    amount_paise: accumulatedUsed,
-                    balance_after_paise: 0,
-                    payment_id: payment.id,
-                    tenancy_id: payment.tenancy_id,
-                    reference_type: "payment",
-                    reference_id: payment.id,
-                    description: "Accumulated cashback redeemed (reconciliation)",
-                  });
-                  await supabase.rpc("decrement_cashback_balance", {
-                    p_user_id: userId,
-                    p_amount: accumulatedUsed,
-                  });
-                }
-              } catch (e) {
-                console.error("Failed to log cashback discount on Cashfree reconciliation:", e);
-              }
-            }
-
-            if (payment.cashback_earned_paise > 0) {
-              try {
-                await supabase.from("cashback_ledger").insert({
-                  user_id: userId,
-                  transaction_type: "earned",
-                  amount_paise: payment.cashback_earned_paise,
-                  balance_after_paise: 0,
-                  payment_id: payment.id,
-                  tenancy_id: payment.tenancy_id,
-                  reference_type: "payment",
-                  reference_id: payment.id,
-                  description: "1% cashback earned (reconciliation)",
-                });
-              } catch (e) {
-                console.error("Failed to credit earned cashback on Cashfree reconciliation:", e);
-              }
-            }
+            await reconcileCashbackLedger(supabase, payment, userId, "Cashfree reconciliation");
           }
 
           // Update local payment object for response
@@ -278,62 +225,7 @@ serve(async (req: Request) => {
               .maybeSingle();
 
             if (lockResult && mappedStatus === "success") {
-              // PATH A: Verified — log instant discount + debit accumulated
-              if (payment.cashback_applied_paise > 0) {
-                try {
-                  await supabase.from("cashback_ledger").insert({
-                    user_id: userId,
-                    transaction_type: "discount",
-                    amount_paise: payment.cashback_applied_paise,
-                    balance_after_paise: 0,
-                    payment_id: payment.id,
-                    tenancy_id: payment.tenancy_id,
-                    reference_type: "payment",
-                    reference_id: payment.id,
-                    description: "1% instant discount on rent payment (reconciliation)",
-                  });
-                  const accumulatedUsed = payment.accumulated_redeemed_paise ?? 0;
-                  if (accumulatedUsed > 0) {
-                    await supabase.from("cashback_ledger").insert({
-                      user_id: userId,
-                      transaction_type: "applied",
-                      amount_paise: accumulatedUsed,
-                      balance_after_paise: 0,
-                      payment_id: payment.id,
-                      tenancy_id: payment.tenancy_id,
-                      reference_type: "payment",
-                      reference_id: payment.id,
-                      description: "Accumulated cashback redeemed (reconciliation)",
-                    });
-                    await supabase.rpc("decrement_cashback_balance", {
-                      p_user_id: userId,
-                      p_amount: accumulatedUsed,
-                    });
-                  }
-                } catch (e) {
-                  console.error("Failed to log cashback discount on reconciliation:", e);
-                }
-              }
-
-              // PATH B: Unverified — credit earned cashback to balance
-              if (payment.cashback_earned_paise > 0) {
-                try {
-                  await supabase.from("cashback_ledger").insert({
-                    user_id: userId,
-                    transaction_type: "earned",
-                    amount_paise: payment.cashback_earned_paise,
-                    balance_after_paise: 0,
-                    payment_id: payment.id,
-                    tenancy_id: payment.tenancy_id,
-                    reference_type: "payment",
-                    reference_id: payment.id,
-                    description: "1% cashback earned (reconciliation)",
-                  });
-                  // sync_cashback_balance trigger on cashback_ledger handles users.cashback_balance_paise
-                } catch (e) {
-                  console.error("Failed to credit earned cashback on reconciliation:", e);
-                }
-              }
+              await reconcileCashbackLedger(supabase, payment, userId, "PayU reconciliation");
             }
 
             // Update local payment object for response
@@ -395,6 +287,74 @@ serve(async (req: Request) => {
     return handleError(error, req.headers.get("x-request-id") ?? undefined);
   }
 });
+
+// ==============================================
+// CASHBACK LEDGER RECONCILIATION
+// ==============================================
+
+/**
+ * Mirrors the live-webhook ledger shape: split cashback_applied_paise into
+ * 'discount' (1% portion) and 'flat_bonus' rows. Used by both Cashfree and
+ * PayU verify-on-stuck reconciliation paths.
+ *
+ * Idempotent via the partial unique indexes
+ *   idx_cashback_ledger_unique_discount   (payment_id, transaction_type='discount')
+ *   idx_cashback_ledger_unique_flat_bonus (payment_id, transaction_type='flat_bonus')
+ * — duplicate inserts from a webhook + reconciliation race are rejected at
+ * the DB level.
+ */
+async function reconcileCashbackLedger(
+  supabase: ReturnType<typeof createServiceClient>,
+  payment: {
+    id: string;
+    tenancy_id: string | null;
+    cashback_applied_paise: number;
+    flat_bonus_paise?: number;
+  },
+  userId: string,
+  context: string,
+): Promise<void> {
+  if (!payment.cashback_applied_paise || payment.cashback_applied_paise <= 0) return;
+
+  const flatBonusPaise = payment.flat_bonus_paise ?? 0;
+  const onePctPaise = payment.cashback_applied_paise - flatBonusPaise;
+
+  if (onePctPaise > 0) {
+    try {
+      await supabase.from("cashback_ledger").insert({
+        user_id: userId,
+        transaction_type: "discount",
+        amount_paise: onePctPaise,
+        balance_after_paise: 0,
+        payment_id: payment.id,
+        tenancy_id: payment.tenancy_id,
+        reference_type: "payment",
+        reference_id: payment.id,
+        description: `1% instant discount on rent payment (${context})`,
+      });
+    } catch (e) {
+      console.error(`Failed to log discount on ${context}:`, e);
+    }
+  }
+
+  if (flatBonusPaise > 0) {
+    try {
+      await supabase.from("cashback_ledger").insert({
+        user_id: userId,
+        transaction_type: "flat_bonus",
+        amount_paise: flatBonusPaise,
+        balance_after_paise: 0,
+        payment_id: payment.id,
+        tenancy_id: payment.tenancy_id,
+        reference_type: "payment",
+        reference_id: payment.id,
+        description: `Flat cashback (promo) (${context})`,
+      });
+    } catch (e) {
+      console.error(`Failed to log flat bonus on ${context}:`, e);
+    }
+  }
+}
 
 // ==============================================
 // PAYU VERIFY PAYMENT API

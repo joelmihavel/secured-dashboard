@@ -675,53 +675,13 @@ async function checkRefundEligibility(
           refund_initiated_at: new Date().toISOString(),
         }).eq("id", payment.id);
 
-        // Reverse earned cashback (unverified users had balance credited on success webhook)
-        if (payment.cashback_earned_paise && payment.cashback_earned_paise > 0) {
-          try {
-            await supabase.rpc("decrement_cashback_balance", {
-              p_user_id: payment.user_id,
-              p_amount: payment.cashback_earned_paise,
-            });
-            await supabase.from("cashback_ledger").insert({
-              user_id: payment.user_id,
-              transaction_type: "reversal",
-              amount_paise: payment.cashback_earned_paise,
-              balance_after_paise: 0, // approximate — RPC handles actual balance
-              payment_id: payment.id,
-              tenancy_id: payment.tenancy_id,
-              reference_type: "refund",
-              reference_id: payment.id,
-              description: "Cashback reversed — settlement failed auto-refund",
-            });
-            console.log(`[refund] Reversed ${payment.cashback_earned_paise} paise earned cashback for payment ${payment.id}`);
-          } catch (cbErr) {
-            console.error(`[refund] Cashback reversal failed for payment ${payment.id}:`, cbErr);
-          }
-        }
-
-        // Also reverse accumulated cashback that was redeemed in this payment
-        // (the instant 1% discount portion is already reflected in the lower refund amount,
-        //  but the accumulated balance debit needs to be re-credited)
-        const accumulatedUsed = (payment as Record<string, any>).accumulated_redeemed_paise ?? 0;
-        if (accumulatedUsed > 0) {
-          try {
-            // sync_cashback_balance trigger on cashback_ledger handles users.cashback_balance_paise
-            await supabase.from("cashback_ledger").insert({
-              user_id: payment.user_id,
-              transaction_type: "reinstatement",
-              amount_paise: accumulatedUsed,
-              balance_after_paise: 0,
-              payment_id: payment.id,
-              tenancy_id: payment.tenancy_id,
-              reference_type: "refund",
-              reference_id: payment.id,
-              description: "Accumulated cashback reinstated — settlement failed auto-refund",
-            });
-            console.log(`[refund] Reinstated ${accumulatedUsed} paise accumulated cashback for payment ${payment.id}`);
-          } catch (cbErr) {
-            console.error(`[refund] Accumulated cashback reinstatement failed for payment ${payment.id}:`, cbErr);
-          }
-        }
+        // No wallet adjustments needed under the instant-discount-only model.
+        // The user paid (rent − cashback) at the gateway; the auto-refund
+        // returns exactly that amount. The 'discount' / 'flat_bonus' ledger
+        // rows stay as audit-only entries — they never credited the wallet,
+        // so no reversal is required. Legacy 'earned' rows (if any predate
+        // the cutover) are reversed by the auto_reverse_cashback_on_refund
+        // trigger when status flips to 'refunded'.
 
         // Notify user
         const supabaseUrl = getSupabaseUrl();

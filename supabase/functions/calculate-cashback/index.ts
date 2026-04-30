@@ -62,19 +62,19 @@ async function handleGetCashbackSummary(
 
   // Run queries in parallel
   const [
-    discountHistoryResult,
+    savingsHistoryResult,
     lifetimeStatsResult,
     legacyBalanceResult,
   ] = await Promise.all([
-    // Recent discount entries (instant discount audit trail)
+    // Recent savings entries (instant discount + flat bonus audit trail)
     supabase
       .from("cashback_ledger")
       .select("id, transaction_type, amount_paise, payment_id, tenancy_id, description, created_at")
       .eq("user_id", userId)
-      .eq("transaction_type", "discount")
+      .in("transaction_type", ["discount", "flat_bonus"])
       .order("created_at", { ascending: false })
       .limit(20),
-    // Lifetime stats: total discounts + legacy earned/applied
+    // Lifetime stats: total savings + legacy earned/applied
     supabase
       .from("cashback_ledger")
       .select("transaction_type, amount_paise")
@@ -83,11 +83,12 @@ async function handleGetCashbackSummary(
     supabase.rpc("get_available_cashback", { p_user_id: userId }),
   ]);
 
-  const discountHistory = discountHistoryResult.data ?? [];
+  const savingsHistory = savingsHistoryResult.data ?? [];
   const stats = lifetimeStatsResult.data ?? [];
   const legacyBalance = legacyBalanceResult.data ?? 0;
 
-  // Calculate savings stats
+  // Calculate savings stats. 'discount' (1%) and 'flat_bonus' both
+  // represent money the user did NOT pay (instant gateway-side discount).
   let totalDiscountSavings = 0;
   let totalLegacyEarned = 0;
   let totalLegacyRedeemed = 0;
@@ -95,6 +96,7 @@ async function handleGetCashbackSummary(
   for (const entry of stats) {
     switch (entry.transaction_type) {
       case "discount":
+      case "flat_bonus":
         totalDiscountSavings += entry.amount_paise;
         break;
       case "earned":
@@ -109,9 +111,9 @@ async function handleGetCashbackSummary(
     }
   }
 
-  const formattedHistory = discountHistory.map((entry: any) => ({
+  const formattedHistory = savingsHistory.map((entry: any) => ({
     id: entry.id,
-    type: "discount",
+    type: entry.transaction_type, // 'discount' | 'flat_bonus'
     amount_paise: entry.amount_paise,
     amount: entry.amount_paise / 100,
     payment_id: entry.payment_id,
@@ -126,7 +128,7 @@ async function handleGetCashbackSummary(
       discount_rate: 0.01,
       total_savings_paise: totalDiscountSavings,
       total_savings: totalDiscountSavings / 100,
-      discount_count: discountHistory.length,
+      discount_count: savingsHistory.length,
       // Legacy wallet data (for transition period)
       legacy_wallet_balance_paise: legacyBalance,
       legacy_wallet_balance: legacyBalance / 100,
