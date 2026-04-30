@@ -294,16 +294,18 @@ serve(async (req: Request) => {
     const landlordUserId = tenancy?.landlord_user_id ?? null;
     let landlordBankMasked: string | null = null;
     let landlordBankHolderName: string | null = null;
+    let landlordBankPanMasked: string | null = null;
     if (landlordUserId) {
       const { data: landlordBank } = await supabase
         .from("bank_accounts")
-        .select("account_number_masked, account_holder_name")
+        .select("account_number_masked, account_holder_name, pan_number_masked")
         .eq("user_id", landlordUserId)
         .eq("party_type", "landlord")
         .eq("is_primary", true)
         .maybeSingle();
       landlordBankMasked = landlordBank?.account_number_masked ?? null;
       landlordBankHolderName = landlordBank?.account_holder_name ?? null;
+      landlordBankPanMasked = landlordBank?.pan_number_masked ?? null;
     }
 
     // Calculate tax breakdown
@@ -383,7 +385,12 @@ serve(async (req: Request) => {
           ? tenancy.landlord_name
           : landlordBankHolderName ?? "N/A",
         bank_account_masked: landlordBankMasked,
-        pan_masked: tenancy?.landlord_pan_masked ?? null,
+        // Prefer the agreement-extracted PAN (tenancies.landlord_pan_masked).
+        // Fall back to the PAN captured during landlord bank verification
+        // (bank_accounts.pan_number_masked) — this is the same person, and
+        // verify-pan populates it on every successful match. Receipt rows
+        // show "—" only when neither source has run yet.
+        pan_masked: tenancy?.landlord_pan_masked ?? landlordBankPanMasked ?? null,
       },
 
       agreement: {

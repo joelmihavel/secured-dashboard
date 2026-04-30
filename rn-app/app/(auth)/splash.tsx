@@ -114,7 +114,7 @@ const styles = StyleSheet.create({
   welcomeTo: {
     fontFamily: 'PlusJakartaSans-Regular',
     fontSize: sf(22),
-    lineHeight: sf(35),
+    lineHeight: sf(28),
     color: colors.white,
   },
   brandName: {
@@ -123,7 +123,7 @@ const styles = StyleSheet.create({
     lineHeight: sf(56),
     letterSpacing: -1,
     color: colors.brand[500],
-    marginTop: sv(4),
+    marginTop: sv(-2),
   },
   byFlentRow: {
     flexDirection: 'row',

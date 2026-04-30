@@ -42,12 +42,45 @@ import { supabase } from '@/src/services/supabase/client';
 
 const LAST_ROUTE_KEY = 'flent_last_journey_target';
 
-/** Routes that are valid for caching. Must match the write set in the
- *  navigation effect below. Agreement routes are transient — they re-resolve
- *  from user_status on each cold start and should NOT be cached. */
+/** Routes the journey-router is allowed to write to + read from the cache.
+ *  Used for two purposes:
+ *   1. Offline fallback when queryUserStatus fails — any route here is a
+ *      reasonable degraded landing, better than dumping the user on /upload.
+ *   2. Fast-path display on cold-start — but ONLY for routes also in
+ *      FAST_PATH_ROUTES (see below).
+ *  Agreement routes (/intro, /upload, /add-bank-details) are always re-resolved
+ *  from user_status — they're transient by nature. */
 const VALID_CACHED_ROUTES = new Set<string>([
   '/(main)',
   '/(waitlist)',
+]);
+
+/** Routes safe to immediately navigate to on cold-start without waiting for
+ *  backend validation. MUST be states whose user_status cannot flip in the
+ *  background — otherwise the user briefly sees the cached route before the
+ *  background validation re-routes (the "flash" bug).
+ *
+ *  Only /(main) qualifies:
+ *    - 'active' user_status doesn't auto-rollback while the app is closed.
+ *    - The dashboard refetches on mount, so any stale data is refreshed.
+ *    - AuthProvider.isUserDeletedOnServer catches banned/deleted users on
+ *      cold-start and signs them out gracefully.
+ *
+
+ *  Transient routes that DON'T qualify (and would flash if cached as fast-path):
+ *    - /(waitlist): admin approval flips waitlisted → approved while app
+ *      is closed. Cached /(waitlist) → background validation finds
+ *      'approved' → re-route via decideApprovedTarget (bank-row check).
+ *
+ *  /(waitlist) still lives in VALID_CACHED_ROUTES (so the cache is written
+ *  + used as offline fallback), it just doesn't fast-path-display. The
+ *  trade-off: stable waitlisted users see a 1-3s splash on cold start
+ *  instead of an instant cache hit. Worth it to never flash the wrong
+ *  screen on a state-flip. The /(agreement)/add-bank-details route is
+ *  never cached at all (agreement routes always re-resolve from
+ *  user_status). */
+const FAST_PATH_ROUTES = new Set<string>([
+  '/(main)',
 ]);
 
 /** Read cached route, validating it belongs to the given user (M-3 fix).
@@ -325,11 +358,14 @@ export default function Index() {
       }
 
       // ── FAST PATH: Use cached last route for instant navigation ──
-      // Avoids 1-3s of network calls (getUser + PostgREST) on every app open.
-      // The cached route is validated in background; if stale, user gets
-      // redirected on next render cycle.
+      // Only kicks in for terminal/stable routes (FAST_PATH_ROUTES — currently
+      // just /(main)). Transient route /(waitlist) skips the fast-path and
+      // waits for background validation, otherwise it flashes the wrong
+      // screen when user_status flipped while app was closed (e.g.
+      // waitlisted → approved by admin). Avoids 1-3s of network calls
+      // (getUser + PostgREST) on every app open for active users.
       const cachedRoute = await readCachedRoute(userId);
-      if (cachedRoute) {
+      if (cachedRoute && FAST_PATH_ROUTES.has(cachedRoute)) {
         console.log('[journey-router] Fast path: using cached route', cachedRoute);
         setTarget(cachedRoute);
         setJourneyResolved(true);
