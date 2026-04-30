@@ -46,8 +46,10 @@ import { typography } from '@/src/theme/typography';
 import { spacing, radius } from '@/src/theme';
 import type { TimelineItemData } from '@/src/components/waitlist/ApplicationTimeline';
 import { useUploadStore } from '@/src/stores/upload';
+import { useAuthStore } from '@/src/stores/auth';
 import { resetForReupload } from '@/src/services/agreement/resetForReupload';
 import { useAuthContext } from '@/src/providers';
+import { bankDetailsAreSettled } from '@/src/services/agreement/bankDetailsGate';
 
 // ============================================
 // FIGMA EXTRACTED CONSTANTS
@@ -302,6 +304,43 @@ export default function WaitlistScreen() {
     routerRef.current.replace('/(waitlist)/rejected');
   }, []);
 
+  // Auth session — needed by the bank-verify gate below as well as the
+  // requiresReupload effect further down. Destructured up here (was previously
+  // declared mid-component) so the gate can read userId on mount.
+  const { session: authSession } = useAuthContext();
+
+  // ── BANK-VERIFY GATE ──────────────────────────────────────────────
+  // Per product flow, /(waitlist) is reachable only AFTER the user has
+  // verified a landlord bank account (signup → upload → bank verify →
+  // /(waitlist) → claim VIP). This screen can still be reached via deep
+  // links (`/waitlist`, `/agreement/success`, etc — see useDeepLink.ts)
+  // and push-notification taps (`under_review` route) that bypass the
+  // journey router. Without this guard, an unverified-bank user landing
+  // here could enter a VIP code and be promoted server-side. The DB-level
+  // claim_invite_code guard now also blocks the claim, but redirecting
+  // here gives a cleaner UX (the user sees the bank screen, not a confusing
+  // "Please verify bank" toast on a screen they shouldn't be on).
+  //
+  // Skips the gate for `not_eligible` users: those are terminally rejected
+  // and should see the waitlist-rejected screen regardless of bank state.
+  const userIdForGate = authSession?.user?.id;
+  const userStatusForGate = useAuthStore((s) => s.userStatus);
+  const bankGateRedirectedRef = useRef(false);
+  useEffect(() => {
+    if (!userIdForGate || bankGateRedirectedRef.current) return;
+    if (userStatusForGate === 'not_eligible') return; // rejected users allowed
+    let cancelled = false;
+    (async () => {
+      const settled = await bankDetailsAreSettled(userIdForGate);
+      if (cancelled || bankGateRedirectedRef.current) return;
+      if (!settled) {
+        bankGateRedirectedRef.current = true;
+        routerRef.current.replace('/(agreement)/add-bank-details' as never);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [userIdForGate, userStatusForGate]);
+
   // Redirect to approved screen when approved
   useEffect(() => {
     if (viewState === 'approved' && !isNavigating) {
@@ -326,7 +365,6 @@ export default function WaitlistScreen() {
     }
   }, [viewState, navigateToRejected, isNavigating, transitionOpacity]);
 
-  const { session: authSession } = useAuthContext();
   useEffect(() => {
     if (!status?.requiresReupload || isNavigating) {
       return;
@@ -657,7 +695,7 @@ export default function WaitlistScreen() {
               </>
             ) : (
               <PrimaryButton
-                title="Get early access faster"
+                title="Apply invite code"
                 onPress={() => setIsInviteDrawerOpen(true)}
                 showDivider={true}
                 testID="get-early-access-faster"
@@ -671,41 +709,6 @@ export default function WaitlistScreen() {
             style={styles.timelineCard}
           >
             <ApplicationTimeline items={timelineItems} />
-          </Animated.View>
-
-          {/* "Once you're in / get started in 3 steps" — Figma 4651:78274.
-              When referral applied, heading + step labels shift slightly per Figma 4651:88588. */}
-          <Animated.View
-            entering={FadeInDown.delay(FIGMA.animation.stagger * 5).duration(FIGMA.animation.duration)}
-            style={styles.stepsSection}
-          >
-            <Text style={styles.stepsHeading}>
-              <Text inherit style={styles.stepsHeadingWhite}>Once you&apos;re in</Text>
-              {'\n'}
-              <Text inherit style={styles.stepsHeadingAccent}>
-                {referralApplied || inviteCodeClaimed
-                  ? 'keep these things handy'
-                  : 'get started in 3 steps'}
-              </Text>
-            </Text>
-
-            <View style={styles.stepsRow}>
-              {/* Single continuous track sits BEHIND the dots and runs from
-                  the centre of the first dot to the centre of the last
-                  dot — Figma 4651:78274 shows one connecting line, not
-                  per-segment dashes. */}
-              <View style={styles.stepsTrack} pointerEvents="none" />
-              <StepDot index={1} label="Landlord's bank details and PAN" />
-              <StepDot index={2} label="Home electricity bill" />
-              <StepDot
-                index={3}
-                label={
-                  referralApplied || inviteCodeClaimed
-                    ? "Landlord's contact details"
-                    : 'Landlord invitation'
-                }
-              />
-            </View>
           </Animated.View>
 
           {/* Benefits Carousel — Figma 4109:24285 */}
@@ -760,7 +763,7 @@ export default function WaitlistScreen() {
               {'\n'}
               <Text inherit style={styles.drawerTitleAccent}>Invite Code</Text>
             </Text>
-            <Text style={styles.drawerSubtitle}>(Get pre-approved access)</Text>
+            <Text style={styles.drawerSubtitle}>For pre-approved access</Text>
           </View>
 
           <View style={styles.drawerDivider} />
@@ -818,17 +821,6 @@ export default function WaitlistScreen() {
           </View>
         </View>
       </BottomSheet>
-    </View>
-  );
-}
-
-/** "Once you're in" step dot — orange filled when index === 1, hollow otherwise. */
-function StepDot({ index, label }: { index: number; label: string }) {
-  const isFirst = index === 1;
-  return (
-    <View style={styles.stepDotWrap}>
-      <View style={[styles.stepDot, isFirst ? styles.stepDotActive : styles.stepDotInactive]} />
-      <Text style={styles.stepLabel}>{label}</Text>
     </View>
   );
 }
@@ -1045,79 +1037,6 @@ const styles = StyleSheet.create({
     lineHeight: 20,
     color: FIGMA.colors.textSecondary,
     textAlign: 'center',
-  },
-
-  // "Once you're in" steps section — Figma 4651:78274
-  stepsSection: {
-    width: '100%',
-    gap: 24,
-    paddingTop: 8,
-    // No extra marginVertical — parent's contentGap already separates this
-    // from the timeline above and benefits carousel below. The previous
-    // 24-each-side margin compounded with contentGap=56 to ~80px of air
-    // on each side, which read as a layout hole.
-  },
-  stepsHeading: {
-    fontFamily: FIGMA.typography.subtitle.fontFamily,
-    fontSize: 22,
-    lineHeight: 28,
-    letterSpacing: -0.6,
-  },
-  stepsHeadingWhite: { color: colors.white },
-  stepsHeadingAccent: { color: colors.brand[500] },
-  stepsRow: {
-    // Position parent for the absolute track; flex-row layout for the
-    // three step columns evenly distributed across the width.
-    position: 'relative',
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-  },
-  stepDotWrap: {
-    flex: 1,
-    alignItems: 'center',
-    gap: 8,
-    // Dot must paint above the absolute track behind the row.
-    zIndex: 1,
-  },
-  stepDot: {
-    width: 14,
-    height: 14,
-    borderRadius: 7,
-    borderWidth: 1.5,
-    // Card-like background so the track line is visually clipped to the
-    // edge of the circle (the line passes behind the dot, not through it).
-    backgroundColor: FIGMA.colors.screenBackground,
-  },
-  // Active step — solid orange fill with matching border
-  stepDotActive: {
-    backgroundColor: colors.brand[500],
-    borderColor: colors.brand[500],
-  },
-  // Inactive — hollow circle with orange ring per Figma 4651:78274
-  // (the brand-orange ring is what makes the connector dots feel like
-  //  part of the accent journey).
-  stepDotInactive: {
-    borderColor: colors.brand[500],
-  },
-  stepLabel: {
-    fontFamily: FIGMA.typography.label.fontFamily,
-    fontSize: 12,
-    lineHeight: 16,
-    color: colors.neutral[500],
-    textAlign: 'center',
-  },
-  stepsTrack: {
-    // Single horizontal hairline behind the dots. With three flex:1 step
-    // columns, dot 1 centre sits at 16.67% from the left and dot 3 centre
-    // at 16.67% from the right, so anchoring left/right at 1/6 keeps the
-    // track flush with the dot centres — no per-segment connectors, no
-    // visible gaps. Top = (dotHeight - lineHeight) / 2 = 6.5 ≈ 6.
-    position: 'absolute',
-    top: 6,
-    left: '16.67%',
-    right: '16.67%',
-    height: 1,
-    backgroundColor: colors.black[400],
   },
 
   // Invite Code Drawer — Figma 4651:98884 / 109194 / 119504 / 129815
