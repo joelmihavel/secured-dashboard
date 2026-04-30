@@ -11,7 +11,7 @@ import { View, StyleSheet, Image, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import Svg, { Path, Defs, ClipPath, Rect } from 'react-native-svg';
+import Svg, { Path } from 'react-native-svg';
 
 import { Screen, Logo, Text, PrimaryButton } from '@/src/components';
 import { BgLine, MarqueeStack, Plus } from '@/src/components/auth/landing-decor';
@@ -71,10 +71,11 @@ export default function WelcomeScreen() {
             <Paperclip />
           </View>
 
-          {/* Folded-corner flap — top-right */}
-          <View style={styles.cornerFlapSlot} pointerEvents="none">
-            <CornerFlap />
-          </View>
+          {/* Folded-corner flap removed — both layers (the rounded back
+              and the underside-triangle) read as a dark patch pasted on
+              the card instead of a paper fold. The card's plain rounded
+              corner is cleaner. Re-introduce only with a Figma-faithful
+              implementation that doesn't leave a visible filled region. */}
 
           {/* Orange + markers — Figma 4651:75968 (39.5, 286) bottom-left,
               4651:75970 (307.5, 99) top-right. Both relative to inner card content. */}
@@ -121,26 +122,6 @@ function Paperclip() {
       <Path
         d="M12.0001 20.8239C12.0001 15.5157 12.1835 10.1714 12.0001 4.86609C11.857 0.724895 6.1445 -1.82115 3.22934 1.58326C2.3663 2.59126 2.21666 3.8089 2.20034 5.06962C2.17106 7.33714 2.20034 9.60693 2.20034 11.8746C2.20034 17.1129 2.0327 22.3811 2.20034 27.6169C2.36222 32.6708 9.82718 32.346 10.1837 27.4668C10.5562 22.3691 10.2333 30.9269 10.2333 25.8133C10.2333 25.0327 9.02024 25.0314 9.02024 25.8133C9.02024 29.978 8.97062 20.3351 8.97062 24.4997C8.97062 25.6405 9.18746 27.0356 8.87054 28.1604C8.05334 31.0607 3.54926 30.6122 3.41342 27.617C3.2297 23.5658 3.41342 19.4643 3.41342 15.4098C3.41342 11.8165 3.1589 8.12025 3.41342 4.53381C3.65042 1.19457 8.21282 0.0791738 10.1784 2.81721C10.8033 3.68769 10.7871 4.32034 10.7871 5.29294C10.7871 9.74602 10.7871 14.1992 10.7871 18.6524C10.7871 23.1055 10.7871 27.5588 10.7871 32.0119C10.7871 33.8964 10.7515 35.9761 9.22094 37.3217C7.48142 38.8511 4.38386 38.6648 2.74286 37.1162C0.414742 34.919 1.30802 29.6012 1.30802 26.7913C1.30802 22.2481 1.30802 17.705 1.30802 13.1619C1.30802 12.3813 0.0949403 12.3801 0.0949403 13.1619C0.0949403 18.1381 0.0949403 23.1143 0.0949403 28.0905C0.0949403 31.1371 -0.592898 35.4086 1.73426 37.8296C3.22178 39.377 5.73938 39.923 7.7981 39.3878C10.4531 38.6976 11.7851 36.3359 11.9769 33.722C12.2895 29.4637 12.0001 25.0897 12.0001 20.8239Z"
         fill={colors.black[400]}
-      />
-    </Svg>
-  );
-}
-
-/** Folded-corner / dog-ear at top-right of card — page bg shows through with a triangle of card-back. */
-function CornerFlap() {
-  const size = s(54);
-  return (
-    <Svg width={size} height={size} viewBox="0 0 54 54" fill="none">
-      <Defs>
-        <ClipPath id="flap-clip">
-          <Rect width={54} height={54} fill="white" />
-        </ClipPath>
-      </Defs>
-      {/* Rounded back showing page bg through the fold */}
-      <Path
-        d="M0 12C0 5.37258 5.37258 0 12 0H42C48.6274 0 54 5.37258 54 12V42C54 48.6274 48.6274 54 42 54H12C5.37258 54 0 48.6274 0 42V12Z"
-        fill={colors.black[700]}
-        clipPath="url(#flap-clip)"
       />
     </Svg>
   );
@@ -199,11 +180,6 @@ const styles = StyleSheet.create({
     height: sv(41.4),
     transform: [{ rotate: '-16.5deg' }],
     overflow: 'visible',
-  },
-  cornerFlapSlot: {
-    position: 'absolute',
-    right: 0,
-    top: 0,
   },
   // Heading
   headingBlock: {
