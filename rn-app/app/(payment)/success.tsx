@@ -100,6 +100,30 @@ const ReceiptRow = memo(({ label, value, variant = 'default' }: ReceiptRowProps)
 ));
 ReceiptRow.displayName = 'ReceiptRow';
 
+/** UTR row — shows the settlement UTR once Cashfree has paid out, or a
+ *  "Settlement Pending" badge while we're still waiting. */
+const UtrRow = memo(({ utr }: { utr: string | null }) => {
+  const isSettled = !!utr;
+  return (
+    <View style={styles.row}>
+      <View style={styles.rowLabelGroup}>
+        <HashIcon />
+        <Text style={styles.rowLabel}>UTR</Text>
+      </View>
+      <View style={[styles.utrBadge, isSettled ? styles.utrBadgeSettled : styles.utrBadgePending]}>
+        <Text
+          style={styles.utrBadgeText}
+          numberOfLines={1}
+          ellipsizeMode="middle"
+        >
+          {isSettled ? utr : 'Settlement Pending'}
+        </Text>
+      </View>
+    </View>
+  );
+});
+UtrRow.displayName = 'UtrRow';
+
 const Divider = () => <View style={styles.divider} />;
 
 export default function PaymentSuccessScreen() {
@@ -253,7 +277,7 @@ export default function PaymentSuccessScreen() {
         cashbackTotalRupees: cb,
         date: formatDisplayDate(rp.paidAt),
         method: rp.paymentMethod ?? (method ? method.toUpperCase() : '—'),
-        transactionId: rp.transactionId || transactionId || '—',
+        utr: rp.utr || null,
         netRentPaid: formatRupees(net),
         landlordName: landlord.name,
         panCard: landlord.panMasked || '—',
@@ -270,13 +294,13 @@ export default function PaymentSuccessScreen() {
       cashbackTotalRupees: cbNum,
       date: formatDisplayDate(new Date().toISOString()),
       method: method ? method.toUpperCase() : '—',
-      transactionId: transactionId || '—',
+      utr: null as string | null,
       netRentPaid: formatRupees(net),
       landlordName: params.landlordName || '—',
       panCard: '—',
       agreementId: params.agreementId ? `#${params.agreementId}` : '—',
     };
-  }, [receiptData, amount, cashback, method, transactionId, params.landlordName, params.agreementId]);
+  }, [receiptData, amount, cashback, method, params.landlordName, params.agreementId]);
 
   const headerTopOffset = Math.max(insets.top, sv(12));
 
@@ -333,7 +357,7 @@ export default function PaymentSuccessScreen() {
             )}
             <ReceiptRow label="Date" value={displayData.date} />
             <ReceiptRow label="Method" value={displayData.method} />
-            <ReceiptRow label="Transaction ID" value={displayData.transactionId} />
+            <UtrRow utr={displayData.utr} />
             <Divider />
             <ReceiptRow label="Net Rent Paid" value={displayData.netRentPaid} variant="highlight" />
             <Divider />
@@ -463,6 +487,29 @@ const styles = StyleSheet.create({
     color: C.highlight,
     fontSize: sf(14),
     lineHeight: sf(20),
+  },
+
+  // UTR badge — solid color rectangle, rounded corners. Red while settlement
+  // is pending, green once the UTR lands. Caps width at 55% (same as
+  // rowValue) so a long UTR truncates from the middle instead of pushing
+  // the row off-screen.
+  utrBadge: {
+    paddingVertical: sv(4),
+    paddingHorizontal: s(10),
+    borderRadius: 6,
+    maxWidth: '55%',
+  },
+  utrBadgePending: {
+    backgroundColor: colors.error.radix, // #E5484D
+  },
+  utrBadgeSettled: {
+    backgroundColor: colors.success.approved, // #06C270
+  },
+  utrBadgeText: {
+    fontFamily: 'PlusJakartaSans-Medium',
+    fontSize: sf(11),
+    lineHeight: sf(16),
+    color: C.white,
   },
 
   // Divider — solid hairline matching Figma
