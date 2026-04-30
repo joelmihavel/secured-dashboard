@@ -29,7 +29,6 @@ export default function AgreementLayout() {
       <Stack.Screen name="review" />
       <Stack.Screen name="upload-review" />
       <Stack.Screen name="upload-edit" />
-      <Stack.Screen name="setup-intro" />
       <Stack.Screen name="add-bank-details" />
     </Stack>
   );

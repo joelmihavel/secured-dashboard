@@ -22,7 +22,6 @@ import {
   Platform,
   Animated,
   Easing,
-  TouchableOpacity,
   Linking,
   Image,
 } from 'react-native';
@@ -210,12 +209,19 @@ const infoStyles = StyleSheet.create({
 
 // ── Main Screen ──────────────────────────────────────────────────────────
 
-export interface AddBankProps {
-  /** Pre-waitlist mode: no tenancy_id, skip option, navigate to waitlist */
-  preWaitlist?: boolean;
+// "Pre-waitlist" means: no tenancy yet, post-submit goes to /(waitlist).
+// "Post-waitlist" (i.e., user_status='approved'|'active') means: tenancy
+// exists, post-submit goes to /(main). The screen derives this from the
+// cached user_status on the auth store — single source of truth — instead
+// of accepting a prop. See useAuthStore.userStatus (populated by the
+// journey router and OTP handler after every queryUserStatus).
+function deriveIsPreWaitlist(userStatus: string | null): boolean {
+  // Null / unknown defaults to pre-waitlist (the safe path for new users).
+  // Post-waitlist requires an explicit approved/active read.
+  return userStatus !== 'approved' && userStatus !== 'active';
 }
 
-export default function AddBankScreen({ preWaitlist = false }: AddBankProps) {
+export default function AddBankScreen() {
   const router = useRouter();
   const routerRef = useRef(router);
   routerRef.current = router;
@@ -273,15 +279,21 @@ export default function AddBankScreen({ preWaitlist = false }: AddBankProps) {
   // Screen state
   const [screenState, setScreenState] = useState<ScreenState>('form');
 
-  // Upload store — needed by redirect effect + handleConfirm + handleSkip
+  // Upload store — needed by redirect effect + handleConfirm
   const completeBankStep = useUploadStore((s) => s.completeBankStep);
+
+  // user_status (cached by journey router / OTP handler) determines whether
+  // we treat this mount as pre-waitlist or post-approval. Single source of
+  // truth — replaces the old isPreWaitlist prop.
+  const userStatus = useAuthStore((s) => s.userStatus);
+  const userId = useAuthStore((s) => s.userId);
+  const isPreWaitlist = deriveIsPreWaitlist(userStatus);
 
   // If bank was ALREADY verified when this screen mounted (e.g., deferred name
   // match succeeded in background), and the user landed here via journey
-  // router (no back stack, ex: cold-start straight onto /add-bank), redirect
-  // away. If the user pushed here from another screen (e.g. tapped "Add
-  // landlord details" on setup-intro), DO NOT redirect — they explicitly
-  // came to view/edit, bouncing them to the dashboard surprises them.
+  // router (no back stack, ex: cold-start straight onto /add-bank-details),
+  // redirect away. If the user pushed here from another screen, DO NOT
+  // redirect — they explicitly came to view/edit, bouncing them surprises them.
   // Pre-waitlist → waitlist (user isn't approved yet, dashboard would be empty).
   // Post-approval → main dashboard.
   const bankAlreadyVerifiedOnMount = useRef(
@@ -293,7 +305,7 @@ export default function AddBankScreen({ preWaitlist = false }: AddBankProps) {
   useEffect(() => {
     if (bankAlreadyVerifiedOnMount.current && !hasRedirectedRef.current) {
       hasRedirectedRef.current = true;
-      if (preWaitlist) {
+      if (isPreWaitlist) {
         completeBankStep();
         routerRef.current.replace('/(waitlist)' as never);
       } else {
@@ -311,8 +323,6 @@ export default function AddBankScreen({ preWaitlist = false }: AddBankProps) {
   //   failed/extraction_failed/invalid_document → flip screenState to
   //                                               'agreement_invalid' overlay
   const extraction = useExtractionStatus({ enabled: true });
-  const userStatus = useAuthStore((s) => s.userStatus);
-  const userId = useAuthStore((s) => s.userId);
 
   const hasExtractionContext = !!extraction.extractionId || !!extraction.data;
   const isExtractionInFlight =
@@ -416,7 +426,7 @@ export default function AddBankScreen({ preWaitlist = false }: AddBankProps) {
   const firePanVerification = useCallback((bankAccountId: string) => {
     const tid = tenancyIdRef.current;
     const pan = panCardRef.current;
-    if (!preWaitlist && !tid) return;
+    if (!isPreWaitlist && !tid) return;
     verifyPanMutateRef.current(
       { ...(tid && { tenancyId: tid }), panNumber: pan.toUpperCase(), bankAccountId },
       {
@@ -446,7 +456,7 @@ export default function AddBankScreen({ preWaitlist = false }: AddBankProps) {
         },
       }
     );
-  }, [preWaitlist]); // Only preWaitlist (stable prop) — tenancyId + panCard read from refs
+  }, [isPreWaitlist]); // Only isPreWaitlist (stable for a given user) — tenancyId + panCard read from refs
 
   // ── Refs for handleSubmit ──
   // handleSubmit is only invoked on user tap, so all rapidly-changing values
@@ -473,7 +483,7 @@ export default function AddBankScreen({ preWaitlist = false }: AddBankProps) {
   validateAllFieldsRef.current = validateAllFields;
 
   // Submit handler — branches by payment method
-  // CRITICAL: Only preWaitlist (stable prop) and firePanVerification (stable
+  // CRITICAL: Only isPreWaitlist (stable for a given user) and firePanVerification (stable
   // callback) in deps. Everything else is read from refs at invocation time.
   // This breaks the re-render cascade: useDashboard refetch -> tenancy changes ->
   // firePanVerification recreated -> handleSubmit recreated -> 50+ renders.
@@ -483,7 +493,7 @@ export default function AddBankScreen({ preWaitlist = false }: AddBankProps) {
       return;
     }
     const tid = tenancyIdRef.current;
-    if (!preWaitlist && !tid) {
+    if (!isPreWaitlist && !tid) {
       setApiError('No active tenancy found.');
       return;
     }
@@ -573,39 +583,19 @@ export default function AddBankScreen({ preWaitlist = false }: AddBankProps) {
         }
       );
     }
-  }, [firePanVerification, preWaitlist]);
+  }, [firePanVerification, isPreWaitlist]);
 
-  // "Confirm and continue" → route by user_status (cached in auth store).
-  // Pre-waitlist (signed_up / waitlisted / agreement_confirmed) → /(waitlist).
-  // Post-approval (approved / active) → /(main).
-  // Falls back to the preWaitlist prop if userStatus is null (cold cache before
-  // the journey router has resolved).
+  // "Confirm and continue" → route by isPreWaitlist (derived from userStatus).
+  // Pre-waitlist → /(waitlist). Post-approval → /(main).
   const handleConfirm = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    const isApprovedOrActive = userStatus === 'approved' || userStatus === 'active';
-    const isPreWaitlistByStatus =
-      userStatus === 'signed_up' ||
-      userStatus === 'waitlisted' ||
-      userStatus === 'agreement_confirmed';
-    const target = isApprovedOrActive
-      ? '/(main)'
-      : isPreWaitlistByStatus
-        ? '/(waitlist)'
-        : preWaitlist
-          ? '/(waitlist)'
-          : '/(main)';
-    if (target === '/(waitlist)') {
+    if (isPreWaitlist) {
       completeBankStep();
+      routerRef.current.replace('/(waitlist)' as never);
+    } else {
+      routerRef.current.replace('/(main)' as never);
     }
-    routerRef.current.replace(target as never);
-  }, [userStatus, preWaitlist, completeBankStep]);
-
-  // Skip — pre-waitlist only
-  const handleSkip = useCallback(() => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    completeBankStep();
-    routerRef.current.replace('/(waitlist)' as never);
-  }, [completeBankStep]);
+  }, [isPreWaitlist, completeBankStep]);
 
   // "Try again" on failure screen — reset everything so fields are editable
   const handleRetry = useCallback(() => {
@@ -784,7 +774,7 @@ export default function AddBankScreen({ preWaitlist = false }: AddBankProps) {
                 if (routerRef.current.canGoBack()) {
                   routerRef.current.back();
                 } else {
-                  routerRef.current.replace((preWaitlist ? '/(waitlist)' : '/(main)') as never);
+                  routerRef.current.replace((isPreWaitlist ? '/(waitlist)' : '/(main)') as never);
                 }
               }}
               style={styles.topRowBack}
@@ -972,12 +962,6 @@ export default function AddBankScreen({ preWaitlist = false }: AddBankProps) {
                 onPress={handleSubmit}
                 disabled={!allFieldsFilled || isExtractionInFlight}
               />
-            )}
-
-            {preWaitlist && (
-              <TouchableOpacity onPress={handleSkip} style={styles.skipButton}>
-                <Text style={styles.skipText}>I&apos;ll do this later</Text>
-              </TouchableOpacity>
             )}
 
             <Text style={styles.footerText}>
@@ -1181,20 +1165,6 @@ const styles = StyleSheet.create({
   // Button section — closer to form so it's visible on initial load
   // buttonSection removed — button is now in stickyBottom
 
-  // Skip (pre-waitlist) — inline below form, not sticky
-  skipButton: { paddingVertical: 4, paddingHorizontal: 12 },
-  skipInline: {
-    marginTop: 24,
-    alignSelf: 'center',
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-  },
-  skipText: {
-    fontFamily: 'PlusJakartaSans-Medium',
-    fontSize: 14, lineHeight: 20,
-    color: colors.white,
-    textDecorationLine: 'underline' as const,
-  },
 
   // Bottom helper (replaces footerText for new design)
   bottomHelper: {
