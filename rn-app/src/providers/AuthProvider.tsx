@@ -12,7 +12,7 @@ import React, { createContext, useContext, useEffect, useState, useRef, useMemo,
 import { useRouter } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
 import { env } from '@/src/config/env';
-import { supabase, updateCachedSession, hasPersistedSession } from '@/src/services/supabase/client';
+import { supabase, updateCachedSession, SUPABASE_SESSION_STORAGE_KEY } from '@/src/services/supabase/client';
 import { clearAllStores } from '@/src/stores/resetAll';
 import { registerForPushNotifications } from '@/src/services/notifications';
 import { isReviewMode, deactivateReviewMode } from '@/src/review/reviewMode';
@@ -294,23 +294,24 @@ export function AuthProvider({ children }: AuthProviderProps) {
               return;
             }
 
-            // Safety net: check if a session persists in SecureStore.
+            // Safety net: check if a session persists in SecureStore directly.
             // NEVER use supabase.auth.getSession() here — in auth-js v2.65.1 it
             // calls _callRefreshToken() when the JWT is expired. If the refresh
             // token was consumed during OTA reload (rotation), this triggers
             // _removeSession() → ANOTHER SIGNED_OUT → cascading logout.
-            //
-            // Goes through ExpoSecureStoreAdapter (via hasPersistedSession)
-            // so chunked + generation storage is read correctly. Reading the
-            // base 'supabase.auth.token' key directly returned null even when
-            // a session existed (the SDK derives `sb-<ref>-auth-token` from
-            // the URL and the adapter writes chunks under that prefix), which
-            // caused this safety-net to silently fall through to clearAllStores
-            // — the bug behind the "logged out on cold restart" reports.
+            // Direct SecureStore read is side-effect-free.
             try {
-              if (await hasPersistedSession()) {
-                console.warn('[AuthProvider] SIGNED_OUT ignored -- refresh token still in SecureStore, letting SDK recover');
-                return;
+              const rawSession = await SecureStore.getItemAsync(SUPABASE_SESSION_STORAGE_KEY);
+              if (rawSession) {
+                const parsed = JSON.parse(rawSession);
+                const tokenData = parsed?.currentSession ?? parsed;
+                if (tokenData?.refresh_token) {
+                  // Session still in storage -- the SDK's internal state and SecureStore
+                  // are out of sync (common after OTA reload). Don't sign out; let the
+                  // SDK's auto-refresh recover on the next API call.
+                  console.warn('[AuthProvider] SIGNED_OUT ignored -- refresh token still in SecureStore, letting SDK recover');
+                  return;
+                }
               }
             } catch {
               // SecureStore read failed — proceed with sign-out

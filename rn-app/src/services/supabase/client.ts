@@ -31,43 +31,9 @@ const SUPABASE_ANON_KEY = env.supabaseAnonKey;
  */
 const CHUNK_SIZE = 1800; // leave headroom below the 2048-byte limit
 
-/** Supabase SDK session storage key.
- *  Without an explicit `storageKey` in createClient, the SDK derives this as
- *  `sb-<projectRef>-auth-token` from the URL — NOT the legacy
- *  'supabase.auth.token' that this constant used to expose. Reading from the
- *  wrong key returned null and tripped the SIGNED_OUT safety-net into
- *  clearing valid sessions on transient refresh failures.
- *  Kept exported under the same name for backwards compatibility with
- *  resetAll.ts / installDetection.ts (they need to delete chunks under the
- *  real key on reinstall + sign-out). */
-const SUPABASE_PROJECT_REF = (() => {
-  try {
-    return new URL(SUPABASE_URL).hostname.split('.')[0];
-  } catch {
-    return '';
-  }
-})();
-export const SUPABASE_SESSION_STORAGE_KEY = SUPABASE_PROJECT_REF
-  ? `sb-${SUPABASE_PROJECT_REF}-auth-token`
-  : 'supabase.auth.token'; // last-resort fallback (should never hit at runtime)
-
-/** Non-side-effecting check for whether a persisted session is on disk.
- *  Goes through ExpoSecureStoreAdapter so chunked + generation storage is
- *  read correctly. Use this from the SIGNED_OUT debounce handler instead of
- *  `getSession()` (which would trigger _callRefreshToken) or a direct
- *  SecureStore read at the wrong key. Returns true if a refresh_token is
- *  present in the persisted session blob. */
-export async function hasPersistedSession(): Promise<boolean> {
-  try {
-    const raw = await ExpoSecureStoreAdapter.getItem(SUPABASE_SESSION_STORAGE_KEY);
-    if (!raw) return false;
-    const parsed = JSON.parse(raw);
-    const tokenData = parsed?.currentSession ?? parsed;
-    return !!tokenData?.refresh_token;
-  } catch {
-    return false;
-  }
-}
+/** Supabase SDK session storage key. Must match SDK's internal STORAGE_KEY.
+ *  Exported for use by resetAll.ts and installDetection.ts to avoid hardcoding. */
+export const SUPABASE_SESSION_STORAGE_KEY = 'supabase.auth.token';
 
 /** Read the active generation number (0 if none set) */
 async function readGen(key: string): Promise<number> {
