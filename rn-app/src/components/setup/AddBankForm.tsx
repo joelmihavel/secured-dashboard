@@ -766,8 +766,11 @@ export default function AddBankScreen() {
   }
 
   // ── FAILURE STATE — Figma 4651:140624 ───────────────────────────────────
-  // Full-screen "We couldn't / Verify these Details" with red spinner + Try Again.
+  // Full-screen "We couldn't / verify these details" with red spinner + Try Again.
   // Reached on generic server/network failures; field-specific errors stay in form.
+  // Top-anchored (vs the loading state's vertically-centered column) so longer
+  // error bodies — e.g. AGREEMENT_NOT_PROCESSED — get breathing room above the
+  // CTA without crowding the spinner.
   if (screenState === 'failure') {
     return (
       <View style={styles.container}>
@@ -775,12 +778,12 @@ export default function AddBankScreen() {
         <View style={[styles.loadingLogoRow, { paddingTop: insets.top + 48 }]}>
           <Logo size={40} />
         </View>
-        <View style={styles.loadingContent}>
-          <Text style={styles.loadingTitle}>
-            <Text style={styles.loadingTitleGray}>We couldn&apos;t{'\n'}</Text>
-            <Text style={styles.failureTitleAccent}>Verify these Details</Text>
-          </Text>
-          <VerificationSpinner failed />
+        <View style={styles.failureContent}>
+          <Text style={[styles.loadingTitleGray, styles.titleLine]}>We couldn&apos;t</Text>
+          <Text style={[styles.failureTitleAccent, styles.titleLine]}>verify these details</Text>
+          <View style={styles.failureSpinnerWrap}>
+            <VerificationSpinner failed />
+          </View>
           <Text style={styles.loadingBody}>
             {apiError || 'Please check the details and try again'}
           </Text>
@@ -1082,6 +1085,23 @@ const styles = StyleSheet.create({
     gap: 48, // Figma: Form Container gap=48
     paddingHorizontal: 32,
   },
+  // Failure state container — top-anchored so the long body copy sits above
+  // the CTA with breathing room (the centered loadingContent layout crammed
+  // long error messages against the Try-Again button).
+  failureContent: {
+    flex: 1,
+    alignItems: 'stretch',
+    paddingTop: 96,
+    paddingHorizontal: 32,
+  },
+  titleLine: {
+    textAlign: 'center',
+  },
+  failureSpinnerWrap: {
+    alignItems: 'center',
+    marginTop: 48,
+    marginBottom: 48,
+  },
   loadingTitle: {
     textAlign: 'center',
   },
@@ -1116,6 +1136,7 @@ const styles = StyleSheet.create({
     color: FIGMA.loadingBody, // Figma: #CBCBCB
     textAlign: 'center',
     maxWidth: 273, // Figma: 273px width
+    alignSelf: 'center', // Center the maxWidth box in stretch-alignItems parents
   },
 
   // Logo (legacy — unused after redesign, kept for any other referrers)

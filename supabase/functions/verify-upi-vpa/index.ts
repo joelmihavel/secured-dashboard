@@ -323,7 +323,7 @@ serve(async (req: Request) => {
           code: "AGREEMENT_NOT_PROCESSED",
           message:
             "We couldn't read your landlord's name from your rental agreement. " +
-            "Please ensure your agreement is fully processed and try again.",
+            "Please try again after a few minutes.",
         },
         409
       );
