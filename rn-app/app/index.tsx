@@ -185,14 +185,19 @@ async function queryUserStatus(userId: string): Promise<string | null> {
 }
 
 /**
- * Approved-user routing helper. Returns `/(main)` if the user has a landlord
- * bank-account row, else `/(agreement)/add-bank-details`. Replaces the old
- * setup-intro?context=approved hop.
+ * Approved-user routing helper. Always returns `/(main)`.
+ *
+ * Bank-details verification is now a pre-waitlist requirement (the
+ * /(waitlist) screen's bank gate enforces it — see (waitlist)/index.tsx).
+ * By the time a user has user_status='approved', they have already cleared
+ * that gate, so post-approval routing should never re-route to
+ * /(agreement)/add-bank-details. Doing so caused ping-pong loops with the
+ * /(main) no-tenancy bounce when fresh-approval state hadn't fully
+ * propagated server-side. Kept as a function (rather than inlined) so the
+ * symbol still names the routing decision at the call sites.
  */
-async function decideApprovedTarget(userId: string): Promise<string> {
-  return (await bankDetailsAreSettled(userId))
-    ? '/(main)'
-    : '/(agreement)/add-bank-details';
+async function decideApprovedTarget(_userId: string): Promise<string> {
+  return '/(main)';
 }
 
 /**

@@ -129,12 +129,23 @@ export default function HomeScreen() {
   // users who had already completed upload (e.g. approved/active without
   // tenancy yet — they'd get stuck on upload with a buffering button).
   // Skip in __DEV__ so the dev screen picker can access the dashboard freely.
+  //
+  // Grace window before bouncing: post-approval, the dashboard query can
+  // briefly return stale no_tenancy until the backend's status flip
+  // (waitlisted → approved → active) propagates. Without the delay, the
+  // bounce ping-pongs the user through the journey router back to
+  // /(waitlist)/approved instead of letting the dashboard load. The
+  // refetch + 3s timer give the backend time to catch up; the cleanup
+  // cancels the bounce as soon as a tenancy appears.
   useEffect(() => {
     if (__DEV__) return;
-    if (!isLoading && dashboardState === 'no_tenancy') {
+    if (isLoading || dashboardState !== 'no_tenancy') return;
+    refresh();
+    const timer = setTimeout(() => {
       SecureStore.deleteItemAsync('flent_last_journey_target').catch(() => {});
       routerRef.current.replace('/' as never);
-    }
+    }, 3000);
+    return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isLoading, dashboardState]);
   const user = resolvedData?.user ?? null;

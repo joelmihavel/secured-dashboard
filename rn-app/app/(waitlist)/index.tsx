@@ -323,12 +323,19 @@ export default function WaitlistScreen() {
   //
   // Skips the gate for `not_eligible` users: those are terminally rejected
   // and should see the waitlist-rejected screen regardless of bank state.
+  // Also skips for `approved`/`active`: those users have already cleared the
+  // pre-waitlist bank gate. If they're transiently routed back here (e.g.
+  // /(main) no-tenancy bounce while a status flip is propagating), they
+  // shouldn't be shoved back into pre-waitlist landlord-details — the
+  // approved screen's redirect will land them on /(main) once viewState
+  // resolves.
   const userIdForGate = authSession?.user?.id;
   const userStatusForGate = useAuthStore((s) => s.userStatus);
   const bankGateRedirectedRef = useRef(false);
   useEffect(() => {
     if (!userIdForGate || bankGateRedirectedRef.current) return;
     if (userStatusForGate === 'not_eligible') return; // rejected users allowed
+    if (userStatusForGate === 'approved' || userStatusForGate === 'active') return; // post-waitlist users
     let cancelled = false;
     (async () => {
       const settled = await bankDetailsAreSettled(userIdForGate);

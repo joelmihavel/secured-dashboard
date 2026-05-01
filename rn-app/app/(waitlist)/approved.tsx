@@ -48,8 +48,6 @@ import {
   DottedGridPattern,
 } from '@/src/components';
 import { useWaitlist } from '@/src/hooks';
-import { useAuthStore } from '@/src/stores/auth';
-import { bankDetailsAreSettled } from '@/src/services/agreement/bankDetailsGate';
 import { isJourneyMode, advanceJourneyStage } from '@/src/review/journeyMode';
 import { colors } from '@/src/theme/colors';
 import { typography } from '@/src/theme/typography';
@@ -235,17 +233,12 @@ export default function WaitlistApprovedScreen() {
   }));
 
   // Stable navigation callback for runOnJS (Reanimated v4 requires standalone functions, not method refs).
-  // Use the shared bank-details gate so the rule "bank-details before
-  // anything else" is enforced consistently with the journey router and
-  // post-OTP routing — a partial verifyBank row (or legacy data) does
-  // NOT count as completed.
-  const navigateAfterApproval = useCallback(async () => {
-    const userId = useAuthStore.getState().userId;
-    let target = '/(agreement)/add-bank-details';
-    if (userId && (await bankDetailsAreSettled(userId))) {
-      target = '/(main)';
-    }
-    routerRef.current.replace(target as never);
+  // Bank-details verification is now a pre-waitlist requirement (the
+  // /(waitlist) screen's bank gate enforces it), so anyone reaching the
+  // approved screen has already cleared that gate. Step Inside goes
+  // straight to the dashboard — no fallback to /(agreement)/add-bank-details.
+  const navigateAfterApproval = useCallback(() => {
+    routerRef.current.replace('/(main)' as never);
   }, []);
 
   // Handle "Step Inside" button
