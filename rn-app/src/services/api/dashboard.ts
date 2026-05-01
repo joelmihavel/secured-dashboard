@@ -707,6 +707,22 @@ export function mapCashbackModule(
       ...Array(pending).fill({ status: 'pending' }),
     ];
   }
+  // Trim leading `pending` stamps. `get-payment-stamps` returns one entry
+  // per month of the lease year (oldest → newest), and lease months
+  // before the user's first real activity come back as `pending`. Without
+  // this trim, a tenant who joined in March but whose lease started in
+  // January would see their March (late/on_time/missed) status at bar[2]
+  // with two grey leading bars — the user-perceived "third bar" instead
+  // of the first. Strip those pre-activity pending months so bars start
+  // at the user's first real interaction. We keep MIDDLE and TRAILING
+  // pending entries since those represent the current month (still
+  // within cutoff) or future months yet to come.
+  if (effectiveStamps && effectiveStamps.length > 0) {
+    const firstActiveIdx = effectiveStamps.findIndex((s) => s.status !== 'pending');
+    if (firstActiveIdx > 0) {
+      effectiveStamps = effectiveStamps.slice(firstActiveIdx);
+    }
+  }
   const chartBars = computeChartBars(effectiveStamps);
 
   // ── Announcement pill (above chart) — always shown per Figma ──
