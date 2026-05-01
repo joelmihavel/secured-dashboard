@@ -30,7 +30,6 @@ import {
 import {
   resolveAgreementNames,
   matchAgainstAgreementNames,
-  runOpportunisticNameMatch,
 } from "../_shared/name-match-service.ts";
 import { callPayUValidateVpa } from "../_shared/payu-config.ts";
 import { isTestUser } from "../_shared/demo-helpers.ts";
