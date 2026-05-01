@@ -341,7 +341,7 @@ export default function PaymentSuccessScreen() {
             <Divider />
             <ReceiptRow label="Amount paid" value={displayData.amount} />
             {displayData.flatBonus !== null && (
-              <ReceiptRow label="Flat ₹1000 Cashback" value={displayData.flatBonus} variant="cashback" />
+              <ReceiptRow label="Bonus Cashback" value={displayData.flatBonus} variant="cashback" />
             )}
             {displayData.cashbackApplied !== null && (
               <ReceiptRow
