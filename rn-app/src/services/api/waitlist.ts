@@ -117,6 +117,7 @@ export type WaitlistErrorCode =
   | 'INVITE_CODE_USED'
   | 'INVITE_CODE_ALREADY_CLAIMED'
   | 'EXTRACTION_NOT_READY'
+  | 'BANK_NOT_VERIFIED'
   | 'RATE_LIMITED'
   | 'NETWORK_ERROR'
   | 'UNKNOWN_ERROR';
@@ -861,6 +862,11 @@ function mapInviteCodeErrorFromCode(code: string | undefined, message: string): 
       return {
         code: 'EXTRACTION_NOT_READY',
         message: message || 'Your scan is in progress, please try again in 2 minutes.',
+      };
+    case 'BANK_NOT_VERIFIED':
+      return {
+        code: 'BANK_NOT_VERIFIED',
+        message: message || "Please verify your landlord's bank details before claiming an invite code.",
       };
     case 'AUTH_ERROR':
       return { code: 'NOT_AUTHENTICATED', message: 'Please sign in to continue' };
