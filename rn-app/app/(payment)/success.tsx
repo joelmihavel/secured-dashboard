@@ -28,6 +28,7 @@ import { Screen, Text, BackButton } from '@/src/components';
 import { GradientPill } from '@/src/components/agreement/GradientPill';
 import { generateReceipt } from '@/src/services/api/payments';
 import type { ReceiptData } from '@/src/services/api/payments';
+import { useReceipt } from '@/src/hooks/usePayments';
 import { buildReceiptHtml, buildFallbackReceiptData } from '@/src/utils/receiptHtml';
 import { PAYMENT_COLORS, colors } from '@/src/theme';
 import { s, sf, sv } from '@/src/theme/scale';
@@ -140,24 +141,18 @@ export default function PaymentSuccessScreen() {
   const transactionId = params.transactionId ?? '';
   const isReceiptView = params.source === 'receipt_view';
 
-  const [receiptData, setReceiptData] = useState<ReceiptData | null>(null);
+  // Receipt is pre-warmed by the home dashboard (useReceipt prefetch in
+  // app/(main)/index.tsx) so this read is typically a synchronous cache hit
+  // — no fetch flash on screen mount. Falls back to route params when the
+  // cache hasn't been warmed (e.g., deep link, cold start) — the route
+  // params already carry amount/method/cashback for instant first paint
+  // while the receipt fetch resolves in the background.
+  const { data: receiptData = null } = useReceipt(paymentId);
   const [generatingPdf, setGeneratingPdf] = useState(false);
 
   useEffect(() => {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
   }, []);
-
-  useEffect(() => {
-    if (!paymentId || receiptData) return;
-    let cancelled = false;
-    (async () => {
-      try {
-        const { data } = await generateReceipt(paymentId);
-        if (!cancelled && data) setReceiptData(data);
-      } catch { /* fallback to route params */ }
-    })();
-    return () => { cancelled = true; };
-  }, [paymentId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     const onBackPress = () => {

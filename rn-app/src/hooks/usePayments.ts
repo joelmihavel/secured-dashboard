@@ -86,6 +86,28 @@ export function usePaymentHistory(
 }
 
 // ==============================================
+// RECEIPT QUERY
+// ==============================================
+// Pre-warmed from the home dashboard so /(payment)/success can paint the
+// full receipt body on first render — no post-mount fetch flash.
+// staleTime is long because a settled receipt is immutable; Cashfree
+// settlement updates a separate field that the home rebroadcast picks up.
+
+export function useReceipt(paymentId: string | undefined) {
+  return useQuery({
+    queryKey: paymentKeys.receipt(paymentId ?? ''),
+    queryFn: async (): Promise<ReceiptData | null> => {
+      if (!paymentId) return null;
+      const { data, error } = await generateReceipt(paymentId);
+      if (error) throw new Error(error);
+      return data ?? null;
+    },
+    enabled: !!paymentId,
+    staleTime: 1000 * 60 * 30, // 30 min — receipts are immutable post-settlement
+  });
+}
+
+// ==============================================
 // PAYMENT STAMPS QUERY
 // ==============================================
 

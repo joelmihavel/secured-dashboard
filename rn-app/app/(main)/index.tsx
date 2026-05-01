@@ -84,9 +84,11 @@ import { useDashboard, useRefreshDashboard } from '@/src/hooks/useDashboard';
 import type { DashboardState, MappedRecentPayment, MappedCashbackEntry, MappedTransaction, RawRecentPayment } from '@/src/services/api/dashboard';
 
 // Import payment stamps
-import { usePaymentStamps } from '@/src/hooks/usePayments';
+import { usePaymentStamps, paymentKeys } from '@/src/hooks/usePayments';
 import { usePaymentStore } from '@/src/stores/payment';
 import type { PaymentStampEntry } from '@/src/services/api/payments';
+import { generateReceipt } from '@/src/services/api/payments';
+import { useQueryClient } from '@tanstack/react-query';
 
 import * as SecureStore from 'expo-secure-store';
 // Import colors from theme
@@ -192,6 +194,28 @@ export default function HomeScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [tenancy, cashback, resolvedData?.recent_payments, stampsData?.stamps, paymentStamps]
   );
+
+  // Pre-warm receipt cache for each successful recent payment so /(payment)/success
+  // paints instantly when the user taps "View Receipt" — no post-mount fetch flash.
+  // Receipts for settled payments are immutable, so the 30-min staleTime in
+  // useReceipt keeps re-mounts hot. Failed/pending payments are skipped (no receipt).
+  const queryClient = useQueryClient();
+  useEffect(() => {
+    const successful = (resolvedData?.recent_payments ?? []).filter(
+      (p: RawRecentPayment) => p.status === 'success' && p.id,
+    );
+    for (const p of successful) {
+      queryClient.prefetchQuery({
+        queryKey: paymentKeys.receipt(p.id),
+        queryFn: async () => {
+          const { data, error } = await generateReceipt(p.id);
+          if (error) throw new Error(error);
+          return data ?? null;
+        },
+        staleTime: 1000 * 60 * 30,
+      });
+    }
+  }, [resolvedData?.recent_payments, queryClient]);
 
   // Tab state for Recent Payments / Cashbacks
   const [activeTab, setActiveTab] = useState<string>('cashbacks');
@@ -343,7 +367,66 @@ export default function HomeScreen() {
     const summaryMissed = stampsData?.summary?.missed ?? paymentStamps?.summary?.missed ?? 0;
     const upcomingMonth = upcomingPayment?.rent_month ?? null;
 
-    // 1. Upcoming payment (always first if exists)
+    // 1. Historical stamps first — chronological ascending (oldest → newest).
+    // Slice keeps the most-recent 6 (stamps come ASC from get-payment-stamps,
+    // so we want the tail of the array). Upcoming/current month is appended
+    // AFTER so the carousel reads left-to-right in chronological order
+    // (e.g., "March, April, May") instead of "May, March, April".
+    if (stampsData?.stamps && stampsData.stamps.length > 0) {
+      const historicalStamps = stampsData.stamps
+        .filter(stamp => stamp.month !== upcomingMonth) // Deduplicate against upcoming
+        .slice(-6); // Most-recent 6 historical months (input is ASC)
+
+      historicalStamps.forEach((stamp) => {
+        const cardStatus = mapStampStatus(stamp.status);
+        const hasPayment = stamp.payment_id && (stamp.status === 'on_time' || stamp.status === 'late');
+        const potentialCb = Math.round(rentAmount * (cashbackRate / 100));
+
+        // Paid on time → actual cashback earned (0 if none recorded, never projected)
+        // Late/missed → potential cashback (= lost amount forfeited)
+        // WARN 23 FIX: Paid cards show actual cashback only, never projected amounts.
+        let historicalCashback: number;
+        if (cardStatus === 'paid') {
+          // Show total cashback: applied (instant discount) + earned (into balance)
+          historicalCashback = ((stamp.cashback_applied_paise ?? 0) + (stamp.cashback_earned_paise ?? 0)) / 100;
+        } else if (cardStatus === 'late' || cardStatus === 'missed') {
+          historicalCashback = potentialCb;
+        } else {
+          historicalCashback = potentialCb;
+        }
+
+        items.push({
+          type: 'payment',
+          id: `stamp-${stamp.month}`,
+          data: {
+            monthName: formatMonth(stamp.month),
+            cashbackEarned: historicalCashback,
+            status: cardStatus,
+            onViewReceipt: hasPayment ? () => {
+              routerRef.current.push({
+                pathname: '/(payment)/status',
+                params: {
+                  paymentId: stamp.payment_id!,
+                  amount: String((stamp.amount_paise ?? 0) / 100),
+                  method: stamp.payment_method ?? '',
+                  cashback: String((stamp.cashback_applied_paise ?? 0) / 100),
+                  initialStatus: 'success',
+                  source: 'receipt_view',
+                  landlordName: tenancy?.landlord_name ?? '',
+                  agreementId: tenancy?.agreement_cert_id ?? '',
+                },
+              } as never);
+            } : undefined,
+            yearlyStamps,
+            lateCount: summaryLate,
+            missedCount: summaryMissed,
+            cardIndex: cardCounter++,
+          }
+        });
+      });
+    }
+
+    // 2. Upcoming payment / current month (appended LAST so order is chronological)
     if (upcomingPayment && rentAmount > 0) {
       // When already paid, show paid/late stamp with receipt link
       if (alreadyPaid) {
@@ -468,61 +551,6 @@ export default function HomeScreen() {
           }
         });
       }
-    }
-
-    // 2. Historical stamps (most recent first, deduplicated against upcoming)
-    if (stampsData?.stamps && stampsData.stamps.length > 0) {
-      const historicalStamps = stampsData.stamps
-        .filter(stamp => stamp.month !== upcomingMonth) // Deduplicate against upcoming
-        .slice(0, 6); // Limit to 6 historical cards
-
-      historicalStamps.forEach((stamp) => {
-        const cardStatus = mapStampStatus(stamp.status);
-        const hasPayment = stamp.payment_id && (stamp.status === 'on_time' || stamp.status === 'late');
-        const potentialCb = Math.round(rentAmount * (cashbackRate / 100));
-
-        // Paid on time → actual cashback earned (0 if none recorded, never projected)
-        // Late/missed → potential cashback (= lost amount forfeited)
-        // WARN 23 FIX: Paid cards show actual cashback only, never projected amounts.
-        let historicalCashback: number;
-        if (cardStatus === 'paid') {
-          // Show total cashback: applied (instant discount) + earned (into balance)
-          historicalCashback = ((stamp.cashback_applied_paise ?? 0) + (stamp.cashback_earned_paise ?? 0)) / 100;
-        } else if (cardStatus === 'late' || cardStatus === 'missed') {
-          historicalCashback = potentialCb;
-        } else {
-          historicalCashback = potentialCb;
-        }
-
-        items.push({
-          type: 'payment',
-          id: `stamp-${stamp.month}`,
-          data: {
-            monthName: formatMonth(stamp.month),
-            cashbackEarned: historicalCashback,
-            status: cardStatus,
-            onViewReceipt: hasPayment ? () => {
-              routerRef.current.push({
-                pathname: '/(payment)/status',
-                params: {
-                  paymentId: stamp.payment_id!,
-                  amount: String((stamp.amount_paise ?? 0) / 100),
-                  method: stamp.payment_method ?? '',
-                  cashback: String((stamp.cashback_applied_paise ?? 0) / 100),
-                  initialStatus: 'success',
-                  source: 'receipt_view',
-                  landlordName: tenancy?.landlord_name ?? '',
-                  agreementId: tenancy?.agreement_cert_id ?? '',
-                },
-              } as never);
-            } : undefined,
-            yearlyStamps,
-            lateCount: summaryLate,
-            missedCount: summaryMissed,
-            cardIndex: cardCounter++,
-          }
-        });
-      });
     }
 
     // Zero state: No stamps, no upcoming, no saved methods
