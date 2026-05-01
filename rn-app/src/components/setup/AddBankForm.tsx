@@ -103,7 +103,15 @@ function isGenericApiError(code: string | undefined): boolean {
  * without ever seeing a clear failure.
  */
 function isBlockingVerificationError(code: string | undefined): boolean {
-  return code === 'NAME_MISMATCH' || code === 'AGREEMENT_NAME_MISMATCH';
+  return (
+    code === 'NAME_MISMATCH' ||
+    code === 'AGREEMENT_NAME_MISMATCH' ||
+    // Backend refuses bank verification when the user's agreement extraction
+    // hasn't produced landlord names yet (or failed). Surfaced as a blocking
+    // failure so the user understands they need to wait / re-upload rather
+    // than hitting the form repeatedly.
+    code === 'AGREEMENT_NOT_PROCESSED'
+  );
 }
 
 function isValidPanFormat(pan: string): boolean {

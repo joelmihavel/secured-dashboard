@@ -59,11 +59,11 @@ export default function AgreementIntroScreen() {
         {/* Heading */}
         <View style={styles.headerBlock}>
           <Text style={styles.heading}>
-            <Text inherit style={styles.headingWhite}>Upload rental agreement{' '}</Text>
-            <Text inherit style={styles.headingAccent}>to unlock cashback on your rent</Text>
+            <Text inherit style={styles.headingWhite}>Complete tenancy verification{' '}</Text>
+            <Text inherit style={styles.headingAccent}>to unlock cashback</Text>
           </Text>
           <Text style={styles.subtitle}>
-            To ensure compliance with RBI KYC regulations, we will verify your rental information for rent payments and cashback.
+            To ensure compliance with RBI regulations, we will verify your rental information for rent payments and cashback.
           </Text>
         </View>
 
@@ -132,7 +132,11 @@ const styles = StyleSheet.create({
     fontFamily: 'PlusJakartaSans-Regular',
     fontSize: sf(28),
     lineHeight: sf(40),
-    letterSpacing: -1,
+    // letterSpacing -1 (Figma 4651:76216) was visually crammed against the
+    // longer "Complete tenancy verification" copy — letters and word gaps
+    // both compress at -1. -0.4 keeps the optical tightness Figma intended
+    // for the heading without squeezing the words together.
+    letterSpacing: -0.4,
   },
   headingWhite: {
     color: colors.white,

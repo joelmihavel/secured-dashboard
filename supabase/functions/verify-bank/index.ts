@@ -307,11 +307,61 @@ serve(async (req: Request) => {
     }
     // ── END DEMO BYPASS ──────────────────────────────────────────────
 
-    // Resolve landlord names from agreement (shared service) — skip when no tenancy
+    // Resolve landlord names from agreement.
+    //
+    // Pre-fix this only ran when hasTenancy=true; for pre-waitlist users (no
+    // tenancy yet) it left allLandlordNames empty and the bypass branch below
+    // set agreement_name_matched=true regardless. The deferred-match path
+    // would later catch the mismatch but kept verified=true, letting users
+    // walk past the gate. Per product flow, name match is mandatory BEFORE
+    // the user moves forward — there is no longer a deferred path. Refuse if
+    // names aren't available.
     let allLandlordNames: string[] = [];
     if (hasTenancy) {
       const resolved = await resolveAgreementNames(supabase, tenancy_id!, "landlord");
       allLandlordNames = resolved.names;
+    } else {
+      // Pre-waitlist: read directly from the user's most recent COMPLETED
+      // extraction. Pending/failed extractions return no names so we can
+      // refuse uniformly.
+      const { data: extraction } = await supabase
+        .from("extracted_rental_info")
+        .select("landlord_name, landlord_names, extraction_status")
+        .eq("user_id", userId)
+        .eq("extraction_status", "completed")
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (extraction) {
+        const seen = new Set<string>();
+        if (typeof extraction.landlord_name === "string" && extraction.landlord_name.trim()) {
+          seen.add(extraction.landlord_name);
+        }
+        if (Array.isArray(extraction.landlord_names)) {
+          for (const n of extraction.landlord_names) {
+            if (typeof n === "string" && n.trim()) seen.add(n);
+          }
+        }
+        allLandlordNames = [...seen];
+      }
+    }
+
+    // Refuse bank verification when no landlord name is available to match
+    // against. The user must wait for extraction to complete (or re-upload
+    // if it failed). Done BEFORE the penny-drop API call to avoid charging
+    // for a verification we'll have to reject anyway.
+    if (allLandlordNames.length === 0) {
+      return jsonResponse(
+        {
+          error: true,
+          code: "AGREEMENT_NOT_PROCESSED",
+          message:
+            "We couldn't read your landlord's name from your rental agreement. " +
+            "Please ensure your agreement is fully processed and try again.",
+        },
+        409
+      );
     }
 
     // Safety reset: when editing an existing bank account, set bank_verified = false
@@ -348,7 +398,11 @@ serve(async (req: Request) => {
 
     const nameAtBank = pennyDropResult.name_at_bank ?? "";
 
-    if (pennyDropResult.status === "SUCCESS" && nameAtBank && allLandlordNames.length > 0) {
+    if (pennyDropResult.status === "SUCCESS" && nameAtBank) {
+      // allLandlordNames is guaranteed non-empty here — the early refusal
+      // above (AGREEMENT_NOT_PROCESSED) returned before we reached the
+      // penny drop. Match synchronously; the user cannot move forward with
+      // an unverified name.
       const matchResult = await matchAgainstAgreementNames({
         verifiedName: nameAtBank,
         candidateNames: allLandlordNames,
@@ -370,11 +424,6 @@ serve(async (req: Request) => {
         matched_landlord: matchedLandlordName,
         landlord_count: allLandlordNames.length,
       });
-    } else if (allLandlordNames.length === 0) {
-      // No landlord names in agreement — skip agreement matching, allow penny drop only
-      console.warn("[verify-bank] No landlord names found in agreement, skipping agreement name match");
-      agreementNameMatched = true; // Don't block if no agreement data
-      agreementMatchDetails = { skipped: true, reason: "no_landlord_names_in_agreement" };
     }
 
     // Encrypt account number for storage
@@ -447,19 +496,12 @@ serve(async (req: Request) => {
       }
     }
 
-    // Opportunistic matching: if tenancy was created while user was on bank screen,
-    // run name matching now instead of waiting for deferred matching (which already ran).
-    if (!hasTenancy && bankAccount.verified) {
-      const nameForMatch = bankAccount.verified_account_holder_name || resolvedAccountHolderName;
-      await runOpportunisticNameMatch({
-        supabase,
-        userId,
-        bankAccountId: bankAccount.id,
-        verifiedName: nameForMatch,
-        context: "agreement_bank_verification",
-        source: "verify-bank",
-      });
-    }
+    // (No opportunistic matching — name match is now synchronous above. The
+    // pre-fix code ran a late match here for the pre-waitlist case where
+    // tenancy might have been created mid-flow; that path could leave a row
+    // with verified=true but agreement_name_matched=false. With the early
+    // refusal at AGREEMENT_NOT_PROCESSED + the inline match, the bank row's
+    // verified flag now strictly reflects name-match status.)
 
     // Update tenancy verification status if landlord account verified
     if (hasTenancy && party_type === "landlord" && bankAccount.verified) {

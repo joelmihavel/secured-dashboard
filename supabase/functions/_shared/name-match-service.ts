@@ -377,8 +377,11 @@ export async function runOpportunisticNameMatch(
       context,
     });
 
-    // Update bank account with real match result (replaces { skipped: true })
-    await supabase.from("bank_accounts").update({
+    // Update bank account with real match result (replaces { skipped: true }).
+    // Pre-fix kept verified=true on no_match (informational). New product
+    // flow makes name match a hard gate, so flip verified=false when match
+    // fails — same change applied to runDeferredBankNameMatching.
+    const bankUpdate: Record<string, unknown> = {
       agreement_name_matched: matchResult.matched,
       agreement_name_match_score: matchResult.score,
       agreement_name_match_details: {
@@ -386,13 +389,19 @@ export async function runOpportunisticNameMatch(
         opportunistic: true,
         matched_at: new Date().toISOString(),
       },
-    }).eq("id", bankAccountId);
+    };
+    if (!matchResult.matched) {
+      bankUpdate.verified = false;
+      bankUpdate.verified_at = null;
+    }
+    await supabase.from("bank_accounts").update(bankUpdate).eq("id", bankAccountId);
 
-    // Always set bank_verified on tenancy -- penny drop confirmed the account.
-    // If name doesn't match, admin decides during approval review.
+    // tenancies.bank_verified mirrors match outcome (was unconditionally
+    // true pre-fix, which let users with mismatched holders keep
+    // bank_verified=true on the tenancy).
     const matchedLandlordName = matchResult.matched ? matchResult.matchedName : null;
     await supabase.from("tenancies").update({
-      bank_verified: true,
+      bank_verified: matchResult.matched,
       ...(matchedLandlordName && { landlord_name: matchedLandlordName }),
     }).eq("id", lateTenancy.id);
 

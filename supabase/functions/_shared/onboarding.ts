@@ -392,21 +392,34 @@ async function runDeferredBankNameMatching(
     context: "agreement_bank_verification",
   });
 
-  // 4. Update bank account with match result (informational — does NOT flip verified)
+  // 4. Update bank account with match result.
+  //    Pre-fix: kept verified=true on no_match, treating it as informational
+  //    for admin review. New product flow makes name match a hard gate, so
+  //    we flip verified=false when match fails. The user will be re-routed
+  //    to /(agreement)/add-bank-details on next launch (journey router checks
+  //    bankDetailsAreSettled which requires verified=true).
+  //
+  //    Deferred path itself is being phased out — verify-bank/verify-upi-vpa
+  //    now refuse with AGREEMENT_NOT_PROCESSED when landlord names aren't
+  //    available yet, so this function should rarely fire. Kept as a
+  //    self-correcting safety net for any legacy rows or unforeseen paths.
   const nameMatched = matchResult.matched;
+  const bankUpdate: Record<string, unknown> = {
+    agreement_name_matched: nameMatched,
+    agreement_name_match_score: matchResult.score,
+    agreement_name_match_details: {
+      ...matchResult.details,
+      deferred: true,
+      matched_at: new Date().toISOString(),
+    },
+  };
+  if (!nameMatched) {
+    bankUpdate.verified = false;
+    bankUpdate.verified_at = null;
+  }
   const { error: updateError } = await supabase
     .from("bank_accounts")
-    .update({
-      agreement_name_matched: nameMatched,
-      agreement_name_match_score: matchResult.score,
-      agreement_name_match_details: {
-        ...matchResult.details,
-        deferred: true,
-        matched_at: new Date().toISOString(),
-      },
-      // Keep verified = true (penny drop confirmed account exists).
-      // Name match result is informational — admin decides during approval.
-    })
+    .update(bankUpdate)
     .eq("id", bank.id);
 
   if (updateError) {
@@ -450,14 +463,15 @@ async function runDeferredBankNameMatching(
     }
   }
 
-  // 5. Always set bank_verified on tenancy — penny drop verified the account.
-  //    If name doesn't match, flag risk on waitlist entry for admin review.
-  //    Admin approval = manual verification override.
+  // 5. Sync tenancies.bank_verified to the match outcome.
+  //    Pre-fix: unconditionally set bank_verified=true (penny drop succeeded,
+  //    let admin review name mismatch). New product flow says name match is
+  //    a hard gate, so bank_verified mirrors the match result.
   const matchedLandlordName = nameMatched ? matchResult.matchedName : null;
   await supabase
     .from("tenancies")
     .update({
-      bank_verified: true,
+      bank_verified: nameMatched,
       ...(matchedLandlordName && { landlord_name: matchedLandlordName }),
     })
     .eq("id", tenancyId);

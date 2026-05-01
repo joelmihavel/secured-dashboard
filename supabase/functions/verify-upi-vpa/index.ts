@@ -279,11 +279,55 @@ serve(async (req: Request) => {
     }
     // -- END DEMO BYPASS ----------------------------------------------------
 
-    // Resolve landlord names from agreement (shared service) — skip when no tenancy
+    // Resolve landlord names from agreement.
+    //
+    // Pre-fix this only ran when hasTenancy=true; for pre-waitlist users
+    // (no tenancy yet) it left allLandlordNames empty and the bypass branch
+    // below set agreement_name_matched=true regardless. The deferred-match
+    // path would later catch the mismatch but kept verified=true. Per
+    // product flow, name match is mandatory BEFORE the user moves forward
+    // — there is no longer a deferred path. Refuse if names aren't
+    // available (and do this BEFORE the VPA validation call so we don't
+    // hit Cashfree for a verification we'd reject anyway).
     let allLandlordNames: string[] = [];
     if (hasTenancy) {
       const resolved = await resolveAgreementNames(supabase, tenancy_id!, "landlord");
       allLandlordNames = resolved.names;
+    } else {
+      const { data: extraction } = await supabase
+        .from("extracted_rental_info")
+        .select("landlord_name, landlord_names, extraction_status")
+        .eq("user_id", userId)
+        .eq("extraction_status", "completed")
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (extraction) {
+        const seen = new Set<string>();
+        if (typeof extraction.landlord_name === "string" && extraction.landlord_name.trim()) {
+          seen.add(extraction.landlord_name);
+        }
+        if (Array.isArray(extraction.landlord_names)) {
+          for (const n of extraction.landlord_names) {
+            if (typeof n === "string" && n.trim()) seen.add(n);
+          }
+        }
+        allLandlordNames = [...seen];
+      }
+    }
+
+    if (allLandlordNames.length === 0) {
+      return jsonResponse(
+        {
+          error: true,
+          code: "AGREEMENT_NOT_PROCESSED",
+          message:
+            "We couldn't read your landlord's name from your rental agreement. " +
+            "Please ensure your agreement is fully processed and try again.",
+        },
+        409
+      );
     }
 
     // Call PayU VPA Validation API
@@ -324,7 +368,10 @@ serve(async (req: Request) => {
     let matchedLandlordName: string | null = null;
     let agreementMatchDetails: Record<string, unknown> = {};
 
-    if (nameAtBank && allLandlordNames.length > 0) {
+    if (nameAtBank) {
+      // allLandlordNames is guaranteed non-empty here — the early refusal
+      // above (AGREEMENT_NOT_PROCESSED) returned before we reached the VPA
+      // call. Match synchronously.
       const matchResult = await matchAgainstAgreementNames({
         verifiedName: nameAtBank,
         candidateNames: allLandlordNames,
@@ -346,11 +393,6 @@ serve(async (req: Request) => {
         matched_landlord: matchedLandlordName,
         landlord_count: allLandlordNames.length,
       });
-    } else if (allLandlordNames.length === 0) {
-      // No landlord names in agreement -- skip agreement matching, allow penny drop only
-      console.warn("[verify-upi-vpa] No landlord names found in agreement, skipping agreement name match");
-      agreementNameMatched = true; // Don't block if no agreement data
-      agreementMatchDetails = { skipped: true, reason: "no_landlord_names_in_agreement" };
     }
 
     const isVerified = pennyDropResult.status === "VALID" && agreementNameMatched;
@@ -471,18 +513,11 @@ serve(async (req: Request) => {
       throw new AppError("Failed to save bank account", "DB_ERROR", 500);
     }
 
-    // Opportunistic matching: if tenancy was created while user was on bank screen,
-    // run name matching now instead of waiting for deferred matching (which already ran).
-    if (!hasTenancy && bankAccount.verified) {
-      await runOpportunisticNameMatch({
-        supabase,
-        userId,
-        bankAccountId: bankAccount.id,
-        verifiedName: nameAtBank,
-        context: "agreement_bank_verification",
-        source: "verify-upi-vpa",
-      });
-    }
+    // (No opportunistic matching — name match is now synchronous above. The
+    // pre-fix code ran a late match here for the pre-waitlist case, which
+    // could leave a row with verified=true but agreement_name_matched=false.
+    // With the early refusal at AGREEMENT_NOT_PROCESSED + the inline match,
+    // the bank row's verified flag now strictly reflects name-match status.)
 
     // Update tenancy verification status if landlord account verified
     if (hasTenancy && party_type === "landlord" && bankAccount.verified) {
