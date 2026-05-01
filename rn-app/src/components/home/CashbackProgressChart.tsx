@@ -6,6 +6,10 @@
  * - Container: horizontal, gap=2, height=40, bars bottom-aligned
  * - 12 bars: flex=1, r=200, ascending heights [5..40]
  * - Colors: earned=#FF9A6D, missed=#E5484D, future=#4D4D4D
+ *
+ * Each bar represents one month of the lease year. As each month passes
+ * and gets a stamp (on_time / late / missed), the corresponding bar
+ * picks up a colour. Months not yet reached stay 'future' (gray).
  */
 
 import React, { memo } from 'react';
@@ -16,7 +20,7 @@ import type { BarStatus } from '@/src/services/api/dashboard';
 export type { BarStatus };
 
 export interface CashbackProgressChartProps {
-  /** Array of 12 bar statuses. Defaults to all 'future'. */
+  /** Array of 12 bar statuses, oldest → newest. Defaults to all 'future'. */
   bars?: BarStatus[];
 }
 
