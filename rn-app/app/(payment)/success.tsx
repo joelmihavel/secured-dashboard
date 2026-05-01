@@ -316,7 +316,7 @@ export default function PaymentSuccessScreen() {
             testID="back-button"
           />
           <GradientPill
-            label="Download receipt"
+            label="Share receipt"
             onPress={handleDownloadReceipt}
             loading={generatingPdf}
             style={styles.downloadPill}
