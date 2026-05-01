@@ -38,6 +38,7 @@ jobs:
       environment: prod
       project-ref: uowjtrzmszuaiokqxgir
       cloud-run-service: extraction-service-prod
+      cloud-run-min-instances: 3
       eas-channel: production
     # Map env-suffixed repo secrets to the generic names deploy.yml expects.
     secrets:

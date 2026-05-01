@@ -23,6 +23,7 @@ jobs:
       environment: dev
       project-ref: zqlowjveyqiagnbmfwsb
       cloud-run-service: extraction-service-dev
+      cloud-run-min-instances: 1
       eas-channel: development
     # Map env-suffixed repo secrets to the generic names deploy.yml expects.
     # Repo has separate GCP_WIF_PROVIDER_DEV / _PROD pairs so dev and prod

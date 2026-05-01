@@ -26,6 +26,11 @@ on:
         description: "Cloud Run service name"
         required: true
         type: string
+      cloud-run-min-instances:
+        description: "Always-warm Cloud Run instance count (3 for prod, 1 for dev)"
+        required: false
+        type: number
+        default: 1
       eas-channel:
         description: "EAS update channel"
         required: true
@@ -147,6 +152,7 @@ jobs:
     uses: ./.github/workflows/_reusable-cloud-run.yml
     with:
       service: ${{ inputs.cloud-run-service }}
+      min-instances: ${{ inputs.cloud-run-min-instances }}
     secrets:
       GCP_WIF_PROVIDER: ${{ secrets.GCP_WIF_PROVIDER }}
       GCP_SA_EMAIL: ${{ secrets.GCP_SA_EMAIL }}

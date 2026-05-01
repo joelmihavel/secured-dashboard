@@ -37,6 +37,11 @@ on:
         required: false
         type: string
         default: "cloud-run/extraction-service"
+      min-instances:
+        description: "Always-warm instance count (autoscaling.knative.dev/minScale). 3 for prod, 1 for dev."
+        required: false
+        type: number
+        default: 1
     secrets:
       GCP_WIF_PROVIDER:
         required: true
@@ -83,6 +88,7 @@ jobs:
             --source ${{ inputs.source-path }} \
             --region=${{ inputs.region }} \
             --project=${{ inputs.project }} \
+            --min-instances=${{ inputs.min-instances }} \
             --no-traffic \
             --tag=candidate \
             --quiet
