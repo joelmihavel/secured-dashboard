@@ -537,7 +537,7 @@ function computeChartBars(
     return Array(12).fill('future');
   }
 
-  return stamps.map((stamp): BarStatus => {
+  const mapped = stamps.map((stamp): BarStatus => {
     switch (stamp.status) {
       case 'on_time':
         return 'earned';
@@ -552,6 +552,18 @@ function computeChartBars(
         return 'future';
     }
   });
+
+  // Left-pad to 12 with 'future' so the user's most-recent stamp lands on
+  // bar[11] (the tallest 40px bar). Without this, a user with 3 stamps had
+  // their colors crammed into bars[0..2] (heights 5/6/8) — barely visible —
+  // while bars[3..11] (heights 10..40) sat as invisible gray placeholders.
+  // Now the colored bars occupy the prominent right end of the chart and
+  // older / pre-join months gray-pad on the left, matching the "fills in
+  // over time" mental model.
+  const TOTAL_BARS = 12;
+  if (mapped.length >= TOTAL_BARS) return mapped.slice(-TOTAL_BARS);
+  const padCount = TOTAL_BARS - mapped.length;
+  return [...Array(padCount).fill('future'), ...mapped];
 }
 
 /**
