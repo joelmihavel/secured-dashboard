@@ -846,22 +846,22 @@ export default function AddBankScreen() {
                   routerRef.current.replace((isPreWaitlist ? '/(waitlist)' : '/(main)') as never);
                   return;
                 }
-                // Unsettled + no back stack: warn the user before letting
-                // them walk away from the verification gate. They can still
-                // leave (some users genuinely want to come back later) but
-                // the friction is intentional so they understand the state.
+                // Unsettled + no back stack: there's no escape route from
+                // the verification gate other than retrying or reaching out
+                // for help. Removed the "Go to waitlist" option after
+                // observing users tap through it without realising it left
+                // them stranded with an unverified bank.
                 Alert.alert(
                   'Verification incomplete',
                   "Your landlord's bank details aren't verified yet. " +
-                  'You can stay here to retry, or go to the waitlist and ' +
-                  'come back later — but until verification is complete, ' +
-                  "you won't be able to set up rent payments.",
+                  "Until verification is complete, you won't be able to " +
+                  'set up rent payments.',
                   [
                     { text: 'Stay and retry', style: 'cancel' },
                     {
-                      text: 'Go to waitlist',
+                      text: 'Contact support',
                       onPress: () => {
-                        routerRef.current.replace((isPreWaitlist ? '/(waitlist)' : '/(main)') as never);
+                        Linking.openURL('mailto:secured@flent.in?subject=Help%20Request').catch(() => {});
                       },
                     },
                   ],
