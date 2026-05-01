@@ -294,30 +294,13 @@ export default function HomeScreen() {
   const allTimeCashback = cashback?.total_savings ?? cashbackBalance;
   const cashbackRate = (cashback?.discount_rate ?? 0.01) * 100; // Backend sends 0.01 (1%), UI displays as percentage
 
-  // Sum of successful payments for THIS rent_month (used to detect partial
-  // vs fully paid). The dashboard already_paid flag flips true at >= 50% of
-  // rent — that's too aggressive to gate the footer on, because a user who
-  // paid 50-99% (partial) still needs the CTA to settle the remainder.
-  // Compare cumulative paid-amount against rent to decide disabled state.
-  const upcomingMonthYYYYMM = upcomingPayment?.rent_month ?? null;
-  const paidThisMonthRupees = useMemo(() => {
-    if (!upcomingMonthYYYYMM) return 0;
-    return (resolvedData?.recent_payments ?? [])
-      .filter((p: RawRecentPayment) =>
-        p.status === 'success' &&
-        typeof p.rent_month === 'string' &&
-        p.rent_month.startsWith(upcomingMonthYYYYMM),
-      )
-      .reduce((sum: number, p: RawRecentPayment) => sum + (p.amount ?? 0), 0);
-  }, [resolvedData?.recent_payments, upcomingMonthYYYYMM]);
-  const isFullyPaid = upcomingPayment !== null && rentAmount > 0 && paidThisMonthRupees >= rentAmount;
-
-  // Show bottom footer whenever there's a tenancy with rent. Disabling (not
-  // hiding) the CTA when fully paid keeps the banner visible — the user gets
-  // the "Paid this month" label + a disabled button instead of nothing,
-  // which is what they expect (and what was here before the regression in
-  // 14d8795d). For partial payments (paid > 0 but < rent), the banner stays
-  // active so the user can complete the payment.
+  // Show bottom footer whenever there's a tenancy with rent. Banner stays
+  // visible AND clickable in every state — already-paid users still see the
+  // "Review & pay" CTA, and the gate that stops them is downstream in
+  // EnterAmountContent (the modal returns the "Rent for this month is
+  // already paid" inline error and disables canContinue). Mirrors the
+  // pre-14d8795d journey: home is permissive, the entry-amount step
+  // enforces the rule.
   const showBottomFooter = upcomingPayment !== null && rentAmount > 0;
 
   // Helper: format month from ISO date to display format
@@ -585,6 +568,25 @@ export default function HomeScreen() {
           cardIndex: 0,
         }
       });
+    }
+
+    // Reorder so cards read newest → oldest left-to-right ("May, April, March"
+    // instead of "March, April, May"). The blocks above push history first
+    // (ASC) and the upcoming/current month last for build clarity; this
+    // post-process puts the upcoming card at index 0 and the historical
+    // cards in DESC order behind it. cardIndex is re-assigned because the
+    // cards rely on it for staggered animations.
+    const upcomingIdx = items.findIndex((i) => i.id === 'upcoming');
+    if (upcomingIdx >= 0) {
+      const upcomingItem = items[upcomingIdx];
+      const historyItems = items.filter((i) => i.id !== 'upcoming').reverse();
+      const reordered: CarouselCardItem[] = [upcomingItem, ...historyItems];
+      reordered.forEach((item, idx) => {
+        if (item.type === 'payment') {
+          item.data.cardIndex = idx;
+        }
+      });
+      return reordered;
     }
 
     return items;
@@ -976,13 +978,12 @@ export default function HomeScreen() {
       {showBottomFooter ? (
         <View style={styles.bottomFooterContainer}>
           <BottomFooter
-            // dueInDays={null} flips the label to "Paid this month" when the
-            // user has fully settled the current month. For partial payments
-            // and unpaid months we keep the countdown / overdue copy.
-            dueInDays={isFullyPaid ? null : daysUntilDue}
+            // When already paid for the current month, surface the next-month
+            // countdown so the banner still has meaningful copy. Always
+            // clickable — EnterAmountContent enforces the "already paid" gate.
+            dueInDays={alreadyPaid ? daysUntilNextDue : daysUntilDue}
             amount={rentAmount}
             buttonLabel="Review & pay"
-            disabled={isFullyPaid}
             onPress={handlePayNow}
           />
         </View>

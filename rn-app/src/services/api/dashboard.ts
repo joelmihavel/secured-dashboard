@@ -553,17 +553,17 @@ function computeChartBars(
     }
   });
 
-  // Left-pad to 12 with 'future' so the user's most-recent stamp lands on
-  // bar[11] (the tallest 40px bar). Without this, a user with 3 stamps had
-  // their colors crammed into bars[0..2] (heights 5/6/8) — barely visible —
-  // while bars[3..11] (heights 10..40) sat as invisible gray placeholders.
-  // Now the colored bars occupy the prominent right end of the chart and
-  // older / pre-join months gray-pad on the left, matching the "fills in
-  // over time" mental model.
+  // Right-pad to 12 with 'future' so paid months fill the chart from the
+  // LEFT and unreached months stay gray on the RIGHT. Reads chronologically
+  // left-to-right: oldest paid month at bar[0], most-recent at bar[N-1],
+  // future months gray on bars[N..11]. A user with 3 paid stamps sees three
+  // colored bars at the start of the chart, growing rightward as months
+  // pass. Matches the journey the home screen surfaced before the temporary
+  // left-pad experiment.
   const TOTAL_BARS = 12;
-  if (mapped.length >= TOTAL_BARS) return mapped.slice(-TOTAL_BARS);
+  if (mapped.length >= TOTAL_BARS) return mapped.slice(0, TOTAL_BARS);
   const padCount = TOTAL_BARS - mapped.length;
-  return [...Array(padCount).fill('future'), ...mapped];
+  return [...mapped, ...Array(padCount).fill('future')];
 }
 
 /**
