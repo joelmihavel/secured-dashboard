@@ -244,7 +244,10 @@ export async function ensureTenancyForExtraction(
       property_pincode: extraction.property_pincode ?? null,
       monthly_rent_paise: monthlyRentPaise,
       maintenance_paise: extraction.maintenance_paise ?? 0,
-      rent_due_day: extraction.rent_due_day || 1,
+      // Clamp to [1, 28] — the tenancies_rent_due_day_check constraint rejects
+      // anything outside this range, so an extraction that returned 29-31
+      // (e.g. last day of month) would otherwise hard-fail the INSERT.
+      rent_due_day: Math.min(Math.max(extraction.rent_due_day || 1, 1), 28),
       cashback_cutoff_day: extraction.rent_due_day
         ? Math.min(extraction.rent_due_day + (extraction.rent_grace_period_days ?? 0), 28)
         : null,
