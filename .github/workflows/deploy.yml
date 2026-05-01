@@ -49,17 +49,36 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 2
     outputs:
-      migrations: ${{ steps.filter.outputs.migrations }}
-      functions: ${{ steps.filter.outputs.functions }}
-      cloudrun: ${{ steps.filter.outputs.cloudrun }}
-      rn: ${{ steps.filter.outputs.rn }}
+      migrations: ${{ steps.tag-defaults.outputs.migrations || steps.filter.outputs.migrations }}
+      functions: ${{ steps.tag-defaults.outputs.functions || steps.filter.outputs.functions }}
+      cloudrun: ${{ steps.tag-defaults.outputs.cloudrun || steps.filter.outputs.cloudrun }}
+      rn: ${{ steps.tag-defaults.outputs.rn || steps.filter.outputs.rn }}
     steps:
       - uses: actions/checkout@v4
         with:
           # paths-filter needs prior commit available; default depth=1 doesn't
           # expose HEAD~1 / github.event.before. fetch-depth: 0 = full history.
           fetch-depth: 0
+
+      # Tag pushes (deploy-prod-*) are explicit deploy decisions — paths-filter
+      # has no useful comparison base for new tags (github.event.before is
+      # 0000…, fallback to default_branch HEAD = same SHA as the tag → empty
+      # diff → all jobs skipped). Caught 2026-05-01 on tag
+      # deploy-prod-2026-05-01-status-trigger-fix where prod CI succeeded but
+      # deployed nothing. Tags always run every layer; the tag IS the explicit
+      # "ship it" signal, not a path-aware optimisation.
+      - id: tag-defaults
+        if: startsWith(github.ref, 'refs/tags/')
+        run: |
+          echo "migrations=true" >> "$GITHUB_OUTPUT"
+          echo "functions=true" >> "$GITHUB_OUTPUT"
+          echo "cloudrun=true" >> "$GITHUB_OUTPUT"
+          echo "rn=true" >> "$GITHUB_OUTPUT"
+
+      # Branch pushes (deploy-dev-trigger.yml on `dev`) keep paths-filter so
+      # doc-only / unrelated-path commits don't redeploy every layer.
       - id: filter
+        if: ${{ !startsWith(github.ref, 'refs/tags/') }}
         uses: dorny/paths-filter@v3
         with:
           # When deploy.yml is invoked via workflow_call (from
