@@ -653,7 +653,10 @@ export function mapCashbackModule(
   cashback: CashbackBalance | null,
   rawPayments: RawRecentPayment[],
   stamps?: Array<{ status: string }> | null,
-  dashboardStamps?: { current_month_status: string; summary: { total_months: number } } | null,
+  dashboardStamps?: {
+    current_month_status: string;
+    summary: { total_months: number; on_time: number; late: number; missed: number; pending: number };
+  } | null,
 ): MappedCashbackModule {
   // ── Module state ──────────────────────────────────────────────
   const vs = tenancy?.verification_status;
@@ -686,13 +689,23 @@ export function mapCashbackModule(
   // instead of from rawPayments (limited to 5 by dashboard-data query).
   // This also fixes Bug 3 (timezone), Bug 4 (refunded), and WARN 15/17/19.
   //
-  // Fallback: when stamps haven't loaded yet, use dashboard-data's
-  // current_month_status to show at least the current month correctly
-  // (prevents all-gray chart while stamps query is in flight).
+  // Fallback: when the per-month stamps array from `get-payment-stamps`
+  // hasn't loaded yet (or returns fewer entries than the summary suggests
+  // — observed in prod for users mid-lease), synthesise an array from
+  // dashboardStamps.summary counts so the chart still shows the right
+  // NUMBER of coloured bars even before per-month detail is available.
+  // We lose exact month ordering, but the visual count matches the
+  // user's actual cashback history (one orange bar per paid month).
   const cutoffDay = tenancy?.cashback_cutoff_day ?? 7;
   let effectiveStamps = stamps;
-  if ((!stamps || stamps.length === 0) && dashboardStamps?.current_month_status) {
-    effectiveStamps = [{ status: dashboardStamps.current_month_status }];
+  if ((!stamps || stamps.length === 0) && dashboardStamps?.summary) {
+    const { on_time, late, missed, pending } = dashboardStamps.summary;
+    effectiveStamps = [
+      ...Array(on_time).fill({ status: 'on_time' }),
+      ...Array(late).fill({ status: 'late' }),
+      ...Array(missed).fill({ status: 'missed' }),
+      ...Array(pending).fill({ status: 'pending' }),
+    ];
   }
   const chartBars = computeChartBars(effectiveStamps);
 
