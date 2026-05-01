@@ -186,13 +186,33 @@ export default function HomeScreen() {
     [resolvedData?.recent_payments, tenancy?.monthly_rent, cashback?.discount_rate]
   );
 
-  // Cashback module — single computed object with all CashbacksList props
-  // BUG 1 FIX: Pass stamps data so chart bars are derived from backend stamps
-  // (all months) instead of recent_payments (limited to 5).
+  // Stamps used by the cashback chart. Backend get-payment-stamps returns
+  // stamps for EVERY month from tenancy start through current+lease horizon
+  // (often 12+ months including future months in 'pending' state). The home
+  // carousel shows only history (last 6) + the upcoming/current month — so
+  // the chart was painting many more bars (and many gray "future" bars) than
+  // there were cards. Filter to the same window the cards use:
+  //   - Drop months strictly AFTER the current upcoming rent_month so future
+  //     placeholders don't show up as gray bars
+  //   - Take the most-recent 7 (matches cards: last-6 history + current)
+  // Result: # bars = # cards, with the same per-month status driving colors.
+  const upcomingMonthForChart = upcomingPayment?.rent_month ?? null;
+  const visibleStamps = useMemo(() => {
+    const all = stampsData?.stamps ?? [];
+    if (all.length === 0) return all;
+    const filtered = upcomingMonthForChart
+      ? all.filter(s => s.month <= upcomingMonthForChart)
+      : all;
+    return filtered.slice(-7);
+  }, [stampsData?.stamps, upcomingMonthForChart]);
+
+  // Cashback module — single computed object with all CashbacksList props.
+  // chart bars come from `visibleStamps` (same window as the carousel cards)
+  // so users see N bars for N cards with matching color codes.
   const cashbackModule = useMemo(
-    () => mapCashbackModule(tenancy ?? null, cashback ?? null, resolvedData?.recent_payments ?? [], stampsData?.stamps, paymentStamps),
+    () => mapCashbackModule(tenancy ?? null, cashback ?? null, resolvedData?.recent_payments ?? [], visibleStamps, paymentStamps),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [tenancy, cashback, resolvedData?.recent_payments, stampsData?.stamps, paymentStamps]
+    [tenancy, cashback, resolvedData?.recent_payments, visibleStamps, paymentStamps]
   );
 
   // Pre-warm receipt cache for each successful recent payment so /(payment)/success
