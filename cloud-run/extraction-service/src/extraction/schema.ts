@@ -100,7 +100,7 @@ export const EXTRACTION_RESPONSE_SCHEMA = {
     },
     certificate_no: {
       type: "string",
-      description: "E-stamp certificate number. MUMBAI/MAHARASHTRA: use GRN or Transaction ID as certificate_no.",
+      description: "E-stamp certificate number, captured EXACTLY including any 'IN-' prefix and trailing check character. SHCIL format is 'IN-XXNNNNNNNNNNX' (e.g. 'IN-KA53026964726796Y'). Preserve 'IN-' verbatim, do NOT strip. MUMBAI/MAHARASHTRA EXCEPTION: GRN or Transaction ID is the certificate_no (no 'IN-' prefix on those).",
       nullable: true,
     },
     certificate_issued_date: {
@@ -120,7 +120,7 @@ export const EXTRACTION_RESPONSE_SCHEMA = {
     },
     description_of_document: {
       type: "string",
-      description: "EXACT verbatim text from the 'Description of Document' field on the e-stamp paper. MUST include the article number when present (e.g., 'Article 30(1)(i) Lease of Immovable Property - Not exceeding 1 year in case of Residential property'). Do NOT abbreviate, summarize, paraphrase, or reduce to a category label like 'Rental Agreement'. Copy the text as-is, preserving the article number, spelling, and punctuation.",
+      description: "EXACT verbatim text from the 'Description of Document' field on the e-stamp paper. MUST include the article number when present (e.g., 'Article 30(1)(i) Lease of Immovable Property - Not exceeding 1 year in case of Residential property'). RESCUE RULE: if the description body is short like 'Lease of Immovable Property', search the e-stamp ANYWHERE (header, top-right cell, alongside the description, fine print, or separate 'Article' field) for 'Article XX' or 'Article XX(Y)' and PREPEND it. Do NOT abbreviate, summarize, or reduce to a category label like 'Rental Agreement' or 'Lease' alone. Copy the text as-is, preserving the article number, spelling, and punctuation.",
       nullable: true,
     },
     first_party: {
