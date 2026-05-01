@@ -16,7 +16,9 @@ export const MULTIMODAL_EXTRACTION_PROMPT = `You are analyzing the attached PDF 
 INSTRUCTIONS:
 - Set is_rental_agreement to true ONLY for rental agreements, lease deeds, leave and license agreements, or tenancy agreements. false for anything else.
 - If not a rental agreement, set all extraction fields to null.
-- For amounts: extract numeric values in rupees ONLY (60000 not "Rs. 60,000"). Strip commas.
+- For amounts: extract numeric values in rupees ONLY (60000 not "Rs. 60,000"). Strip commas. Parse amounts written in words ("rupees two lakh fifty thousand only" → 250000).
+- For security_deposit: recognise indirect phrasings — "interest-free refundable amount", "caution money", "refundable interest-free deposit", "shall pay a sum of Rs. X as/towards security", or "advance equivalent to N months' rent" (compute as rent × N). NEVER use the "Consideration Amount" / "Consideration Price" on the stamp-paper challan as the deposit — that is the lease value (rent × term or rent × lock-in months) used for stamp-duty calculation. Return null if only a deposit clause exists with no stated amount.
+- For rent_escalation_percent: if the Schedule cell is a bare decimal &lt; 1 (e.g., "0.07"), interpret as percent (0.07 → 7).
 - For dates: convert to YYYY-MM-DD format.
 - For names: each person MUST be a SEPARATE array element. "RAMESH AND SEEMA JOSHI" \u2192 ["RAMESH JOSHI", "SEEMA JOSHI"]. Never combine multiple people into one string.
 - For property_name: SHORT display name \u2014 Flat/House#, Society, Locality, Pincode, City. No full address, no repeated segments.
@@ -51,8 +53,8 @@ Extract and return a JSON object with these exact fields (use null for fields yo
   "property_pincode": "6-digit pincode",
   "micromarket": "locality/area (e.g., Whitefield, Koramangala, HSR Layout, Richmond Town)",
   "monthly_rent": "number only in rupees (e.g., 60000 for Rs. 60,000)",
-  "security_deposit": "number only in rupees (e.g., 200000 for Rs. 2,00,000)",
-  "rent_escalation_percent": "annual escalation percentage as number (e.g., 5 for 5%)",
+  "security_deposit": "Refundable security deposit in rupees, numeric only (e.g., 200000 for Rs. 2,00,000). RECOGNISE INDIRECT PHRASINGS: 'interest-free refundable amount of Rs. X', 'caution money of Rs. X', 'refundable interest-free deposit of Rs. X', 'shall pay a sum of Rs. X as security/towards security'. If the clause says 'advance amount equivalent to N months' rent' (and rent is known), compute as monthly_rent × N. Parse amounts written in words ('rupees two lakh fifty thousand only' → 250000). DO NOT use any of these as the deposit: (a) 'Consideration Amount' / 'Consideration Price' on a SHCIL or e-stamp challan — that is the lease value used for stamp-duty calculation (typically rent × term or rent × lock-in months) and is NEVER the security deposit; (b) Stamp duty paid amount; (c) Over-occupancy, penalty, or forfeit amounts; (d) Advance rent, unless the clause explicitly labels it refundable. Return null when the agreement only references a deposit qualitatively (e.g., 'as set forth in the Customer Service Agreement' / 'quantum to be determined separately') without stating an amount.",
+  "rent_escalation_percent": "Annual escalation percentage as a number (e.g., 5 for 5%). If the value is written as a bare decimal less than 1 in a percentage context — for example a 'Rent Escalation Terms' / Schedule cell containing '0.07' or '0.09' — interpret it as percent (0.07 → 7, 0.09 → 9).",
   "contract_start_date": "YYYY-MM-DD format",
   "contract_end_date": "YYYY-MM-DD format",
   "contract_length_months": "duration in months as number",
@@ -60,11 +62,11 @@ Extract and return a JSON object with these exact fields (use null for fields yo
   "rent_grace_period_days": "number of grace days after rent_due_day (e.g., if due on 1st with grace until 5th, return 4). Look for 'grace period', 'without penalty until', 'no late fee before'. Return 0 if no grace period mentioned.",
   "tenant_names": ["array of tenant/lessee names"],
   "landlord_names": ["array of landlord/lessor/owner names"],
-  "certificate_no": "certificate number from e-stamp or stamp paper. IMPORTANT: For Mumbai/Maharashtra agreements, the GRN (Government Receipt Number) or Transaction ID serves as the Stamp Certificate ID - if you see 'GRN', 'Transaction ID', or 'Transaction No.' in a Mumbai document, use that as certificate_no. For other states, look for 'Certificate No.' or 'Cert. No.'",
+  "certificate_no": "Stamp certificate number, captured EXACTLY as printed INCLUDING any 'IN-' prefix and trailing check character. SHCIL e-stamps are formatted 'IN-XXNNNNNNNNNNX' (e.g. 'IN-KA53026964726796Y', 'IN-DL12345678901234Z') — preserve the 'IN-' prefix verbatim, do NOT strip or normalise. MUMBAI/MAHARASHTRA EXCEPTION: the GRN (Government Receipt Number) or Transaction ID serves as the Stamp Certificate ID — if you see 'GRN', 'Transaction ID', or 'Transaction No.' in a Mumbai/Maharashtra document, use that as certificate_no and do NOT prepend 'IN-' to it. For other states, look for 'Certificate No.' or 'Cert. No.' and copy the full value including 'IN-' prefix.",
   "certificate_issued_date": "YYYY-MM-DD format - date when stamp certificate was issued",
   "account_reference": "account reference number from e-stamp",
   "purchased_by": "name of person who purchased the stamp paper",
-  "description_of_document": "EXACT verbatim text from the 'Description of Document' field on the e-stamp paper. MUST include the article number when present (e.g., 'Article 30(1)(i) Lease of Immovable Property - Not exceeding 1 year in case of Residential property'). Do NOT abbreviate, summarize, paraphrase, or reduce to a category label like 'Rental Agreement'. Copy the text as-is, preserving the article number, spelling, and punctuation.",
+  "description_of_document": "EXACT verbatim text from the 'Description of Document' field on the e-stamp paper. MUST include the article number when present (e.g., 'Article 30(1)(i) Lease of Immovable Property - Not exceeding 1 year in case of Residential property'). RESCUE RULE: if the description body is short like 'Lease of Immovable Property', search the e-stamp ANYWHERE for 'Article XX' or 'Article XX(Y)' (header, top-right cell, alongside the description, fine print, or even a separate 'Article' field) and PREPEND it. If you cannot find any article number on the e-stamp, return the description as-is and the downstream system will fall back to manual review. Do NOT abbreviate, summarize, or reduce to a category label like 'Rental Agreement' or 'Lease' alone. Copy the text as-is, preserving the article number, spelling, and punctuation.",
   "first_party": "first party name as mentioned on stamp paper (usually lessor/landlord)",
   "second_party": "second party name as mentioned on stamp paper (usually lessee/tenant)",
   "stamp_duty_paid_by": "who paid the stamp duty (tenant/landlord/both)",
@@ -157,19 +159,19 @@ Please extract and return a JSON object with these exact fields:
   "property_pincode": "6-digit pincode",
   "micromarket": "locality/area (e.g., Whitefield, Koramangala, HSR Layout)",
   "monthly_rent": "number in rupees (no currency symbol)",
-  "security_deposit": "number in rupees",
-  "rent_escalation_percent": "annual escalation % (e.g., 5 for 5%)",
+  "security_deposit": "Refundable security deposit in rupees, numeric only. RECOGNISE INDIRECT PHRASINGS: 'interest-free refundable amount of Rs. X', 'caution money of Rs. X', 'refundable interest-free deposit', 'shall pay a sum of Rs. X as/towards security'. If phrased as 'advance amount equivalent to N months' rent' (rent known), compute as monthly_rent × N. Parse amounts in words to digits. DO NOT use as the deposit: 'Consideration Amount' / 'Consideration Price' on a SHCIL or e-stamp challan (that is rent × term or rent × lock-in months for stamp duty, NEVER the deposit), stamp duty paid, over-occupancy or penalty amounts, or advance rent unless explicitly refundable. Return null when only the existence of a deposit is stated without an amount.",
+  "rent_escalation_percent": "Annual escalation percentage as a number (e.g., 5 for 5%). If the Schedule cell shows a bare decimal less than 1 (e.g., '0.07' or '0.09'), interpret as percent (0.07 → 7).",
   "contract_start_date": "YYYY-MM-DD format",
   "contract_end_date": "YYYY-MM-DD format",
   "contract_length_months": "number of months",
   "rent_due_day": "day of month when rent is due (e.g., 1, 5, 10)",
   "tenant_names": ["array of tenant names"],
   "landlord_names": ["array of landlord names"],
-  "certificate_no": "certificate number from e-stamp or stamp paper. IMPORTANT: For Mumbai/Maharashtra agreements, the GRN (Government Receipt Number) or Transaction ID is the Stamp Certificate ID - use GRN/Transaction ID as certificate_no for Mumbai documents",
+  "certificate_no": "Stamp certificate number, captured EXACTLY including any 'IN-' prefix. SHCIL e-stamps are formatted 'IN-XXNNNNNNNNNNX' — preserve 'IN-' verbatim. MUMBAI/MAHARASHTRA: GRN or Transaction ID IS the certificate_no (no 'IN-' prefix on those).",
   "certificate_issued_date": "YYYY-MM-DD format",
   "account_reference": "account reference from e-stamp",
   "purchased_by": "who purchased the stamp paper",
-  "description_of_document": "EXACT verbatim text from the 'Description of Document' field on the e-stamp paper. MUST include the article number when present (e.g., 'Article 30(1)(i) Lease of Immovable Property - Not exceeding 1 year in case of Residential property'). Do NOT abbreviate, summarize, or reduce to a category label. Copy as-is.",
+  "description_of_document": "EXACT verbatim text from the 'Description of Document' field on the e-stamp paper. MUST include the article number when present (e.g., 'Article 30(1)(i) Lease of Immovable Property - Not exceeding 1 year in case of Residential property'). RESCUE RULE: if the description body is short like 'Lease of Immovable Property', search the e-stamp ANYWHERE for 'Article XX' or 'Article XX(Y)' (header, fine print, or a separate 'Article' field) and PREPEND it. Do NOT abbreviate or reduce to a category label. Copy as-is.",
   "first_party": "first party on stamp paper (usually lessor)",
   "second_party": "second party on stamp paper (usually lessee)",
   "stamp_duty_paid_by": "who paid stamp duty",

@@ -61,8 +61,8 @@ const EXTRACTION_RESPONSE_SCHEMA = {
     property_pincode: { type: "string", description: "6-digit pincode", nullable: true },
     micromarket: { type: "string", description: "Locality/area name", nullable: true },
     monthly_rent: { type: "number", description: "Monthly rent in rupees — numeric only", nullable: true },
-    security_deposit: { type: "number", description: "Security deposit in rupees — numeric only", nullable: true },
-    rent_escalation_percent: { type: "number", description: "Annual escalation % as number", nullable: true },
+    security_deposit: { type: "number", description: "Refundable security deposit in rupees, numeric only. Recognise indirect phrasings: 'interest-free refundable amount', 'caution money', 'refundable interest-free deposit', 'shall pay a sum of Rs. X as/towards security'. If 'advance equivalent to N months' rent', compute as monthly_rent × N. Parse amounts in words to digits. NEVER use 'Consideration Amount' / 'Consideration Price' on a SHCIL or e-stamp challan as the deposit (that is rent × term/lock-in months for stamp-duty calculation). Also exclude stamp duty paid, over-occupancy/penalty amounts, and advance rent unless explicitly refundable. Return null when only the existence of a deposit is stated without an amount.", nullable: true },
+    rent_escalation_percent: { type: "number", description: "Annual escalation percentage as a number (e.g., 5 for 5%). If a Schedule cell shows a bare decimal less than 1 (e.g., '0.07'), interpret as percent (0.07 → 7).", nullable: true },
     contract_start_date: { type: "string", description: "YYYY-MM-DD format", nullable: true },
     contract_end_date: { type: "string", description: "YYYY-MM-DD format", nullable: true },
     contract_length_months: { type: "integer", description: "Duration in months", nullable: true },
@@ -103,7 +103,9 @@ Analyze the document above and determine if it is an Indian rental/lease agreeme
 EXTRACTION RULES:
 - Set is_rental_agreement to true ONLY for rental/lease/tenancy/leave-and-license agreements. false for anything else.
 - If not a rental agreement, set all extraction fields to null.
-- For amounts: numeric values in rupees ONLY (60000 not "Rs. 60,000"). Strip commas.
+- For amounts: numeric values in rupees ONLY (60000 not "Rs. 60,000"). Strip commas. Parse amounts written in words ("rupees two lakh fifty thousand only" → 250000).
+- For security_deposit: recognise indirect phrasings — "interest-free refundable amount", "caution money", "refundable interest-free deposit", "shall pay a sum of Rs. X as/towards security", or "advance equivalent to N months' rent" (compute as rent × N). NEVER use the "Consideration Amount" / "Consideration Price" on the stamp-paper challan as the deposit — that is the lease value (rent × term or rent × lock-in months) used for stamp-duty calculation. Return null when only a deposit clause exists with no stated amount.
+- For rent_escalation_percent: if the Schedule cell is a bare decimal < 1 (e.g., "0.07"), interpret as percent (0.07 → 7).
 - For dates: convert to YYYY-MM-DD format.
 - For names: each person MUST be a SEPARATE array element. Split joint names: "RAMESH AND SEEMA JOSHI" → ["RAMESH JOSHI", "SEEMA JOSHI"].
 - For property_name: SHORT display name — Flat/House#, Society, Locality, Pincode, City. No repetition.
@@ -118,7 +120,9 @@ const MULTIMODAL_PROMPT = `You are analyzing the attached PDF document. Determin
 INSTRUCTIONS:
 - Set is_rental_agreement to true ONLY for rental/lease/tenancy/leave-and-license agreements. false for anything else.
 - If not a rental agreement, set all extraction fields to null.
-- For amounts: numeric values in rupees ONLY (60000 not "Rs. 60,000").
+- For amounts: numeric values in rupees ONLY (60000 not "Rs. 60,000"). Parse amounts in words ("rupees two lakh fifty thousand only" → 250000).
+- For security_deposit: recognise indirect phrasings — "interest-free refundable amount", "caution money", "refundable interest-free deposit", "shall pay a sum of Rs. X as/towards security", or "advance equivalent to N months' rent" (compute as rent × N). NEVER use "Consideration Amount" / "Consideration Price" on the stamp-paper challan as the deposit — that is rent × term or rent × lock-in months for stamp-duty calculation. Return null when only a deposit clause exists with no stated amount.
+- For rent_escalation_percent: if the Schedule cell is a bare decimal < 1 (e.g., "0.07"), interpret as percent (0.07 → 7).
 - For dates: YYYY-MM-DD format.
 - For names: each person MUST be a SEPARATE array element. Split joint names.
 - For property_state: infer from city if not explicit.
