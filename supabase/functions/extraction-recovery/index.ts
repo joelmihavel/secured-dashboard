@@ -309,15 +309,24 @@ serve(async (req: Request) => {
             continue;
           }
 
-          // Skip: contract flagged by process-document (needs admin intervention)
-          // NOTE: "expired" removed — expired agreements proceed, risk engine flags them
-          if (["manual_review", "invalid_document"].includes(extraction.contract_status)) {
-            results.skipped.push({ user_id: userId, reason: `contract_status: ${extraction.contract_status}` });
+          // Skip: extraction validation flagged the doc as needing human eyes for
+          // missing non-critical fields (security_deposit, lease_start, etc).
+          // invalid_document is intentionally NOT skipped: most invalid_document
+          // cases are Gemini classifier false-negatives where DocAI extracted
+          // complete fields. hasMinimumFields() below catches genuinely
+          // unprocessable docs (missing rent/address/parties), and admin triage
+          // gates the rest before they advance to KYC.
+          if (extraction.contract_status === "manual_review") {
+            results.skipped.push({ user_id: userId, reason: `contract_status: manual_review` });
             continue;
           }
 
-          // Skip: needs manual review (and not overridden to confirmed)
-          if (extraction.needs_manual_review && extraction.contract_status !== "confirmed") {
+          // Skip: needs manual review (and not overridden to confirmed).
+          // invalid_document carries needs_manual_review=true by design — let it
+          // through this gate so the admin queue can triage classifier-disagreement cases.
+          if (extraction.needs_manual_review
+              && extraction.contract_status !== "confirmed"
+              && extraction.contract_status !== "invalid_document") {
             results.skipped.push({ user_id: userId, reason: "needs_manual_review=true" });
             continue;
           }

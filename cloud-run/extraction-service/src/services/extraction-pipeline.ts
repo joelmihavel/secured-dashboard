@@ -638,14 +638,29 @@ export async function runExtractionPipeline(
     // ================================================================
     await heartbeat.updateStep('finalizing');
 
-    // Notify user if extraction failed OR completed with an invalid document.
-    // Both cases require the user to re-upload a different PDF, so the UX is
-    // the same. scheduleNotification dedups by (user_id, related_entity_id)
-    // within a 24h window, so triggering here for every pipeline run is
-    // safe -- extraction-recovery retries won't cause spam.
+    // Notify user if extraction failed OR completed with an invalid document
+    // that recovery cannot pick up. Recovery-eligible invalid_document rows
+    // (Gemini classifier false-negatives where DocAI extracted full fields)
+    // get silently routed to the admin triage queue instead — telling the
+    // user to re-upload would conflict with that flow.
+    //
+    // Recovery eligibility mirrors extraction-recovery/index.ts:hasMinimumFields()
+    // plus the supported-city gate.
+    const recoveryEligible =
+      evaluationResult.contract_status === 'invalid_document'
+      && !!extractedData.property_address
+      && !!extractedData.monthly_rent_paise && extractedData.monthly_rent_paise > 0
+      && extractedData.security_deposit_paise != null
+      && (extractedData.tenant_names?.length ?? 0) > 0
+      && !!extractedData.tenant_names?.[0]
+      && (extractedData.landlord_names?.length ?? 0) > 0
+      && !!extractedData.landlord_names?.[0]
+      && isCitySupported !== false;
+
     const shouldNotifyReupload =
       resolvedExtractionStatus === 'extraction_failed'
-      || evaluationResult.contract_status === 'invalid_document';
+      || (evaluationResult.contract_status === 'invalid_document' && !recoveryEligible);
+
     if (shouldNotifyReupload) {
       scheduleNotification(userId, 'agreement_upload_failed', undefined, {
         relatedEntityType: 'extraction',
