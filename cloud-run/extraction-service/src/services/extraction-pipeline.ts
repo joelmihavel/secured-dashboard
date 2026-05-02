@@ -38,6 +38,7 @@ import { callGeminiApiKeyText, callGeminiApiKeyMultimodal, callGeminiApiKeyMulti
 import { Heartbeat } from './heartbeat.js';
 import { scheduleNotification } from './notifications.js';
 import { geocodePropertyAddress } from './geocoding.js';
+import { triggerStampVerification } from './stamp-verification.js';
 
 // Extraction helpers
 import { mergeGeminiResults } from '../extraction/merge.js';
@@ -604,6 +605,22 @@ export async function runExtractionPipeline(
     }
 
     completedExtractionPersisted = true;
+
+    // Fire-and-forget SHCIL stamp verification for Karnataka extractions
+    // with a certificate number. Service is idempotent (short-circuits on
+    // existing 'verified' row) and writes its own stamp_verifications row.
+    // Karnataka-only mirrors the sweep-stamp-verifications safety-net cron.
+    if (
+      resolvedExtractionStatus === 'completed'
+      && extractedData.certificate_no
+      && extractedData.property_state?.trim().toLowerCase() === 'karnataka'
+    ) {
+      try {
+        triggerStampVerification(extractionId);
+      } catch (err) {
+        console.warn('[pipeline] Stamp verification trigger threw (non-fatal):', err);
+      }
+    }
 
     // ================================================================
     // Step 14: Geocode property address (non-blocking)
