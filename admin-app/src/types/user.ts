@@ -36,17 +36,24 @@ export interface UserFunnel {
   property_pincode: string | null;
   monthly_rent_paise: number | null;
   maintenance_paise: number | null;
+  security_deposit_paise: number | null;
   landlord_name: string | null;
   landlord_display_name: string | null;
   landlord_phone: string | null;
   lease_start_date: string | null;
   lease_end_date: string | null;
   rent_due_day: number | null;
+  rooms_in_agreement: number | null;
+  property_bhk_type: string | null;
   latitude: number | null;
   longitude: number | null;
   geocode_formatted_address: string | null;
   extraction_confidence: number | null;
   agreement_uploaded_at: string | null;
+  // Stamp verification (denormalized from stamp_verifications)
+  stamp_verification_status: string | null;
+  stamp_verified_at: string | null;
+  stamp_verification_attempt: number | null;
   // Tenancy
   tenancy_id: string | null;
   tenancy_status: string | null;

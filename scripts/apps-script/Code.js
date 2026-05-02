@@ -1170,14 +1170,15 @@ function writeUsersSheet(data, tenantMap) {
   var sheet = getOrCreateSheet('Users');
   var headers = ['ID', 'Phone', 'Status', 'Name', 'Rent (\u20B9)', 'Address', 'Google Maps',
                  'Security Deposit (\u20B9)', 'Sign Up', 'Wait Hours', 'SLA', 'Risk', 'Admin Review',
-                 'Extraction', 'Queue #', 'Audit Status', 'Missing Data', 'Flent Tenant'];
-  var widths = [50, 130, 110, 200, 100, 280, 100, 140, 170, 90, 70, 90, 120, 100, 60, 100, 200, 180];
+                 'Extraction', 'Queue #', 'Audit Status', 'Missing Data', 'Flent Tenant', 'Rooms', 'SHCIL'];
+  var widths = [50, 130, 110, 200, 100, 280, 100, 140, 170, 90, 70, 90, 120, 100, 60, 100, 200, 180, 60, 120];
   var mapsUrls = [];
   tenantMap = tenantMap || {};
 
   var rows = data.map(function(r) {
     var name = r.m360_full_name || r.name || '';
     var rent = r.monthly_rent_paise ? Math.round(r.monthly_rent_paise / 100) : '';
+    var deposit = r.security_deposit_paise ? Math.round(r.security_deposit_paise / 100) : '';
     var lat = r.latitude, lng = r.longitude;
     var mapsUrl = (lat && lng) ? 'https://www.google.com/maps?q=' + lat + ',' + lng : '';
     mapsUrls.push(mapsUrl);
@@ -1244,7 +1245,7 @@ function writeUsersSheet(data, tenantMap) {
       rent,
       r.property_address || '',
       mapsUrl ? 'View Map' : '',
-      rent, // security deposit = rent proxy
+      deposit,
       r.signed_up_at ? toIST(r.signed_up_at) : '',
       hoursSince,
       slaBreach,
@@ -1255,6 +1256,8 @@ function writeUsersSheet(data, tenantMap) {
       auditStatus,
       missingDisplay,
       tenantLabel,
+      r.rooms_in_agreement || '',
+      r.stamp_verification_status || '',
     ];
   });
 
@@ -1317,6 +1320,17 @@ function writeUsersSheet(data, tenantMap) {
     sheet.getRange(2, 17, rc, 1).setWrap(true).setFontSize(9).setFontColor(C.MUTED);
     // Flent Tenant col 18
     applyStatusColors(sheet, 18, rc, tenantRules());
+    // Rooms col 19
+    sheet.getRange(2, 19, rc, 1).setHorizontalAlignment('center');
+    // SHCIL col 20
+    applyStatusColors(sheet, 20, rc, {
+      'verified': { bg: C.GREEN_BG, fg: C.GREEN },
+      'missing_article': { bg: C.RED_BG, fg: C.RED },
+      'not_found': { bg: C.RED_BG, fg: C.RED },
+      'mismatch': { bg: C.RED_BG, fg: C.RED },
+      'missing_fields': { bg: C.RED_BG, fg: C.RED },
+      'site_error': { bg: C.AMBER_BG, fg: C.AMBER },
+    });
     // Text wrap on Address column (col 6)
     sheet.getRange(2, 6, rc, 1).setWrap(true);
   }
