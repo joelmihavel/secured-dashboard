@@ -1166,6 +1166,17 @@ function mergeAuditResults(users, auditResults) {
 // USERS SHEET (12 columns — clean operator view + Flent Tenant match)
 // ============================================================================
 
+// SHCIL only verifies Karnataka e-stamps. For completed non-KA extractions
+// the column would otherwise be blank — make the reason explicit.
+function shcilDisplay(r) {
+  if (r.stamp_verification_status) return r.stamp_verification_status;
+  if (r.extraction_status === 'completed' && r.property_state) {
+    var s = String(r.property_state).toUpperCase().trim();
+    if (s !== 'KA' && s !== 'KARNATAKA') return 'non-KA';
+  }
+  return '';
+}
+
 function writeUsersSheet(data, tenantMap) {
   var sheet = getOrCreateSheet('Users');
   var headers = ['ID', 'Phone', 'Status', 'Name', 'Rent (\u20B9)', 'Address', 'Google Maps',
@@ -1257,7 +1268,7 @@ function writeUsersSheet(data, tenantMap) {
       missingDisplay,
       tenantLabel,
       r.rooms_in_agreement || '',
-      r.stamp_verification_status || '',
+      shcilDisplay(r),
     ];
   });
 
@@ -1330,6 +1341,7 @@ function writeUsersSheet(data, tenantMap) {
       'mismatch': { bg: C.RED_BG, fg: C.RED },
       'missing_fields': { bg: C.RED_BG, fg: C.RED },
       'site_error': { bg: C.AMBER_BG, fg: C.AMBER },
+      'non-KA': { bg: C.MUTED_BG, fg: C.MUTED },
     });
     // Text wrap on Address column (col 6)
     sheet.getRange(2, 6, rc, 1).setWrap(true);
