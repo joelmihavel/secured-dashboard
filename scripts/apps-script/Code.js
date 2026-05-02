@@ -788,15 +788,24 @@ function onAdminReviewEdit(e) {
     var resp = _callAdminWaitlist(payload);
 
     if (resp.ok) {
-      var r = resp.result;
-      var count = r.approved || r.rejected || userIds.length;
-      var resultMsg = icon + ' ' + action + ': ' + count + ' user(s) updated.';
-      if (r.errors && r.errors.length > 0) {
-        resultMsg += '\n\nFailed (' + r.errors.length + '):';
-        r.errors.slice(0, 5).forEach(function(err) { resultMsg += '\n  • ' + (err.user_id || '').substring(0, 8) + ': ' + err.error; });
+      var r = resp.result || {};
+      var perUser = (r.data && Array.isArray(r.data.results)) ? r.data.results : [];
+      var succeededIds = perUser.filter(function(u) { return u.success; }).map(function(u) { return u.user_id; });
+      var failed = perUser.filter(function(u) { return !u.success; });
+      var resultMsg = icon + ' ' + action + ': ' + succeededIds.length + ' of ' + userIds.length + ' user(s) updated.';
+      if (failed.length > 0) {
+        resultMsg += '\n\nBlocked (' + failed.length + '):';
+        failed.slice(0, 5).forEach(function(err) {
+          resultMsg += '\n  • ' + String(err.user_id || '').substring(0, 8) + ': ' + (err.error || 'unknown error');
+        });
+        if (failed.length > 5) resultMsg += '\n  • …and ' + (failed.length - 5) + ' more';
       }
-      // Instant status update in the sheet (no sync needed)
-      _updateSheetStatus(userIds, newValue);
+      // Visually mark only the rows the server actually updated
+      if (succeededIds.length > 0) _updateSheetStatus(succeededIds, newValue);
+      // If nothing succeeded, revert the edited cell so the dropdown reflects DB truth
+      if (succeededIds.length === 0) {
+        e.range.setValue(oldValue || 'due');
+      }
       ui.alert(action + ' Complete', resultMsg, ui.ButtonSet.OK);
     } else {
       ui.alert(action + ' Failed', resp.errorMsg + '\n\nCell reverted.', ui.ButtonSet.OK);

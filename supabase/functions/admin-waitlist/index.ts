@@ -144,6 +144,51 @@ serve(async (req: Request) => {
         }
       }
 
+      // Guard: block approval if user's latest tenancy is not bank-verified.
+      // The /(waitlist) screen already enforces this for users (4226462c); the
+      // admin path needs the same gate so a sheet edit or web-UI approve can't
+      // promote a user past that requirement. No force override — bank
+      // verification is a hard prerequisite for being approved.
+      const { data: tenancyRows } = await supabase
+        .from("tenancies")
+        .select("user_id, bank_verified, created_at")
+        .in("user_id", body.user_ids)
+        .order("created_at", { ascending: false });
+
+      const latestTenancyByUser = new Map<string, { bank_verified: boolean | null }>();
+      for (const t of tenancyRows ?? []) {
+        if (!latestTenancyByUser.has(t.user_id as string)) {
+          latestTenancyByUser.set(t.user_id as string, t as { bank_verified: boolean | null });
+        }
+      }
+
+      const usersWithoutBank = new Set<string>();
+      for (const uid of body.user_ids) {
+        const t = latestTenancyByUser.get(uid);
+        if (!t || !t.bank_verified) {
+          usersWithoutBank.add(uid);
+        }
+      }
+
+      if (usersWithoutBank.size > 0) {
+        for (const uid of body.user_ids) {
+          if (usersWithoutBank.has(uid)) {
+            const t = latestTenancyByUser.get(uid);
+            results.push({
+              user_id: uid,
+              success: false,
+              error: t
+                ? "Cannot approve: bank not verified."
+                : "Cannot approve: no tenancy yet — user hasn't completed bank verification.",
+            });
+          }
+        }
+        body.user_ids = body.user_ids.filter((uid: string) => !usersWithoutBank.has(uid));
+        if (body.user_ids.length === 0) {
+          return jsonResponse({ success: false, results, message: "No users approved — none have verified bank" });
+        }
+      }
+
       // Recompute risk for each user before approval — ensures admin sees freshest data
       for (const uid of body.user_ids) {
         try {
@@ -327,6 +372,20 @@ serve(async (req: Request) => {
               user_id: uid,
               notification_type: "setup_incomplete",
             }).catch((e) => console.warn("[admin-waitlist] Failed to schedule setup_incomplete:", e))
+          )
+        );
+
+        // Auto-advance to 'active' for users who already have a verified landlord
+        // bank (the new pre-waitlist add-bank cohort). The RPC is gated on
+        // user_status='approved' AND tenancies.bank_verified=true and is a no-op
+        // otherwise, so old-flow users (no bank yet) stay 'approved' as before.
+        // Placed after both scheduleNotification calls so the immediate
+        // 'waitlist_approved' push fires while user_status is still 'approved'
+        // (process-notification-schedule.ts:70 suppresses on !== 'approved').
+        await Promise.allSettled(
+          Array.from(approvedIds).map((uid) =>
+            supabase.rpc("check_and_advance_to_active", { p_user_id: uid })
+              .catch((e) => console.warn(`[admin-waitlist] check_and_advance_to_active failed for ${uid}:`, e))
           )
         );
       }
