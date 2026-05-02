@@ -201,6 +201,33 @@ async function decideApprovedTarget(_userId: string): Promise<string> {
 }
 
 /**
+ * TEMP — legacy_post_waitlist_bank_required check.
+ *
+ * The 2026-05-01 release moved add-bank-details from post-waitlist to
+ * pre-waitlist. Users who were already 'approved' before that release have
+ * no landlord bank row and would silently fail at settlement if they paid.
+ * This flag (set on a one-shot migration) routes them back through
+ * /(agreement)/add-bank-details on cold start.
+ *
+ * Remove this helper and its callers when
+ *   SELECT count(*) FROM users WHERE legacy_post_waitlist_bank_required = true
+ * reaches 0. See docs/legacy-post-waitlist-bank-fix.md.
+ */
+async function userNeedsLegacyBank(userId: string): Promise<boolean> {
+  try {
+    const { data } = await supabase
+      .from('users')
+      .select('legacy_post_waitlist_bank_required')
+      .eq('id', userId)
+      .maybeSingle();
+    return data?.legacy_post_waitlist_bank_required === true;
+  } catch (err) {
+    console.warn('[journey-router] legacy-bank flag query failed:', err);
+    return false;
+  }
+}
+
+/**
  * Map user_status string to a JourneyTarget route.
  * Returns null for statuses that need upload store context (signed_up).
  */
@@ -369,14 +396,18 @@ export default function Index() {
 
           // statusToTarget returns null for deferred statuses (need async checks)
           if (!correctTarget && userStatus === 'approved') {
-            const { data: tenancyRow } = await supabase
-              .from('tenancies')
-              .select('id')
-              .eq('user_id', userId)
-              .maybeSingle();
+            const [{ data: tenancyRow }, needsLegacyBank] = await Promise.all([
+              supabase.from('tenancies').select('id').eq('user_id', userId).maybeSingle(),
+              userNeedsLegacyBank(userId),
+            ]);
             // No tenancy = broken state — route to waitlist as safety net.
-            // Otherwise: bank row present → /(main); absent → /(agreement)/add-bank-details.
-            correctTarget = !tenancyRow ? '/(waitlist)' : await decideApprovedTarget(userId);
+            // TEMP: legacy cohort bounce — see userNeedsLegacyBank() above.
+            // Otherwise: hand off to decideApprovedTarget (-> /(main)).
+            correctTarget = !tenancyRow
+              ? '/(waitlist)'
+              : needsLegacyBank
+                ? '/(agreement)/add-bank-details'
+                : await decideApprovedTarget(userId);
           } else if (!correctTarget && (userStatus === 'waitlisted' || userStatus === 'agreement_confirmed')) {
             // Background validation for waitlisted — bank-details gate covers
             // both the legacy skip cohort and the kill-mid-flow case (partial
@@ -467,17 +498,23 @@ export default function Index() {
       if (resolved) {
         setTarget(resolved);
       } else if (userStatus === 'approved') {
-        // approved — check tenancy exists, then route by bank-row presence.
-        const { data: tenancyRow } = await supabase
-          .from('tenancies')
-          .select('id')
-          .eq('user_id', userId)
-          .maybeSingle();
+        // approved — check tenancy + legacy bank flag, then route.
+        const [{ data: tenancyRow }, needsLegacyBank] = await Promise.all([
+          supabase.from('tenancies').select('id').eq('user_id', userId).maybeSingle(),
+          userNeedsLegacyBank(userId),
+        ]);
 
         // No tenancy = broken state (approved requires tenancy from extraction flow).
         // Route to waitlist as safety net — extraction-recovery cron will fix the state.
-        // Otherwise: bank row present → /(main); absent → /(agreement)/add-bank-details.
-        setTarget(!tenancyRow ? '/(waitlist)' : await decideApprovedTarget(userId));
+        // TEMP: legacy cohort bounce — see userNeedsLegacyBank() above.
+        // Otherwise hand off to decideApprovedTarget (-> /(main)).
+        setTarget(
+          !tenancyRow
+            ? '/(waitlist)'
+            : needsLegacyBank
+              ? '/(agreement)/add-bank-details'
+              : await decideApprovedTarget(userId)
+        );
       } else if (userStatus === 'waitlisted' || userStatus === 'agreement_confirmed') {
         // waitlisted — check if extraction requires reupload (invalid document / failed).
         // Without this check, the waitlist screen loads → detects requiresReupload →
