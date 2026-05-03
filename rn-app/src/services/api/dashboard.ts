@@ -694,16 +694,21 @@ export function mapCashbackModule(
   // — observed in prod for users mid-lease), synthesise an array from
   // dashboardStamps.summary counts so the chart still shows the right
   // NUMBER of coloured bars even before per-month detail is available.
-  // We lose exact month ordering, but the visual count matches the
-  // user's actual cashback history (one orange bar per paid month).
+  //
+  // Order: missed → late → on_time → pending, so the chart reads
+  // chronologically left→right under the typical assumption that users
+  // settle into on-time payments after early hiccups, and the current
+  // month (often `pending` until cutoff passes) sits at the rightmost
+  // colored slot. Exact chronology is unrecoverable from counts alone;
+  // this is corrected once usePaymentStamps resolves with per-month data.
   const cutoffDay = tenancy?.cashback_cutoff_day ?? 7;
   let effectiveStamps = stamps;
   if ((!stamps || stamps.length === 0) && dashboardStamps?.summary) {
     const { on_time, late, missed, pending } = dashboardStamps.summary;
     effectiveStamps = [
-      ...Array(on_time).fill({ status: 'on_time' }),
-      ...Array(late).fill({ status: 'late' }),
       ...Array(missed).fill({ status: 'missed' }),
+      ...Array(late).fill({ status: 'late' }),
+      ...Array(on_time).fill({ status: 'on_time' }),
       ...Array(pending).fill({ status: 'pending' }),
     ];
   }
