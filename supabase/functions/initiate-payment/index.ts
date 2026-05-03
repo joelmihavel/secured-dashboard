@@ -514,9 +514,12 @@ serve(async (req: Request) => {
     if (await isTestUser(userId, supabase)) {
       const demoTxnId = `DEMO-${crypto.randomUUID()}`;
       const demoRentPaise = validatedBody.amount_paise ?? tenancy.monthly_rent_paise;
-      const demoDueDate = calculateDueDate(rent_month, tenancy.rent_due_day);
+      // Grace-inclusive deadline (Model B) — see commit b9007708.
+      const demoDeadlineDay = Math.max(tenancy.rent_due_day, tenancy.cashback_cutoff_day ?? tenancy.rent_due_day);
+      const demoDueDate = calculateDueDate(rent_month, demoDeadlineDay);
 
-      const demoCutoffDay = tenancy.cashback_cutoff_day ?? tenancy.rent_due_day ?? 7;
+      // B11/C4: tenancies.rent_due_day is NOT NULL — drop the unreachable `?? 7` magic.
+      const demoCutoffDay = tenancy.cashback_cutoff_day ?? tenancy.rent_due_day;
       const [demoYear, demoMonthNum] = rent_month.split("-").map(Number);
       const demoCutoffDate = new Date(Date.UTC(demoYear, demoMonthNum - 1, demoCutoffDay, 18, 29, 59, 999));
       const demoIsPastCutoff = new Date() > demoCutoffDate;
@@ -632,9 +635,10 @@ serve(async (req: Request) => {
       && tenancy.utility_verified
       && tenancy.landlord_approved;
 
-    // Cutoff gate — cashback only if payment is made on or before the cutoff day
-    // cutoff_day comes from the rent agreement; defaults to 7 if not specified
-    const cutoffDay = tenancy.cashback_cutoff_day ?? tenancy.rent_due_day ?? 7;
+    // Cutoff gate — cashback only if payment is made on or before the cutoff day.
+    // cutoff_day comes from the rent agreement. B11/C4: tenancies.rent_due_day is
+    // NOT NULL, so the previous `?? 7` magic-number fallback was unreachable.
+    const cutoffDay = tenancy.cashback_cutoff_day ?? tenancy.rent_due_day;
     const [rentYear, rentMonthNum] = rent_month.split("-").map(Number);
     // Cutoff date: end of cutoff day in IST (UTC+05:30) → 18:29:59 UTC
     const cutoffDate = new Date(Date.UTC(rentYear, rentMonthNum - 1, cutoffDay, 18, 29, 59, 999));
@@ -779,8 +783,9 @@ serve(async (req: Request) => {
       });
     }
 
-    // Calculate due date using tenancy's actual rent_due_day
-    const dueDate = calculateDueDate(rent_month, tenancy.rent_due_day);
+    // Grace-inclusive deadline (Model B) — see commit b9007708.
+    const deadlineDay = Math.max(tenancy.rent_due_day, tenancy.cashback_cutoff_day ?? tenancy.rent_due_day);
+    const dueDate = calculateDueDate(rent_month, deadlineDay);
 
     // Create payment record — rent_amount_paise stores the ORIGINAL rent, not the reduced amount
     const { data: payment, error: paymentError } = await supabase

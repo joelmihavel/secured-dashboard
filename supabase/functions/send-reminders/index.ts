@@ -106,7 +106,8 @@ serve(async (req: Request) => {
       for (const tenancy of tenancies) {
         if (paidUserIds.has(tenancy.user_id)) continue; // Already paid/processing
 
-        const dueDay = tenancy.rent_due_day ?? 1;
+        // B11/C4: tenancies.rent_due_day is NOT NULL — drop the unreachable `?? 1`.
+        const dueDay = tenancy.rent_due_day;
         // Compute actual days until due — handles month boundaries correctly.
         // Simple subtraction (dueDay - todayDay) fails when due date is in next month
         // (e.g., rent_due_day=1, today=March 29 → -28 instead of 3).

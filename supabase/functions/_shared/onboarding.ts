@@ -389,6 +389,11 @@ export async function ensureTenancyForExtraction(
     return { tenancyId: undefined, missingFields: missing };
   }
 
+  // B7/C7: when extraction.rent_due_day is null/0, the `|| 1` fallback below
+  // fabricates day-1 silently. Capture this so we can leave a breadcrumb in
+  // audit_logs after the tenancy is created.
+  const rentDueDayInferred = !extraction.rent_due_day;
+
   const { data: tenancy, error: tenancyError } = await supabase
     .from("tenancies")
     .insert({
@@ -448,6 +453,31 @@ export async function ensureTenancyForExtraction(
         tenancyId,
         extraction,
       });
+    }
+
+    // B7/C7: breadcrumb when rent_due_day was fabricated by the fallback. Only
+    // emit on the create-branch (not the race-branch) — the racing writer is
+    // responsible for its own breadcrumb. Non-fatal: never block tenancy
+    // creation on audit failure.
+    if (rentDueDayInferred && tenancyError?.code !== "23505") {
+      try {
+        await supabase.from("audit_logs").insert({
+          user_id: userId,
+          actor_type: "system",
+          action: "TENANCY_RENT_DUE_DAY_INFERRED",
+          action_category: "verification",
+          entity_type: "tenancy",
+          entity_id: tenancyId,
+          status: "success",
+          details: {
+            reason: "extraction.rent_due_day was null; inferred to 1 by fallback. Manual review recommended.",
+            extraction_id: extraction.id,
+            fabricated_value: 1,
+          },
+        });
+      } catch (auditErr) {
+        console.error("[onboarding] TENANCY_RENT_DUE_DAY_INFERRED audit log failed:", auditErr);
+      }
     }
   }
 

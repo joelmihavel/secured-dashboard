@@ -383,6 +383,11 @@ serve(async (req: Request) => {
             const landlordName = extraction.landlord_name
               ?? (extraction.landlord_names?.length ? extraction.landlord_names.join(" & ") : null);
 
+            // B7/C7: when extraction.rent_due_day is null/0, the `|| 1` fallback
+            // below fabricates day-1 silently. Capture so we can leave a
+            // breadcrumb in audit_logs after the tenancy is created.
+            const rentDueDayInferred = !extraction.rent_due_day;
+
             const { data: newTenancy, error: tenancyError } = await supabase
               .from("tenancies")
               .insert({
@@ -428,6 +433,34 @@ serve(async (req: Request) => {
                 .eq("id", extraction.id);
 
               actions.push("created tenancy " + tenancyId);
+
+              // B7/C7: breadcrumb when rent_due_day was fabricated by the
+              // fallback. Only on the create-branch (race-branch's racing
+              // writer owns its own breadcrumb). Direct insert (not the shared
+              // audit logger) so we record the affected user's UUID — the
+              // shared logger's context.userId is the literal "system" string
+              // for this cron, which would violate audit_logs.user_id UUID FK.
+              // Non-fatal: never block recovery on audit failure.
+              if (rentDueDayInferred) {
+                try {
+                  await supabase.from("audit_logs").insert({
+                    user_id: userId,
+                    actor_type: "system",
+                    action: "TENANCY_RENT_DUE_DAY_INFERRED",
+                    action_category: "verification",
+                    entity_type: "tenancy",
+                    entity_id: tenancyId,
+                    status: "success",
+                    details: {
+                      reason: "extraction.rent_due_day was null; inferred to 1 by fallback. Manual review recommended.",
+                      extraction_id: extraction.id,
+                      fabricated_value: 1,
+                    },
+                  });
+                } catch (auditErr) {
+                  console.error("[extraction-recovery] TENANCY_RENT_DUE_DAY_INFERRED audit log failed:", auditErr);
+                }
+              }
             }
           } else if (existingTenancy) {
             actions.push("tenancy already exists");

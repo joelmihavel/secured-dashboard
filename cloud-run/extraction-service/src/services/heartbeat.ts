@@ -3,7 +3,9 @@
  * Updates the extraction record periodically so the client
  * (and recovery cron) can detect stuck extractions.
  *
- * Writes to `gemini_raw_response` column with current step and timestamp.
+ * Writes to `extraction_progress` column with current step and timestamp.
+ * Distinct from `gemini_raw_response`, which holds the final structured
+ * Gemini output once extraction completes.
  */
 
 import type { SupabaseClient } from '@supabase/supabase-js';
@@ -32,7 +34,7 @@ export class Heartbeat {
 
   /**
    * Start sending periodic heartbeats.
-   * Each heartbeat updates `gemini_raw_response` with the current step
+   * Each heartbeat updates `extraction_progress` with the current step
    * and a `last_heartbeat` timestamp.
    */
   start(): void {
@@ -43,7 +45,7 @@ export class Heartbeat {
         await this.supabase
           .from('extracted_rental_info')
           .update({
-            gemini_raw_response: {
+            extraction_progress: {
               step: this.currentStep,
               last_heartbeat: new Date().toISOString(),
               started_at: new Date().toISOString(),
@@ -72,7 +74,7 @@ export class Heartbeat {
       await this.supabase
         .from('extracted_rental_info')
         .update({
-          gemini_raw_response: {
+          extraction_progress: {
             step,
             last_heartbeat: new Date().toISOString(),
             started_at: new Date().toISOString(),
@@ -87,6 +89,8 @@ export class Heartbeat {
   /**
    * Stop sending heartbeats.
    * Call this when the pipeline completes (success or failure).
+   * Also clears the `extraction_progress` column best-effort so stale
+   * heartbeat metadata does not linger after extraction completes.
    */
   stop(): void {
     if (this.intervalId) {
@@ -94,5 +98,20 @@ export class Heartbeat {
       this.intervalId = null;
       console.log(`[heartbeat] Stopped for extraction ${this.extractionId}`);
     }
+
+    // Best-effort clear of the heartbeat column. Fire-and-forget so callers
+    // are not blocked, and swallow errors so a stray network failure does
+    // not crash the pipeline shutdown path.
+    this.supabase
+      .from('extracted_rental_info')
+      .update({ extraction_progress: null })
+      .eq('id', this.extractionId)
+      .then(({ error }) => {
+        if (error) {
+          console.warn('[heartbeat] Failed to clear extraction_progress:', error.message);
+        }
+      }, (err: unknown) => {
+        console.warn('[heartbeat] Failed to clear extraction_progress:', err instanceof Error ? err.message : String(err));
+      });
   }
 }

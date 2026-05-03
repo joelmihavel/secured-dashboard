@@ -364,7 +364,9 @@ serve(async (req: Request) => {
     if (await isTestUser(userId, supabase)) {
       const demoTxnId = `DEMO-CF-${crypto.randomUUID()}`;
       const demoRentPaise = validatedBody.amount_paise ?? tenancy.monthly_rent_paise;
-      const demoDueDate = calculateDueDate(rent_month, tenancy.rent_due_day);
+      // Grace-inclusive deadline (Model B) — see commit b9007708.
+      const demoDeadlineDay = Math.max(tenancy.rent_due_day, tenancy.cashback_cutoff_day ?? tenancy.rent_due_day);
+      const demoDueDate = calculateDueDate(rent_month, demoDeadlineDay);
 
       const { data: demoPayment, error: demoError } = await supabase
         .from("payments")
@@ -430,7 +432,8 @@ serve(async (req: Request) => {
       && tenancy.utility_verified
       && tenancy.landlord_approved;
 
-    const cutoffDay = tenancy.cashback_cutoff_day ?? tenancy.rent_due_day ?? 7;
+    // B11/C4: tenancies.rent_due_day is NOT NULL — drop the unreachable `?? 7` magic.
+    const cutoffDay = tenancy.cashback_cutoff_day ?? tenancy.rent_due_day;
     const { year: rentYear, month: rentMonthNum } = parseRentMonth(rent_month);
     const cutoffDate = new Date(Date.UTC(rentYear, rentMonthNum - 1, cutoffDay, 18, 29, 59, 999));
     const now = new Date();
@@ -502,7 +505,9 @@ serve(async (req: Request) => {
     }
 
     const txnId = generateTransactionId("FLENT");
-    const dueDate = calculateDueDate(rent_month, tenancy.rent_due_day);
+    // Grace-inclusive deadline (Model B) — see commit b9007708.
+    const deadlineDay = Math.max(tenancy.rent_due_day, tenancy.cashback_cutoff_day ?? tenancy.rent_due_day);
+    const dueDate = calculateDueDate(rent_month, deadlineDay);
 
     // Create payment record
     const { data: payment, error: paymentError } = await supabase
