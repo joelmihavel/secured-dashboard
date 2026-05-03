@@ -110,6 +110,33 @@ Deno.serve(async (req) => {
       // No body or invalid JSON — process all failed
     }
 
+    // Cloud Run delegation: when explicit IDs are passed AND the service is
+    // configured, fire-and-forget the batch to extraction-service-prod /reprocess.
+    // Cloud Run has a 900s request timeout vs the edge function's 150s ceiling,
+    // so any backfill > 1 extraction will exceed our limits if processed in-band.
+    // Same pattern as process-document → /extract delegation.
+    const cloudRunUrl = Deno.env.get("EXTRACTION_SERVICE_URL");
+    const extractionSecret = Deno.env.get("EXTRACTION_SECRET");
+    const useCloudRun = Deno.env.get("USE_CLOUD_RUN") === "true";
+    if (useCloudRun && cloudRunUrl && extractionSecret && targetIds && targetIds.length > 0) {
+      console.log(`[reprocess] Delegating ${targetIds.length} extraction(s) to Cloud Run /reprocess`);
+      fetch(`${cloudRunUrl}/reprocess`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-Extraction-Secret": extractionSecret,
+        },
+        body: JSON.stringify({ extraction_ids: targetIds }),
+      }).catch((err) => {
+        console.error("[reprocess] Cloud Run delegation failed:", err);
+      });
+      return new Response(JSON.stringify({
+        message: `Delegated ${targetIds.length} extraction(s) to Cloud Run /reprocess (fire-and-forget). Poll extracted_rental_info.updated_at for completion.`,
+        delegated_to: "cloud-run",
+        extraction_ids: targetIds,
+      }), { status: 202, headers });
+    }
+
     // Query extractions to reprocess.
     //
     // Default mode (no explicit IDs): only failed extractions. Three failure modes:
