@@ -71,7 +71,7 @@ gcloud iam workload-identity-pools providers create-oidc github-prod \
   --workload-identity-pool=github-pool \
   --issuer-uri="https://token.actions.githubusercontent.com" \
   --attribute-mapping="google.subject=assertion.sub,attribute.repository=assertion.repository,attribute.ref=assertion.ref" \
-  --attribute-condition="attribute.repository == 'flent-homes/Secured-v2'"
+  --attribute-condition="attribute.repository == 'flent-homes/Secured-v2' && (attribute.ref == 'refs/heads/main' || attribute.ref.startsWith('refs/tags/deploy-prod-'))"
 
 # 3. Create deploy service accounts (per environment)
 gcloud iam service-accounts create cloud-run-deployer-prod \
