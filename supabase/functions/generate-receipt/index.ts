@@ -166,7 +166,7 @@ serve(async (req: Request) => {
           payment_method, status, payment_month, paid_at, created_at, due_date,
           tenancies (
             id, property_address, property_city, property_state, property_pincode,
-            landlord_name, landlord_pan_masked, agreement_cert_id, rent_due_day,
+            landlord_name, landlord_pan_masked, agreement_cert_id, rent_due_day, cashback_cutoff_day,
             landlord_user_id,
             users!tenancies_user_id_fkey (
               first_name, last_name, phone, pan_number
@@ -372,7 +372,20 @@ serve(async (req: Request) => {
         rent_month_display: rentMonthDisplay,
         paid_at: payment.paid_at,
         utr: (() => { const utr = resolveUtr(payment); console.log(`[generate-receipt] payment=${payment.id} resolveUtr=${utr} gateway_payout_utr=${payment.gateway_payout_utr} landlord_payout_utr=${payment.landlord_payout_utr} status=${payment.landlord_payout_status}`); return utr; })(),
-        timeliness: computeTimeliness(payment.paid_at, payment.due_date, tenancy?.rent_due_day, payment.payment_month),
+        // Receipt timeliness reflects whether the user got cashback. Anchor
+        // on MAX(rent_due_day, cashback_cutoff_day) — the grace-inclusive deadline
+        // (Model B). Otherwise users with cashback_cutoff_day > rent_due_day see
+        // "Late" on the receipt while the dashboard credits them cashback.
+        // Note: payment.due_date is also used here when set, but it was historically
+        // stored as just rent_due_day by initiate-payment — see TODO in C9.
+        timeliness: computeTimeliness(
+          payment.paid_at,
+          payment.due_date,
+          tenancy?.rent_due_day != null
+            ? Math.max(tenancy.rent_due_day, tenancy.cashback_cutoff_day ?? tenancy.rent_due_day)
+            : null,
+          payment.payment_month
+        ),
       },
 
       tenant: {
