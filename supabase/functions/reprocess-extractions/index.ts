@@ -110,20 +110,28 @@ Deno.serve(async (req) => {
       // No body or invalid JSON — process all failed
     }
 
-    // Query failed extractions — pick up:
+    // Query extractions to reprocess.
+    //
+    // Default mode (no explicit IDs): only failed extractions. Three failure modes:
     //   1. Original failures: extraction_method=gcp_doc_ai, confidence=0, needs_review=true
     //   2. Reprocess failures: extraction_status=extraction_failed
     //   3. Crash failures: extraction_status=failed (crashed mid-processing, nulls everywhere)
-    // The OR covers all three failure modes.
+    //
+    // Explicit-IDs mode (extraction_ids in body): process those rows regardless of
+    // extraction_status. Used by admin-triggered backfills that need to re-run
+    // Gemini on completed extractions whose persisted shape was incomplete (e.g. the
+    // rent_grace_period_days drop bug pre-Phase-1 fix). Caller is responsible for
+    // not stampeding healthy data — this bypass is intentional.
     let query = supabase
       .from("extracted_rental_info")
       .select("id, user_id, document_storage_path, raw_extraction_data, extraction_method, confidence_score, extraction_status")
-      .in("extraction_status", ["failed", "extraction_failed"])
       .not("document_storage_path", "is", null)
       .order("created_at", { ascending: true });
 
     if (targetIds && targetIds.length > 0) {
       query = query.in("id", targetIds);
+    } else {
+      query = query.in("extraction_status", ["failed", "extraction_failed"]);
     }
 
     const { data: failedExtractions, error: queryError } = await query;
