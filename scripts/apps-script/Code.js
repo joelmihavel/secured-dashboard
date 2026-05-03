@@ -1856,13 +1856,24 @@ function writeUserDetailsSheet(data) {
 // LANDLORDS SHEET
 // ============================================================================
 
+// Format the landlord-bank name match: bool → ✓/✗ with score (0-100) appended.
+function _formatBankMatch(r) {
+  if (r.landlord_bank_agreement_name_matched !== true && r.landlord_bank_agreement_name_matched !== false) return '';
+  var icon = r.landlord_bank_agreement_name_matched ? '✓' : '✗';
+  var raw = r.landlord_bank_agreement_match_score;
+  if (raw === null || raw === undefined || raw === '') return icon;
+  return icon + ' ' + Math.round(Number(raw)) + '%';
+}
+
 function writeLandlordsSheet(data) {
   var sheet = getOrCreateSheet('Landlords');
   var headers = ['Landlord Name', 'Landlord Phone', 'Property Address', 'City', 'State',
                  'Tenant Name', 'Tenant Phone', 'Rent (\u20B9)',
                  'Bank A/C', 'IFSC', 'Bank Holder Name', 'Bank Verified',
-                 'Lease Start', 'Lease End', 'LL Approved'];
-  var widths = [180, 130, 280, 100, 100, 180, 130, 100, 150, 120, 180, 100, 110, 110, 110];
+                 'Lease Start', 'Lease End', 'LL Approved',
+                 'M360 Landlord', 'SHCIL Status', 'Bank Name Match', 'SHCIL Name Match'];
+  var widths = [180, 130, 280, 100, 100, 180, 130, 100, 150, 120, 180, 100, 110, 110, 110,
+                180, 110, 130, 130];
 
   var rows = [];
   data.forEach(function(r) {
@@ -1883,6 +1894,10 @@ function writeLandlordsSheet(data) {
       r.lease_start_date || '',
       r.lease_end_date || '',
       r.landlord_approved === true ? '\u2713' : r.landlord_approved === false ? '\u2717' : '',
+      r.landlord_m360_full_name || '',
+      r.stamp_verification_status || '',
+      _formatBankMatch(r),
+      r.shcil_landlord_name_matched === true ? '\u2713' : r.shcil_landlord_name_matched === false ? '\u2717' : '',
     ]);
   });
 
@@ -1890,6 +1905,30 @@ function writeLandlordsSheet(data) {
   var rc = rows.length;
   if (rc > 0) {
     sheet.getRange(2, 8, rc, 1).setNumberFormat('\u20B9#,##0');
+    // M360 Landlord (col 16) — plain text, no formatting
+    // SHCIL Status (col 17) — colored like Users sheet
+    applyStatusColors(sheet, 17, rc, {
+      'verified': { bg: C.GREEN_BG, fg: C.GREEN },
+      'missing_article': { bg: C.RED_BG, fg: C.RED },
+      'not_found': { bg: C.RED_BG, fg: C.RED },
+      'mismatch': { bg: C.RED_BG, fg: C.RED },
+      'missing_fields': { bg: C.RED_BG, fg: C.RED },
+      'site_error': { bg: C.AMBER_BG, fg: C.AMBER },
+    });
+    // Bank Name Match (col 18) and SHCIL Name Match (col 19) — color by ✓/✗ prefix
+    [18, 19].forEach(function(c) {
+      var range = sheet.getRange(2, c, rc, 1);
+      var vals = range.getValues();
+      range.setBackgrounds(vals.map(function(v) {
+        var s = String(v[0] || '');
+        return [s.charAt(0) === '✓' ? C.GREEN_BG : s.charAt(0) === '✗' ? C.RED_BG : C.ROW_EVEN];
+      }));
+      range.setFontColors(vals.map(function(v) {
+        var s = String(v[0] || '');
+        return [s.charAt(0) === '✓' ? C.GREEN : s.charAt(0) === '✗' ? C.RED : C.MUTED];
+      }));
+      range.setFontWeight('bold').setHorizontalAlignment('center');
+    });
     // Bool coloring for Bank Verified (col 12)
     var bankVerifiedRange = sheet.getRange(2, 12, rc, 1);
     var bvVals = bankVerifiedRange.getValues();
