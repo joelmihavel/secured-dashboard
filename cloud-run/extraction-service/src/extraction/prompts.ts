@@ -27,6 +27,7 @@ INSTRUCTIONS:
 - MUMBAI/MAHARASHTRA: GRN or Transaction ID IS the Stamp Certificate ID \u2014 use as certificate_no.
 - For rooms_in_agreement: if tenant rents a portion, count only rented rooms.
 - For e-stamp fields: look in the stamp/e-stamp section (usually at top or bottom of document).
+- For rent_due_day and rent_grace_period_days: see field descriptions. Common phrasings include 'grace period of N days', 'N days of grace period', 'penalty after Nth', 'within Nth day in advance'.
 - Use null for any field you cannot find.`;
 
 /**
@@ -35,6 +36,7 @@ INSTRUCTIONS:
  *
  * Ported from: process-document/index.ts extractWithVertexAIGemini() inline prompt
  */
+// Canonical grace-period extraction rule (rent_grace_period_days line below). If you change this, update all 7 sites: cloud-run/extraction-service/src/extraction/schema.ts (rent_grace_period_days), cloud-run/extraction-service/src/extraction/prompts.ts (buildVertexAIExtractionPrompt, buildGeminiAPIKeyPrompt), supabase/functions/process-document/index.ts (EXTRACTION_RESPONSE_SCHEMA, extractWithVertexAIGemini inline), supabase/functions/process-document-fallback/index.ts, supabase/functions/reprocess-extractions/index.ts.
 export function buildVertexAIExtractionPrompt(documentText: string): string {
   return `You are analyzing a document that the user claims is an Indian rental/lease agreement. First determine if it actually IS a rental/lease agreement, then extract information.
 
@@ -59,14 +61,14 @@ Extract and return a JSON object with these exact fields (use null for fields yo
   "contract_end_date": "YYYY-MM-DD format",
   "contract_length_months": "duration in months as number",
   "rent_due_day": "day of month when rent is due (e.g., 1, 5, 10) - look for phrases like 'rent payable on 5th of every month'",
-  "rent_grace_period_days": "number of grace days after rent_due_day (e.g., if due on 1st with grace until 5th, return 4). Look for 'grace period', 'without penalty until', 'no late fee before'. Return 0 if no grace period mentioned.",
+  "rent_grace_period_days": "Number of days AFTER rent_due_day during which rent can still be paid without penalty / late fee — i.e., the LENGTH of the grace window, NOT a date. CRITICAL: drives cashback_cutoff_day = rent_due_day + this value. Math examples: due on 1st with grace until 5th → 4; due on 1st with grace until 3rd → 2; due on 5th with grace until 10th → 5; due on 10th with 'penalty beyond 15th' → 5. PHRASINGS to recognize (both directions matter — Gemini has missed clauses where the number comes BEFORE the words 'grace period'): 'grace period of N days', 'N days of grace period' (e.g., '10 days of grace period'), 'beyond N days of grace period' (e.g., 'penalty for delay beyond 10 days of grace period'), 'N-day grace' / 'N-day grace period' (e.g., '10-day grace'), 'grace of N days', 'within a grace of N days', 'without penalty until the Nth', 'no late fee before Nth', 'allowed/permitted until Nth', 'within N days of due date', 'buffer of N days', 'late payment charges shall apply only after the Nth', 'penalty after Nth' / 'penalty beyond Nth' (then grace = N - rent_due_day), 'rent payable by Nth' (only when an explicit earlier rent_due_day is also stated, then grace = N - rent_due_day), 'rent payable from Xth to Yth of every month' → rent_due_day=X, grace=Y-X. Return 0 ONLY if no grace period, buffer, or late-fee threshold is mentioned ANYWHERE in the agreement. DO NOT default to 0 if any penalty/grace/buffer clause is present — extract the implied grace days even if the wording is indirect.",
   "tenant_names": ["array of tenant/lessee names"],
   "landlord_names": ["array of landlord/lessor/owner names"],
   "certificate_no": "Stamp certificate number, captured EXACTLY as printed INCLUDING any 'IN-' prefix and trailing check character. SHCIL e-stamps are formatted 'IN-XXNNNNNNNNNNX' (e.g. 'IN-KA53026964726796Y', 'IN-DL12345678901234Z') — preserve the 'IN-' prefix verbatim, do NOT strip or normalise. MUMBAI/MAHARASHTRA EXCEPTION: the GRN (Government Receipt Number) or Transaction ID serves as the Stamp Certificate ID — if you see 'GRN', 'Transaction ID', or 'Transaction No.' in a Mumbai/Maharashtra document, use that as certificate_no and do NOT prepend 'IN-' to it. For other states, look for 'Certificate No.' or 'Cert. No.' and copy the full value including 'IN-' prefix.",
   "certificate_issued_date": "YYYY-MM-DD format - date when stamp certificate was issued",
   "account_reference": "account reference number from e-stamp",
   "purchased_by": "name of person who purchased the stamp paper",
-  "description_of_document": "EXACT verbatim text from the 'Description of Document' field on the e-stamp paper. MUST include the article number when present (e.g., 'Article 30(1)(i) Lease of Immovable Property - Not exceeding 1 year in case of Residential property'). RESCUE RULE: if the description body is short like 'Lease of Immovable Property', search the e-stamp ANYWHERE for 'Article XX' or 'Article XX(Y)' (header, top-right cell, alongside the description, fine print, or even a separate 'Article' field) and PREPEND it. If you cannot find any article number on the e-stamp, return the description as-is and the downstream system will fall back to manual review. Do NOT abbreviate, summarize, or reduce to a category label like 'Rental Agreement' or 'Lease' alone. Copy the text as-is, preserving the article number, spelling, and punctuation.",
+  "description_of_document": "Description of Document field from the e-stamp paper, with the article number normalised for downstream SHCIL parsing. MUST include the article number (e.g., 'Article 30(1)(i) Lease of Immovable Property - Not exceeding 1 year in case of Residential property', 'Article 5(j) Agreement (in any other cases)'). RESCUE RULE: if the description body is short like 'Lease of Immovable Property', search the e-stamp ANYWHERE for 'Article XX' or 'Article XX(Y)' (header, top-right cell, alongside the description, fine print, or even a separate 'Article' field) and PREPEND it. NORMALISATION RULE — IMPORTANT for SHCIL lookup: when the article has a letter sub-clause (e.g., '5(J)', '5(A)', '30(1)(I)'), output the LETTER PORTION IN LOWERCASE — '5(j)', '5(a)', '30(1)(i)'. SHCIL's article-code dropdown uses lowercase letters; capital letters cause lookup failure. Numeric sub-clauses stay as written. Karnataka Article 5(j) = 'Agreement (in any other cases)' — common for non-standard residential rentals. Do NOT abbreviate, summarize, or reduce to a category label like 'Rental Agreement' or 'Lease' alone.",
   "first_party": "first party name as mentioned on stamp paper (usually lessor/landlord)",
   "second_party": "second party name as mentioned on stamp paper (usually lessee/tenant)",
   "stamp_duty_paid_by": "who paid the stamp duty (tenant/landlord/both)",
@@ -123,6 +125,7 @@ EXTRACTION RULES:
  *
  * Ported from: process-document/index.ts verifyWithGemini() inline prompt
  */
+// Canonical grace-period extraction rule (rent_grace_period_days line below). If you change this, update all 7 sites: cloud-run/extraction-service/src/extraction/schema.ts (rent_grace_period_days), cloud-run/extraction-service/src/extraction/prompts.ts (buildVertexAIExtractionPrompt, buildGeminiAPIKeyPrompt), supabase/functions/process-document/index.ts (EXTRACTION_RESPONSE_SCHEMA, extractWithVertexAIGemini inline), supabase/functions/process-document-fallback/index.ts, supabase/functions/reprocess-extractions/index.ts.
 export function buildGeminiAPIKeyPrompt(documentText: string, initialExtraction: ExtractedData): string {
   // Only include relevant extracted fields, NOT raw_doc_ai_data or raw_gemini_data
   // IMPORTANT: Convert paise back to rupees before passing to Gemini — the prompt
@@ -164,14 +167,15 @@ Please extract and return a JSON object with these exact fields:
   "contract_start_date": "YYYY-MM-DD format",
   "contract_end_date": "YYYY-MM-DD format",
   "contract_length_months": "number of months",
-  "rent_due_day": "day of month when rent is due (e.g., 1, 5, 10)",
+  "rent_due_day": "day of month when rent is due (e.g., 1, 5, 10). The original due date BEFORE any grace period.",
+  "rent_grace_period_days": "Number of days AFTER rent_due_day during which rent can still be paid without penalty / late fee — i.e., the LENGTH of the grace window, NOT a date. CRITICAL: drives cashback_cutoff_day = rent_due_day + this value. Math examples: due on 1st with grace until 5th → 4; due on 1st with grace until 3rd → 2; due on 5th with grace until 10th → 5; due on 10th with 'penalty beyond 15th' → 5. PHRASINGS to recognize (both directions matter — Gemini has missed clauses where the number comes BEFORE the words 'grace period'): 'grace period of N days', 'N days of grace period' (e.g., '10 days of grace period'), 'beyond N days of grace period' (e.g., 'penalty for delay beyond 10 days of grace period'), 'N-day grace' / 'N-day grace period' (e.g., '10-day grace'), 'grace of N days', 'within a grace of N days', 'without penalty until the Nth', 'no late fee before Nth', 'allowed/permitted until Nth', 'within N days of due date', 'buffer of N days', 'late payment charges shall apply only after the Nth', 'penalty after Nth' / 'penalty beyond Nth' (then grace = N - rent_due_day), 'rent payable by Nth' (only when an explicit earlier rent_due_day is also stated, then grace = N - rent_due_day), 'rent payable from Xth to Yth of every month' → rent_due_day=X, grace=Y-X. Return 0 ONLY if no grace period, buffer, or late-fee threshold is mentioned ANYWHERE in the agreement. DO NOT default to 0 if any penalty/grace/buffer clause is present — extract the implied grace days even if the wording is indirect.",
   "tenant_names": ["array of tenant names"],
   "landlord_names": ["array of landlord names"],
   "certificate_no": "Stamp certificate number, captured EXACTLY including any 'IN-' prefix. SHCIL e-stamps are formatted 'IN-XXNNNNNNNNNNX' — preserve 'IN-' verbatim. MUMBAI/MAHARASHTRA: GRN or Transaction ID IS the certificate_no (no 'IN-' prefix on those).",
   "certificate_issued_date": "YYYY-MM-DD format",
   "account_reference": "account reference from e-stamp",
   "purchased_by": "who purchased the stamp paper",
-  "description_of_document": "EXACT verbatim text from the 'Description of Document' field on the e-stamp paper. MUST include the article number when present (e.g., 'Article 30(1)(i) Lease of Immovable Property - Not exceeding 1 year in case of Residential property'). RESCUE RULE: if the description body is short like 'Lease of Immovable Property', search the e-stamp ANYWHERE for 'Article XX' or 'Article XX(Y)' (header, fine print, or a separate 'Article' field) and PREPEND it. Do NOT abbreviate or reduce to a category label. Copy as-is.",
+  "description_of_document": "Description of Document from the e-stamp, with the article number normalised. MUST include the article number (e.g., 'Article 30(1)(i) Lease of Immovable Property - Not exceeding 1 year', 'Article 5(j) Agreement (in any other cases)'). RESCUE RULE: if the description body is short, search the e-stamp ANYWHERE for 'Article XX(Y)' and PREPEND it. NORMALISATION: lowercase any letter sub-clause — '5(J)' → '5(j)', '30(1)(I)' → '30(1)(i)' — SHCIL article-code lookup is case-sensitive on letters. Numeric sub-clauses stay as written. Karnataka 5(j) = 'Agreement (in any other cases)'. Do NOT abbreviate.",
   "first_party": "first party on stamp paper (usually lessor)",
   "second_party": "second party on stamp paper (usually lessee)",
   "stamp_duty_paid_by": "who paid stamp duty",

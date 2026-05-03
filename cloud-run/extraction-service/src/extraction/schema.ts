@@ -85,7 +85,13 @@ export const EXTRACTION_RESPONSE_SCHEMA = {
     },
     rent_due_day: {
       type: "integer",
-      description: "Day of month when rent is due (1-28). Look for 'rent payable on Nth of every month'.",
+      description: "Day of month when rent is due (1-28). Look for 'rent payable on Nth of every month'. This is the original due date BEFORE any grace period.",
+      nullable: true,
+    },
+    // Canonical grace-period extraction rule. If you change this, update all 7 sites: cloud-run/extraction-service/src/extraction/schema.ts (rent_grace_period_days), cloud-run/extraction-service/src/extraction/prompts.ts (buildVertexAIExtractionPrompt, buildGeminiAPIKeyPrompt), supabase/functions/process-document/index.ts (EXTRACTION_RESPONSE_SCHEMA, extractWithVertexAIGemini inline), supabase/functions/process-document-fallback/index.ts, supabase/functions/reprocess-extractions/index.ts.
+    rent_grace_period_days: {
+      type: "integer",
+      description: "Number of days AFTER rent_due_day during which rent can still be paid without penalty / late fee — i.e., the LENGTH of the grace window, NOT a date. CRITICAL: drives cashback_cutoff_day = rent_due_day + this value. Math examples: due on 1st with grace until 5th → 4; due on 1st with grace until 3rd → 2; due on 5th with grace until 10th → 5; due on 10th with 'penalty beyond 15th' → 5. PHRASINGS to recognize (both directions matter — Gemini has missed clauses where the number comes BEFORE the words 'grace period'): 'grace period of N days', 'N days of grace period' (e.g., '10 days of grace period'), 'beyond N days of grace period' (e.g., 'penalty for delay beyond 10 days of grace period'), 'N-day grace' / 'N-day grace period' (e.g., '10-day grace'), 'grace of N days', 'within a grace of N days', 'without penalty until the Nth', 'no late fee before Nth', 'allowed/permitted until Nth', 'within N days of due date', 'buffer of N days', 'late payment charges shall apply only after the Nth', 'penalty after Nth' / 'penalty beyond Nth' (then grace = N - rent_due_day), 'rent payable by Nth' (only when an explicit earlier rent_due_day is also stated, then grace = N - rent_due_day), 'rent payable from Xth to Yth of every month' → rent_due_day=X, grace=Y-X. Return 0 ONLY if no grace period, buffer, or late-fee threshold is mentioned ANYWHERE in the agreement. DO NOT default to 0 if any penalty/grace/buffer clause is present — extract the implied grace days even if the wording is indirect.",
       nullable: true,
     },
     tenant_names: {
@@ -120,7 +126,7 @@ export const EXTRACTION_RESPONSE_SCHEMA = {
     },
     description_of_document: {
       type: "string",
-      description: "EXACT verbatim text from the 'Description of Document' field on the e-stamp paper. MUST include the article number when present (e.g., 'Article 30(1)(i) Lease of Immovable Property - Not exceeding 1 year in case of Residential property'). RESCUE RULE: if the description body is short like 'Lease of Immovable Property', search the e-stamp ANYWHERE (header, top-right cell, alongside the description, fine print, or separate 'Article' field) for 'Article XX' or 'Article XX(Y)' and PREPEND it. Do NOT abbreviate, summarize, or reduce to a category label like 'Rental Agreement' or 'Lease' alone. Copy the text as-is, preserving the article number, spelling, and punctuation.",
+      description: "Description of Document from the e-stamp paper, with article number normalised for SHCIL lookup. MUST include the article number (e.g., 'Article 30(1)(i) Lease of Immovable Property - Not exceeding 1 year in case of Residential property', 'Article 5(j) Agreement (in any other cases)'). RESCUE RULE: if the description body is short like 'Lease of Immovable Property', search the e-stamp ANYWHERE (header, top-right cell, alongside the description, fine print, or separate 'Article' field) for 'Article XX' or 'Article XX(Y)' and PREPEND it. NORMALISATION RULE — CRITICAL: lowercase any letter sub-clause — '5(J)' → '5(j)', '30(1)(I)' → '30(1)(i)'. SHCIL's article-code lookup is case-sensitive on letters; capitals cause failures. Numeric sub-clauses stay as written. Karnataka Article 5(j) = 'Agreement (in any other cases)'. Do NOT abbreviate or reduce to a category label.",
       nullable: true,
     },
     first_party: {

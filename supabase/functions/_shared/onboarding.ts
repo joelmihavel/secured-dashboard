@@ -2,6 +2,7 @@ import { recomputeAndStoreRisk } from "./risk-utils.ts";
 import { isTestUser } from "./demo-helpers.ts";
 import { matchNameAgainstCandidates } from "./gemini.ts";
 import { resolveAgreementNames, matchAgainstAgreementNames } from "./name-match-service.ts";
+import type { AuditLogger } from "./audit.ts";
 
 type SupabaseClientLike = any;
 type ExtractionRow = Record<string, any>;
@@ -139,6 +140,151 @@ export async function ensureWaitlistState(
   };
 }
 
+/**
+ * Subset of extraction columns that double as operational state on a tenancy.
+ * Edits to these fields on `extracted_rental_info` after the tenancy already
+ * exists must be propagated, otherwise the tenancy (which drives reminders,
+ * cashback, due dates) keeps diverging from the corrected extraction.
+ *
+ * Fields with their own state machines (status, bank_verified,
+ * landlord_approved, landlord_name/names, tenant_names, ...) are intentionally
+ * excluded — they are mutated by other flows and must not mirror extraction.
+ */
+const TENANCY_PROPAGATION_FIELDS = [
+  "rent_due_day",
+  "monthly_rent_paise",
+  "lease_start_date",
+  "lease_end_date",
+  "landlord_phone",
+  "landlord_email",
+  "property_address",
+  "property_city",
+  "property_state",
+  "property_pincode",
+] as const;
+
+type PropagationField = typeof TENANCY_PROPAGATION_FIELDS[number];
+
+interface SyncExtractionEditsOptions {
+  supabase: SupabaseClientLike;
+  tenancyId: string;
+  extraction: ExtractionRow;
+  /**
+   * Restrict propagation to columns the caller actually touched. If omitted,
+   * every TENANCY_PROPAGATION_FIELDS column whose value differs is synced —
+   * used by the duplicate-tenancy / existing-tenancy paths in
+   * ensureTenancyForExtraction where we don't have an explicit list.
+   */
+  changedColumns?: Iterable<string>;
+  /** Optional audit logger; if provided, a TENANCY_FIELD_PROPAGATED row is written. */
+  audit?: AuditLogger | null;
+}
+
+/**
+ * Pushes operationally-relevant edits from `extracted_rental_info` onto the
+ * matching tenancy. No-op if the tenancy is closed (status NOT IN
+ * pending_verification/active) or no field actually changed.
+ */
+export async function syncExtractionEditsToTenancy(
+  options: SyncExtractionEditsOptions,
+): Promise<{ propagated: PropagationField[] }> {
+  const { supabase, tenancyId, extraction, changedColumns, audit } = options;
+
+  const { data: tenancy, error: tenancyFetchError } = await supabase
+    .from("tenancies")
+    .select(
+      "id, status, rent_due_day, monthly_rent_paise, lease_start_date, lease_end_date, landlord_phone, landlord_email, property_address, property_city, property_state, property_pincode, cashback_cutoff_day",
+    )
+    .eq("id", tenancyId)
+    .maybeSingle();
+
+  if (tenancyFetchError || !tenancy) return { propagated: [] };
+  if (!["pending_verification", "active"].includes(tenancy.status)) {
+    return { propagated: [] };
+  }
+
+  // Restrict to fields the caller actually edited (when known).
+  const allowed: Set<string> | null = changedColumns
+    ? new Set(changedColumns)
+    : null;
+
+  const updates: Record<string, unknown> = {};
+  const oldValues: Record<string, unknown> = {};
+  const newValues: Record<string, unknown> = {};
+  const propagated: PropagationField[] = [];
+
+  for (const field of TENANCY_PROPAGATION_FIELDS) {
+    if (allowed && !allowed.has(field)) continue;
+    const nextValue = extraction[field] ?? null;
+    const prevValue = tenancy[field] ?? null;
+    if (nextValue === prevValue) continue;
+    // rent_due_day must be clamped to [1, 28] per tenancies_rent_due_day_check.
+    if (field === "rent_due_day" && typeof nextValue === "number") {
+      const clamped = Math.min(Math.max(nextValue, 1), 28);
+      updates[field] = clamped;
+      newValues[field] = clamped;
+    } else {
+      updates[field] = nextValue;
+      newValues[field] = nextValue;
+    }
+    oldValues[field] = prevValue;
+    propagated.push(field);
+  }
+
+  // Recompute cashback_cutoff_day whenever rent_due_day changes. Uses
+  // post-update extraction.rent_grace_period_days so admins can also edit
+  // grace and have it land correctly.
+  if (propagated.includes("rent_due_day") && typeof updates.rent_due_day === "number") {
+    const grace = Number(extraction.rent_grace_period_days ?? 0) || 0;
+    const cashbackCutoff = Math.min((updates.rent_due_day as number) + grace, 28);
+    if (cashbackCutoff !== (tenancy.cashback_cutoff_day ?? null)) {
+      oldValues.cashback_cutoff_day = tenancy.cashback_cutoff_day ?? null;
+      newValues.cashback_cutoff_day = cashbackCutoff;
+      updates.cashback_cutoff_day = cashbackCutoff;
+    }
+  }
+
+  if (Object.keys(updates).length === 0) return { propagated: [] };
+
+  updates.updated_at = new Date().toISOString();
+
+  const { error: updateError } = await supabase
+    .from("tenancies")
+    .update(updates)
+    .eq("id", tenancyId);
+
+  if (updateError) {
+    console.error(
+      `[onboarding] syncExtractionEditsToTenancy: failed to update tenancy ${tenancyId}:`,
+      updateError,
+    );
+    return { propagated: [] };
+  }
+
+  if (audit) {
+    try {
+      await audit.log({
+        action: "TENANCY_FIELD_PROPAGATED",
+        category: "tenancy",
+        entityType: "tenancies",
+        entityId: tenancyId,
+        oldValues,
+        newValues,
+        details: {
+          fields: propagated,
+          source: "extracted_rental_info",
+          extraction_id: extraction.id,
+        },
+        status: "success",
+      });
+    } catch (auditErr) {
+      console.error("[onboarding] TENANCY_FIELD_PROPAGATED audit log failed:", auditErr);
+    }
+  }
+
+  return { propagated };
+}
+
 export async function ensureTenancyForExtraction(
   options: EnsureTenancyForExtractionOptions,
 ): Promise<EnsureTenancyForExtractionResult> {
@@ -201,6 +347,17 @@ export async function ensureTenancyForExtraction(
       .from("extracted_rental_info")
       .update({ tenancy_id: existingTenancy.id })
       .eq("id", extraction.id);
+
+    // Edits made to extracted_rental_info between original tenancy creation
+    // and now (e.g. user-corrected fields on confirm-extraction body, or admin
+    // edits via update-extraction) must be propagated to the tenancy. Without
+    // this, reminders/cashback keep using the original AI-extracted values
+    // even after correction.
+    await syncExtractionEditsToTenancy({
+      supabase,
+      tenancyId: existingTenancy.id as string,
+      extraction,
+    });
 
     return { tenancyId: existingTenancy.id as string };
   }
@@ -281,6 +438,17 @@ export async function ensureTenancyForExtraction(
       .from("extracted_rental_info")
       .update({ tenancy_id: tenancyId })
       .eq("id", extraction.id);
+
+    // Race-branch: another writer just created this tenancy. Propagate any
+    // edits from the freshly-fetched extraction so the surviving tenancy
+    // reflects the latest values, not whatever the racing writer saw.
+    if (tenancyError?.code === "23505") {
+      await syncExtractionEditsToTenancy({
+        supabase,
+        tenancyId,
+        extraction,
+      });
+    }
   }
 
   return { tenancyId };

@@ -242,14 +242,17 @@ serve(async (req: Request) => {
     // Payment tracking starts from tenancy creation (when user joined platform),
     // NOT from agreement lease dates. Agreement dates are extraction metadata only.
     //
-    // Two distinct cutoffs apply to each month:
-    //   • rent_due_day      — the actual obligation deadline. After this passes
-    //                         with no success payment, the month is "missed".
-    //   • cashback_cutoff_day — earlier (or equal) date for cashback eligibility.
-    //                         Payments after this are still on-rent-time but
-    //                         classified "late" (cashback forfeited).
-    // The two often coincide; when they differ (e.g. cutoff=7, due=15) we must
-    // NOT mark the month missed between them — the user still has time to pay.
+    // Model B (matches onboarding code that wrote every existing row):
+    //   • rent_due_day        — contractual rent obligation deadline (display).
+    //   • cashback_cutoff_day — the grace-inclusive deadline. Equal to or LATER
+    //                           than rent_due_day historically. Paying on or
+    //                           before this day = on_time (cashback). After =
+    //                           late (cashback forfeited but rent still
+    //                           accepted). Once cashback_cutoff_day has also
+    //                           passed without payment, the month is "missed".
+    // Default: when cashback_cutoff_day is null, fall back to rent_due_day.
+    // If rent_due_day is also null, that's an upstream data bug — don't paper
+    // over it with a magic constant.
     const trackingStart = new Date(tenancy.created_at);
     const dueDay = tenancy.rent_due_day;
     const cutoffDay = tenancy.cashback_cutoff_day ?? tenancy.rent_due_day;
@@ -297,22 +300,24 @@ serve(async (req: Request) => {
       let status: PaymentStampEntry["status"];
       let daysLate: number | null = null;
 
-      // Is this a future month, or the current month where the rent due day
-      // hasn't passed yet? Note we anchor on rent_due_day (the obligation
-      // deadline), NOT cashback_cutoff_day — between the two, the rent isn't
-      // yet "missed", just no longer cashback-eligible. Cashback eligibility
+      // Is this a future month, or the current month where the grace-inclusive
+      // deadline hasn't passed yet? Anchor on MAX(rent_due_day, cashback_cutoff_day)
+      // — under Model B that's just cashback_cutoff_day. A payment month between
+      // rent_due_day and cashback_cutoff_day must stay "pending" (the user still
+      // has time to pay), not "missed". Cashback eligibility (on_time vs late)
       // is enforced separately via dueCutoffUtc when classifying paid months.
       const isFutureMonth =
         y > currentYear || (y === currentYear && m > currentMonth);
       const isCurrentMonth = y === currentYear && m === currentMonth;
       const daysInMonth = new Date(y, m + 1, 0).getDate();
-      const clampedDueDay = Math.min(dueDay, daysInMonth);
+      const graceDeadlineDay = Math.max(dueDay, cutoffDay);
+      const clampedDueDay = Math.min(graceDeadlineDay, daysInMonth);
       const dueDateNotPassed = isCurrentMonth && currentDay <= clampedDueDay;
 
       // Grey (pending) is the zero state. Stamps only change when:
       // - Payment completed (success) → on_time or late (vs cashback cutoff)
-      // - Rent due day passed with no success payment → missed
-      // failed/refunded/no-payment all remain grey until rent due day passes.
+      // - Grace deadline passed with no success payment → missed
+      // failed/refunded/no-payment all remain grey until the grace deadline passes.
       if (isFutureMonth || dueDateNotPassed) {
         // Due date hasn't passed — grey unless already paid
         if (payment && payment.status === "success" && payment.paid_at) {
@@ -346,7 +351,8 @@ serve(async (req: Request) => {
         // Still processing — keep grey even past due
         status = "pending";
       } else {
-        // Due date passed, no success/processing payment → missed
+        // Grace deadline (MAX of rent_due_day and cashback_cutoff_day) passed,
+        // no success/processing payment → missed.
         status = "missed";
       }
 

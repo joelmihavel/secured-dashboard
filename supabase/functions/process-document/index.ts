@@ -213,9 +213,10 @@ const EXTRACTION_RESPONSE_SCHEMA = {
       description: "Day of month when rent is due (1-28). Look for 'rent payable on Nth of every month'.",
       nullable: true,
     },
+    // Canonical grace-period extraction rule. If you change this, update all 7 sites: cloud-run/extraction-service/src/extraction/schema.ts (rent_grace_period_days), cloud-run/extraction-service/src/extraction/prompts.ts (buildVertexAIExtractionPrompt, buildGeminiAPIKeyPrompt), supabase/functions/process-document/index.ts (EXTRACTION_RESPONSE_SCHEMA, extractWithVertexAIGemini inline), supabase/functions/process-document-fallback/index.ts, supabase/functions/reprocess-extractions/index.ts.
     rent_grace_period_days: {
       type: "integer",
-      description: "Number of grace period days AFTER rent_due_day within which payment is still on-time (0-28). Look for 'grace period of N days', 'without penalty until Nth', 'no late fee before Nth'. If grace period end day is mentioned (e.g., 'grace period up to the 5th' with due day 1st), compute: grace_days = grace_end_day - rent_due_day. Return 0 if no grace period is mentioned.",
+      description: "Number of days AFTER rent_due_day during which rent can still be paid without penalty / late fee — i.e., the LENGTH of the grace window, NOT a date. CRITICAL: drives cashback_cutoff_day = rent_due_day + this value. Math examples: due on 1st with grace until 5th → 4; due on 1st with grace until 3rd → 2; due on 5th with grace until 10th → 5; due on 10th with 'penalty beyond 15th' → 5. PHRASINGS to recognize (both directions matter — Gemini has missed clauses where the number comes BEFORE the words 'grace period'): 'grace period of N days', 'N days of grace period' (e.g., '10 days of grace period'), 'beyond N days of grace period' (e.g., 'penalty for delay beyond 10 days of grace period'), 'N-day grace' / 'N-day grace period' (e.g., '10-day grace'), 'grace of N days', 'within a grace of N days', 'without penalty until the Nth', 'no late fee before Nth', 'allowed/permitted until Nth', 'within N days of due date', 'buffer of N days', 'late payment charges shall apply only after the Nth', 'penalty after Nth' / 'penalty beyond Nth' (then grace = N - rent_due_day), 'rent payable by Nth' (only when an explicit earlier rent_due_day is also stated, then grace = N - rent_due_day), 'rent payable from Xth to Yth of every month' → rent_due_day=X, grace=Y-X. Return 0 ONLY if no grace period, buffer, or late-fee threshold is mentioned ANYWHERE in the agreement. DO NOT default to 0 if any penalty/grace/buffer clause is present — extract the implied grace days even if the wording is indirect.",
       nullable: true,
     },
     tenant_names: {
@@ -312,6 +313,7 @@ INSTRUCTIONS:
 - MUMBAI/MAHARASHTRA: GRN or Transaction ID IS the Stamp Certificate ID — use as certificate_no.
 - For rooms_in_agreement: if tenant rents a portion, count only rented rooms.
 - For e-stamp fields: look in the stamp/e-stamp section (usually at top or bottom of document).
+- For rent_due_day and rent_grace_period_days: see field descriptions. Common phrasings include 'grace period of N days', 'N days of grace period', 'penalty after Nth', 'within Nth day in advance'.
 - Use null for any field you cannot find.`;
 
 /**
@@ -1461,6 +1463,7 @@ async function createJWT(credentials: { client_email: string; private_key: strin
 // ============================================
 // VERTEX AI GEMINI (uses GCP service account)
 // ============================================
+// Canonical grace-period extraction rule (rent_grace_period_days line in the prompt below). If you change this, update all 7 sites: cloud-run/extraction-service/src/extraction/schema.ts (rent_grace_period_days), cloud-run/extraction-service/src/extraction/prompts.ts (buildVertexAIExtractionPrompt, buildGeminiAPIKeyPrompt), supabase/functions/process-document/index.ts (EXTRACTION_RESPONSE_SCHEMA, extractWithVertexAIGemini inline), supabase/functions/process-document-fallback/index.ts, supabase/functions/reprocess-extractions/index.ts.
 
 async function extractWithVertexAIGemini(
   documentText: string,
@@ -1491,7 +1494,7 @@ Extract and return a JSON object with these exact fields (use null for fields yo
   "contract_end_date": "YYYY-MM-DD format",
   "contract_length_months": "duration in months as number",
   "rent_due_day": "day of month when rent is due (e.g., 1, 5, 10) - look for phrases like 'rent payable on 5th of every month'",
-  "rent_grace_period_days": "number of grace days after rent_due_day (e.g., if due on 1st with grace until 5th, return 4). Look for 'grace period', 'without penalty until', 'no late fee before'. Return 0 if no grace period mentioned.",
+  "rent_grace_period_days": "Number of days AFTER rent_due_day during which rent can still be paid without penalty / late fee — i.e., the LENGTH of the grace window, NOT a date. CRITICAL: drives cashback_cutoff_day = rent_due_day + this value. Math examples: due on 1st with grace until 5th → 4; due on 1st with grace until 3rd → 2; due on 5th with grace until 10th → 5; due on 10th with 'penalty beyond 15th' → 5. PHRASINGS to recognize (both directions matter — Gemini has missed clauses where the number comes BEFORE the words 'grace period'): 'grace period of N days', 'N days of grace period' (e.g., '10 days of grace period'), 'beyond N days of grace period' (e.g., 'penalty for delay beyond 10 days of grace period'), 'N-day grace' / 'N-day grace period' (e.g., '10-day grace'), 'grace of N days', 'within a grace of N days', 'without penalty until the Nth', 'no late fee before Nth', 'allowed/permitted until Nth', 'within N days of due date', 'buffer of N days', 'late payment charges shall apply only after the Nth', 'penalty after Nth' / 'penalty beyond Nth' (then grace = N - rent_due_day), 'rent payable by Nth' (only when an explicit earlier rent_due_day is also stated, then grace = N - rent_due_day), 'rent payable from Xth to Yth of every month' → rent_due_day=X, grace=Y-X. Return 0 ONLY if no grace period, buffer, or late-fee threshold is mentioned ANYWHERE in the agreement. DO NOT default to 0 if any penalty/grace/buffer clause is present — extract the implied grace days even if the wording is indirect.",
   "tenant_names": ["array of tenant/lessee names"],
   "landlord_names": ["array of landlord/lessor/owner names"],
   "certificate_no": "certificate number from e-stamp or stamp paper. IMPORTANT: For Mumbai/Maharashtra agreements, the GRN (Government Receipt Number) or Transaction ID serves as the Stamp Certificate ID - if you see 'GRN', 'Transaction ID', or 'Transaction No.' in a Mumbai document, use that as certificate_no. For other states, look for 'Certificate No.' or 'Cert. No.'",

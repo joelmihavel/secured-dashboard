@@ -262,12 +262,15 @@ export default function HomeScreen() {
     const nextMonthIdx = serverDue.getMonth() + 1;
     const nextYear = nextMonthIdx > 11 ? serverDue.getFullYear() + 1 : serverDue.getFullYear();
     const nextMonth = nextMonthIdx > 11 ? 0 : nextMonthIdx;
-    // Clamp rent_due_day to next month's actual days (e.g., 31 in Feb → 28)
+    // Anchor on the grace-inclusive deadline = MAX(rent_due_day, cashback_cutoff_day)
+    // (Model B — cashback_cutoff_day is later or equal to rent_due_day historically).
+    // Default: ?? rent_due_day, no magic constant.
     const daysInNextMonth = new Date(nextYear, nextMonth + 1, 0).getDate();
-    const clampedDay = Math.min(tenancy.rent_due_day, daysInNextMonth);
+    const graceDeadlineDay = Math.max(tenancy.rent_due_day, tenancy.cashback_cutoff_day ?? tenancy.rent_due_day);
+    const clampedDay = Math.min(graceDeadlineDay, daysInNextMonth);
     const nextDue = new Date(nextYear, nextMonth, clampedDay);
     return Math.ceil((nextDue.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
-  }, [alreadyPaid, upcomingPayment?.due_date, tenancy?.rent_due_day]);
+  }, [alreadyPaid, upcomingPayment?.due_date, tenancy?.rent_due_day, tenancy?.cashback_cutoff_day]);
   const daysUntilDue = alreadyPaid ? null : (upcomingPayment?.days_until_due ?? 0);
   const isOverdue = alreadyPaid ? false : (upcomingPayment?.is_overdue ?? false);
   const isMissed = isOverdue && (daysUntilDue ?? 0) <= -30 && (daysUntilDue ?? 0) > -60; // Missed if overdue by more than 30 days

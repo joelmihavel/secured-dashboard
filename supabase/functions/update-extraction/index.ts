@@ -17,6 +17,7 @@ import { handleCors, jsonResponse } from "../_shared/cors.ts";
 import { AppError, ValidationError, NotFoundError, handleError } from "../_shared/errors.ts";
 import { validateSchema, isValidUuid, isValidDate } from "../_shared/validation.ts";
 import { AuditLogger } from "../_shared/audit.ts";
+import { syncExtractionEditsToTenancy } from "../_shared/onboarding.ts";
 
 // ==============================================
 // TYPES & VALIDATION
@@ -296,6 +297,32 @@ serve(async (req: Request) => {
       fields_modified: Object.keys(filteredModifications),
       modification_count: modificationHistory.length,
     });
+
+    // Propagate operationally-relevant edits to the linked tenancy (if any).
+    // Without this, fixing rent_due_day / monthly_rent / lease dates on
+    // extracted_rental_info leaves the tenancy stale and reminders + cashback
+    // keep using the wrong values. Non-fatal: extraction update is the source
+    // of truth and must succeed for the response.
+    try {
+      const { data: linkedTenancy } = await supabase
+        .from("tenancies")
+        .select("id")
+        .eq("extracted_rental_info_id", extraction_id)
+        .in("status", ["pending_verification", "active"])
+        .maybeSingle();
+
+      if (linkedTenancy?.id) {
+        await syncExtractionEditsToTenancy({
+          supabase,
+          tenancyId: linkedTenancy.id as string,
+          extraction: updatedExtraction,
+          changedColumns: Object.keys(columnUpdates),
+          audit,
+        });
+      }
+    } catch (propagationErr) {
+      console.error("[update-extraction] Tenancy propagation failed (non-fatal):", propagationErr);
+    }
 
     // Build response with merged data (original + modifications)
     const originalData = {

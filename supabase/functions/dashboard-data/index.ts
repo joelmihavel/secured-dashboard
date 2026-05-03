@@ -206,8 +206,13 @@ function computePaymentStamps(
   const now = new Date(); // UTC for cutoff comparisons (cutoffDate is already UTC-adjusted)
   // Payment tracking starts from when the tenancy was created (user joined platform),
   // NOT from agreement lease_start_date. Agreement dates are extraction metadata only.
-  // cashback_cutoff_day (grace period) is used for on_time/late/missed classification;
-  // rent_due_day is only for display ("Your rent is due on the 1st").
+  // Model B (matches onboarding): cashback_cutoff_day is the grace-inclusive
+  // deadline (>= rent_due_day historically). on_time/late uses cashback_cutoff_day
+  // (paid by cutoff = on_time, paid after = late). "missed" only fires once the
+  // grace deadline has also passed — under Model B that's just cashback_cutoff_day.
+  // rent_due_day is the contractual obligation; for display use rent_due_day.
+  // Default: when cashback_cutoff_day is null, fall back to rent_due_day. If
+  // rent_due_day itself is null, that's an upstream data bug — don't paper over it.
   const trackingStart = new Date(tenancy.created_at);
   const cutoffDay = tenancy.cashback_cutoff_day ?? tenancy.rent_due_day;
 
@@ -443,9 +448,15 @@ serve(async (req: Request) => {
       const currentYear = nowIST.getUTCFullYear();
       const todayDay = nowIST.getUTCDate();
 
-      // Clamp rent_due_day to the last day of the month (e.g., rent_due_day=31 in Feb → 28)
+      // Anchor "due date" / "overdue" on the grace-inclusive deadline =
+      // MAX(rent_due_day, cashback_cutoff_day). Under Model B, cashback_cutoff_day
+      // is the LAST day the user can still pay rent (with cashback forfeiture
+      // somewhere in between). A user with rent_due_day=1 and cashback_cutoff_day=5
+      // is NOT overdue on the 3rd. Default: ?? rent_due_day (no magic 7).
+      // cashback_eligible / past_cutoff stay anchored on cashback_cutoff_day only.
       const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
-      const clampedDueDay = Math.min(tenancy.rent_due_day, daysInMonth);
+      const graceDeadlineDay = Math.max(tenancy.rent_due_day, tenancy.cashback_cutoff_day ?? tenancy.rent_due_day);
+      const clampedDueDay = Math.min(graceDeadlineDay, daysInMonth);
 
       const dueDate = new Date(currentYear, currentMonth, clampedDueDay);
       const daysUntilDue = clampedDueDay - todayDay;
@@ -467,7 +478,9 @@ serve(async (req: Request) => {
         .limit(1);
       const existingPayment = existingPayments?.[0] ?? null;
 
-      const cutoffDay = tenancy.cashback_cutoff_day ?? 7;
+      // Cashback cutoff (eligibility, NOT overdue): falls back to rent_due_day,
+      // not a magic 7 — if rent_due_day is also null, that's an upstream bug.
+      const cutoffDay = tenancy.cashback_cutoff_day ?? tenancy.rent_due_day;
       const cutoffDate = new Date(Date.UTC(currentYear, currentMonth, cutoffDay, 18, 29, 59, 999));
       const pastCutoff = nowUTC > cutoffDate;
 
