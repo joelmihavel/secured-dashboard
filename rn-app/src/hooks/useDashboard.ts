@@ -289,19 +289,11 @@ export function useVerificationStatus() {
   const { bank_verified, utility_verified, landlord_approved, landlord_status } =
     tenancy.verification_status;
 
-  // Landlord step is done for setup purposes once invite is sent.
-  // 'human_review' = 2 of 3 verification gates passed; admin must promote.
-  // 'invited_deferred' = sync send accepted, Meta-cap'd; retry pipeline running.
-  // From the user's perspective these are past the invite/setup stage, so we
-  // treat them as 'done' here even though landlord_approved is still false.
-  // 'invited_undelivered' is intentionally NOT here — it's a terminal failure
-  // requiring the tenant to retry with a different number; setup is NOT done.
+  // Landlord step is done for setup purposes once invite is sent
   const landlordStepDone = landlord_approved
     || landlord_status === 'invited'
-    || landlord_status === 'invited_deferred'
     || landlord_status === 'otp_confirmed'
-    || landlord_status === 'verified'
-    || landlord_status === 'human_review';
+    || landlord_status === 'verified';
 
   const pendingSteps: string[] = [];
   if (!bank_verified) pendingSteps.push('bank');

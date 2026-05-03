@@ -19,22 +19,18 @@ export type LandlordStatus =
   | 'waiting_response_recent' // <24hrs
   | 'waiting_response_old' // >24hrs
   | 'invite_pending'
-  | 'delivery_delayed'        // Maps from tenancy.landlord_status='invited_deferred' (Meta-cap; retry running)
-  | 'undelivered'             // Maps from tenancy.landlord_status='invited_undelivered' (terminal; tenant must act)
   | 'declined';
 
 export interface LandlordStatusCardProps {
   status: LandlordStatus;
   onSendReminder?: () => void;
   onContactSupport?: () => void;
-  onTryAnotherNumber?: () => void; // Used by 'delivery_delayed' / 'undelivered' to open the form prefilled
 }
 
 function LandlordStatusCardComponent({
   status,
   onSendReminder,
   onContactSupport,
-  onTryAnotherNumber,
 }: LandlordStatusCardProps) {
   const getContent = () => {
     switch (status) {
@@ -69,22 +65,6 @@ function LandlordStatusCardComponent({
             'You can still pay rent. Rewards unlock when your landlord joins',
           actionLabel: 'Contact support',
           actionHandler: onContactSupport,
-        };
-      case 'delivery_delayed':
-        return {
-          title: 'Delivery delayed',
-          description:
-            "WhatsApp is rate-limiting messages to your landlord's number. We'll keep trying for the next 2 days — or you can try a different number now",
-          actionLabel: 'Try another number',
-          actionHandler: onTryAnotherNumber,
-        };
-      case 'undelivered':
-        return {
-          title: "Couldn't reach your landlord",
-          description:
-            "We tried multiple times but the message didn't deliver. Try a different number to invite them again",
-          actionLabel: 'Try another number',
-          actionHandler: onTryAnotherNumber,
         };
       case 'declined':
         return {
