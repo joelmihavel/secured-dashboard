@@ -25,14 +25,20 @@ function runPreflightChecks(user: UserFunnel): PreflightCheck[] {
   const checks: PreflightCheck[] = [];
 
   // 1. Extraction completed
+  function extractionDetail(): string {
+    if (user.extraction_status === "completed") {
+      return `Completed with ${user.extraction_confidence ?? 0}% confidence`;
+    }
+    if (user.extraction_status === "extraction_failed") {
+      return "Extraction failed — parser returned no fields. User must re-upload the agreement before approval.";
+    }
+    return `Status: ${user.extraction_status || "not started"}`;
+  }
   checks.push({
     id: "extraction",
     label: "Agreement extraction",
     status: user.extraction_status === "completed" ? "pass" : "fail",
-    detail:
-      user.extraction_status === "completed"
-        ? `Completed with ${user.extraction_confidence ?? 0}% confidence`
-        : `Status: ${user.extraction_status || "not started"}`,
+    detail: extractionDetail(),
     blocking: true,
   });
 
@@ -44,6 +50,42 @@ function runPreflightChecks(user: UserFunnel): PreflightCheck[] {
     detail: user.agreement_verified
       ? "User confirmed extracted data is correct"
       : "User has NOT verified — tenancy will use unverified data",
+    blocking: false,
+  });
+
+  // 2b. Stamp verification (warning, non-blocking)
+  function stampDetail(): string {
+    const status = user.stamp_verification_status;
+    if (!status) return "Not yet attempted";
+    if (status === "verified") {
+      return user.stamp_verified_at
+        ? `Stamp verified on ${user.stamp_verified_at.slice(0, 10)}`
+        : "Stamp paper verified";
+    }
+    const attempt = user.stamp_verification_attempt
+      ? ` (attempt ${user.stamp_verification_attempt})`
+      : "";
+    const friendly: Record<string, string> = {
+      mismatch: "Stamp value or date does not match the agreement",
+      not_found: "Stamp paper not found in the state registry",
+      captcha_failed: "Verification site captcha failed",
+      site_error: "State stamp registry returned an error",
+      unsupported_state: "State does not support stamp verification",
+      missing_article: "Article number missing from agreement",
+      missing_fields: "Required fields missing from extraction",
+    };
+    return `${friendly[status] ?? status}${attempt}`;
+  }
+  checks.push({
+    id: "stamp_verification",
+    label: "Stamp verification",
+    status:
+      user.stamp_verification_status === "verified"
+        ? "pass"
+        : user.stamp_verification_status
+          ? "warn"
+          : "warn",
+    detail: stampDetail(),
     blocking: false,
   });
 

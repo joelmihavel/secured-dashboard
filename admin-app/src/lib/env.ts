@@ -53,8 +53,5 @@ export function getEnvConfig(env: Environment): SupabaseEnvConfig {
   return ENVIRONMENTS[env];
 }
 
-/**
- * Admin-app's own auth key (separate from Supabase's service-role —
- * gates write actions in admin edge functions like admin-waitlist).
- */
-export const adminApiKey: string = process.env.NEXT_PUBLIC_ADMIN_KEY ?? "";
+// adminApiKey removed (Phase B, 2026-05-01) — admin_key now injected
+// server-side by /api/admin/route.ts using the server-only ADMIN_KEY env.

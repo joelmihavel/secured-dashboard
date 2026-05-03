@@ -29,12 +29,16 @@ serve(async (req: Request) => {
   const supabase = createServiceClient();
 
   try {
-    // Find tenancies with OTP confirmed but M360 not yet matched
+    // Find tenancies that should be re-evaluated by the 3-gate check:
+    //   - 'otp_confirmed': new arrivals waiting for M360+bank+SHCIL to converge
+    //   - 'human_review':  already in admin queue; if the missing gate finally
+    //                       passes (e.g., bank gets re-verified, SHCIL re-runs),
+    //                       this cron will auto-promote them to 'verified'.
     // Safety: only process where landlord_otp_verified = true
     const { data: tenancies, error } = await supabase
       .from("tenancies")
       .select("id, landlord_phone")
-      .eq("landlord_status", "otp_confirmed")
+      .in("landlord_status", ["otp_confirmed", "human_review"])
       .eq("landlord_approved", false)
       .eq("landlord_otp_verified", true)
       .order("landlord_approved_at", { ascending: true })

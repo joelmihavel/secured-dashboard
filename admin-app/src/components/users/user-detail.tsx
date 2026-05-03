@@ -7,14 +7,16 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
-import { Switch } from "@/components/ui/switch";
 import { formatCurrency, formatCurrencyShort, formatDate, maskPhone } from "@/lib/utils";
 import { callEdgeFunction } from "@/lib/supabase";
-import { adminApiKey } from "@/lib/env";
 import type { UserFunnel } from "@/types/user";
 import { RiskFactorBreakdown } from "./risk-factor-breakdown";
 import { ApprovalPreflight } from "./approval-preflight";
 import { RejectDialog } from "@/components/dialogs/reject-dialog";
+
+const DASH = "—";
+const CHECK = "✓";
+const CROSS = "✗";
 
 function riskColor(level: string | null) {
   switch (level) {
@@ -25,12 +27,81 @@ function riskColor(level: string | null) {
   }
 }
 
+interface VerificationChipDef {
+  id: string;
+  label: string;
+  passed: boolean;
+  detail: string;
+}
+
+function buildVerificationChips(user: UserFunnel): VerificationChipDef[] {
+  return [
+    {
+      id: "bank",
+      label: "Bank",
+      passed: user.bank_verified === true,
+      detail: user.bank_verified
+        ? "Penny-drop succeeded; agreement-name match passed."
+        : "Bank not verified — penny-drop failed or name mismatch with agreement.",
+    },
+    {
+      id: "utility",
+      label: "Utility",
+      passed: user.utility_verified === true,
+      detail: user.utility_verified
+        ? "Utility bill matched property address."
+        : "Utility not verified — no bill on file or address mismatch.",
+    },
+    {
+      id: "landlord",
+      label: "Landlord",
+      passed: user.landlord_approved === true,
+      detail: user.landlord_approved
+        ? "Landlord confirmed via OTP."
+        : "Landlord has not yet confirmed.",
+    },
+    {
+      id: "m360",
+      label: "Identity",
+      passed: user.m360_status === "SUCCESS",
+      detail:
+        user.m360_status === "SUCCESS"
+          ? `M360 verified · ${user.m360_full_name ?? ""} · credit ${user.m360_credit_score ?? "n/a"}`
+          : `M360 status: ${user.m360_status ?? "not started"}`,
+    },
+    {
+      id: "agreement",
+      label: "Agreement",
+      passed: user.extraction_status === "completed",
+      detail:
+        user.extraction_status === "completed"
+          ? `Extracted with ${user.extraction_confidence ?? 0}% confidence${user.agreement_verified ? " · user-verified" : ""}.`
+          : `Extraction status: ${user.extraction_status ?? "not started"}`,
+    },
+    {
+      id: "stamp",
+      label: "Stamp",
+      passed: user.stamp_verification_status === "verified",
+      detail:
+        user.stamp_verification_status === "verified"
+          ? `Stamp paper verified${user.stamp_verified_at ? ` on ${user.stamp_verified_at.slice(0, 10)}` : ""}.`
+          : `Stamp status: ${user.stamp_verification_status ?? "not attempted"}${user.stamp_verification_attempt ? ` · attempt ${user.stamp_verification_attempt}` : ""}`,
+    },
+  ];
+}
+
+function verifiedColorClass(score: number, total: number) {
+  if (score === total) return "text-success";
+  if (score >= total - 2) return "text-warning";
+  return "text-destructive";
+}
+
 function InfoRow({ label, value, mono }: { label: string; value: string | null | undefined; mono?: boolean }) {
   return (
     <div className="flex items-center justify-between border-b border-border/30 py-1.5">
       <span className="text-xs text-muted-foreground/60">{label}</span>
       <span className={`text-[13px] font-medium text-muted-foreground ${mono ? "font-mono" : ""}`}>
-        {value || "\u2014"}
+        {value || DASH}
       </span>
     </div>
   );
@@ -41,6 +112,7 @@ export function UserDetail({ user }: { user: UserFunnel }) {
   const [showRejectDialog, setShowRejectDialog] = useState(false);
   const [approving, setApproving] = useState(false);
   const [approvalResult, setApprovalResult] = useState<{ success: boolean; message: string } | null>(null);
+  const [expandedChip, setExpandedChip] = useState<string | null>(null);
 
   const initials = (user.name || "?")
     .split(" ")
@@ -53,10 +125,9 @@ export function UserDetail({ user }: { user: UserFunnel }) {
     setApproving(true);
     setApprovalResult(null);
     try {
-      const result = await callEdgeFunction("admin-waitlist", {
+      await callEdgeFunction("admin-waitlist", {
         action: "approve",
         user_ids: [user.user_id],
-        admin_key: adminApiKey,
       });
       setApprovalResult({ success: true, message: "User approved successfully" });
       setShowPreflight(false);
@@ -70,22 +141,10 @@ export function UserDetail({ user }: { user: UserFunnel }) {
     }
   }
 
-  const verificationScore =
-    (user.bank_verified ? 1 : 0) +
-    (user.utility_verified ? 1 : 0) +
-    (user.landlord_approved ? 1 : 0) +
-    (user.m360_status === "SUCCESS" ? 1 : 0) +
-    (user.extraction_status === "completed" ? 1 : 0) +
-    ((user.extraction_confidence || 0) > 50 ? 1 : 0) +
-    (user.agreement_verified ? 1 : 0);
-
-  const checks = [
-    { name: "Bank Verified", passed: user.bank_verified, status: user.bank_verified ? "Passed" : "Not verified" },
-    { name: "Utility Verified", passed: user.utility_verified, status: user.utility_verified ? "Passed" : "Not verified" },
-    { name: "Landlord", passed: user.landlord_approved, status: user.landlord_approved ? "Approved" : "Pending" },
-    { name: "M360 Identity", passed: user.m360_status === "SUCCESS", status: user.m360_status || "Not started" },
-    { name: "Agreement", passed: user.extraction_status === "completed", status: `${user.extraction_confidence || 0}%` },
-  ];
+  const chips = buildVerificationChips(user);
+  const verificationScore = chips.filter((c) => c.passed).length;
+  const verificationTotal = chips.length;
+  const verifiedClass = verifiedColorClass(verificationScore, verificationTotal);
 
   return (
     <div className="flex flex-1 flex-col gap-4 overflow-auto p-5">
@@ -113,19 +172,21 @@ export function UserDetail({ user }: { user: UserFunnel }) {
           <div className="flex-1" />
           <div className="flex items-center gap-4">
             <div className="flex flex-col items-center gap-1">
-              <span className="text-lg font-bold text-success">{verificationScore}/7</span>
+              <span className={`text-2xl font-bold ${verifiedClass}`}>
+                {verificationScore}<span className="text-base text-muted-foreground/50">/{verificationTotal}</span>
+              </span>
               <span className="text-[11px] text-muted-foreground/40">Verified</span>
             </div>
             <Separator orientation="vertical" className="h-8" />
             <div className="flex flex-col items-center gap-1">
               <Badge variant="outline" className={`text-xs ${riskColor(user.risk_level)}`}>
-                {user.risk_level || "\u2014"}
+                {user.risk_level || DASH}
               </Badge>
               <span className="text-[11px] text-muted-foreground/40">Risk</span>
             </div>
             <Separator orientation="vertical" className="h-8" />
             <div className="flex flex-col items-center gap-1">
-              <span className="text-lg font-bold text-foreground">{user.m360_credit_score || "\u2014"}</span>
+              <span className="text-lg font-bold text-foreground">{user.m360_credit_score || DASH}</span>
               <span className="text-[11px] text-muted-foreground/40">Credit</span>
             </div>
             <Separator orientation="vertical" className="h-8" />
@@ -178,25 +239,42 @@ export function UserDetail({ user }: { user: UserFunnel }) {
         />
       )}
 
-      {/* Verification Checks */}
+      {/* Verification chips — single-glance status */}
       <Card className="border-border bg-card">
         <CardContent className="p-5">
-          <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/40">
-            Verification Checks
-          </span>
-          <div className="mt-3 flex flex-col gap-0">
-            {checks.map((check) => (
-              <div key={check.name} className="flex items-center gap-3 border-b border-border/30 py-2.5">
-                <span className="w-[130px] text-[13px] font-medium text-muted-foreground">{check.name}</span>
-                <span className={`text-[13px] ${check.passed ? "text-success" : "text-destructive"}`}>
-                  {check.passed ? "\u2713" : "\u2717"} {check.status}
-                </span>
-                <div className="flex-1" />
-                <Switch className="scale-75" disabled={check.passed === true} />
-                <span className="text-[11px] text-muted-foreground/40">Override</span>
-              </div>
-            ))}
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/40">
+              Verifications
+            </span>
+            <span className={`text-xs font-semibold ${verifiedClass}`}>
+              {verificationScore} of {verificationTotal} verified
+            </span>
           </div>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {chips.map((chip) => {
+              const isOpen = expandedChip === chip.id;
+              return (
+                <button
+                  key={chip.id}
+                  type="button"
+                  onClick={() => setExpandedChip(isOpen ? null : chip.id)}
+                  className={`flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${
+                    chip.passed
+                      ? "border-success/40 bg-success/10 text-success hover:bg-success/15"
+                      : "border-destructive/40 bg-destructive/10 text-destructive hover:bg-destructive/15"
+                  } ${isOpen ? "ring-1 ring-current/40" : ""}`}
+                >
+                  <span className="text-sm">{chip.passed ? CHECK : CROSS}</span>
+                  <span>{chip.label}</span>
+                </button>
+              );
+            })}
+          </div>
+          {expandedChip && (
+            <div className="mt-3 rounded-md border border-border/60 bg-muted/30 px-3 py-2 text-[12px] text-muted-foreground">
+              {chips.find((c) => c.id === expandedChip)?.detail}
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -256,12 +334,14 @@ export function UserDetail({ user }: { user: UserFunnel }) {
               <InfoRow label="City / State" value={user.property_city ? `${user.property_city}, ${user.property_state} ${user.property_pincode}` : null} />
               <InfoRow label="Landlord" value={user.landlord_display_name || user.landlord_name} />
               <InfoRow label="Landlord Phone" value={maskPhone(user.landlord_phone)} />
+              <InfoRow label="BHK" value={user.property_bhk_type} />
             </div>
             <div className="flex flex-col gap-1 flex-1">
               <InfoRow label="Monthly Rent" value={formatCurrency(user.monthly_rent_paise)} />
               <InfoRow label="Maintenance" value={formatCurrency(user.maintenance_paise)} />
               <InfoRow label="Lease" value={user.lease_start_date ? `${formatDate(user.lease_start_date)} → ${formatDate(user.lease_end_date)}` : null} />
               <InfoRow label="Due Day" value={user.rent_due_day ? `${user.rent_due_day}th of month` : null} />
+              <InfoRow label="Stamp Status" value={user.stamp_verification_status} />
             </div>
           </div>
         </CardContent>

@@ -6,7 +6,6 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { fetchView, callEdgeFunction } from "@/lib/supabase";
-import { adminApiKey } from "@/lib/env";
 import { formatCurrencyShort, maskPhone } from "@/lib/utils";
 import type { UserFunnel } from "@/types/user";
 import { ApprovalPreflight } from "@/components/users/approval-preflight";
@@ -20,13 +19,63 @@ function riskBadge(level: string | null) {
   }
 }
 
-function verificationScore(user: UserFunnel) {
+interface VerificationFlags {
+  bank: boolean;
+  utility: boolean;
+  landlord: boolean;
+  identity: boolean;
+  agreement: boolean;
+  stamp: boolean;
+}
+
+function verificationFlags(user: UserFunnel): VerificationFlags {
+  return {
+    bank: user.bank_verified === true,
+    utility: user.utility_verified === true,
+    landlord: user.landlord_approved === true,
+    identity: user.m360_status === "SUCCESS",
+    agreement: user.extraction_status === "completed",
+    stamp: user.stamp_verification_status === "verified",
+  };
+}
+
+function verificationCount(flags: VerificationFlags): number {
+  return Object.values(flags).filter(Boolean).length;
+}
+
+const VERIFICATION_TOTAL = 6;
+
+function VerificationPips({ flags }: { flags: VerificationFlags }) {
+  const order: Array<[keyof VerificationFlags, string]> = [
+    ["bank", "Bank"],
+    ["utility", "Utility"],
+    ["landlord", "Landlord"],
+    ["identity", "Identity"],
+    ["agreement", "Agreement"],
+    ["stamp", "Stamp"],
+  ];
+  const count = verificationCount(flags);
+  const countColor =
+    count === VERIFICATION_TOTAL
+      ? "text-success"
+      : count >= VERIFICATION_TOTAL - 2
+        ? "text-warning"
+        : "text-destructive";
   return (
-    (user.bank_verified ? 1 : 0) +
-    (user.utility_verified ? 1 : 0) +
-    (user.landlord_approved ? 1 : 0) +
-    (user.m360_status === "SUCCESS" ? 1 : 0) +
-    (user.extraction_status === "completed" ? 1 : 0)
+    <div className="flex flex-col items-center gap-1">
+      <span className={`text-[12px] font-semibold ${countColor}`}>
+        {count}/{VERIFICATION_TOTAL}
+      </span>
+      <div className="flex gap-0.5">
+        {order.map(([key, label]) => (
+          <span
+            key={key}
+            title={`${label}: ${flags[key] ? "verified" : "not verified"}`}
+            className={`size-1.5 rounded-full ${flags[key] ? "bg-success" : "bg-destructive/40"}`}
+          />
+        ))}
+      </div>
+    </div>
   );
 }
 
@@ -97,7 +146,6 @@ export default function TriagePage() {
       await callEdgeFunction("admin-waitlist", {
         action,
         user_ids: ids,
-        admin_key: adminApiKey,
         ...(action === "reject" ? { rejection_reasons: ["Admin rejection"] } : {}),
       });
       setFeedback({
@@ -179,7 +227,7 @@ export default function TriagePage() {
             <span className="flex-1">User</span>
             <span className="w-20 text-right">Rent</span>
             <span className="w-14 text-center">Risk</span>
-            <span className="w-12 text-center">Score</span>
+            <span className="w-20 text-center">Verified</span>
             <span className="w-20 text-center">Audit</span>
             <span className="w-24 text-center">Review</span>
             <span className="w-24 text-right">Actions</span>
@@ -191,7 +239,7 @@ export default function TriagePage() {
             </div>
           ) : (
             users.map((user) => {
-              const vs = verificationScore(user);
+              const flags = verificationFlags(user);
               const audit = auditStatus(user);
               const isSelected = selected.has(user.user_id);
               return (
@@ -207,7 +255,7 @@ export default function TriagePage() {
                   </div>
                   <span className="w-20 text-right text-[13px] text-muted-foreground">{formatCurrencyShort(user.monthly_rent_paise)}</span>
                   <div className="w-14 text-center">{riskBadge(user.risk_level)}</div>
-                  <span className={`w-12 text-center text-xs font-medium ${vs >= 4 ? "text-success" : vs >= 2 ? "text-warning" : "text-destructive"}`}>{vs}/5</span>
+                  <div className="w-20 flex justify-center"><VerificationPips flags={flags} /></div>
                   <div className="w-20 flex justify-center">
                     <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${audit.color}`}>{audit.label}</span>
                   </div>

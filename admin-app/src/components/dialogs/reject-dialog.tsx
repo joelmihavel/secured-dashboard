@@ -13,7 +13,6 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { callEdgeFunction } from "@/lib/supabase";
-import { adminApiKey } from "@/lib/env";
 
 const REJECTION_REASONS = [
   { id: "expired_lease", label: "Expired lease" },
@@ -96,7 +95,6 @@ export function RejectDialog({
         user_ids: userIds,
         rejection_reasons: rejectionReasons,
         next_application_hours: cooldownHours,
-        admin_key: adminApiKey,
       });
       reset();
       onOpenChange(false);
