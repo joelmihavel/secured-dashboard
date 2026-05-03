@@ -40,6 +40,7 @@ export interface UserFunnel {
   landlord_name: string | null;
   landlord_display_name: string | null;
   landlord_phone: string | null;
+  landlord_country_code: string | null;
   lease_start_date: string | null;
   lease_end_date: string | null;
   rent_due_day: number | null;

@@ -207,6 +207,7 @@ export async function POST(req: NextRequest) {
       id: string;
       user_id: string;
       landlord_phone: string | null;
+      country_code: string | null;
       landlord_name: string | null;
       landlord_names: string[] | null;
       landlord_status: string;
@@ -220,7 +221,7 @@ export async function POST(req: NextRequest) {
     const { data: tenancies, error: tErr } = await supabase
       .from("tenancies")
       .select(
-        "id, user_id, landlord_phone, landlord_name, landlord_names, " +
+        "id, user_id, landlord_phone, country_code, landlord_name, landlord_names, " +
           "landlord_status, bank_verified, extracted_rental_info_id, created_at",
       )
       .eq("landlord_status", "human_review")
@@ -285,6 +286,7 @@ export async function POST(req: NextRequest) {
           tenant_phone: u?.user?.phone ?? null,
           landlord_name: t.landlord_name,
           landlord_phone: t.landlord_phone,
+          landlord_country_code: t.country_code,
           landlord_names: t.landlord_names,
           created_at: t.created_at,
           gates: {

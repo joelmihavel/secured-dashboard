@@ -32,7 +32,7 @@ import {
   validateSchema,
   isValidUuid,
   isValidEmail,
-  isValidIndianPhone,
+  isValidPhone,
 } from "../_shared/validation.ts";
 import { AuditLogger } from "../_shared/audit.ts";
 
@@ -45,6 +45,7 @@ interface UpdateLandlordRequest {
   landlord_name?: string;
   landlord_email?: string;
   landlord_phone?: string;
+  country_code?: string;
 }
 
 // ==============================================
@@ -65,6 +66,14 @@ const updateSchema = {
       v === undefined || v === null || (typeof v === "string" && isValidEmail(v)) || "Invalid email address",
   },
   landlord_phone: { required: false, type: "string" as const },
+  country_code: {
+    required: false,
+    type: "string" as const,
+    custom: (v: unknown) =>
+      v === undefined || v === null ||
+      (typeof v === "string" && /^\+\d{1,3}$/.test(v)) ||
+      "Country code must be in '+CC' form (e.g. '+91', '+1', '+971')",
+  },
 };
 
 // ==============================================
@@ -189,12 +198,12 @@ async function handleUpdateLandlord(
   const body = await req.json();
   const validated = validateSchema<UpdateLandlordRequest>(body, updateSchema, true);
 
-  const { tenancy_id, landlord_name, landlord_email, landlord_phone } = validated;
+  const { tenancy_id, landlord_name, landlord_email, landlord_phone, country_code } = validated;
 
   // Verify tenancy ownership
   const { data: tenancy, error: tenancyError } = await supabase
     .from("tenancies")
-    .select("id, user_id, landlord_approved, landlord_name, landlord_email, landlord_phone")
+    .select("id, user_id, landlord_approved, landlord_name, landlord_email, landlord_phone, country_code")
     .eq("id", tenancy_id)
     .eq("user_id", userId)
     .single();
@@ -232,13 +241,39 @@ async function handleUpdateLandlord(
     updatePayload.landlord_token_expires_at = null;
   }
 
-  if (landlord_phone !== undefined) {
-    if (landlord_phone && !isValidIndianPhone(landlord_phone)) {
-      throw new ValidationError("Invalid phone number", { landlord_phone: "Invalid format" });
+  // Phone updates must always include country_code (or be cleared together).
+  // Indian tenants frequently have NRI landlords, so we never default the
+  // country code — the caller must say which country the number belongs to.
+  if (landlord_phone !== undefined || country_code !== undefined) {
+    const nextPhone = landlord_phone !== undefined ? landlord_phone : tenancy.landlord_phone;
+    const nextCountryCode = country_code !== undefined ? country_code : tenancy.country_code;
+
+    if (nextPhone) {
+      if (!nextCountryCode) {
+        throw new ValidationError(
+          "country_code is required when setting landlord_phone",
+          { country_code: "Required (e.g. '+91', '+1', '+971')" }
+        );
+      }
+      if (!isValidPhone(nextPhone, nextCountryCode)) {
+        throw new ValidationError("Invalid landlord phone for the selected country", {
+          landlord_phone: "Invalid format for country code " + nextCountryCode,
+        });
+      }
     }
-    oldValues.landlord_phone = tenancy.landlord_phone;
-    newValues.landlord_phone = landlord_phone;
-    updatePayload.landlord_phone = landlord_phone;
+
+    if (landlord_phone !== undefined) {
+      oldValues.landlord_phone = tenancy.landlord_phone;
+      newValues.landlord_phone = landlord_phone;
+      // Store digits only — country_code holds the +CC, per the canonical
+      // (country_code || landlord_phone) E.164 contract.
+      updatePayload.landlord_phone = landlord_phone ? landlord_phone.replace(/\D/g, "") : landlord_phone;
+    }
+    if (country_code !== undefined) {
+      oldValues.country_code = tenancy.country_code;
+      newValues.country_code = country_code;
+      updatePayload.country_code = country_code;
+    }
   }
 
   if (Object.keys(updatePayload).length === 0) {

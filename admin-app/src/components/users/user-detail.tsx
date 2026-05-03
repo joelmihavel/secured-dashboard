@@ -333,7 +333,7 @@ export function UserDetail({ user }: { user: UserFunnel }) {
               <InfoRow label="Address" value={user.property_address} />
               <InfoRow label="City / State" value={user.property_city ? `${user.property_city}, ${user.property_state} ${user.property_pincode}` : null} />
               <InfoRow label="Landlord" value={user.landlord_display_name || user.landlord_name} />
-              <InfoRow label="Landlord Phone" value={maskPhone(user.landlord_phone)} />
+              <InfoRow label="Landlord Phone" value={maskPhone(user.landlord_phone, user.landlord_country_code)} />
               <InfoRow label="BHK" value={user.property_bhk_type} />
             </div>
             <div className="flex flex-col gap-1 flex-1">

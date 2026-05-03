@@ -139,6 +139,7 @@ export interface LandlordReviewQueueItem {
   tenant_phone: string | null;
   landlord_name: string | null;
   landlord_phone: string | null;
+  landlord_country_code: string | null;
   landlord_names: string[] | null;
   created_at: string;
   gates: {

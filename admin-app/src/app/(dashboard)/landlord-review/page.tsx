@@ -169,7 +169,7 @@ export default function LandlordReviewPage() {
                         {item.landlord_phone && (
                           <span className="text-muted-foreground/60">
                             {" · "}
-                            {maskPhone(item.landlord_phone)}
+                            {maskPhone(item.landlord_phone, item.landlord_country_code)}
                           </span>
                         )}
                       </span>

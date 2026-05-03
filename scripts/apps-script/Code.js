@@ -1062,15 +1062,26 @@ function normalizePhone(raw) {
 }
 
 /**
- * Ensures phone has + prefix for consistent display.
- * Handles: "+91...", "91...", "9876..." → "+91..."
+ * Render a phone for display. Handles two storage shapes:
+ *   1. E.164 already (auth.users.phone, payments.user_phone): "+91XXXXXXXXXX".
+ *      Returned as "+<digits>" — countryCode arg is ignored.
+ *   2. Local subscriber digits + separate country code (tenancies.landlord_phone
+ *      paired with tenancies.country_code): pass countryCode explicitly. Indian
+ *      tenants frequently have NRI landlords (+1, +44, +61, +971, ...), so we
+ *      MUST NOT default to +91 — when country code is missing, render the
+ *      bare digits and let the missing prefix surface the problem.
  */
-function displayPhone(raw) {
+function displayPhone(raw, countryCode) {
   if (!raw) return '';
   var s = String(raw).trim();
-  if (s.charAt(0) === '+') return s;
-  // Bare digits — add + prefix (e.g. "919876543210" → "+919876543210")
-  return '+' + s;
+  var digits = s.replace(/\D/g, '');
+  if (!digits) return '';
+  // Embedded E.164 — trust it.
+  if (s.charAt(0) === '+') return '+' + digits;
+  // Local digits — prepend country code only if we know it.
+  var cc = countryCode == null ? '' : String(countryCode).trim();
+  if (cc && cc.charAt(0) !== '+') cc = '+' + cc;
+  return cc ? cc + digits : digits;
 }
 
 /**
@@ -1732,7 +1743,8 @@ function writeUserDetailsSheet(data) {
       if (c.key === '_audit_fixes') return r._audit_fixes || '';
       var val = r[c.key];
       if (val === null || val === undefined) return '';
-      if (c.key === 'phone' || c.key === 'landlord_phone') return displayPhone(val);
+      if (c.key === 'phone') return displayPhone(val);
+      if (c.key === 'landlord_phone') return displayPhone(val, r.landlord_country_code);
       if (c.fmt === 'paise') return Math.round(val / 100);
       if ((c.fmt === 'date' || c.fmt === 'datetime') && val) return toIST(val);
       if (c.fmt === 'bool') return val === true ? '\u2713' : val === false ? '\u2717' : '';
@@ -1880,7 +1892,7 @@ function writeLandlordsSheet(data) {
     if (!r.landlord_display_name && !r.landlord_name && !r.landlord_phone) return;
     rows.push([
       r.landlord_display_name || r.landlord_name || '',
-      displayPhone(r.landlord_phone),
+      displayPhone(r.landlord_phone, r.landlord_country_code),
       r.property_address || '',
       r.property_city || '',
       r.property_state || '',
@@ -2039,7 +2051,8 @@ function writeVerificationsSheet(data) {
     return allCols.map(function(c) {
       var val = r[c.key];
       if (val === null || val === undefined) return '';
-      if (c.key === 'phone' || c.key === 'landlord_phone') return displayPhone(val);
+      if (c.key === 'phone') return displayPhone(val);
+      if (c.key === 'landlord_phone') return displayPhone(val, r.landlord_country_code);
       if (c.key === 'risk_factors' && typeof val === 'object') {
         if (Array.isArray(val)) return val.map(function(f) { return f.signal || f; }).join(', ');
         return JSON.stringify(val);
