@@ -16,6 +16,9 @@ node_modules
 # Supabase temp files
 supabase/.temp/
 
+# Local scratch (compressed media, ops payloads)
+.tmp/
+
 # Rejected patches
 *.rej
 *.orig

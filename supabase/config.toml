@@ -307,6 +307,18 @@ verify_jwt = false
 [functions.test-gemini-extraction]
 verify_jwt = false
 
+[functions.contact-support-redirect]
+verify_jwt = false
+
+[functions.whatsapp-inbound]
+verify_jwt = false
+
+[functions.reconcile-landlord-invite-deliveries]
+verify_jwt = false
+
+[functions.retry-landlord-invites]
+verify_jwt = false
+
 [functions.twilio-debug]
 verify_jwt = false
 

@@ -1,12 +1,17 @@
 /**
- * Flent Secured v2 - Manage Landlord Edge Function (BE-079)
+ * Flent Secured v2 - Manage Landlord Edge Function
  *
- * CRUD operations for landlord management tied to a tenancy.
+ * Read + update operations for landlord details on a tenancy.
  *
  * Endpoints:
- * - GET  /functions/v1/manage-landlord?tenancy_id=xxx - Fetch landlord details
- * - POST /functions/v1/manage-landlord - Send landlord invite (email notification)
- * - PUT  /functions/v1/manage-landlord - Update landlord contact info
+ * - GET /functions/v1/manage-landlord?tenancy_id=xxx — fetch landlord details
+ * - PUT /functions/v1/manage-landlord                 — update landlord contact info
+ *
+ * The POST/email-invite handler that used to live here was removed in the
+ * 2026-05-03 release: the email invite path was redundant (RN app routes
+ * 100% through WhatsApp via invite-landlord-whatsapp, and the new template
+ * URL doesn't carry tokens). For tenant-initiated invites, call
+ * /functions/v1/invite-landlord-whatsapp.
  *
  * Auth: Required (User JWT)
  */
@@ -29,26 +34,11 @@ import {
   isValidEmail,
   isValidIndianPhone,
 } from "../_shared/validation.ts";
-import { AuditLogger, AuditActions } from "../_shared/audit.ts";
-import { sendEmail, MessageTemplates } from "../_shared/notifications.ts";
-import { generateSecureRandom } from "../_shared/crypto.ts";
-// ==============================================
-// CONFIGURATION
-// ==============================================
-
-const INVITE_EXPIRY_HOURS = 72;
-const LANDLORD_PORTAL_URL = "https://flent.in/secured/invite-landlord";
+import { AuditLogger } from "../_shared/audit.ts";
 
 // ==============================================
 // TYPES
 // ==============================================
-
-interface SendInviteRequest {
-  tenancy_id: string;
-  landlord_name: string;
-  landlord_email: string;
-  landlord_phone?: string;
-}
 
 interface UpdateLandlordRequest {
   tenancy_id: string;
@@ -60,22 +50,6 @@ interface UpdateLandlordRequest {
 // ==============================================
 // VALIDATION SCHEMAS
 // ==============================================
-
-const inviteSchema = {
-  tenancy_id: {
-    required: true,
-    type: "string" as const,
-    custom: (v: unknown) => isValidUuid(v) || "Invalid tenancy ID",
-  },
-  landlord_name: { required: true, type: "string" as const, minLength: 2, maxLength: 100 },
-  landlord_email: {
-    required: true,
-    type: "string" as const,
-    custom: (v: unknown) =>
-      (typeof v === "string" && isValidEmail(v)) || "Invalid email address",
-  },
-  landlord_phone: { required: false, type: "string" as const },
-};
 
 const updateSchema = {
   tenancy_id: {
@@ -114,8 +88,6 @@ serve(async (req: Request) => {
     switch (req.method) {
       case "GET":
         return await handleGetLandlord(req, supabase, userId);
-      case "POST":
-        return await handleSendInvite(req, supabase, userId, audit);
       case "PUT":
         return await handleUpdateLandlord(req, supabase, userId, audit);
       default:
@@ -200,137 +172,6 @@ async function handleGetLandlord(
         city: tenancy.property_city,
         monthly_rent: (tenancy.monthly_rent_paise ?? 0) / 100,
       },
-    },
-  });
-}
-
-// ==============================================
-// SEND LANDLORD INVITE
-// ==============================================
-
-async function handleSendInvite(
-  req: Request,
-  supabase: ReturnType<typeof createServiceClient>,
-  userId: string,
-  audit: AuditLogger
-): Promise<Response> {
-  const body = await req.json();
-  const validated = validateSchema<SendInviteRequest>(body, inviteSchema, true);
-
-  const { tenancy_id, landlord_name, landlord_email, landlord_phone } = validated;
-
-  // Verify tenancy ownership
-  const { data: tenancy, error: tenancyError } = await supabase
-    .from("tenancies")
-    .select("id, user_id, landlord_approved, landlord_name, landlord_email, landlord_invite_count, property_address, monthly_rent_paise")
-    .eq("id", tenancy_id)
-    .eq("user_id", userId)
-    .single();
-
-  if (tenancyError || !tenancy) {
-    throw new NotFoundError("Tenancy", tenancy_id);
-  }
-
-  if (tenancy.landlord_approved) {
-    return jsonResponse({
-      success: true,
-      data: {
-        already_approved: true,
-        message: "Landlord has already approved this tenancy",
-      },
-    });
-  }
-
-  // Generate approval token
-  const approvalToken = generateSecureRandom(32);
-  const expiresAt = new Date(
-    Date.now() + INVITE_EXPIRY_HOURS * 60 * 60 * 1000
-  ).toISOString();
-
-  // Update tenancy with landlord info and token
-  const updatePayload: Record<string, unknown> = {
-    landlord_name,
-    landlord_email,
-    landlord_approval_token: approvalToken,
-    landlord_token_expires_at: expiresAt,
-    landlord_invite_sent_at: new Date().toISOString(),
-    landlord_invite_count: (tenancy.landlord_invite_count ?? 0) + 1,
-  };
-
-  if (landlord_phone) {
-    updatePayload.landlord_phone = landlord_phone;
-  }
-
-  const { error: updateError } = await supabase
-    .from("tenancies")
-    .update(updatePayload)
-    .eq("id", tenancy_id);
-
-  if (updateError) {
-    console.error("Failed to update tenancy with invite:", updateError);
-    throw new AppError("Failed to generate invite", "DB_ERROR", 500);
-  }
-
-  // Build approval URL
-  const approvalUrl = `${LANDLORD_PORTAL_URL}/approve/${tenancy_id}?token=${approvalToken}`;
-
-  // Get tenant name for the email
-  const { data: tenant } = await supabase
-    .from("users")
-    .select("first_name, last_name")
-    .eq("id", userId)
-    .single();
-
-  const tenantName = tenant?.first_name
-    ? `${tenant.first_name}${tenant.last_name ? ` ${tenant.last_name}` : ""}`
-    : "Your tenant";
-
-  const monthlyRent = ((tenancy.monthly_rent_paise ?? 0) / 100).toLocaleString("en-IN");
-
-  // Send email notification
-  const emailResult = await sendEmail({
-    to: landlord_email,
-    subject: `${tenantName} has added you as their landlord - Action Required`,
-    html: generateInviteEmailHtml({
-      landlordName: landlord_name,
-      tenantName,
-      propertyAddress: tenancy.property_address,
-      monthlyRent,
-      approvalUrl,
-    }),
-    text: `Hi ${landlord_name}, ${tenantName} has registered you as their landlord on Flent Secured for ${tenancy.property_address}. Monthly rent: Rs ${monthlyRent}. Please verify at: ${approvalUrl}. This link expires in 72 hours.`,
-  });
-
-  await audit.logSuccess(
-    AuditActions.LANDLORD_INVITE_SENT,
-    "landlord",
-    "tenancy",
-    tenancy_id,
-    {
-      landlord_email_masked: maskEmail(landlord_email),
-      email_sent: emailResult.success,
-      email_message_id: emailResult.messageId,
-      expires_at: expiresAt,
-    }
-  );
-
-  if (!emailResult.success) {
-    throw new AppError(
-      `Failed to send invitation email: ${emailResult.error}`,
-      "EMAIL_FAILED",
-      502
-    );
-  }
-
-  return jsonResponse({
-    success: true,
-    data: {
-      invite_id: tenancy_id,
-      status: "sent",
-      sent_via: "email",
-      expires_at: expiresAt,
-      landlord_email_masked: maskEmail(landlord_email),
-      message: "Landlord invitation email sent successfully",
     },
   });
 }
@@ -446,50 +287,4 @@ function maskEmail(email: string): string {
   const maskedLocal = local.charAt(0) + "***";
   const maskedDomain = domainParts[0].charAt(0) + "***";
   return `${maskedLocal}@${maskedDomain}.${domainParts.slice(1).join(".")}`;
-}
-
-function generateInviteEmailHtml(params: {
-  landlordName: string;
-  tenantName: string;
-  propertyAddress: string;
-  monthlyRent: string;
-  approvalUrl: string;
-}): string {
-  const { landlordName, tenantName, propertyAddress, monthlyRent, approvalUrl } = params;
-  return `
-<!DOCTYPE html>
-<html>
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
-<body style="margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background-color:#f5f5f5;">
-  <table role="presentation" style="width:100%;border-collapse:collapse;">
-    <tr><td align="center" style="padding:40px 20px;">
-      <table role="presentation" style="max-width:600px;width:100%;background-color:#ffffff;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.08);">
-        <tr><td style="padding:40px 40px 20px;text-align:center;">
-          <h1 style="margin:0;font-size:24px;font-weight:600;color:#1a1a1a;">Flent Secured</h1>
-        </td></tr>
-        <tr><td style="padding:20px 40px;">
-          <p style="font-size:16px;color:#333;">Hello <strong>${landlordName}</strong>,</p>
-          <p style="font-size:16px;color:#333;"><strong>${tenantName}</strong> has registered you as their landlord on Flent Secured.</p>
-          <table role="presentation" style="width:100%;background-color:#f8f9fa;border-radius:8px;margin:20px 0;">
-            <tr><td style="padding:20px;">
-              <p style="margin:0 0 10px;font-size:14px;color:#666;">Property Address</p>
-              <p style="margin:0 0 16px;font-size:16px;color:#1a1a1a;font-weight:500;">${propertyAddress}</p>
-              <p style="margin:0 0 10px;font-size:14px;color:#666;">Monthly Rent</p>
-              <p style="margin:0;font-size:20px;color:#1a1a1a;font-weight:600;">Rs ${monthlyRent}</p>
-            </td></tr>
-          </table>
-          <p style="font-size:16px;color:#333;">Please verify and approve this tenancy:</p>
-          <table role="presentation" style="width:100%;"><tr><td align="center">
-            <a href="${approvalUrl}" style="display:inline-block;padding:14px 32px;background-color:#2563eb;color:#ffffff;text-decoration:none;font-size:16px;font-weight:600;border-radius:8px;">Review & Approve</a>
-          </td></tr></table>
-          <p style="margin:24px 0 0;font-size:14px;color:#666;text-align:center;">This link expires in <strong>72 hours</strong>.</p>
-        </td></tr>
-        <tr><td style="padding:30px 40px;border-top:1px solid #e5e5e5;">
-          <p style="margin:0;font-size:12px;color:#999;text-align:center;">&copy; ${new Date().getFullYear()} Flent Technologies Pvt Ltd</p>
-        </td></tr>
-      </table>
-    </td></tr>
-  </table>
-</body>
-</html>`.trim();
 }

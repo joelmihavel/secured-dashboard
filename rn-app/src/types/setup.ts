@@ -9,7 +9,7 @@
  *   - verify-upi-vpa (POST, auth required) - Cashfree UPI Penny Drop verification
  *   - verify-utility (POST, auth required) - API Club electricity bill verification
  *   - verify-utility?action=operators (GET, auth optional) - Electricity operator list
- *   - send-landlord-invite (POST, auth required) - Email invitation to landlord
+ *   - invite-landlord-whatsapp (POST, auth required) - WhatsApp invite to landlord
  */
 
 // ==============================================

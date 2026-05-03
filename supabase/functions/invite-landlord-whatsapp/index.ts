@@ -125,6 +125,17 @@ serve(async (req: Request) => {
 
     const tenantFullName = tenantUser?.full_name ?? "Your tenant";
 
+    // Cancel any in-flight retry rows for this tenancy. The tenant tapping
+    // "Send" again should always supersede an outstanding retry — they're
+    // either retrying a different number or wanted a fresh attempt now.
+    // Rows currently in 'processing' are left alone (cron has already
+    // committed the send; we'll dedupe on the next reconcile cycle).
+    await supabaseAdmin
+      .from("landlord_invite_retry_queue")
+      .update({ status: "superseded", last_error_message: "tenant_resent" })
+      .eq("tenancy_id", tenancy.id)
+      .eq("status", "pending");
+
     // Get template SID from env
     const LANDLORD_INVITE_TEMPLATE_SID = Deno.env.get("TWILIO_LANDLORD_INVITE_TEMPLATE_SID");
     if (!LANDLORD_INVITE_TEMPLATE_SID) {
@@ -206,7 +217,12 @@ serve(async (req: Request) => {
       );
     }
 
-    // Update tenancy invite status
+    // Update tenancy invite status. Note: landlord_status='invited' here
+    // is OPTIMISTIC — Twilio's response is 'queued', not 'delivered'. The
+    // reconcile-landlord-invite-deliveries cron polls Twilio per-minute for
+    // the terminal status of last_landlord_invite_message_sid and will
+    // transition this to 'invited_deferred' (retry queued) or
+    // 'invited_undelivered' (terminal) if the message ultimately fails.
     const currentInviteCount = tenancy.landlord_invite_count ?? 0;
     const { error: updateError } = await supabaseAdmin
       .from("tenancies")
@@ -214,6 +230,8 @@ serve(async (req: Request) => {
         landlord_status: "invited",
         landlord_invite_sent_at: new Date().toISOString(),
         landlord_invite_count: currentInviteCount + 1,
+        last_landlord_invite_message_sid: result.messageId ?? null,
+        landlord_invite_status_checked: false,
       })
       .eq("id", tenancy.id);
 

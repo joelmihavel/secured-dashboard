@@ -8,7 +8,7 @@
  *   - verify-bank (POST, auth required)
  *   - verify-utility (POST, auth required)
  *   - verify-utility?action=operators (GET, auth optional)
- *   - send-landlord-invite (POST, auth required)
+ *   - invite-landlord-whatsapp (POST, auth required)
  *
  * Pattern follows waitlist.ts: define raw response types, map to RN camelCase.
  */
