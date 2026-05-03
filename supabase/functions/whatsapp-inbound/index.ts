@@ -88,32 +88,27 @@ function stripWhatsAppPrefix(addr: string): string {
 
 /**
  * Looks up the most recent tenancy whose landlord matches `phoneE164`.
- * Matches on (country_code || landlord_phone) so we don't depend on phone
- * formatting being identical across rows. India: country_code='+91' +
- * landlord_phone='9978899383' → '+919978899383'.
+ * Country-agnostic: delegates to the `find_tenancy_by_landlord_e164` RPC
+ * which matches on the exact concatenation of `country_code || landlord_phone`.
+ * Works for any of our supported country codes (+91, +1, +44, +971, +61,
+ * +65, +60, +49, +33, +966, +974, +968, +977, +94) and any future country
+ * code added to validation without code change here.
  *
  * Returns null if no tenancy is found.
  */
 // deno-lint-ignore no-explicit-any
 async function findTenancyByLandlordPhone(supabase: any, phoneE164: string) {
-  // Use the last 10 digits as a fallback match — robust to country_code
-  // being null or formatted differently across legacy rows.
-  const digits = phoneE164.replace(/\D/g, "");
-  const last10 = digits.slice(-10);
-
-  const { data, error } = await supabase
-    .from("tenancies")
-    .select("id, user_id, landlord_phone, country_code, landlord_invite_sent_at")
-    .like("landlord_phone", `%${last10}`)
-    .order("landlord_invite_sent_at", { ascending: false, nullsFirst: false })
-    .limit(1)
-    .maybeSingle();
-
+  const normalized = phoneE164.startsWith("+") ? phoneE164 : `+${phoneE164}`;
+  const { data, error } = await supabase.rpc("find_tenancy_by_landlord_e164", {
+    p_phone_e164: normalized,
+  });
   if (error) {
-    console.error("[whatsapp-inbound] tenancy lookup failed:", error);
+    console.error("[whatsapp-inbound] tenancy lookup RPC failed:", error);
     return null;
   }
-  return data as
+  if (!data || (Array.isArray(data) && data.length === 0)) return null;
+  const row = Array.isArray(data) ? data[0] : data;
+  return row as
     | {
         id: string;
         user_id: string;
