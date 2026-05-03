@@ -331,7 +331,7 @@ export async function POST(req: NextRequest) {
       .update(update)
       .eq("id", tenancyId)
       .eq("landlord_status", "human_review")
-      .select("id, landlord_status, landlord_approved")
+      .select("id, user_id, landlord_status, landlord_approved")
       .maybeSingle();
 
     if (uErr) {
@@ -363,6 +363,53 @@ export async function POST(req: NextRequest) {
       });
     } catch (auditErr) {
       console.warn("[/api/admin update-tenancy-landlord] audit insert failed:", auditErr);
+    }
+
+    // Best-effort tenant notification. Both branches are fire-and-forget;
+    // a failure here doesn't undo the admin's UPDATE.
+    if (action === "promote") {
+      supabase.functions
+        .invoke("notify-user", {
+          body: {
+            user_id: updated.user_id,
+            notification_type: "landlord_verified",
+            related_entity_type: "tenancy",
+            related_entity_id: updated.id,
+            priority: "high",
+          },
+        })
+        .catch((e: unknown) =>
+          console.error("[/api/admin promote] notify-user failed:", e),
+        );
+    } else {
+      // Atomic claim before notify so the cron + admin-decline race can't
+      // double-fire. notify-user is invoked only if this row owns the claim.
+      const { data: claimed, error: claimErr } = await supabase
+        .from("tenancies")
+        .update({ landlord_verification_failed_notified_at: new Date().toISOString() })
+        .eq("id", updated.id)
+        .is("landlord_verification_failed_notified_at", null)
+        .select("id")
+        .maybeSingle();
+
+      if (claimErr) {
+        console.error("[/api/admin decline] failure-notify claim err:", claimErr);
+      } else if (claimed) {
+        supabase.functions
+          .invoke("notify-user", {
+            body: {
+              user_id: updated.user_id,
+              notification_type: "landlord_verification_failed",
+              related_entity_type: "tenancy",
+              related_entity_id: updated.id,
+              priority: "high",
+            },
+          })
+          .catch((e: unknown) =>
+            console.error("[/api/admin decline] notify-user failed:", e),
+          );
+      }
+      // If not claimed, the cron already notified — silently skip.
     }
 
     return NextResponse.json({ data: updated });

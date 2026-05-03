@@ -478,6 +478,7 @@ async function handleApprove(
     .update({
       landlord_approved: true,
       landlord_approved_at: new Date().toISOString(),
+      landlord_status: "verified",
       landlord_response: "approved",
       status: "active", // Activate tenancy on landlord approval
     })
@@ -493,11 +494,11 @@ async function handleApprove(
     bank_account_id: bankAccount.id,
   });
 
-  // Notify tenant via notify-user (in-app + push)
+  // Notify tenant via notify-user (in-app + push). Legacy email-token approval
+  // path skips the OTP/3-gate flow, so we fire landlord_verified directly.
   notifyUser(getSupabaseUrl(), Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!, {
     user_id: tenancy.user_id,
-    notification_type: "landlord_confirmed",
-    template_vars: { landlord_name: tenancy.landlord_name },
+    notification_type: "landlord_verified",
     related_entity_type: "tenancy",
     related_entity_id: tenancy.id,
     priority: "high",

@@ -16,6 +16,8 @@ export type NotificationType =
   | 'rent_due_tomorrow'
   | 'rent_overdue'
   | 'landlord_confirmed'
+  | 'landlord_verified'
+  | 'landlord_verification_failed'
   | 'landlord_rejected'
   | 'app_update'
   | 'reminder_utility'
@@ -73,8 +75,16 @@ export const NOTIFICATION_TEMPLATES: Record<NotificationType, NotificationTempla
     body: "Don't miss your payment. ₹{amount} was due on {date}.",
   },
   landlord_confirmed: {
-    title: 'Your landlord confirmed you',
-    body: "{landlord_name} verified your tenancy. You're all set to pay rent through Flent.",
+    title: 'Landlord confirmed your tenancy',
+    body: "We're running the final checks now. Once everything is verified, your account will be approved shortly.",
+  },
+  landlord_verified: {
+    title: "You're verified",
+    body: 'You can now continue getting 1% cashback on your rent payments.',
+  },
+  landlord_verification_failed: {
+    title: 'Verification needs attention',
+    body: "We couldn't complete your landlord verification after our internal anti-fraud checks. Someone from our team will reach out to help. You can contact our support if you've any questions.",
   },
   landlord_rejected: {
     title: "Landlord couldn't verify tenancy",
@@ -157,6 +167,8 @@ export const NOTIFICATION_ROUTES: Record<NotificationType, string> = {
   rent_due_tomorrow: '/(payment)/enter-rent',
   rent_overdue: '/(payment)/enter-rent',
   landlord_confirmed: '/(main)',
+  landlord_verified: '/(main)',
+  landlord_verification_failed: '/(main)',
   landlord_rejected: '/(setup)/invite-landlord',
   app_update: '/(main)',
   reminder_utility: '/(setup)/add-utility',

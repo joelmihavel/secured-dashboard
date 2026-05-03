@@ -10,6 +10,8 @@
  */
 
 import { matchAgainstAgreementNames, resolveAgreementNames } from "./name-match-service.ts";
+import { notifyUser } from "./notifications.ts";
+import { getSupabaseUrl } from "./supabase.ts";
 
 // ==============================================
 // TYPES
@@ -238,6 +240,22 @@ export async function checkAndUpgradeLandlordStatus(
       return { upgraded: false, result };
     }
     console.log(`[landlord-m360-check] Tenancy ${tenancyId} → verified (${gateSummary})`);
+
+    // Fire-and-forget tenant notification. notifyUser handles policy /
+    // preference checks internally and short-circuits to push-only if
+    // the WA SID is unset.
+    const supabaseUrl = getSupabaseUrl();
+    const serviceKey = (Deno.env.get("SB_SECRET_KEY") || Deno.env.get("SUPABASE_SERVICE_ROLE_KEY"))!;
+    notifyUser(supabaseUrl, serviceKey, {
+      user_id: tenancy.user_id,
+      notification_type: "landlord_verified",
+      priority: "high",
+      related_entity_type: "tenancy",
+      related_entity_id: tenancyId,
+    }).catch((err) =>
+      console.error(`[landlord-m360-check] notifyUser(landlord_verified) failed for ${tenancyId}:`, err),
+    );
+
     return { upgraded: true, result: { ...result, detail: `All 3 gates passed (${gateSummary})` } };
   }
 
