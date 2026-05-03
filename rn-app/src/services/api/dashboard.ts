@@ -48,8 +48,8 @@ export interface DashboardTenancy {
   property_city: string | null;
   monthly_rent: number; // In rupees
   maintenance: number; // In rupees, 0 if none
-  rent_due_day: number;
-  cashback_cutoff_day: number; // Day of month by which rent must be paid for cashback (defaults to 7)
+  rent_due_day: number; // Phase 2: grace-inclusive deadline (LAST day rent can be paid without penalty). Includes any contractual grace period folded in.
+  cashback_cutoff_day: number; // Phase 2: equals rent_due_day (grace-inclusive deadline). Field kept for backwards compat with legacy clients; will be removed in a future cleanup.
   lease_end_date: string | null;
   lease_start_date: string | null;
   agreement_cert_id: string | null;
@@ -701,7 +701,9 @@ export function mapCashbackModule(
   // month (often `pending` until cutoff passes) sits at the rightmost
   // colored slot. Exact chronology is unrecoverable from counts alone;
   // this is corrected once usePaymentStamps resolves with per-month data.
-  const cutoffDay = tenancy?.cashback_cutoff_day ?? 7;
+  // Phase 2: cashback_cutoff_day === rent_due_day in the new model.
+  // Both fields server-side guaranteed non-null; trailing ?? 7 is defensive only.
+  const cutoffDay = tenancy?.cashback_cutoff_day ?? tenancy?.rent_due_day ?? 7;
   let effectiveStamps = stamps;
   if ((!stamps || stamps.length === 0) && dashboardStamps?.summary) {
     const { on_time, late, missed, pending } = dashboardStamps.summary;

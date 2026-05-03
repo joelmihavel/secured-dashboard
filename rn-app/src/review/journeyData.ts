@@ -136,7 +136,7 @@ export function getJourneyResponse(
           property_city: 'Bangalore',
           monthly_rent: 25000,
           rent_due_day: 5,
-          cashback_cutoff_day: 7,
+          cashback_cutoff_day: 5,
           lease_end_date: '2027-01-31',
           lease_start_date: '2026-02-01',
           agreement_cert_id: 'KA-BLR-2025-005678',

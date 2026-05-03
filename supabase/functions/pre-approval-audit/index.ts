@@ -277,7 +277,14 @@ serve(async (req: Request) => {
                   monthly_rent_paise: extraction.monthly_rent_paise,
                   maintenance_paise: extraction.maintenance_paise ?? 0,
                   rent_due_day: rentDueDay,
-                  cashback_cutoff_day: Math.min(rentDueDay + (extraction.rent_grace_period_days ?? 0), 28),
+                  // Phase 2 cashback_cutoff_day logic (2026-05-04): see commit <TBD> message.
+                  // When rent_grace_period_days is null, the extraction is from the new
+                  // single-field prompt — rent_due_day already includes grace, so
+                  // cashback_cutoff_day = rent_due_day. When non-null, the extraction is
+                  // legacy (two-field model) and we still add grace days.
+                  cashback_cutoff_day: extraction.rent_grace_period_days != null
+                    ? Math.min(rentDueDay + extraction.rent_grace_period_days, 28)
+                    : rentDueDay,
                   lease_start_date: extraction.lease_start_date,
                   lease_end_date: extraction.lease_end_date,
                   landlord_name: landlordName,

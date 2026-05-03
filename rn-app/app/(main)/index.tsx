@@ -447,7 +447,9 @@ export default function HomeScreen() {
         const potentialCashback = Math.round(rentAmount * (cashbackRate / 100));
 
         // Determine if payment was late (paid after cashback cutoff day)
-        const cutoffDay = tenancy?.cashback_cutoff_day ?? 7;
+        // Phase 2: cashback_cutoff_day === rent_due_day in the new model.
+        // Both fields server-side guaranteed non-null; trailing ?? 7 is defensive only.
+        const cutoffDay = tenancy?.cashback_cutoff_day ?? tenancy?.rent_due_day ?? 7;
         const paidStatus: 'paid' | 'late' = (() => {
           if (!paidPayment?.paid_at) return 'paid';
           const paidDate = new Date(paidPayment.paid_at);

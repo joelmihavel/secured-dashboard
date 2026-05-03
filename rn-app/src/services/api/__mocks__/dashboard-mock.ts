@@ -55,7 +55,7 @@ export const MOCK_DASHBOARD_DATA: DashboardData = {
     monthly_rent: 44000,
     maintenance: 0,
     rent_due_day: 5,
-    cashback_cutoff_day: 7,
+    cashback_cutoff_day: 5,
     lease_start_date: '2025-12-01',
     lease_end_date: '2026-11-01',
     agreement_cert_id: 'KA-2025-BLR-00789012',

@@ -83,15 +83,17 @@ export const EXTRACTION_RESPONSE_SCHEMA = {
       description: "Contract duration in months as integer",
       nullable: true,
     },
+    // Phase 2 (single-field semantic, 2026-05-04): rent_due_day = grace-inclusive
+    // deadline. rent_grace_period_days is deprecated (always null). If you change
+    // either description, update all 7 sites: cloud-run/extraction-service/src/extraction/schema.ts (rent_grace_period_days), cloud-run/extraction-service/src/extraction/prompts.ts (buildVertexAIExtractionPrompt, buildGeminiAPIKeyPrompt), supabase/functions/process-document/index.ts (EXTRACTION_RESPONSE_SCHEMA, extractWithVertexAIGemini inline), supabase/functions/process-document-fallback/index.ts, supabase/functions/reprocess-extractions/index.ts.
     rent_due_day: {
       type: "integer",
-      description: "Day of month when rent is due (1-28). Look for 'rent payable on Nth of every month'. This is the original due date BEFORE any grace period.",
+      description: "Day of month (1-28) representing the LAST day rent can be paid without penalty / late fee — i.e., the grace-inclusive payment deadline. If the agreement says 'rent due on 1st' with no grace, return 1. If it says 'rent due on 1st with grace period of 4 days', return 5 (1+4=5). If it says 'rent payable within 5th day in advance', return 5. If it says 'penalty 1% per day after the 5th', return 5. If it says 'rent payable from 1st to 5th of every month', return 5. ALWAYS return the END date of any grace window — never the original due day when grace is mentioned. The field rent_grace_period_days is deprecated and should always be null in your response (grace is folded into rent_due_day).",
       nullable: true,
     },
-    // Canonical grace-period extraction rule. If you change this, update all 7 sites: cloud-run/extraction-service/src/extraction/schema.ts (rent_grace_period_days), cloud-run/extraction-service/src/extraction/prompts.ts (buildVertexAIExtractionPrompt, buildGeminiAPIKeyPrompt), supabase/functions/process-document/index.ts (EXTRACTION_RESPONSE_SCHEMA, extractWithVertexAIGemini inline), supabase/functions/process-document-fallback/index.ts, supabase/functions/reprocess-extractions/index.ts.
     rent_grace_period_days: {
       type: "integer",
-      description: "Number of days AFTER rent_due_day during which rent can still be paid without penalty / late fee — i.e., the LENGTH of the grace window, NOT a date. CRITICAL: drives cashback_cutoff_day = rent_due_day + this value. Math examples: due on 1st with grace until 5th → 4; due on 1st with grace until 3rd → 2; due on 5th with grace until 10th → 5; due on 10th with 'penalty beyond 15th' → 5. PHRASINGS to recognize (both directions matter — Gemini has missed clauses where the number comes BEFORE the words 'grace period'): 'grace period of N days', 'N days of grace period' (e.g., '10 days of grace period'), 'beyond N days of grace period' (e.g., 'penalty for delay beyond 10 days of grace period'), 'N-day grace' / 'N-day grace period' (e.g., '10-day grace'), 'grace of N days', 'within a grace of N days', 'without penalty until the Nth', 'no late fee before Nth', 'allowed/permitted until Nth', 'within N days of due date', 'buffer of N days', 'late payment charges shall apply only after the Nth', 'penalty after Nth' / 'penalty beyond Nth' (then grace = N - rent_due_day), 'rent payable by Nth' (only when an explicit earlier rent_due_day is also stated, then grace = N - rent_due_day), 'rent payable from Xth to Yth of every month' → rent_due_day=X, grace=Y-X. Return 0 ONLY if no grace period, buffer, or late-fee threshold is mentioned ANYWHERE in the agreement. DO NOT default to 0 if any penalty/grace/buffer clause is present — extract the implied grace days even if the wording is indirect.",
+      description: "DEPRECATED in Phase 2 (single-field semantic). Always return null. Grace days are now folded into rent_due_day directly — see the rent_due_day description for the math. This field is kept in the schema only so legacy extractions in the database remain readable; AI must NOT populate it.",
       nullable: true,
     },
     tenant_names: {

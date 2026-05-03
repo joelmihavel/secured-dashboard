@@ -234,9 +234,16 @@ export async function syncExtractionEditsToTenancy(
   // Recompute cashback_cutoff_day whenever rent_due_day changes. Uses
   // post-update extraction.rent_grace_period_days so admins can also edit
   // grace and have it land correctly.
+  // Phase 2 cashback_cutoff_day logic (2026-05-04): see commit <TBD> message.
+  // When rent_grace_period_days is null, the extraction is from the new
+  // single-field prompt — rent_due_day already includes grace, so
+  // cashback_cutoff_day = rent_due_day. When non-null, the extraction is
+  // legacy (two-field model) and we still add grace days.
   if (propagated.includes("rent_due_day") && typeof updates.rent_due_day === "number") {
-    const grace = Number(extraction.rent_grace_period_days ?? 0) || 0;
-    const cashbackCutoff = Math.min((updates.rent_due_day as number) + grace, 28);
+    const newRentDueDay = updates.rent_due_day as number;
+    const cashbackCutoff = extraction.rent_grace_period_days != null
+      ? Math.min(newRentDueDay + Number(extraction.rent_grace_period_days), 28)
+      : newRentDueDay;
     if (cashbackCutoff !== (tenancy.cashback_cutoff_day ?? null)) {
       oldValues.cashback_cutoff_day = tenancy.cashback_cutoff_day ?? null;
       newValues.cashback_cutoff_day = cashbackCutoff;
@@ -410,8 +417,15 @@ export async function ensureTenancyForExtraction(
       // anything outside this range, so an extraction that returned 29-31
       // (e.g. last day of month) would otherwise hard-fail the INSERT.
       rent_due_day: Math.min(Math.max(extraction.rent_due_day || 1, 1), 28),
+      // Phase 2 cashback_cutoff_day logic (2026-05-04): see commit <TBD> message.
+      // When rent_grace_period_days is null, the extraction is from the new
+      // single-field prompt — rent_due_day already includes grace, so
+      // cashback_cutoff_day = rent_due_day. When non-null, the extraction is
+      // legacy (two-field model) and we still add grace days.
       cashback_cutoff_day: extraction.rent_due_day
-        ? Math.min(extraction.rent_due_day + (extraction.rent_grace_period_days ?? 0), 28)
+        ? (extraction.rent_grace_period_days != null
+            ? Math.min(extraction.rent_due_day + extraction.rent_grace_period_days, 28)
+            : extraction.rent_due_day)
         : null,
       lease_start_date: leaseStartDate,
       lease_end_date: extraction.lease_end_date ?? null,

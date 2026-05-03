@@ -118,7 +118,7 @@ export const SCENARIOS = {
         property_city: 'Bangalore',
         monthly_rent: 35000,
         rent_due_day: 1,
-        cashback_cutoff_day: 7,
+        cashback_cutoff_day: 1,
         lease_end_date: null,
         lease_start_date: '2026-01-01',
         agreement_cert_id: null,

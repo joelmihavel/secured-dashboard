@@ -183,8 +183,15 @@ export async function ensureTenancyForExtraction(
       // anything outside this range, so an extraction returning 29-31 (e.g.
       // last day of month) would otherwise hard-fail the INSERT.
       rent_due_day: Math.min(Math.max(extraction.rent_due_day || 1, 1), 28),
+      // Phase 2 cashback_cutoff_day logic (2026-05-04): see commit <TBD> message.
+      // When rent_grace_period_days is null, the extraction is from the new
+      // single-field prompt — rent_due_day already includes grace, so
+      // cashback_cutoff_day = rent_due_day. When non-null, the extraction is
+      // legacy (two-field model) and we still add grace days.
       cashback_cutoff_day: extraction.rent_due_day
-        ? Math.min(extraction.rent_due_day + (extraction.rent_grace_period_days ?? 0), 28)
+        ? (extraction.rent_grace_period_days != null
+            ? Math.min(extraction.rent_due_day + extraction.rent_grace_period_days, 28)
+            : extraction.rent_due_day)
         : null,
       lease_start_date: leaseStartDate,
       lease_end_date: extraction.lease_end_date ?? null,
