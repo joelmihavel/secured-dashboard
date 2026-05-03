@@ -97,7 +97,7 @@ export const NOTIFICATION_TEMPLATES: Record<
   },
   landlord_verification_failed: {
     title: "Verification needs attention",
-    body: "We couldn't complete your landlord verification after our internal anti-fraud checks. Someone from our team will reach out to help. You can contact our support if you've any questions.",
+    body: "We couldn't complete your landlord verification after our internal anti-fraud checks. Someone from our team will reach out to help. You can contact support at secured@flent.in if you've any questions.",
   },
   landlord_rejected: {
     title: "Landlord couldn't verify tenancy",
