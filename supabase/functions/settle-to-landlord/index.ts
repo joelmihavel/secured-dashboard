@@ -25,6 +25,13 @@ import { notifyUserWithFallback } from "../_shared/notifications.ts";
 
 const BATCH_SIZE = 10; // Max payments to process per invocation (payout fraud control)
 
+// Minimum age before a payment is eligible for landlord settlement attempt.
+// Prevents the race where landlord bank verification (penny drop + Cashfree
+// vendor creation, ~30s–9min observed) finishes AFTER settle-to-landlord's
+// first cron tick, causing a permanent failure (Faris case, 2026-05-02).
+// 10 min covers the worst observed bank-verification latency with margin.
+const MIN_PAYMENT_AGE_MS = 10 * 60 * 1000;
+
 // ==============================================
 // MAIN HANDLER
 // ==============================================
@@ -94,6 +101,9 @@ serve(async (req: Request) => {
       .eq("status", "success")
       .eq("landlord_payout_status", "ready")
       .eq("transfer_hold", false)
+      // Race guard: only attempt payout once landlord bank verification has
+      // had time to complete. See MIN_PAYMENT_AGE_MS comment above.
+      .lt("paid_at", new Date(Date.now() - MIN_PAYMENT_AGE_MS).toISOString())
       .order("paid_at", { ascending: true })
       .limit(BATCH_SIZE);
 
