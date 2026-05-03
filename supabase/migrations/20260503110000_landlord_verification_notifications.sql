@@ -50,8 +50,10 @@ INSERT INTO notification_policy (
   max_per_user_per_window_count, window_seconds, respect_quiet_hours,
   respect_user_preference_column, note, content_template_sid, content_variable_keys
 ) VALUES
-  ('landlord_verified',            NULL, NULL, 1, 60, false, NULL, 'Transactional; 1-min idempotency', NULL, NULL),
-  ('landlord_verification_failed', NULL, NULL, 1, 60, false, NULL, 'Transactional; 1-min idempotency', NULL, NULL)
+  -- content_variable_keys is NOT NULL on prod (default '{}'). Pass empty array
+  -- explicitly; ops fills in real keys when the Twilio Content SIDs are wired.
+  ('landlord_verified',            NULL, NULL, 1, 60, false, NULL, 'Transactional; 1-min idempotency', NULL, '{}'::text[]),
+  ('landlord_verification_failed', NULL, NULL, 1, 60, false, NULL, 'Transactional; 1-min idempotency', NULL, '{}'::text[])
 ON CONFLICT (notification_type) DO NOTHING;
 
 -- ============================================================
