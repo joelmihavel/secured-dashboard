@@ -52,6 +52,9 @@ export function mergeGeminiResults(docAI: ExtractedData, gemini: any): Extracted
     rent_due_day: gemini.rent_due_day != null
       ? Number(gemini.rent_due_day)
       : docAI.rent_due_day,
+    rent_grace_period_days: gemini.rent_grace_period_days != null
+      ? Number(gemini.rent_grace_period_days)
+      : (docAI as any).rent_grace_period_days,
     tenant_names: gemini.tenant_names?.length > 0
       ? splitJointNames(gemini.tenant_names) : docAI.tenant_names,
     landlord_names: gemini.landlord_names?.length > 0
@@ -108,6 +111,10 @@ export function mergeGeminiResults(docAI: ExtractedData, gemini: any): Extracted
   // Sanity-check rent_due_day (1-28)
   if (merged.rent_due_day != null && (merged.rent_due_day < 1 || merged.rent_due_day > 28)) {
     merged.rent_due_day = undefined;
+  }
+  // Sanity-check rent_grace_period_days (0-28) — DB CHECK constraint matches.
+  if (merged.rent_grace_period_days != null && (merged.rent_grace_period_days < 0 || merged.rent_grace_period_days > 28)) {
+    merged.rent_grace_period_days = undefined;
   }
 
   // Recalculate fields extracted

@@ -171,7 +171,7 @@ serve(async (req: Request) => {
       const [extractionsRes, tenanciesRes, waitlistRes] = await Promise.all([
         supabase
           .from("extracted_rental_info")
-          .select("id, user_id, extraction_status, user_verified, needs_manual_review, contract_status, is_city_supported, tenant_name, tenant_names, landlord_name, landlord_names, property_address, property_city, property_state, property_pincode, monthly_rent_paise, maintenance_paise, lease_start_date, lease_end_date, rent_due_day, landlord_phone, landlord_email, tenancy_id, created_at")
+          .select("id, user_id, extraction_status, user_verified, needs_manual_review, contract_status, is_city_supported, tenant_name, tenant_names, landlord_name, landlord_names, property_address, property_city, property_state, property_pincode, monthly_rent_paise, maintenance_paise, lease_start_date, lease_end_date, rent_due_day, rent_grace_period_days, landlord_phone, landlord_email, tenancy_id, created_at")
           .in("user_id", chunkUserIds)
           .eq("extraction_status", "completed")
           .order("created_at", { ascending: false }),

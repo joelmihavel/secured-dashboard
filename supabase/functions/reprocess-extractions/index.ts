@@ -36,7 +36,8 @@ const EXTRACTION_RESPONSE_SCHEMA = {
     contract_start_date: { type: "string", description: "YYYY-MM-DD format", nullable: true },
     contract_end_date: { type: "string", description: "YYYY-MM-DD format", nullable: true },
     contract_length_months: { type: "integer", description: "Duration in months", nullable: true },
-    rent_due_day: { type: "integer", description: "Day of month rent is due (1-28)", nullable: true },
+    rent_due_day: { type: "integer", description: "Day of month rent is due (1-28). The original due date BEFORE any grace period.", nullable: true },
+    rent_grace_period_days: { type: "integer", description: "Number of days AFTER rent_due_day during which rent can be paid without penalty (length of grace window, NOT a date). Drives cashback_cutoff_day = rent_due_day + this value. Due on 1st with grace until 5th → 4. Phrasings: 'grace period of N days', 'without penalty until Nth', 'no late fee before Nth', 'allowed until Nth', 'within N days', 'penalty after Nth', 'rent payable from Xth to Yth' (then grace = Y - X). Return 0 ONLY if no grace mentioned anywhere.", nullable: true },
     tenant_names: { type: "array", items: { type: "string" }, description: "Tenant names — each person SEPARATE" },
     landlord_names: { type: "array", items: { type: "string" }, description: "Landlord names — each person SEPARATE" },
     certificate_no: { type: "string", description: "E-stamp cert no. Mumbai: use GRN/Transaction ID", nullable: true },
@@ -323,6 +324,7 @@ Deno.serve(async (req) => {
             rent_duration_months: merged.contract_length_months,
             rent_escalation_percent: merged.rent_escalation_percent,
             rent_due_day: merged.rent_due_day,
+            rent_grace_period_days: merged.rent_grace_period_days,
             agreement_date: merged.agreement_date,
             registration_number: merged.registration_number,
             certificate_no: merged.certificate_no,
@@ -710,6 +712,7 @@ function mergeGeminiResults(gemini: any): any {
     lease_end_date: gemini.contract_end_date || null,
     contract_length_months: gemini.contract_length_months != null ? Number(gemini.contract_length_months) : null,
     rent_due_day: gemini.rent_due_day != null ? Number(gemini.rent_due_day) : null,
+    rent_grace_period_days: gemini.rent_grace_period_days != null ? Number(gemini.rent_grace_period_days) : null,
     tenant_names: gemini.tenant_names?.length > 0 ? splitJointNames(gemini.tenant_names) : [],
     landlord_names: gemini.landlord_names?.length > 0 ? splitJointNames(gemini.landlord_names) : [],
     // E-stamp fields
@@ -749,6 +752,9 @@ function mergeGeminiResults(gemini: any): any {
   }
   if (merged.rent_due_day != null && (merged.rent_due_day < 1 || merged.rent_due_day > 28)) {
     merged.rent_due_day = null;
+  }
+  if (merged.rent_grace_period_days != null && (merged.rent_grace_period_days < 0 || merged.rent_grace_period_days > 28)) {
+    merged.rent_grace_period_days = null;
   }
 
   merged.fields_extracted = countExtractedFields(merged);

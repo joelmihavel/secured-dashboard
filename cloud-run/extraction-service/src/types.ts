@@ -23,6 +23,7 @@ export interface ExtractedData {
   contract_length_months?: number;
   rent_escalation_percent?: number;
   rent_due_day?: number;
+  rent_grace_period_days?: number;
 
   // Parties
   tenant_names: string[];

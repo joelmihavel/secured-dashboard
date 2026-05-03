@@ -127,7 +127,7 @@ serve(async (req: Request) => {
       // Q3: extracted_rental_info (latest per user via order + distinct-like logic)
       supabase
         .from("extracted_rental_info")
-        .select("id, user_id, extraction_status, user_verified, needs_manual_review, contract_status, tenant_name, tenant_names, landlord_name, landlord_names, monthly_rent_paise, maintenance_paise, lease_start_date, lease_end_date, rent_due_day, extraction_confidence, property_address, property_city, property_state, property_pincode, landlord_phone, landlord_email, tenancy_id")
+        .select("id, user_id, extraction_status, user_verified, needs_manual_review, contract_status, tenant_name, tenant_names, landlord_name, landlord_names, monthly_rent_paise, maintenance_paise, lease_start_date, lease_end_date, rent_due_day, rent_grace_period_days, extraction_confidence, property_address, property_city, property_state, property_pincode, landlord_phone, landlord_email, tenancy_id")
         .in("user_id", userIds)
         .order("created_at", { ascending: false }),
 

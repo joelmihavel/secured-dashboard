@@ -561,6 +561,7 @@ export async function runExtractionPipeline(
         rent_duration_months: extractedData.contract_length_months,
         rent_escalation_percent: extractedData.rent_escalation_percent,
         rent_due_day: extractedData.rent_due_day,
+        rent_grace_period_days: extractedData.rent_grace_period_days ?? null,
         agreement_date: extractedData.agreement_date,
         registration_number: extractedData.registration_number,
         // E-stamp fields
