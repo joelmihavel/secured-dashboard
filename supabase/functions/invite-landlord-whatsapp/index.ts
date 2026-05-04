@@ -52,7 +52,7 @@ serve(async (req: Request) => {
     // Fetch tenancy and verify ownership
     const { data: tenancy, error: tenancyError } = await supabaseAdmin
       .from("tenancies")
-      .select("id, user_id, landlord_phone, landlord_name, landlord_status, landlord_invite_count, country_code")
+      .select("id, user_id, landlord_phone, landlord_name, landlord_status, landlord_invite_count, landlord_otp_verified, country_code")
       .eq("id", tenancy_id)
       .single();
 
@@ -100,14 +100,29 @@ serve(async (req: Request) => {
       }
     }
 
-    // If phone came from body, save it on tenancy before sending
+    // If phone came from body, save it on tenancy before sending. When the
+    // tenant SWITCHES to a different landlord (isPhoneChanged), wipe all
+    // landlord-side state — the previous landlord's OTP/approval/M360 is
+    // not valid for the new person and would corrupt the 3-gate cron.
     if (bodyPhone) {
+      const phoneUpdate: Record<string, unknown> = {
+        landlord_phone: resolvedPhone,
+        country_code: resolvedCountryCode,
+      };
+      if (isPhoneChanged) {
+        phoneUpdate.landlord_status = "invited";
+        phoneUpdate.landlord_otp_verified = false;
+        phoneUpdate.landlord_otp_hash = null;
+        phoneUpdate.landlord_otp_expires_at = null;
+        phoneUpdate.landlord_otp_attempts = 0;
+        phoneUpdate.landlord_response = null;
+        phoneUpdate.landlord_approved = false;
+        phoneUpdate.landlord_approved_at = null;
+        phoneUpdate.landlord_user_id = null;
+      }
       const { error: phoneUpdateError } = await supabaseAdmin
         .from("tenancies")
-        .update({
-          landlord_phone: resolvedPhone,
-          country_code: resolvedCountryCode,
-        })
+        .update(phoneUpdate)
         .eq("id", tenancy.id);
 
       if (phoneUpdateError) {
@@ -223,16 +238,29 @@ serve(async (req: Request) => {
     // the terminal status of last_landlord_invite_message_sid and will
     // transition this to 'invited_deferred' (retry queued) or
     // 'invited_undelivered' (terminal) if the message ultimately fails.
+    //
+    // Don't regress landlord_status if the landlord has already verified OTP —
+    // a re-invite from the retry path or tenant action must not undo
+    // 'otp_confirmed'/'human_review'/'verified', otherwise the row becomes
+    // self-contradictory (status='invited' but otp_verified=true) and the
+    // 3-gate cron's eligibleStatuses filter stops seeing it.
     const currentInviteCount = tenancy.landlord_invite_count ?? 0;
+    const tenancyUpdate: Record<string, unknown> = {
+      landlord_invite_sent_at: new Date().toISOString(),
+      landlord_invite_count: currentInviteCount + 1,
+      last_landlord_invite_message_sid: result.messageId ?? null,
+      landlord_invite_status_checked: false,
+    };
+    // The in-memory `tenancy` was loaded BEFORE the phone-change reset above,
+    // so `landlord_otp_verified` reflects pre-reset state. Treat a phone
+    // change as if OTP was never verified (it wasn't, for the new landlord).
+    const otpVerifiedForCurrentLandlord = tenancy.landlord_otp_verified && !isPhoneChanged;
+    if (!otpVerifiedForCurrentLandlord) {
+      tenancyUpdate.landlord_status = "invited";
+    }
     const { error: updateError } = await supabaseAdmin
       .from("tenancies")
-      .update({
-        landlord_status: "invited",
-        landlord_invite_sent_at: new Date().toISOString(),
-        landlord_invite_count: currentInviteCount + 1,
-        last_landlord_invite_message_sid: result.messageId ?? null,
-        landlord_invite_status_checked: false,
-      })
+      .update(tenancyUpdate)
       .eq("id", tenancy.id);
 
     if (updateError) {

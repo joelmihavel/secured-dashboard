@@ -224,16 +224,21 @@ export async function checkAndUpgradeLandlordStatus(
   const passCount = (m360Pass ? 1 : 0) + (bankPass ? 1 : 0) + (stampPass ? 1 : 0);
   const gateSummary = `m360=${m360Pass} bank=${bankPass} stamp=${stampPass}(status=${stampStatus ?? "null"})`;
 
-  // Allow upgrade from either 'otp_confirmed' (auto path) or 'human_review'
-  // (so cron can promote a tenancy that became fully-verified after the
-  // missing gate finally passed).
-  const eligibleStatuses = ["otp_confirmed", "human_review"];
+  // Allow upgrade from 'otp_confirmed' (auto path), 'human_review' (so cron
+  // can promote a tenancy that became fully-verified after the missing gate
+  // finally passed), and 'invited' (defensive: rescues rows where
+  // invite-landlord-whatsapp regressed status='invited' AFTER OTP had
+  // already been verified — see fix in that handler). The
+  // landlord_otp_verified=true filter on the UPDATE prevents accidental
+  // promotion of a never-confirmed row.
+  const eligibleStatuses = ["otp_confirmed", "human_review", "invited"];
 
   if (passCount === 3) {
     const { error: updateError } = await supabase
       .from("tenancies")
       .update({ landlord_status: "verified", landlord_approved: true })
       .eq("id", tenancyId)
+      .eq("landlord_otp_verified", true)
       .in("landlord_status", eligibleStatuses);
     if (updateError) {
       console.error(`[landlord-m360-check] Failed to upgrade tenancy ${tenancyId} → verified:`, updateError);
@@ -260,13 +265,16 @@ export async function checkAndUpgradeLandlordStatus(
   }
 
   if (passCount === 2) {
-    // Move to human_review only from 'otp_confirmed' (don't downgrade an
-    // already-verified tenancy, and don't keep flipping a human_review row).
+    // Move to human_review only from 'otp_confirmed' or the regression case
+    // 'invited' (don't downgrade an already-verified tenancy, and don't keep
+    // flipping a human_review row). landlord_otp_verified=true filter ensures
+    // we never bring a row that hasn't OTP-confirmed into the review queue.
     const { error: updateError } = await supabase
       .from("tenancies")
       .update({ landlord_status: "human_review", landlord_approved: false })
       .eq("id", tenancyId)
-      .eq("landlord_status", "otp_confirmed");
+      .eq("landlord_otp_verified", true)
+      .in("landlord_status", ["otp_confirmed", "invited"]);
     if (updateError) {
       console.error(`[landlord-m360-check] Failed to set tenancy ${tenancyId} → human_review:`, updateError);
       return { upgraded: false, result };
