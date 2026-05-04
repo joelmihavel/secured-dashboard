@@ -16,10 +16,8 @@ export default function CriticalUpdatePreview() {
       <CriticalUpdateScreen
         policy={{
           type: 'native',
-          isRequired: true,
           title: 'Update required',
           message: 'A new version of Flent Secured is available with important security changes',
-          isLoading: false,
           minAppVersion: '3.0.0',
         }}
       />
@@ -31,10 +29,8 @@ export default function CriticalUpdatePreview() {
       <CriticalUpdateScreen
         policy={{
           type: 'ota',
-          isRequired: true,
           title: 'Applying update',
           message: "We've made important changes to keep your account secure",
-          isLoading: false,
           minAppVersion: null,
         }}
         onDismiss={() => setMode('select')}

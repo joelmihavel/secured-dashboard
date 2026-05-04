@@ -246,6 +246,10 @@ export function createMockReceiptData(
       gatewayId: nextId('pg'),
       amount: 25000,
       pgFee: 500,
+      cashback_applied: 0,
+      cashback_earned: 0,
+      flat_bonus: 0,
+      one_pct_cashback: 0,
       paymentMethod: 'upi',
       status: 'success',
       rentMonth: '2026-02',
@@ -300,6 +304,12 @@ export function createMockSelectedPaymentMethod(
       displayName: 'Visa ending 4242',
       last4: '4242',
       isPrimary: true,
+    },
+    debit_card: {
+      id: nextId('pm'),
+      type: 'debit_card',
+      displayName: 'Visa Debit ending 1111',
+      last4: '1111',
     },
     netbanking: {
       id: nextId('pm'),
@@ -365,6 +375,7 @@ export function createMockPaymentStampEntry(
     days_late: null,
     amount_paise: 2500000,
     cashback_applied_paise: 20000,
+    payment_method: 'upi',
     cashback_earned: 200,
     ...overrides,
   };

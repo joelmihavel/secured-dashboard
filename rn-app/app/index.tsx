@@ -725,10 +725,17 @@ export default function Index() {
   }, [journeyResolved, target, rootNavigationState?.key, updatePolicy.isRequired]);
 
   // Critical update blocks ALL navigation — user must update (OTA or native)
-  if (updatePolicy.isRequired) {
+  // (When `isRequired=true`, type is always 'native' | 'ota' — never 'none' —
+  // but we narrow explicitly to satisfy the screen's prop type.)
+  if (updatePolicy.isRequired && updatePolicy.type !== 'none') {
     return (
       <CriticalUpdateScreen
-        policy={updatePolicy}
+        policy={{
+          type: updatePolicy.type,
+          title: updatePolicy.title,
+          message: updatePolicy.message,
+          minAppVersion: updatePolicy.minAppVersion,
+        }}
         onDismiss={() => clearUpdatePolicyCache()}
       />
     );

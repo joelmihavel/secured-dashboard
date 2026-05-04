@@ -11,9 +11,11 @@
  * rate-limiting against SHCIL, and backoff on site_error.
  */
 
+import { config } from '../config.js';
+
 export function triggerStampVerification(extractionId: string): void {
-  const url = process.env.STAMP_VERIFICATION_SERVICE_URL;
-  const secret = process.env.STAMP_VERIFICATION_SECRET;
+  const url = config.stampVerification.url;
+  const secret = config.stampVerification.secret;
 
   if (!url || !secret) {
     console.log(

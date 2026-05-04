@@ -186,6 +186,10 @@ export default function HomeScreen() {
     [resolvedData?.recent_payments, tenancy?.monthly_rent, cashback?.discount_rate]
   );
 
+  // Get payment stamps (per-month historical payment data) — declared here
+  // so it's available to cashbackModule below.
+  const { data: stampsData } = usePaymentStamps(tenancy?.id);
+
   // Cashback module — single computed object with all CashbacksList props
   // BUG 1 FIX: Pass stamps data so chart bars are derived from backend stamps
   // (all months) instead of recent_payments (limited to 5).
@@ -237,9 +241,6 @@ export default function HomeScreen() {
   // Scroll tracking for scroll-down indicator
   const scrollViewRef = useRef<ScrollView>(null);
   // Scroll handler removed — ScrollDownIndicator removed from home screen.
-
-  // Get payment stamps (per-month historical payment data)
-  const { data: stampsData } = usePaymentStamps(tenancy?.id);
 
   // ==============================================
   // DERIVED VALUES
@@ -390,7 +391,7 @@ export default function HomeScreen() {
         let historicalCashback: number;
         if (cardStatus === 'paid') {
           // Show total cashback: applied (instant discount) + earned (into balance)
-          historicalCashback = ((stamp.cashback_applied_paise ?? 0) + (stamp.cashback_earned_paise ?? 0)) / 100;
+          historicalCashback = ((stamp.cashback_applied_paise ?? 0) + (stamp.cashback_earned ?? 0)) / 100;
         } else if (cardStatus === 'late' || cardStatus === 'missed') {
           historicalCashback = potentialCb;
         } else {

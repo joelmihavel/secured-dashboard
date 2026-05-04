@@ -126,7 +126,7 @@ export default function ProfileAgreementScreen() {
       { label: 'Tenant(s)', value: Array.isArray(t?.tenant_names) && (t.tenant_names as string[]).length > 0 ? (t.tenant_names as string[]).join(', ') : 'Not available' },
       { label: 'Landlord(s)', value: (t?.landlord_name as string) ?? 'Not available' },
       { label: 'Monthly Rent', value: t?.monthly_rent ? formatCurrency(t.monthly_rent as number) : '\u20B9 40,000' },
-      { label: 'One-Time Deposit', value: (t?.security_deposit as number) ? formatCurrency(t.security_deposit as number) : 'N/A' },
+      { label: 'One-Time Deposit', value: (t?.security_deposit as number) ? formatCurrency(t!.security_deposit as number) : 'N/A' },
       { label: 'Rent Duration', value: formatDuration(t?.lease_duration_months as number | null) },
       { label: 'Exit Date', value: formatDate(t?.lease_end_date as string | null) },
     ];
