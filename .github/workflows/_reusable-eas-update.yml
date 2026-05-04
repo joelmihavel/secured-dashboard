@@ -60,6 +60,14 @@ jobs:
             SUBJECT=$(git log -1 --format=%s "${{ github.sha }}")
             MSG="${GITHUB_SHA:0:7}: $SUBJECT"
           fi
+          # Force every CI-published OTA to be critical so users coming from
+          # an App Store / Play Store install are forced to apply it before
+          # using the app. rn-app/src/config/updates.ts:isCriticalUpdate
+          # detects the "CRITICAL:" prefix (case-insensitive). Idempotent
+          # if a caller already passed a CRITICAL-prefixed message.
+          if ! echo "$MSG" | grep -qiE '^CRITICAL:'; then
+            MSG="CRITICAL: $MSG"
+          fi
           echo "msg<<EOF" >> $GITHUB_OUTPUT
           echo "$MSG" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
