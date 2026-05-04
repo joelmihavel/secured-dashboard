@@ -38,7 +38,7 @@ export interface NameMatchOutput {
     gemini_used: boolean;
     reasoning?: string;
     match_type?: string;
-    all_candidates?: string[];  // Only if >1
+    all_candidates?: string[];  // The agreement names checked against
     name_at_source?: string;    // The verified name from external source
     fallback_score?: number;
     skipped?: boolean;
@@ -159,7 +159,7 @@ export async function matchAgainstAgreementNames(
         gemini_used: true,
         reasoning: result.reasoning,
         match_type: result.match_type,
-        all_candidates: candidateNames.length > 1 ? candidateNames : undefined,
+        all_candidates: candidateNames,
         name_at_source: verifiedName,
       },
     };
@@ -187,7 +187,7 @@ export async function matchAgainstAgreementNames(
       details: {
         gemini_used: false,
         fallback_score: Math.round(bestScore * 100),
-        all_candidates: candidateNames.length > 1 ? candidateNames : undefined,
+        all_candidates: candidateNames,
         name_at_source: verifiedName,
       },
     };
