@@ -510,13 +510,17 @@ export async function runExtractionPipeline(
       supportedCities?.map((c: { city_name: string }) => c.city_name) || []
     );
 
-    // Evaluate extraction result
+    // Evaluate extraction result.
+    // documentText is the raw OCR text from DocAI — we pass it so evaluator
+    // can distinguish "stamp paper page absent from PDF" (user forgot page 1)
+    // from "stamp paper present but Certificate No. unparseable" (admin review).
     const evaluationResult = evaluateExtraction(
       extractedData.fields_extracted,
       extractedData.total_fields,
       extractedData.confidence_score,
       isCitySupported,
-      extractedData
+      extractedData,
+      documentText
     );
 
     // Structured quality log
@@ -647,6 +651,13 @@ export async function runExtractionPipeline(
     //
     // Recovery eligibility mirrors extraction-recovery/index.ts:hasMinimumFields()
     // plus the supported-city gate.
+    //
+    // missing_stamp_paper is intentionally NOT recovery-eligible: by
+    // construction the agreement body extracted cleanly (only Certificate No.
+    // is missing), so the recoveryEligible field-presence predicate would be
+    // true — but the user definitionally didn't include page 1, so admin
+    // triage cannot fix it. The only path forward is re-upload, so we always
+    // notify and bypass the admin-queue routing.
     const recoveryEligible =
       evaluationResult.contract_status === 'invalid_document'
       && !!extractedData.property_address
@@ -660,7 +671,8 @@ export async function runExtractionPipeline(
 
     const shouldNotifyReupload =
       resolvedExtractionStatus === 'extraction_failed'
-      || (evaluationResult.contract_status === 'invalid_document' && !recoveryEligible);
+      || (evaluationResult.contract_status === 'invalid_document' && !recoveryEligible)
+      || evaluationResult.contract_status === 'missing_stamp_paper';
 
     if (shouldNotifyReupload) {
       scheduleNotification(userId, 'agreement_upload_failed', undefined, {

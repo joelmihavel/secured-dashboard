@@ -357,7 +357,8 @@ export default function AddBankScreen() {
     !!extraction.data &&
     (extraction.data.extractionStatus === 'failed' ||
       extraction.data.extractionStatus === 'extraction_failed' ||
-      extraction.data.contractStatus === 'invalid_document');
+      extraction.data.contractStatus === 'invalid_document' ||
+      extraction.data.contractStatus === 'missing_stamp_paper');
 
   // Flip to the agreement-invalid overlay as soon as a terminal-error state is
   // observed — wins over any in-progress bank/UPI verify (the agreement is
@@ -736,14 +737,25 @@ export default function AddBankScreen() {
 
   // ── AGREEMENT_INVALID STATE ──────────────────────────────────────────────
   // Reached when the extraction pipeline reports a terminal error
-  // (extraction_status ∈ {failed, extraction_failed} OR contract_status === 'invalid_document').
-  // The agreement is unusable — landlord-name match would never resolve — so
-  // the only path forward is to re-upload. Mirrors the failure-state layout
-  // but uses the failure spinner colours and an "Upload again" CTA.
+  // (extraction_status ∈ {failed, extraction_failed} OR contract_status ∈
+  // {invalid_document, missing_stamp_paper}). The agreement is unusable —
+  // landlord-name match would never resolve — so the only path forward is to
+  // re-upload. missing_stamp_paper gets dedicated copy explaining the
+  // page-1-of-PDF requirement; everything else falls through to the generic
+  // "We couldn't read your agreement" message.
   if (screenState === 'agreement_invalid') {
-    const errorBody =
-      extraction.data?.extractionError ||
-      "We couldn't read your rental agreement. Please upload a clearer copy to continue.";
+    const isMissingStampPaper =
+      extraction.data?.contractStatus === 'missing_stamp_paper';
+    const titleSecondLine = isMissingStampPaper
+      ? 'must include the stamp paper page'
+      : 'read your agreement';
+    const titleFirstLine = isMissingStampPaper
+      ? 'Your PDF\n'
+      : "We couldn't\n";
+    const errorBody = isMissingStampPaper
+      ? 'Please re-upload a single PDF that includes both the stamp paper page and the agreement body.'
+      : (extraction.data?.extractionError ||
+          "We couldn't read your rental agreement. Please upload a clearer copy to continue.");
     return (
       <View style={styles.container}>
         <DottedGridPattern fadeMask={false} />
@@ -752,8 +764,8 @@ export default function AddBankScreen() {
         </View>
         <View style={styles.loadingContent}>
           <Text style={styles.loadingTitle}>
-            <Text style={styles.loadingTitleGray}>We couldn&apos;t{'\n'}</Text>
-            <Text style={styles.failureTitleAccent}>read your agreement</Text>
+            <Text style={styles.loadingTitleGray}>{titleFirstLine}</Text>
+            <Text style={styles.failureTitleAccent}>{titleSecondLine}</Text>
           </Text>
           <VerificationSpinner failed />
           <Text style={styles.loadingBody}>{errorBody}</Text>

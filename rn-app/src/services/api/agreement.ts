@@ -52,7 +52,7 @@ const withTimeout = <T>(promise: Promise<T>, ms: number = QUERY_TIMEOUT_MS): Pro
 export type ExtractionStatus = 'pending' | 'processing' | 'completed' | 'failed' | 'extraction_failed';
 
 /** Status of the contract review */
-export type ContractStatus = 'uploading' | 'user_review' | 'manual_review' | 'expired' | 'invalid_document' | 'confirmed';
+export type ContractStatus = 'uploading' | 'user_review' | 'manual_review' | 'expired' | 'invalid_document' | 'missing_stamp_paper' | 'confirmed';
 
 /** Upload step 1 result: signed URL + extraction record */
 export interface UploadDocumentResult {

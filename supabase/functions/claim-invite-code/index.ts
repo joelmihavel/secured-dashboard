@@ -103,17 +103,29 @@ serve(async (req) => {
     }
 
     // ==============================================
-    // EXTRACTION READINESS GATE
+    // EXTRACTION READINESS GATE (narrowed)
     // ==============================================
     //
     // Fire-and-forget upload flow: the user may submit an invite code while
-    // the agreement scan is still running in the background, has failed, or
-    // was flagged for manual review. In any of those states we MUST NOT
-    // consume the code or auto-approve — return EXTRACTION_NOT_READY so the
-    // client shows the user-friendly retry message and the code stays unused.
+    // the agreement scan is still running in the background. If extraction
+    // hasn't completed yet, we MUST NOT consume the code — return
+    // EXTRACTION_NOT_READY so the client surfaces a retry message and the
+    // code stays unused.
+    //
+    // Narrowed in PR-1: the gate now fires only when extraction_status is
+    // anything other than 'completed' (i.e. pending, processing, failed,
+    // extraction_failed). It NO LONGER bails on contract_status ∈
+    // {manual_review, invalid_document, expired, missing_stamp_paper}:
+    //   - For non-VIP users, the RPC's use_count/admin_review queue handles
+    //     those rows naturally — they get counted but stay in admin_review
+    //     until a human resolves the contract_status.
+    //   - For VIP users, the RPC promotes them anyway by design (admin queue
+    //     and extraction quality are intentionally bypassed for VIP).
+    // Defense-in-depth lives in the RPC itself (see the EXTRACTION_NOT_READY
+    // and bank+PAN checks in claim_invite_code).
     const { data: extraction, error: extractionLookupError } = await adminClient
       .from("extracted_rental_info")
-      .select("extraction_status, contract_status")
+      .select("extraction_status")
       .eq("user_id", user.id)
       .order("created_at", { ascending: false })
       .limit(1)
@@ -134,11 +146,7 @@ serve(async (req) => {
     }
 
     const extractionReady =
-      !!extraction &&
-      extraction.extraction_status === "completed" &&
-      extraction.contract_status !== "manual_review" &&
-      extraction.contract_status !== "invalid_document" &&
-      extraction.contract_status !== "expired";
+      !!extraction && extraction.extraction_status === "completed";
 
     if (!extractionReady) {
       // Log the attempt so it shows up in rate-limit accounting (the user is
@@ -154,7 +162,7 @@ serve(async (req) => {
           success: false,
           error: true,
           code: "EXTRACTION_NOT_READY",
-          message: "Your scan is in progress, please try again in 2 minutes.",
+          message: "Your agreement is still being scanned. Please wait a moment and try again.",
         },
         409,
         headers

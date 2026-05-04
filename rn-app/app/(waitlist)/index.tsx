@@ -647,7 +647,7 @@ export default function WaitlistScreen() {
                     <RNText style={styles.titleAccent}>setting{'\n'}things up</RNText>
                   </Text>
                   <Text style={styles.subtitle}>
-                    Taking a bit longer than usual. Hang tight!
+                    Your agreement is being reviewed by our team. We'll notify you within 24-48 hours.
                   </Text>
                 </>
               ) : displayName ? (

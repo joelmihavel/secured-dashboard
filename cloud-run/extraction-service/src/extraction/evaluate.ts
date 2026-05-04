@@ -103,6 +103,29 @@ export function validateMinimumRequiredFields(data: Partial<ExtractedData>): {
 }
 
 /**
+ * Detect whether the OCR text contains any signal that an SHCIL e-stamp
+ * paper page is present in the uploaded PDF. Used to disambiguate the
+ * "missing Certificate No." failure mode:
+ *   - Stamp-paper page present, OCR couldn't parse "Certificate No.": admin review
+ *   - Stamp-paper page absent (no SHCIL/IN-XX/GRN markers anywhere): user
+ *     simply forgot to include page 1 — recoverable via re-upload.
+ *
+ * Returns true on any match. Returns false on null/undefined input.
+ */
+export function hasEstampSignal(ocrText: string | undefined): boolean {
+  if (!ocrText) return false;
+  const patterns: RegExp[] = [
+    /\bIN-[A-Z]{2}\d{10,16}[A-Z]\b/i,
+    /Certificate\s*No\b/i,
+    /SHCIL/i,
+    /Stock\s+Holding/i,
+    /GRN[\s:]+[A-Z0-9]+/i,
+    /e[-\s]?stamp/i,
+  ];
+  return patterns.some((re) => re.test(ocrText));
+}
+
+/**
  * Check if a city is in the supported cities list.
  *
  * Ported from: process-document/index.ts checkCitySupported()
@@ -126,7 +149,8 @@ export function evaluateExtraction(
   totalFields: number,
   confidenceScore: number,
   isCitySupported: boolean,
-  extractedData?: Partial<ExtractedData>
+  extractedData?: Partial<ExtractedData>,
+  ocrText?: string
 ): EvaluationResult {
   // City support check: Record the flag but do NOT block extraction
   // Unsupported cities proceed normally — the is_city_supported flag is stored separately
@@ -181,6 +205,25 @@ export function evaluateExtraction(
     const validation = validateMinimumRequiredFields(extractedData);
 
     if (!validation.isComplete) {
+      // Missing-stamp-paper sub-case: only the Certificate No. is missing AND
+      // the OCR text shows no SHCIL/IN-XX/GRN/e-stamp signal anywhere. This
+      // is the "user forgot to include page 1" pattern — the agreement body
+      // extracted cleanly, only the stamp paper itself is absent. Route to a
+      // user-facing re-upload prompt instead of the admin manual_review queue.
+      const onlyCertificateMissing =
+        validation.missingFields.length === 1 &&
+        validation.missingFields[0] === 'Certificate No.';
+
+      if (onlyCertificateMissing && !hasEstampSignal(ocrText)) {
+        return {
+          needs_manual_review: false,
+          review_reason:
+            'Your agreement is missing its stamp paper page. Please re-upload a single PDF that includes both the stamp paper and the agreement body.',
+          contract_status: 'missing_stamp_paper',
+          missing_fields: validation.missingFields,
+        };
+      }
+
       // Missing non-critical fields - needs manual review
       return {
         needs_manual_review: true,

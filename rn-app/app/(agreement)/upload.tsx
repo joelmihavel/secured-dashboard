@@ -856,6 +856,24 @@ export default function UploadScreen() {
           return;
         }
 
+        // Stamp-paper-page-missing: agreement body extracted cleanly but the
+        // PDF didn't include the e-stamp page (no SHCIL/IN-XX/GRN markers
+        // anywhere in the OCR text). Friendlier sibling of invalid_document —
+        // user just needs to re-upload a single PDF that includes both pages.
+        if (status.contractStatus === 'missing_stamp_paper') {
+          const stampMessage =
+            'Your PDF must include the stamp paper page. Please re-upload your agreement with both the stamp paper page and the agreement body in a single PDF.';
+          useUploadStore.getState().prepareForReupload({
+            extractionId: eid,
+            errorCode: 'MISSING_STAMP_PAPER',
+            errorMessage: stampMessage,
+          });
+          setUploadState('error_expired');
+          setErrorOverrideMessage(stampMessage);
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+          return;
+        }
+
         // All other cases (expired, manual_review, unsupported city) proceed
         // forward. Fire-and-forget flow: skip the review screen and land on
         // bank-details. Manual-review / expired states are surfaced later by
@@ -1251,6 +1269,13 @@ export default function UploadScreen() {
             <Text style={styles.subtitle}>
               We&apos;ll auto-fill your details for verification. Takes ~10 seconds.
             </Text>
+
+            {/* Stamp-paper requirement — surfaced before the upload CTA so users
+                know to include the e-stamp page in their PDF. Prevents the
+                manual_review queue caused by stamp-page-less uploads. */}
+            <Text style={styles.stampPaperNote}>
+              Your PDF must include the stamp paper page
+            </Text>
           </View>
 
           {/* Journey-resume notice — only shows when:
@@ -1452,6 +1477,14 @@ const styles = StyleSheet.create({
   subtitle: {
     ...FIGMA.typography.subtitle,
     color: FIGMA.colors.subtitle, // #797979
+  },
+
+  // Stamp-paper requirement note — same bodySm typography as subtitle, but
+  // tinted with the existing iconWarning token (#FFB020) so it reads as a
+  // requirement rather than ambient helper text.
+  stampPaperNote: {
+    ...FIGMA.typography.subtitle,
+    color: FIGMA.colors.iconWarning,
   },
 
   // Journey-resume notice card — surfaced only when the user was dropped on

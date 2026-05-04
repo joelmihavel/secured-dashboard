@@ -118,6 +118,7 @@ export type WaitlistErrorCode =
   | 'INVITE_CODE_ALREADY_CLAIMED'
   | 'EXTRACTION_NOT_READY'
   | 'BANK_NOT_VERIFIED'
+  | 'PAN_NOT_VERIFIED'
   | 'RATE_LIMITED'
   | 'NETWORK_ERROR'
   | 'UNKNOWN_ERROR';
@@ -861,12 +862,17 @@ function mapInviteCodeErrorFromCode(code: string | undefined, message: string): 
     case 'EXTRACTION_NOT_READY':
       return {
         code: 'EXTRACTION_NOT_READY',
-        message: message || 'Your scan is in progress, please try again in 2 minutes.',
+        message: message || 'Your agreement is still being scanned. Please wait a moment and try again.',
       };
     case 'BANK_NOT_VERIFIED':
       return {
         code: 'BANK_NOT_VERIFIED',
-        message: message || "Please verify your landlord's bank details before claiming an invite code.",
+        message: message || "Please verify your landlord's bank details first.",
+      };
+    case 'PAN_NOT_VERIFIED':
+      return {
+        code: 'PAN_NOT_VERIFIED',
+        message: message || 'Please verify your PAN first.',
       };
     case 'AUTH_ERROR':
       return { code: 'NOT_AUTHENTICATED', message: 'Please sign in to continue' };
