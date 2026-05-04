@@ -44,6 +44,7 @@ import { useVerifyBank, useVerifyUpiVpa, useVerifyPan, useDashboard, useExtracti
 import { useUploadStore } from '@/src/stores/upload';
 import { useAuthStore } from '@/src/stores/auth';
 import { resetForReupload } from '@/src/services/agreement/resetForReupload';
+import { rematchBankName } from '@/src/services/api/setup';
 import type { BankVerificationResponse, UpiVerificationResponse, PanVerificationResponse, SetupError, SetupPaymentMethodType } from '@/src/types/setup';
 import { colors } from '@/src/theme';
 
@@ -56,7 +57,11 @@ const PAYMENT_METHOD_TABS = [
 //   shown when the extraction pipeline reaches a terminal error
 //   (extraction_status ∈ {failed, extraction_failed} OR contract_status === 'invalid_document').
 //   Replaces the form entirely; the only escape is "Upload again".
-type ScreenState = 'form' | 'loading' | 'success' | 'failure' | 'agreement_invalid';
+// 'rematching' = PR-4: brief loading state shown while the screen re-runs the
+//   no-charge agreement-name match against an existing verified bank row
+//   (after the user re-uploaded their agreement). Visually identical to
+//   'loading' but with copy that doesn't claim a penny-drop is in flight.
+type ScreenState = 'form' | 'loading' | 'success' | 'failure' | 'agreement_invalid' | 'rematching';
 
 // Figma exact color values
 const FIGMA = {
@@ -313,6 +318,16 @@ export default function AddBankScreen() {
   const userId = useAuthStore((s) => s.userId);
   const isPreWaitlist = deriveIsPreWaitlist(userStatus);
 
+  // PR-4: a verified bank row whose agreement-name match is stale (pre-waitlist
+  // user re-uploaded their agreement) must NOT trigger the auto-redirect — the
+  // screen needs to mount and run the no-charge rematch effect first. Only
+  // fully-settled rows (verified + agreement_name_matched=true, or verified
+  // post-approval) bounce the user away.
+  const landlordBankNeedsRematch =
+    !!landlordBank?.verified &&
+    !!landlordBank?.pan_verified &&
+    landlordBank?.agreement_name_matched === false;
+
   // If bank was ALREADY verified when this screen mounted (e.g., deferred name
   // match succeeded in background), and the user landed here via journey
   // router (no back stack, ex: cold-start straight onto /add-bank-details),
@@ -323,6 +338,7 @@ export default function AddBankScreen() {
   const bankAlreadyVerifiedOnMount = useRef(
     !__DEV__ &&
     !routerRef.current.canGoBack() &&
+    !landlordBankNeedsRematch &&
     (tenancy?.verification_status?.bank_verified || landlordBank?.verified)
   );
   const hasRedirectedRef = useRef(false);
@@ -337,6 +353,11 @@ export default function AddBankScreen() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // PR-4 rematch ref — declared up-front so the effect (positioned AFTER the
+  // extraction-state gating block to read `extraction` + `isAgreementInvalid`)
+  // can reference it. Guards against repeated firing across re-renders.
+  const rematchAttemptedRef = useRef(false);
 
   // ── Extraction-state gating ──────────────────────────────────────────────
   // The bank/PAN name match relies on landlord names from the agreement scan.
@@ -370,6 +391,75 @@ export default function AddBankScreen() {
       setScreenState('agreement_invalid');
     }
   }, [isAgreementInvalid]);
+
+  // PR-4: rematch-on-mount.
+  // When the user lands here with a *preserved* verified+pan_verified bank
+  // row whose agreement-name match was invalidated by a re-upload, run the
+  // cheap, no-Cashfree rematch endpoint against the new extraction's
+  // landlord_names.
+  //   match succeeds → set bankDetailsCompleted=true, navigate to /(waitlist).
+  //                    No penny drop, no form re-entry.
+  //   match fails    → surface "different landlord" message and force the
+  //                    user to enter NEW bank details. Penny drop will fire
+  //                    once for the genuinely different bank on submit.
+  // Only runs once per mount; gated by rematchAttemptedRef so React StrictMode
+  // + dashboard refetches (which flip agreement_name_matched back to true on
+  // success) don't re-fire it.
+  useEffect(() => {
+    if (rematchAttemptedRef.current) return;
+    if (!landlordBankNeedsRematch) return;
+    // Wait for the extraction to be readable (rematch needs landlord_names).
+    if (!extraction.data || extraction.data.extractionStatus !== 'completed') return;
+    // Don't fight the agreement_invalid overlay — its effect flips
+    // screenState to 'agreement_invalid' for terminal-error states.
+    if (isAgreementInvalid) return;
+
+    rematchAttemptedRef.current = true;
+    let cancelled = false;
+    (async () => {
+      setScreenState('rematching');
+      const { data, error } = await rematchBankName();
+      if (cancelled) return;
+
+      if (error) {
+        // NO_VERIFIED_BANK / AGREEMENT_NOT_PROCESSED / network: drop into the
+        // form so the user can re-enter manually. apiError surfaces context.
+        setApiError(error.message);
+        setScreenState('form');
+        return;
+      }
+
+      if (data?.agreementNameMatched) {
+        // Same bank holder is on the new agreement → proceed silently to
+        // the waitlist screen. Mirrors the post-verify success path in
+        // handleConfirm but without re-running the penny drop.
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        useUploadStore.getState().setBankDetailsCompleted(true);
+        if (cancelled) return;
+        if (isPreWaitlist) {
+          routerRef.current.replace('/(waitlist)' as never);
+        } else {
+          routerRef.current.replace('/(main)' as never);
+        }
+        return;
+      }
+
+      // Match failed: this agreement names a *different* landlord. The
+      // previously-verified bank is for the wrong party; the user must
+      // enter new bank details. Surface a clear message and drop into form.
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+      setApiError(
+        'Your previous bank details were for a different landlord. ' +
+        "Please verify your new landlord's bank account."
+      );
+      setScreenState('form');
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [landlordBankNeedsRematch, extraction.data?.extractionStatus, isAgreementInvalid]);
 
   const bankVerified = verificationResult?.verified === true;
   const panVerified = panResult?.panVerified === true;
@@ -729,6 +819,31 @@ export default function AddBankScreen() {
             {isUpi
               ? 'Verifying the UPI ID and PAN with our partners. This takes few seconds.'
               : 'Verifying the bank account and PAN with our partners. This takes few seconds.'}
+          </Text>
+        </View>
+      </View>
+    );
+  }
+
+  // ── REMATCHING STATE (PR-4) ──────────────────────────────────────────────
+  // Shown briefly while we re-run the agreement-name match against the new
+  // agreement for an already-verified bank row. No penny drop, no API call
+  // to Cashfree — typically completes in 1-3 seconds (Gemini call).
+  if (screenState === 'rematching') {
+    return (
+      <View style={styles.container}>
+        <DottedGridPattern fadeMask={false} />
+        <View style={[styles.loadingLogoRow, { paddingTop: insets.top + 48 }]}>
+          <Logo size={40} />
+        </View>
+        <View style={styles.loadingContent}>
+          <Text style={styles.loadingTitle}>
+            <Text style={styles.loadingTitleGray}>Re-checking </Text>
+            <Text style={styles.loadingTitleAccent}>your bank details</Text>
+          </Text>
+          <VerificationSpinner />
+          <Text style={styles.loadingBody}>
+            Matching your verified bank against the new agreement. This takes a few seconds.
           </Text>
         </View>
       </View>

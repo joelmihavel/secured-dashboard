@@ -131,6 +131,11 @@ export interface LandlordBankAccount {
   pan_verified: boolean;
   upi_vpa: string | null;
   verification_method: 'bank' | 'upi' | null;
+  /** PR-4: false when the user re-uploaded their agreement and the row's
+   *  name match against the new agreement is stale. AddBankForm runs the
+   *  no-charge rematch endpoint on mount when this is false. Optional for
+   *  backwards-compat with cached responses from older deploys. */
+  agreement_name_matched?: boolean | null;
 }
 
 export interface DashboardPaymentStamps {

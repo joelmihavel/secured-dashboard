@@ -62,6 +62,8 @@ import {
 import { abandonExtraction } from '@/src/services/api/agreement';
 // navigateToError removed — auth errors now handled inline to avoid error-screen loops
 import { useUploadStore } from '@/src/stores/upload';
+import { useAuthStore } from '@/src/stores/auth';
+import { userHasLandlordBankAndPanVerified } from '@/src/services/agreement/bankDetailsGate';
 import { colors } from '@/src/theme/colors';
 import { typography } from '@/src/theme/typography';
 
@@ -876,14 +878,26 @@ export default function UploadScreen() {
 
         // All other cases (expired, manual_review, unsupported city) proceed
         // forward. Fire-and-forget flow: skip the review screen and land on
-        // bank-details. Manual-review / expired states are surfaced later by
-        // the waitlist banner + the claim-invite-code extraction gate.
+        // bank-details — UNLESS the user already has a verified landlord bank
+        // with verified PAN (re-upload of an agreement for the same landlord).
+        // In that case the bank step is already complete; route straight to
+        // /(waitlist) so the user isn't bounced through a redundant screen.
+        // Manual-review / expired states are surfaced later by the waitlist
+        // banner + the claim-invite-code extraction gate.
         setUploadState('success');
         setErrorOverrideMessage(null);
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
 
-        setTimeout(() => {
-          router.replace('/(agreement)/add-bank-details' as never);
+        setTimeout(async () => {
+          const uid = useAuthStore.getState().userId;
+          const hasBankAndPan = uid
+            ? await userHasLandlordBankAndPanVerified(uid)
+            : false;
+          router.replace(
+            (hasBankAndPan
+              ? '/(waitlist)'
+              : '/(agreement)/add-bank-details') as never,
+          );
         }, FIGMA.animation.duration);
         break;
       }

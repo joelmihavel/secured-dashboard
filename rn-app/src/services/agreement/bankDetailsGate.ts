@@ -51,6 +51,30 @@ export async function userHasLandlordBankRow(userId: string): Promise<boolean> {
   }
 }
 
+/**
+ * Stricter sibling of userHasLandlordBankRow that also requires pan_verified=true.
+ * Used by upload.tsx to decide whether the post-extraction bounce should land
+ * on /(waitlist) directly (both gates met) or /(agreement)/add-bank-details
+ * (still needs PAN). Same-shape query, just one extra filter.
+ */
+export async function userHasLandlordBankAndPanVerified(userId: string): Promise<boolean> {
+  try {
+    const { data } = await supabase
+      .from('bank_accounts')
+      .select('id')
+      .eq('user_id', userId)
+      .eq('party_type', 'landlord')
+      .eq('verified', true)
+      .eq('pan_verified', true)
+      .limit(1)
+      .maybeSingle();
+    return !!data;
+  } catch (err) {
+    console.warn('[bankDetailsGate] bank+pan query failed:', err);
+    return false;
+  }
+}
+
 export async function bankDetailsAreSettled(userId: string): Promise<boolean> {
   if (!useUploadStore.getState().bankDetailsCompleted) return false;
   return userHasLandlordBankRow(userId);

@@ -243,7 +243,31 @@ export type SetupErrorCode =
   | 'UPI_VPA_INVALID'
   | 'SERVICE_UNAVAILABLE'
   | 'EMPTY_RESPONSE'
+  // PR-4: rematch-bank-name returned 409 because no verified pre-waitlist
+  // landlord row exists. Caller should fall back to the standard verifyBank
+  // flow.
+  | 'NO_VERIFIED_BANK'
+  // PR-4: rematch-bank-name returned 409 because the latest extraction
+  // doesn't have landlord_names yet. Same handling as the verify-bank
+  // AGREEMENT_NOT_PROCESSED gate.
+  | 'AGREEMENT_NOT_PROCESSED'
   | 'UNKNOWN_ERROR';
+
+/**
+ * PR-4: rematch-bank-name response.
+ * Re-runs only the agreement-name match against an existing verified
+ * pre-waitlist landlord bank row. Does NOT call Cashfree (no penny drop).
+ */
+export interface RematchBankNameResponse {
+  success: boolean;
+  bankAccountId: string;
+  agreementNameMatched: boolean;
+  agreementMatchScore: number;
+  matchedLandlordName: string | null;
+  verifiedName: string | null;
+  candidateLandlordNames: string[];
+  message: string;
+}
 
 /** Field keys for add-bank form; backend may use snake_case (e.g. account_number). */
 export type BankDetailsErrorFields = Partial<{

@@ -26,6 +26,7 @@ import type {
   UtilityOperator,
   LandlordInviteRequest,
   LandlordInviteResponse,
+  RematchBankNameResponse,
   SetupProgress,
   SetupStep,
   SetupError,
@@ -134,6 +135,20 @@ interface RawOperatorsResponse {
   data: {
     operators: RawOperator[];
     count: number;
+  };
+}
+
+/** Raw response from rematch-bank-name edge function (PR-4) */
+interface RawRematchBankNameResponse {
+  success: boolean;
+  data: {
+    bank_account_id: string;
+    agreement_name_matched: boolean;
+    agreement_match_score: number;
+    matched_landlord_name: string | null;
+    verified_name: string | null;
+    candidate_landlord_names: string[];
+    message: string;
   };
 }
 
@@ -646,6 +661,85 @@ export async function resendLandlordInvite(
   tenancyId: string
 ): Promise<{ data: LandlordInviteResponse | null; error: SetupError | null }> {
   return sendLandlordInvite({ tenancyId });
+}
+
+/**
+ * PR-4: re-run agreement-name match against an existing verified pre-waitlist
+ * landlord bank row, without re-charging Cashfree's penny-drop.
+ *
+ * Edge function: POST /functions/v1/rematch-bank-name
+ * Auth: Required (JWT)
+ * Request: empty body — user implicit from JWT, bank row resolved server-side.
+ * Response: RematchBankNameResponse.
+ *
+ * Error codes (mapped from edge function):
+ *   - NO_VERIFIED_BANK (409): no pre-waitlist verified landlord bank row exists.
+ *     Caller should fall back to the standard verify-bank flow.
+ *   - AGREEMENT_NOT_PROCESSED (409): latest extraction has no landlord_names.
+ *     Caller should wait or surface the same gate as verify-bank.
+ */
+export async function rematchBankName(): Promise<{
+  data: RematchBankNameResponse | null;
+  error: SetupError | null;
+}> {
+  const { data, error, errorBody } = await callEdgeFunction<RawRematchBankNameResponse>(
+    'rematch-bank-name',
+    {},
+    true,   // requireAuth
+    'POST',
+    30_000  // 30s — Gemini matching can take several seconds
+  );
+
+  if (error) {
+    // Map structured error codes specific to this endpoint before falling back
+    // to the generic mapper.
+    const structuredCode = errorBody?.code as string | undefined;
+    if (structuredCode === 'NO_VERIFIED_BANK') {
+      return {
+        data: null,
+        error: {
+          code: 'NO_VERIFIED_BANK',
+          message:
+            (errorBody?.message as string) ??
+            'No verified bank account found to rematch.',
+        },
+      };
+    }
+    if (structuredCode === 'AGREEMENT_NOT_PROCESSED') {
+      return {
+        data: null,
+        error: {
+          code: 'AGREEMENT_NOT_PROCESSED',
+          message:
+            (errorBody?.message as string) ??
+            "We couldn't read your landlord's name from your rental agreement.",
+        },
+      };
+    }
+    return { data: null, error: mapSetupError(error, errorBody) };
+  }
+
+  if (!data?.success || !data.data) {
+    return {
+      data: null,
+      error: { code: 'VERIFICATION_FAILED', message: 'Bank name rematch failed' },
+    };
+  }
+
+  const d = data.data;
+  return {
+    data: {
+      success: data.success,
+      bankAccountId: d.bank_account_id,
+      agreementNameMatched: d.agreement_name_matched,
+      agreementMatchScore: d.agreement_match_score,
+      matchedLandlordName: d.matched_landlord_name,
+      verifiedName: d.verified_name,
+      candidateLandlordNames: d.candidate_landlord_names,
+      message: d.message,
+    },
+    error: null,
+  };
 }
 
 /**

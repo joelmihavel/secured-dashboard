@@ -169,6 +169,10 @@ interface DashboardData {
     pan_verified: boolean;
     upi_vpa: string | null;
     verification_method: string | null;
+    /** PR-4: false when extraction was re-uploaded and the bank row's name
+     *  match against the new agreement hasn't been re-evaluated yet. The RN
+     *  AddBankForm uses this on mount to fire the no-charge rematch endpoint. */
+    agreement_name_matched: boolean | null;
   } | null;
   unread_notification_count: number;
   payment_stamps: {
@@ -380,9 +384,12 @@ serve(async (req: Request) => {
       supabase.rpc("get_unread_notification_count", { p_user_id: userId }),
 
       // 8. Landlord bank account (for edit bank details)
+      // PR-4: include agreement_name_matched so AddBankForm can detect a
+      // preserved-but-unmatched row after re-upload and trigger a no-charge
+      // rematch instead of a fresh penny-drop.
       supabase
         .from("bank_accounts")
-        .select("id, account_holder_name, account_number_masked, ifsc_code, bank_name, verified, pan_number_masked, pan_verified, upi_vpa, verification_method")
+        .select("id, account_holder_name, account_number_masked, ifsc_code, bank_name, verified, pan_number_masked, pan_verified, upi_vpa, verification_method, agreement_name_matched")
         .eq("user_id", userId)
         .eq("party_type", "landlord")
         .eq("is_primary", true)
