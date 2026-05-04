@@ -9,6 +9,7 @@ export interface EvaluationResult {
   review_reason?: string;
   contract_status: string;
   missing_fields?: string[];
+  manual_review_reason?: string; // Structured taxonomy: missing_stamp_paper, missing_critical_fields, missing_required_fields, low_confidence, not_rental_agreement, other
 }
 
 /**
@@ -164,6 +165,7 @@ export function evaluateExtraction(
       needs_manual_review: true,
       review_reason: reason,
       contract_status: 'invalid_document',
+      manual_review_reason: 'not_rental_agreement',
     };
   }
 
@@ -196,6 +198,7 @@ export function evaluateExtraction(
         review_reason: `This agreement is missing critical information: ${criticalMissing.join(', ')}. Please upload a complete rental agreement.`,
         contract_status: 'invalid_document',
         missing_fields: criticalMissing,
+        manual_review_reason: 'missing_critical_fields',
       };
     }
   }
@@ -221,6 +224,7 @@ export function evaluateExtraction(
             'Your agreement is missing its stamp paper page. Please re-upload a single PDF that includes both the stamp paper and the agreement body.',
           contract_status: 'missing_stamp_paper',
           missing_fields: validation.missingFields,
+          manual_review_reason: 'missing_stamp_paper',
         };
       }
 
@@ -230,6 +234,7 @@ export function evaluateExtraction(
         review_reason: `Missing required fields: ${validation.missingFields.join(', ')}. Our team will review your document manually.`,
         contract_status: 'manual_review',
         missing_fields: validation.missingFields,
+        manual_review_reason: 'missing_required_fields',
       };
     }
 
@@ -255,6 +260,7 @@ export function evaluateExtraction(
       needs_manual_review: true,
       review_reason: `Extraction incomplete: ${fieldsExtracted}/${totalFields} fields extracted with ${confidenceScore}% confidence. Document may need re-upload or manual review.`,
       contract_status: 'manual_review',
+      manual_review_reason: 'low_confidence',
     };
   }
 
@@ -263,5 +269,6 @@ export function evaluateExtraction(
     needs_manual_review: true,
     review_reason: `Some information couldn't be extracted clearly (${fieldsExtracted}/${totalFields} fields, ${confidenceScore}% confidence).`,
     contract_status: 'manual_review',
+    manual_review_reason: 'low_confidence',
   };
 }

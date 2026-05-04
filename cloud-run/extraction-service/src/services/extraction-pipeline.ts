@@ -600,6 +600,7 @@ export async function runExtractionPipeline(
         extraction_status: resolvedExtractionStatus,
         contract_status: evaluationResult.contract_status,
         needs_manual_review: evaluationResult.needs_manual_review,
+        manual_review_reason: evaluationResult.manual_review_reason ?? null,
       })
       .eq('id', extractionId)
       .select()
