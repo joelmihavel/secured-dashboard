@@ -409,14 +409,38 @@ export default function Index() {
                 ? '/(agreement)/add-bank-details'
                 : await decideApprovedTarget(userId);
           } else if (!correctTarget && (userStatus === 'waitlisted' || userStatus === 'agreement_confirmed')) {
-            // Background validation for waitlisted — bank-details gate covers
-            // both the legacy skip cohort and the kill-mid-flow case (partial
-            // bank_accounts row from verifyBank but user never tapped Confirm).
-            // The reupload-on-invalid-extraction redirect still happens on the
-            // waitlist screen.
-            correctTarget = (await bankDetailsAreSettled(userId))
-              ? '/(waitlist)'
-              : '/(agreement)/add-bank-details';
+            // Background validation for waitlisted — same logic as the primary
+            // path: route stale-extraction users straight to upload, bank-gate
+            // covers the legacy skip + kill-mid-flow cases, otherwise waitlist.
+            const { data: extraction } = await supabase
+              .from('extracted_rental_info')
+              .select('extraction_status, contract_status')
+              .eq('user_id', userId)
+              .order('created_at', { ascending: false })
+              .limit(1)
+              .maybeSingle();
+
+            const needsReupload =
+              !!extraction && (
+                extraction.contract_status === 'invalid_document' ||
+                extraction.contract_status === 'missing_stamp_paper' ||
+                extraction.extraction_status === 'extraction_failed'
+              );
+
+            if (needsReupload) {
+              const isMissingStampPaper = extraction!.contract_status === 'missing_stamp_paper';
+              useUploadStore.getState().prepareForReupload({
+                errorCode: isMissingStampPaper ? 'MISSING_STAMP_PAPER' : 'INVALID_DOCUMENT',
+                errorMessage: isMissingStampPaper
+                  ? 'Your PDF must include the stamp paper page. Please re-upload a single PDF that includes both your stamp paper and the agreement body.'
+                  : 'Please upload a valid rental agreement to continue.',
+              });
+              correctTarget = '/(agreement)/upload';
+            } else {
+              correctTarget = (await bankDetailsAreSettled(userId))
+                ? '/(waitlist)'
+                : '/(agreement)/add-bank-details';
+            }
           }
 
           if (correctTarget && correctTarget !== cachedRoute) {
@@ -516,9 +540,11 @@ export default function Index() {
               : await decideApprovedTarget(userId)
         );
       } else if (userStatus === 'waitlisted' || userStatus === 'agreement_confirmed') {
-        // waitlisted — check if extraction requires reupload (invalid document / failed).
-        // Without this check, the waitlist screen loads → detects requiresReupload →
-        // redirects to upload, causing a visible flicker.
+        // waitlisted — check if extraction requires reupload (invalid document /
+        // missing stamp paper / failed). Without this check, the user briefly
+        // lands on bank-details (or waitlist) where AddBankForm/waitlist detects
+        // the bad extraction and flips an overlay — causing a visible flash of
+        // the wrong screen before the redirect.
         const { data: extraction } = await supabase
           .from('extracted_rental_info')
           .select('extraction_status, contract_status')
@@ -527,10 +553,21 @@ export default function Index() {
           .limit(1)
           .maybeSingle();
 
-        if (extraction && (extraction.contract_status === 'invalid_document' || extraction.extraction_status === 'extraction_failed')) {
-          // Prepare upload store for reupload so the upload screen shows the right state
+        const needsReupload =
+          !!extraction && (
+            extraction.contract_status === 'invalid_document' ||
+            extraction.contract_status === 'missing_stamp_paper' ||
+            extraction.extraction_status === 'extraction_failed'
+          );
+
+        if (needsReupload) {
+          const isMissingStampPaper = extraction!.contract_status === 'missing_stamp_paper';
+          // Prepare upload store for reupload so the upload screen shows the right state.
           useUploadStore.getState().prepareForReupload({
-            errorMessage: 'Please upload a valid rental agreement to continue.',
+            errorCode: isMissingStampPaper ? 'MISSING_STAMP_PAPER' : 'INVALID_DOCUMENT',
+            errorMessage: isMissingStampPaper
+              ? 'Your PDF must include the stamp paper page. Please re-upload a single PDF that includes both your stamp paper and the agreement body.'
+              : 'Please upload a valid rental agreement to continue.',
           });
           setTarget('/(agreement)/upload');
         } else if (!await bankDetailsAreSettled(userId)) {
