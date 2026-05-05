@@ -221,6 +221,36 @@ function runPreflightChecks(user: UserFunnel): PreflightCheck[] {
     blocking: false,
   });
 
+  // 9b. Landlord bank verified — BLOCKING.
+  // Approving a user without a verified landlord bank puts them in
+  // user_status='approved' but they can't transact (settlement requires
+  // a verified bank). The narrowed VIP override (PR-1) also reads from
+  // bank_accounts as the source of truth, so the same gate applies here.
+  checks.push({
+    id: "landlord_bank",
+    label: "Landlord bank verified",
+    status: user.landlord_bank_verified === true ? "pass" : "fail",
+    detail:
+      user.landlord_bank_verified === true
+        ? "Landlord bank account verified via penny-drop"
+        : user.landlord_bank_verified === false
+          ? "Bank row exists but penny-drop never succeeded — user must re-enter bank details"
+          : "User has not started landlord bank verification",
+    blocking: true,
+  });
+
+  // 9c. Landlord PAN verified — BLOCKING.
+  checks.push({
+    id: "landlord_pan",
+    label: "Landlord PAN verified",
+    status: user.landlord_bank_pan_verified === true ? "pass" : "fail",
+    detail:
+      user.landlord_bank_pan_verified === true
+        ? "Landlord PAN matched + verified"
+        : "Landlord PAN not yet verified — user must complete PAN check before approval",
+    blocking: true,
+  });
+
   // 10. Existing tenancy check
   if (user.tenancy_id) {
     checks.push({

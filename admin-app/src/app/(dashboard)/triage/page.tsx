@@ -183,8 +183,43 @@ export default function TriagePage() {
   }
 
   async function batchAction(action: "approve" | "reject", userIds?: string[]) {
-    const ids = userIds || Array.from(selected);
-    if (ids.length === 0) return;
+    const requestedIds = userIds || Array.from(selected);
+    if (requestedIds.length === 0) return;
+
+    // Gate batch approve: filter out users whose landlord bank+PAN aren't both
+    // verified. Approving them would put them in user_status='approved' but
+    // they can't transact, which silently breaks the funnel. We surface the
+    // skipped users to the admin and only proceed with the safe subset.
+    let ids = requestedIds;
+    let skipped = 0;
+    if (action === "approve") {
+      const idToUser = new Map(users.map((u) => [u.user_id, u]));
+      const ready = requestedIds.filter((id) => {
+        const u = idToUser.get(id);
+        return u?.landlord_bank_verified === true && u?.landlord_bank_pan_verified === true;
+      });
+      skipped = requestedIds.length - ready.length;
+
+      if (ready.length === 0) {
+        setFeedback({
+          type: "error",
+          message: `Cannot approve: none of the ${requestedIds.length} selected user${requestedIds.length > 1 ? "s" : ""} have verified landlord bank + PAN. They'd be stuck post-approval with no way to transact.`,
+        });
+        return;
+      }
+
+      if (skipped > 0) {
+        const proceed = window.confirm(
+          `${skipped} of ${requestedIds.length} selected users are not ready (missing landlord bank or PAN verification).\n\n` +
+          `Approving them now would put them in 'approved' state but they can't transact until they finish bank+PAN. ` +
+          `They'd need to come back through the funnel.\n\n` +
+          `Proceed with the ${ready.length} ready user${ready.length > 1 ? "s" : ""} and skip the rest?`
+        );
+        if (!proceed) return;
+      }
+      ids = ready;
+    }
+
     setActionLoading(true);
     setFeedback(null);
     try {
@@ -193,9 +228,10 @@ export default function TriagePage() {
         user_ids: ids,
         ...(action === "reject" ? { rejection_reasons: ["Admin rejection"] } : {}),
       });
+      const skippedSuffix = skipped > 0 ? ` (${skipped} skipped — not ready)` : "";
       setFeedback({
         type: "success",
-        message: `${ids.length} user${ids.length > 1 ? "s" : ""} ${action === "approve" ? "approved" : "rejected"}`,
+        message: `${ids.length} user${ids.length > 1 ? "s" : ""} ${action === "approve" ? "approved" : "rejected"}${skippedSuffix}`,
       });
       setSelected(new Set());
       loadQueue();
