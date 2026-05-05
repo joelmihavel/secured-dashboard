@@ -61,6 +61,14 @@ export interface UserFunnel {
   bank_verified: boolean | null;
   utility_verified: boolean | null;
   landlord_approved: boolean | null;
+  // Extraction (latest)
+  contract_status: string | null;
+  manual_review_reason: string | null;
+  // Landlord bank — authoritative readiness gate for admin approval.
+  // Approval is safe iff both flags are true. tenancy.bank_verified above is
+  // a denormalised mirror; bank_accounts is the source of truth.
+  landlord_bank_verified: boolean | null;
+  landlord_bank_pan_verified: boolean | null;
   // M360
   m360_status: string | null;
   m360_full_name: string | null;

@@ -91,6 +91,51 @@ function auditStatus(user: UserFunnel): { label: string; color: string } {
     : { label: "BLOCKED", color: "text-destructive bg-destructive/10" };
 }
 
+/**
+ * Returns the admin-approval readiness for a user. Approval is safe iff
+ * both the landlord bank account is verified AND its PAN is verified.
+ * Approving a user without these flags puts them in user_status='approved'
+ * but they can't transact (settlement requires verified landlord bank).
+ *
+ * The hint string surfaces the specific gate so admin can WhatsApp the
+ * user telling them what's still missing.
+ */
+function approvalReadiness(user: UserFunnel): {
+  label: string;
+  color: string;
+  tooltip: string;
+} {
+  const bankVerified = user.landlord_bank_verified === true;
+  const panVerified = user.landlord_bank_pan_verified === true;
+
+  if (bankVerified && panVerified) {
+    return {
+      label: "READY",
+      color: "text-success bg-success/10 border-success/30",
+      tooltip: "Landlord bank verified and PAN verified — safe to approve.",
+    };
+  }
+  if (bankVerified && !panVerified) {
+    return {
+      label: "PAN PENDING",
+      color: "text-warning bg-warning/10 border-warning/30",
+      tooltip: "Landlord bank verified but PAN not verified — user must complete PAN before approval.",
+    };
+  }
+  if (!bankVerified && user.landlord_bank_verified === false) {
+    return {
+      label: "BANK FAILED",
+      color: "text-destructive bg-destructive/10 border-destructive/30",
+      tooltip: "Landlord bank row exists but penny-drop never succeeded — user must re-enter bank details.",
+    };
+  }
+  return {
+    label: "NO BANK",
+    color: "text-destructive bg-destructive/10 border-destructive/30",
+    tooltip: "User hasn't started landlord bank verification — do not approve.",
+  };
+}
+
 export default function TriagePage() {
   const [users, setUsers] = useState<UserFunnel[]>([]);
   const [loading, setLoading] = useState(true);
@@ -229,6 +274,7 @@ export default function TriagePage() {
             <span className="w-14 text-center">Risk</span>
             <span className="w-20 text-center">Verified</span>
             <span className="w-20 text-center">Audit</span>
+            <span className="w-28 text-center">Approve?</span>
             <span className="w-24 text-center">Review</span>
             <span className="w-24 text-right">Actions</span>
           </div>
@@ -241,6 +287,7 @@ export default function TriagePage() {
             users.map((user) => {
               const flags = verificationFlags(user);
               const audit = auditStatus(user);
+              const readiness = approvalReadiness(user);
               const isSelected = selected.has(user.user_id);
               return (
                 <div key={user.user_id} className={`flex items-center border-b border-border/30 px-5 py-3 text-[13px] transition-colors ${isSelected ? "bg-primary/5" : "hover:bg-muted/20"}`}>
@@ -258,6 +305,14 @@ export default function TriagePage() {
                   <div className="w-20 flex justify-center"><VerificationPips flags={flags} /></div>
                   <div className="w-20 flex justify-center">
                     <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${audit.color}`}>{audit.label}</span>
+                  </div>
+                  <div className="w-28 flex justify-center">
+                    <span
+                      title={readiness.tooltip}
+                      className={`rounded-full px-2 py-0.5 text-[11px] font-medium border ${readiness.color}`}
+                    >
+                      {readiness.label}
+                    </span>
                   </div>
                   <div className="w-24 flex justify-center">
                     <Badge variant="outline" className="text-[11px]">{user.admin_review || "due"}</Badge>
