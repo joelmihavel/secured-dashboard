@@ -270,6 +270,44 @@ function statusToTarget(userStatus: string): JourneyTarget | null {
  * "Re-upload Agreement", the old extraction is dismissed and should NOT cause
  * routing to waitlist/review (prevents the re-upload loop).
  */
+/**
+ * Returns the upload-screen route + prepareForReupload payload for users
+ * whose latest extraction needs a re-upload (invalid_document, missing
+ * stamp paper, or extraction_failed). Returns null if the latest extraction
+ * is fine. Used by both `waitlisted` and `signed_up` branches so the routing
+ * is symmetric — without this, signed_up users (e.g., post-revert_to_signed_up)
+ * briefly flash through the bank screen before the in-form overlay catches it.
+ */
+async function routeOnInvalidExtraction(
+  userId: string,
+): Promise<string | null> {
+  const { data: extraction } = await supabase
+    .from('extracted_rental_info')
+    .select('extraction_status, contract_status')
+    .eq('user_id', userId)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (!extraction) return null;
+
+  const needsReupload =
+    extraction.contract_status === 'invalid_document' ||
+    extraction.contract_status === 'missing_stamp_paper' ||
+    extraction.extraction_status === 'extraction_failed';
+
+  if (!needsReupload) return null;
+
+  const isMissingStampPaper = extraction.contract_status === 'missing_stamp_paper';
+  useUploadStore.getState().prepareForReupload({
+    errorCode: isMissingStampPaper ? 'MISSING_STAMP_PAPER' : 'INVALID_DOCUMENT',
+    errorMessage: isMissingStampPaper
+      ? 'Your PDF must include the stamp paper page. Please re-upload a single PDF that includes both your stamp paper and the agreement body.'
+      : 'Please upload a valid rental agreement to continue.',
+  });
+  return '/(agreement)/upload';
+}
+
 async function checkPendingExtraction(userId: string): Promise<boolean> {
   try {
     const { data } = await supabase
@@ -412,30 +450,9 @@ export default function Index() {
             // Background validation for waitlisted — same logic as the primary
             // path: route stale-extraction users straight to upload, bank-gate
             // covers the legacy skip + kill-mid-flow cases, otherwise waitlist.
-            const { data: extraction } = await supabase
-              .from('extracted_rental_info')
-              .select('extraction_status, contract_status')
-              .eq('user_id', userId)
-              .order('created_at', { ascending: false })
-              .limit(1)
-              .maybeSingle();
-
-            const needsReupload =
-              !!extraction && (
-                extraction.contract_status === 'invalid_document' ||
-                extraction.contract_status === 'missing_stamp_paper' ||
-                extraction.extraction_status === 'extraction_failed'
-              );
-
-            if (needsReupload) {
-              const isMissingStampPaper = extraction!.contract_status === 'missing_stamp_paper';
-              useUploadStore.getState().prepareForReupload({
-                errorCode: isMissingStampPaper ? 'MISSING_STAMP_PAPER' : 'INVALID_DOCUMENT',
-                errorMessage: isMissingStampPaper
-                  ? 'Your PDF must include the stamp paper page. Please re-upload a single PDF that includes both your stamp paper and the agreement body.'
-                  : 'Please upload a valid rental agreement to continue.',
-              });
-              correctTarget = '/(agreement)/upload';
+            const reuploadTarget = await routeOnInvalidExtraction(userId);
+            if (reuploadTarget) {
+              correctTarget = reuploadTarget;
             } else {
               correctTarget = (await bankDetailsAreSettled(userId))
                 ? '/(waitlist)'
@@ -540,36 +557,12 @@ export default function Index() {
               : await decideApprovedTarget(userId)
         );
       } else if (userStatus === 'waitlisted' || userStatus === 'agreement_confirmed') {
-        // waitlisted — check if extraction requires reupload (invalid document /
-        // missing stamp paper / failed). Without this check, the user briefly
-        // lands on bank-details (or waitlist) where AddBankForm/waitlist detects
-        // the bad extraction and flips an overlay — causing a visible flash of
-        // the wrong screen before the redirect.
-        const { data: extraction } = await supabase
-          .from('extracted_rental_info')
-          .select('extraction_status, contract_status')
-          .eq('user_id', userId)
-          .order('created_at', { ascending: false })
-          .limit(1)
-          .maybeSingle();
-
-        const needsReupload =
-          !!extraction && (
-            extraction.contract_status === 'invalid_document' ||
-            extraction.contract_status === 'missing_stamp_paper' ||
-            extraction.extraction_status === 'extraction_failed'
-          );
-
-        if (needsReupload) {
-          const isMissingStampPaper = extraction!.contract_status === 'missing_stamp_paper';
-          // Prepare upload store for reupload so the upload screen shows the right state.
-          useUploadStore.getState().prepareForReupload({
-            errorCode: isMissingStampPaper ? 'MISSING_STAMP_PAPER' : 'INVALID_DOCUMENT',
-            errorMessage: isMissingStampPaper
-              ? 'Your PDF must include the stamp paper page. Please re-upload a single PDF that includes both your stamp paper and the agreement body.'
-              : 'Please upload a valid rental agreement to continue.',
-          });
-          setTarget('/(agreement)/upload');
+        // waitlisted — check if extraction requires reupload first (avoids the
+        // bank-form / waitlist-screen flash where the in-form overlay catches
+        // the bad state ~100-700ms after mount).
+        const reuploadTarget = await routeOnInvalidExtraction(userId);
+        if (reuploadTarget) {
+          setTarget(reuploadTarget);
         } else if (!await bankDetailsAreSettled(userId)) {
           // Bank-details not completed (no row, partial row, or flag never set) →
           // force back to bank-details. Covers the legacy skip cohort and the
@@ -579,8 +572,16 @@ export default function Index() {
           setTarget('/(waitlist)');
         }
       } else {
-        // signed_up — need to check extraction state to route correctly
-        // First: check if there's a completed extraction awaiting backend review.
+        // signed_up — symmetric reupload check first. Without this, a user
+        // who reverted from waitlisted (via resetForReupload's revert RPC)
+        // would briefly flash bank-details before the overlay flips.
+        const reuploadTarget = await routeOnInvalidExtraction(userId);
+        if (reuploadTarget) {
+          setTarget(reuploadTarget);
+          setJourneyResolved(true);
+          return;
+        }
+        // Then: check if there's a completed extraction awaiting backend review.
         // If so, the upload is done — route to waitlist, not back to upload.
         const manualReview = await checkPendingExtraction(userId);
         if (manualReview) {

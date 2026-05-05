@@ -165,7 +165,15 @@ export async function resetForReupload(opts: ResetForReuploadOptions): Promise<v
     errorMessage: 'Please re-upload your agreement to continue.',
   });
 
-  // 4. Wipe the in-memory manual-agreement form so downstream screens don't
+  // 4. Clear the bank-details-completed SecureStore flag. The bank row's
+  // agreement_name_matched was just nulled (or the row preserved while the
+  // agreement was invalidated) — both states mean bank is no longer "settled"
+  // for the journey router's bankDetailsAreSettled check. Without this clear,
+  // the router would still treat the user as past the bank gate and route
+  // them to /(waitlist) before the rematch flow runs.
+  useUploadStore.getState().setBankDetailsCompleted(false);
+
+  // 5. Wipe the in-memory manual-agreement form so downstream screens don't
   // read stale fields from the discarded extraction.
   useManualAgreementStore.getState().reset();
 }

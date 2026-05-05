@@ -318,15 +318,15 @@ export default function AddBankScreen() {
   const userId = useAuthStore((s) => s.userId);
   const isPreWaitlist = deriveIsPreWaitlist(userStatus);
 
-  // PR-4: a verified bank row whose agreement-name match is stale (pre-waitlist
-  // user re-uploaded their agreement) must NOT trigger the auto-redirect — the
-  // screen needs to mount and run the no-charge rematch effect first. Only
-  // fully-settled rows (verified + agreement_name_matched=true, or verified
-  // post-approval) bounce the user away.
+  // PR-4 + bundle: trigger rematch whenever the landlord bank is verified
+  // but the agreement-name match is stale (post re-upload) — regardless of
+  // whether PAN was previously verified. Earlier the predicate ANDed
+  // pan_verified=true; that left a hole where verified=true + pan_verified=false
+  // bypassed rematch and let the user past the gate.
+  // Anything not explicitly true (false OR null) needs rematch.
   const landlordBankNeedsRematch =
     !!landlordBank?.verified &&
-    !!landlordBank?.pan_verified &&
-    landlordBank?.agreement_name_matched === false;
+    landlordBank?.agreement_name_matched !== true;
 
   // If bank was ALREADY verified when this screen mounted (e.g., deferred name
   // match succeeded in background), and the user landed here via journey
@@ -335,11 +335,21 @@ export default function AddBankScreen() {
   // redirect — they explicitly came to view/edit, bouncing them surprises them.
   // Pre-waitlist → waitlist (user isn't approved yet, dashboard would be empty).
   // Post-approval → main dashboard.
+  //
+  // CRITICAL: only redirect when the landlord bank is fully settled —
+  // verified=true AND agreement_name_matched=true. Without the name-match
+  // requirement, a re-uploaded user with verified=true but stale name-match
+  // (or a different landlord on the new agreement) gets bounced past the gate.
+  // tenancy.bank_verified is a denormalised mirror; we still trust it because
+  // approved/active users go through it post-tenancy creation.
   const bankAlreadyVerifiedOnMount = useRef(
     !__DEV__ &&
     !routerRef.current.canGoBack() &&
     !landlordBankNeedsRematch &&
-    (tenancy?.verification_status?.bank_verified || landlordBank?.verified)
+    (
+      tenancy?.verification_status?.bank_verified === true ||
+      (landlordBank?.verified === true && landlordBank?.agreement_name_matched === true)
+    )
   );
   const hasRedirectedRef = useRef(false);
   useEffect(() => {
@@ -716,14 +726,21 @@ export default function AddBankScreen() {
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
             setApiError(error.message || 'Bank verification failed');
             const isNameMismatch = isBlockingVerificationError(error.code);
+            const isTransport = isGenericApiError(error.code);
+            // Don't slap "Invalid Bank A/C" on transport errors (NETWORK_ERROR,
+            // SERVICE_UNAVAILABLE, IDEMPOTENCY_CONFLICT, UNKNOWN_ERROR) — the
+            // bank account itself isn't the problem; users were getting confused.
+            // Only label as Invalid A/C when it's a genuine bank-rejection error.
             setErrors((prev) => ({
               ...prev,
               accountNumber: isNameMismatch
                 ? "Name doesn't match"
-                : 'Invalid Bank A/C',
+                : isTransport
+                  ? '' // banner above already shows the transport error.message
+                  : 'Invalid Bank A/C',
             }));
             setScreenState(
-              (isGenericApiError(error.code) || isNameMismatch)
+              (isTransport || isNameMismatch)
                 ? 'failure'
                 : 'form'
             );

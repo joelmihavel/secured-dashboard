@@ -199,13 +199,27 @@ serve(async (req: Request) => {
     };
 
     // Persist the rematch result on the bank row.
+    //
+    // CRITICAL: when the rematch FAILS (different landlord on the new
+    // agreement), demote `verified=false` along with the failed name match.
+    // Without this, downstream gates that read only `verified=true` (the
+    // legacy invariant) would treat the row as good and let the user past
+    // the bank gate. The pre-PR-4 hard-delete had the same effect; we
+    // restore that semantic here without losing the penny-drop fee record.
+    //
+    // On match success, we keep verified=true (it was true coming in).
+    const updates: Record<string, unknown> = {
+      agreement_name_matched: matchResult.matched,
+      agreement_name_match_score: matchResult.score,
+      agreement_name_match_details: agreementMatchDetails,
+    };
+    if (!matchResult.matched) {
+      updates.verified = false;
+    }
+
     const { error: updateErr } = await supabase
       .from("bank_accounts")
-      .update({
-        agreement_name_matched: matchResult.matched,
-        agreement_name_match_score: matchResult.score,
-        agreement_name_match_details: agreementMatchDetails,
-      })
+      .update(updates)
       .eq("id", bankAccount.id)
       .eq("user_id", userId);
 

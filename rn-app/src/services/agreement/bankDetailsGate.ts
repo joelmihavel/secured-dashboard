@@ -26,13 +26,18 @@ import { supabase } from '@/src/services/supabase/client';
 import { useUploadStore } from '@/src/stores/upload';
 
 /**
- * Returns true only if the user has a *verified* landlord bank row. A row
- * with verified=false (NAME_MISMATCH or failed penny-drop) does NOT count.
+ * Returns true only if the user has a *verified* landlord bank row whose
+ * holder name *also* matches the agreement's landlord. Three filters:
+ *   verified=true                — penny-drop succeeded
+ *   pan_verified=true            — PAN matched and validated
+ *   agreement_name_matched=true  — bank-holder name matches the agreement landlord
  *
- * Pre-fix this was a verified-agnostic existence check, which let the
- * journey router route a user with a wrong-holder unverified row straight
- * to /(main) (decideApprovedTarget) or /(waitlist) (waitlisted branch),
- * skipping the verification gate.
+ * The `agreement_name_matched=true` filter is critical for re-upload safety.
+ * After PR-4, resetForReupload preserves the verified bank row but clears
+ * agreement_name_matched. Without this filter, downstream gates would
+ * still treat the row as "settled" — letting a user past the gate while
+ * the new agreement names a different landlord (or the rematch hadn't
+ * yet succeeded).
  */
 export async function userHasLandlordBankRow(userId: string): Promise<boolean> {
   try {
@@ -42,6 +47,7 @@ export async function userHasLandlordBankRow(userId: string): Promise<boolean> {
       .eq('user_id', userId)
       .eq('party_type', 'landlord')
       .eq('verified', true)
+      .eq('agreement_name_matched', true)
       .limit(1)
       .maybeSingle();
     return !!data;
@@ -54,8 +60,11 @@ export async function userHasLandlordBankRow(userId: string): Promise<boolean> {
 /**
  * Stricter sibling of userHasLandlordBankRow that also requires pan_verified=true.
  * Used by upload.tsx to decide whether the post-extraction bounce should land
- * on /(waitlist) directly (both gates met) or /(agreement)/add-bank-details
- * (still needs PAN). Same-shape query, just one extra filter.
+ * on /(waitlist) directly (all gates met) or /(agreement)/add-bank-details
+ * (still needs something).
+ *
+ * Same agreement_name_matched=true filter as the sibling — see its docstring
+ * for why preserving the row's name-match status is critical post-reupload.
  */
 export async function userHasLandlordBankAndPanVerified(userId: string): Promise<boolean> {
   try {
@@ -66,6 +75,7 @@ export async function userHasLandlordBankAndPanVerified(userId: string): Promise
       .eq('party_type', 'landlord')
       .eq('verified', true)
       .eq('pan_verified', true)
+      .eq('agreement_name_matched', true)
       .limit(1)
       .maybeSingle();
     return !!data;

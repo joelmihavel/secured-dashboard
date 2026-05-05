@@ -83,26 +83,50 @@ export async function ensureWaitlistState(
 
   let finalUserStatus = currentUserStatus ?? "signed_up";
 
-  // 3. Advance user_status to "waitlisted" if currently in early state
+  // 3. Advance user_status to "waitlisted" if currently in early state AND
+  // the latest extraction is actually usable. Without the contract_status
+  // gate, users with missing_stamp_paper / invalid_document / expired
+  // extractions get flipped to "waitlisted" — which is semantically wrong
+  // (they're not ready for the waitlist) and causes confusion in admin
+  // tooling that reads user_status alone. The journey router already
+  // re-routes such users to /(agreement)/upload, so the only effect of
+  // this gate is to keep status honest.
   if (
     ["signed_up", "agreement_confirmed"].includes(finalUserStatus)
   ) {
-    const { error: statusError } = await supabase
-      .from("users")
-      .update({
-        user_status: "waitlisted",
-        status_updated_at: new Date().toISOString(),
-      })
-      .eq("id", userId)
-      .in("user_status", ["signed_up", "agreement_confirmed"]);
+    const { data: latestExtraction } = await supabase
+      .from("extracted_rental_info")
+      .select("contract_status")
+      .eq("user_id", userId)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
 
-    if (statusError) {
-      console.error(
-        "[onboarding] Failed to advance user_status to waitlisted:",
-        statusError
-      );
+    const contractStatus = (latestExtraction as { contract_status?: string | null } | null)?.contract_status;
+    const extractionUsable = !!contractStatus && !["missing_stamp_paper", "invalid_document", "expired"].includes(contractStatus);
+
+    if (extractionUsable) {
+      const { error: statusError } = await supabase
+        .from("users")
+        .update({
+          user_status: "waitlisted",
+          status_updated_at: new Date().toISOString(),
+        })
+        .eq("id", userId)
+        .in("user_status", ["signed_up", "agreement_confirmed"]);
+
+      if (statusError) {
+        console.error(
+          "[onboarding] Failed to advance user_status to waitlisted:",
+          statusError
+        );
+      } else {
+        finalUserStatus = "waitlisted";
+      }
     } else {
-      finalUserStatus = "waitlisted";
+      console.log(
+        `[onboarding] Skipping user_status advancement for user ${userId} — extraction contract_status=${contractStatus}`
+      );
     }
   }
 
