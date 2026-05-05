@@ -10,7 +10,7 @@
  * Figma Reference: 799:3380
  */
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import {
   View,
   StyleSheet,
@@ -22,7 +22,7 @@ import Svg, { Path, Line } from 'react-native-svg';
 import { PrimaryButton, BackButton } from '@/src/components/ui/Button';
 import { Pill } from '@/src/components/ui/Pill';
 import { BgLine } from '@/src/components/ui/BgLine';
-import { useDashboard, useFeeRates } from '@/src/hooks';
+import { useDashboard, useFeeRates, useRefreshDashboard } from '@/src/hooks';
 import { usePaymentStore } from '@/src/stores';
 import { getGatewayFeeRates, getPaymentGateway, computeFee } from '@/src/services/payment';
 import type { FeeRateConfig, GatewayFeeRates } from '@/src/services/payment';
@@ -122,6 +122,18 @@ export function ConfirmPaymentContent({
   const { data: feeRates } = useFeeRates();
   const enteredAmount = usePaymentStore((s) => s.enteredAmount);
 
+  // Force a fresh dashboard fetch when this screen mounts. The 2-min React
+  // Query staleTime + 5-min HTTP `Cache-Control: max-age=300` on the edge
+  // function means a user can land here with stale `flat_bonus_eligible`
+  // (e.g., promo flipped on after their previous fetch). Invalidating on
+  // mount guarantees the receipt mirrors what initiate-payment will see.
+  const refreshDashboard = useRefreshDashboard();
+  useEffect(() => {
+    void refreshDashboard();
+    // refreshDashboard is stable (useCallback) — fire once per mount.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // ── Payment Data ───────────────────────────────────────────────────────────
 
   const rentAmount = enteredAmount || tenancy?.monthly_rent || 0;
@@ -132,29 +144,84 @@ export function ConfirmPaymentContent({
   const cashbackAmount = pastCutoff ? 0 : Math.round(Math.min(rentAmount, agreementRent) * cashbackPct);
   const annualSavings = pastCutoff ? 0 : Math.round(agreementRent * cashbackPct) * 12;
 
-  // Accumulated balance from previous unverified payments (stored in paise)
+  // Accumulated balance from previous unverified payments (stored in paise).
+  // Display only — initiate-payment ignores this since accumulation was
+  // decommissioned in migration 20260501130000_cashback_rules_revamp.sql.
   const accumulatedBalanceRupees = pastCutoff ? 0 : Math.floor((user?.cashback_balance_paise ?? 0) / 100);
 
-  // Flat ₹1000 promo bonus — gated by upcoming_payment.flat_bonus_eligible
-  // (server is source of truth). Cap at remaining rent room with a ₹1 floor
-  // so the gateway always has > 0 to charge — matches initiate-payment.
-  const flatBonusEligible = !pastCutoff && (upcomingPayment?.flat_bonus_eligible ?? false);
-  const flatBonusBaseRupees = upcomingPayment?.flat_bonus_paise != null
+  // Flat ₹1000 promo bonus.
+  //
+  // The dashboard's `flat_bonus_eligible` flag gates promo-active +
+  // !pastCutoff + !already-given, but its threshold check runs against
+  // tenancy.monthly_rent_paise. initiate-payment runs the threshold against
+  // the user's ENTERED amount. For partial payments below the threshold the
+  // two diverge — Confirm screen would show the bonus while Cashfree won't
+  // apply it (and vice versa for low-rent users overpaying). Mirror the
+  // server: trust the dashboard's "no" (it knows about already-given /
+  // promo-disabled), but additionally require the entered rent to clear the
+  // ₹30,000 minimum that initiate-payment enforces.
+  const FLAT_BONUS_MIN_PAYMENT_RUPEES = 30_000; // app_config.flat_bonus_promo.min_payment_paise / 100
+  const FLAT_BONUS_FALLBACK_RUPEES = 1000;      // app_config.flat_bonus_promo.amount_paise / 100
+  const enteredMeetsThreshold = rentAmount >= FLAT_BONUS_MIN_PAYMENT_RUPEES;
+  const flatBonusEligible =
+    !pastCutoff
+    && (upcomingPayment?.flat_bonus_eligible ?? false)
+    && enteredMeetsThreshold;
+  // dashboard returns 0 for ineligible users — fall back to the promo amount
+  // so the row never shrinks to ₹0 when we override-eligible above.
+  const dashboardFlatBonusRupees = upcomingPayment?.flat_bonus_paise
     ? Math.floor(upcomingPayment.flat_bonus_paise / 100)
-    : 1000;
+    : 0;
+  const flatBonusBaseRupees = dashboardFlatBonusRupees > 0
+    ? dashboardFlatBonusRupees
+    : FLAT_BONUS_FALLBACK_RUPEES;
   const onePctApplied = Math.min(cashbackAmount, rentAmount);
-  const accumulatedAfterOnePct = Math.max(
-    0,
-    Math.min(accumulatedBalanceRupees, rentAmount - onePctApplied),
-  );
-  const headroom = Math.max(0, rentAmount - onePctApplied - accumulatedAfterOnePct - 1);
+  // Match initiate-payment's headroom (rent − 1% − ₹1 gateway floor) — do
+  // NOT subtract accumulated balance: accumulation is decommissioned and
+  // the server-side bonus calc only fences the gateway minimum.
+  const headroom = Math.max(0, rentAmount - onePctApplied - 1);
   const flatBonusApplied = flatBonusEligible
     ? Math.min(flatBonusBaseRupees, headroom)
     : 0;
+  // Show accumulated balance up to remaining rent after 1% + flat bonus —
+  // for display parity with the prior receipt; server-side this is always 0.
+  const accumulatedAfterOnePct = Math.max(
+    0,
+    Math.min(accumulatedBalanceRupees, rentAmount - onePctApplied - flatBonusApplied),
+  );
 
   // Always apply cashback as instant discount (1% + any accumulated + flat)
   const appliedCashback = onePctApplied + accumulatedAfterOnePct + flatBonusApplied;
   const earnedCashback = 0;
+
+  // Diagnostic: log when the bonus row will be SUPPRESSED despite the user
+  // looking eligible by entered amount. Lets us trace post-OTA reports of
+  // "₹1000 missing on Confirm but applied on Cashfree" against the actual
+  // values we received. Logs once per render path that hides the row.
+  useEffect(() => {
+    if (
+      !pastCutoff
+      && rentAmount >= FLAT_BONUS_MIN_PAYMENT_RUPEES
+      && flatBonusApplied === 0
+      && upcomingPayment !== null
+    ) {
+      // eslint-disable-next-line no-console
+      console.log('[ConfirmPaymentContent] flat_bonus suppressed', {
+        rentAmount,
+        pastCutoff,
+        dashboard_flat_bonus_eligible: upcomingPayment?.flat_bonus_eligible,
+        dashboard_flat_bonus_paise: upcomingPayment?.flat_bonus_paise,
+        enteredMeetsThreshold,
+        flatBonusEligible,
+        flatBonusBaseRupees,
+        headroom,
+        flatBonusApplied,
+        cashback_balance_paise: user?.cashback_balance_paise ?? 0,
+        tenancy_monthly_rent: tenancy?.monthly_rent,
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [flatBonusApplied, rentAmount, pastCutoff, upcomingPayment?.flat_bonus_eligible]);
 
   // Fee computed on net rent (AFTER cashback) — matches backend formula
   const netRent = rentAmount - appliedCashback;
