@@ -140,6 +140,15 @@ export async function POST(req: NextRequest) {
 
   const supabase = getServerSupabaseClient(env);
 
+  const readOnly = process.env.READ_ONLY === "true";
+
+  if (readOnly && payload.op !== "fetch-view" && payload.op !== "fetch-landlord-review-queue") {
+    return NextResponse.json(
+      { error: "This deployment is read-only" },
+      { status: 403 },
+    );
+  }
+
   if (payload.op === "fetch-view") {
     const { viewName, options } = payload;
     if (!viewName || typeof viewName !== "string") {
