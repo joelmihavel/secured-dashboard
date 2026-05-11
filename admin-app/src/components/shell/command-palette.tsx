@@ -83,7 +83,7 @@ export function CommandPalette() {
               <CommandItem
                 key={user.id}
                 value={`${user.name} ${user.phone} ${user.city || ""}`}
-                onSelect={() => navigate(`/users`)}
+                onSelect={() => navigate(`/users?search=${encodeURIComponent(user.name)}`)}
               >
                 <Users className="size-4 opacity-60" />
                 <div className="flex flex-col flex-1 min-w-0">

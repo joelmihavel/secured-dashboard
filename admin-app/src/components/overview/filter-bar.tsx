@@ -213,6 +213,38 @@ function CheckOption({ checked, onClick, label, count }: { checked: boolean; onC
   );
 }
 
+function SearchableCheckList({ items, selected, placeholder, onToggle }: {
+  items: [string, number][];
+  selected: string[];
+  placeholder: string;
+  onToggle: (value: string) => void;
+}) {
+  const [query, setQuery] = useState("");
+  const filtered = query
+    ? items.filter(([label]) => label.toLowerCase().includes(query.toLowerCase()))
+    : items;
+
+  return (
+    <div className="flex flex-col gap-1">
+      <input
+        type="text"
+        value={query}
+        onChange={(e) => setQuery(e.target.value)}
+        placeholder={placeholder}
+        className="w-full rounded-md border border-[#1F1F1F] bg-[#0A0A0A] px-3 py-1.5 font-mono text-[11px] text-foreground placeholder:text-muted-foreground/30 outline-none focus:border-[#3D5A80]/50"
+      />
+      <div className="max-h-[200px] overflow-y-auto">
+        {filtered.map(([label, count]) => (
+          <CheckOption key={label} checked={selected.includes(label)} label={label} count={count} onClick={() => onToggle(label)} />
+        ))}
+        {filtered.length === 0 && (
+          <span className="block px-3 py-2 text-[11px] text-muted-foreground/30">No matches</span>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function toggleInArray(arr: string[], val: string): string[] {
   return arr.includes(val) ? arr.filter((v) => v !== val) : [...arr, val];
 }
@@ -259,24 +291,26 @@ export function FilterBar({
 
       {/* Region / City */}
       <FilterChip label="Region" active={filters.cities.length > 0} count={filters.cities.length}>
-        <div className="max-h-[240px] overflow-y-auto">
-          {uniqueCities.map(([city, count]) => (
-            <CheckOption key={city} checked={filters.cities.includes(city)} label={city} count={count}
-              onClick={() => updateFilter("cities", toggleInArray(filters.cities, city))} />
-          ))}
-        </div>
+        <SearchableCheckList
+          items={uniqueCities}
+          selected={filters.cities}
+          placeholder="Search cities…"
+          onToggle={(city) => updateFilter("cities", toggleInArray(filters.cities, city))}
+        />
       </FilterChip>
 
       {/* Building */}
       <FilterChip label="Building" active={filters.buildings.length > 0} count={filters.buildings.length}>
-        <div className="max-h-[240px] overflow-y-auto">
-          {uniqueBuildings.length === 0 ? (
-            <span className="block px-3 py-2 text-[11px] text-muted-foreground/40">No building data</span>
-          ) : uniqueBuildings.map(([b, count]) => (
-            <CheckOption key={b} checked={filters.buildings.includes(b)} label={b} count={count}
-              onClick={() => updateFilter("buildings", toggleInArray(filters.buildings, b))} />
-          ))}
-        </div>
+        {uniqueBuildings.length === 0 ? (
+          <span className="block px-3 py-2 text-[11px] text-muted-foreground/40">No building data</span>
+        ) : (
+          <SearchableCheckList
+            items={uniqueBuildings}
+            selected={filters.buildings}
+            placeholder="Search buildings…"
+            onToggle={(b) => updateFilter("buildings", toggleInArray(filters.buildings, b))}
+          />
+        )}
       </FilterChip>
 
       {/* Credit Score */}

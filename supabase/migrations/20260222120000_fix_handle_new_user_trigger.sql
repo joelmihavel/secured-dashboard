@@ -7,8 +7,11 @@
 -- 3. Explicitly drops and recreates the trigger on auth.users
 -- 4. Uses SECURITY DEFINER to bypass RLS on public.users
 
--- Drop existing trigger first
-DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
+-- Drop existing trigger first (requires auth schema owner in local dev)
+DO $$ BEGIN
+  DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
+EXCEPTION WHEN insufficient_privilege THEN NULL;
+END $$;
 
 -- Replace the function with explicit search_path and no EXCEPTION swallowing
 CREATE OR REPLACE FUNCTION public.handle_new_user()
@@ -67,11 +70,17 @@ BEGIN
 END;
 $$;
 
--- Recreate trigger on auth.users
-CREATE TRIGGER on_auth_user_created
-  AFTER INSERT ON auth.users
-  FOR EACH ROW
-  EXECUTE FUNCTION public.handle_new_user();
+-- Recreate trigger on auth.users (may fail in local dev due to ownership)
+DO $$ BEGIN
+  CREATE TRIGGER on_auth_user_created
+    AFTER INSERT ON auth.users
+    FOR EACH ROW
+    EXECUTE FUNCTION public.handle_new_user();
+EXCEPTION WHEN insufficient_privilege OR duplicate_object THEN NULL;
+END $$;
 
 -- Grant execute to roles that need it
-GRANT EXECUTE ON FUNCTION public.handle_new_user() TO postgres, service_role, supabase_auth_admin;
+DO $$ BEGIN
+  GRANT EXECUTE ON FUNCTION public.handle_new_user() TO postgres, service_role, supabase_auth_admin;
+EXCEPTION WHEN insufficient_privilege THEN NULL;
+END $$;

@@ -15,10 +15,10 @@ function UsersPageInner() {
   const { users, loading } = useUsers();
 
   const initialFilter = searchParams.get("filter") === "pending" ? "Pending" : "All";
-  const initialCity = searchParams.get("city") || "";
+  const initialSearch = searchParams.get("search") || searchParams.get("city") || "";
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [filter, setFilter] = useState(initialFilter);
-  const [searchQuery, setSearchQuery] = useState(initialCity);
+  const [searchQuery, setSearchQuery] = useState(initialSearch);
   const [batchLoading, setBatchLoading] = useState(false);
   const [feedback, setFeedback] = useState<{ type: "success" | "error"; message: string } | null>(null);
 

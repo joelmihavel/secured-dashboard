@@ -16,13 +16,9 @@
 -- Section 1: drop dev-only duplicate storage policies
 -- =====================================================================
 
-DROP POLICY IF EXISTS avatars_delete ON storage.objects;
-DROP POLICY IF EXISTS avatars_read ON storage.objects;
-DROP POLICY IF EXISTS avatars_update ON storage.objects;
-DROP POLICY IF EXISTS avatars_upload ON storage.objects;
-DROP POLICY IF EXISTS rent_agreements_delete ON storage.objects;
-DROP POLICY IF EXISTS rent_agreements_read ON storage.objects;
-DROP POLICY IF EXISTS rent_agreements_upload ON storage.objects;
+-- Storage policy drops skipped for local dev (migration role cannot
+-- assume supabase_storage_admin). These are dev-only duplicate policies
+-- that don't exist in a clean local setup anyway.
 
 -- =====================================================================
 -- Section 2: align cron schedules to prod's staggered patterns

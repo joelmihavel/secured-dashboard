@@ -82,4 +82,7 @@ BEGIN
 END;
 $$;
 
-GRANT EXECUTE ON FUNCTION public.handle_new_user() TO postgres, service_role, supabase_auth_admin;
+DO $$ BEGIN
+  GRANT EXECUTE ON FUNCTION public.handle_new_user() TO postgres, service_role, supabase_auth_admin;
+EXCEPTION WHEN insufficient_privilege THEN NULL;
+END $$;

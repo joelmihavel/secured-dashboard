@@ -196,6 +196,14 @@ export default function OverviewPage() {
 
   const conversionPct = stats.total > 0 ? Math.round((stats.paid / stats.total) * 100) : 0;
 
+  function usersLinkWithFilter(extra?: string): string {
+    const parts: string[] = [];
+    if (filters.cities.length === 1) parts.push(`search=${encodeURIComponent(filters.cities[0])}`);
+    if (filters.buildings.length === 1) parts.push(`search=${encodeURIComponent(filters.buildings[0])}`);
+    if (extra) parts.push(extra);
+    return `/users${parts.length > 0 ? "?" + parts.join("&") : ""}`;
+  }
+
   const funnelSteps = [
     { label: "SIGNUP", count: stats.total },
     { label: "AGREE", count: stats.withAgreement },
@@ -277,7 +285,7 @@ export default function OverviewPage() {
       <div className="flex gap-4 h-[460px] flex-shrink-0">
         {/* Column 1 — Tall stat cards */}
         <div className="flex w-[240px] flex-shrink-0 flex-col gap-4">
-          <Link href="/users" className="flex flex-1 flex-col justify-between rounded-xl bg-[#3D5A80] p-5 hover:bg-[#4A6B91] transition-colors cursor-pointer group">
+          <Link href={usersLinkWithFilter()} className="flex flex-1 flex-col justify-between rounded-xl bg-[#3D5A80] p-5 hover:bg-[#4A6B91] transition-colors cursor-pointer group">
             <div className="flex items-center justify-between">
               <span className="font-mono text-[9px] uppercase tracking-[1.5px] text-white/60">Total Users</span>
               <span className="font-mono text-[10px] text-white/0 group-hover:text-white/60 transition-colors">&rarr;</span>
@@ -394,7 +402,7 @@ export default function OverviewPage() {
               const dropoff = prevCount > 0 ? Math.round(((prevCount - step.count) / prevCount) * 100) : 0;
               return (
                 <div key={step.label} className="flex flex-1 flex-col items-center gap-1.5 cursor-pointer group/bar"
-                  onClick={() => router.push(FUNNEL_ROUTES[step.label] || "/users")}>
+                  onClick={() => router.push(step.label === "PAID" ? "/payments" : usersLinkWithFilter())}>
                   {i > 0 && dropoff > 0 && (
                     <span className="font-mono text-[9px] text-destructive/60">-{dropoff}%</span>
                   )}
@@ -411,7 +419,7 @@ export default function OverviewPage() {
             {funnelSteps.map((step) => (
               <span key={step.label}
                 className={`flex-1 text-center font-mono text-[9px] uppercase tracking-[1px] cursor-pointer hover:opacity-80 transition-opacity ${step.label === "PAID" ? "text-[#FF9A6D]" : "text-muted-foreground/40"}`}
-                onClick={() => router.push(FUNNEL_ROUTES[step.label] || "/users")}>
+                onClick={() => router.push(step.label === "PAID" ? "/payments" : usersLinkWithFilter())}>
                 {step.label}
               </span>
             ))}
@@ -434,20 +442,20 @@ export default function OverviewPage() {
       </div>
 
       {/* Row 2 — Dynamic analytics cards */}
-      <div className={cn("grid gap-4 flex-shrink-0", gridCols)}>
+      <div className={cn("grid gap-4 flex-shrink-0 auto-rows-[280px]", gridCols)}>
         {/* City Breakdown — with proportional bars */}
         {visibleCards.has("city") && (
-          <div className={cn("flex flex-col rounded-xl border bg-[#141414] p-5 transition-all", cardBorder("city"), cardGlow("city"))}>
+          <div className={cn("flex flex-col rounded-xl border bg-[#141414] p-5 transition-all overflow-hidden", cardBorder("city"), cardGlow("city"))}>
             <div className="flex items-center justify-between mb-3">
               <span className="font-mono text-[9px] uppercase tracking-[1.5px] text-[#A3A3A366]">By City</span>
               {highlightedCards.has("city") && <span className="size-1.5 rounded-full bg-[#3D5A80]" />}
             </div>
-            <div className="flex flex-col gap-1.5 flex-1">
+            <div className="flex flex-col gap-1 flex-1 overflow-y-auto min-h-0">
               {stats.cityEntries.map(([city, count]) => {
                 const barPct = maxCity > 0 ? Math.round((count / maxCity) * 100) : 0;
                 return (
-                  <button key={city} onClick={() => router.push(`/users?city=${encodeURIComponent(city)}`)}
-                    className="flex items-center gap-3 rounded-lg px-2 py-1.5 -mx-2 hover:bg-white/[0.04] transition-colors group/city">
+                  <button key={city} onClick={() => router.push(`/users?search=${encodeURIComponent(city)}`)}
+                    className="flex items-center gap-3 rounded-lg px-2 py-1.5 -mx-2 hover:bg-white/[0.04] transition-colors group/city flex-shrink-0">
                     <span className="text-[12px] text-muted-foreground group-hover/city:text-foreground transition-colors w-[80px] truncate text-left">{city}</span>
                     <div className="flex-1 h-[6px] rounded-full bg-[#1F1F1F] overflow-hidden">
                       <div className="h-full rounded-full bg-[#3D5A80]/50 group-hover/city:bg-[#3D5A80]/70 transition-colors" style={{ width: `${barPct}%` }} />
@@ -458,7 +466,7 @@ export default function OverviewPage() {
               })}
             </div>
             {stats.citiesTotal > 5 && (
-              <Link href="/users" className="font-mono text-[10px] text-muted-foreground/30 mt-2 hover:text-muted-foreground/50 transition-colors">
+              <Link href="/users" className="font-mono text-[10px] text-muted-foreground/30 mt-2 hover:text-muted-foreground/50 transition-colors flex-shrink-0">
                 +{stats.citiesTotal - 5} more cities &rarr;
               </Link>
             )}
@@ -467,7 +475,7 @@ export default function OverviewPage() {
 
         {/* Risk Breakdown — clickable rows to filter */}
         {visibleCards.has("risk") && (
-          <div className={cn("flex flex-col rounded-xl border bg-[#141414] p-5 transition-all", cardBorder("risk"), cardGlow("risk"))}>
+          <div className={cn("flex flex-col rounded-xl border bg-[#141414] p-5 transition-all overflow-hidden", cardBorder("risk"), cardGlow("risk"))}>
             <div className="flex items-center justify-between mb-3">
               <span className="font-mono text-[9px] uppercase tracking-[1.5px] text-[#A3A3A366]">Risk Breakdown</span>
               {highlightedCards.has("risk") && <span className="size-1.5 rounded-full bg-[#3D5A80]" />}
@@ -505,7 +513,7 @@ export default function OverviewPage() {
 
         {/* Verification Pipeline — merged M360 + Bank + Utility */}
         {visibleCards.has("verification_pipeline") && (
-          <div className={cn("flex flex-col rounded-xl border bg-[#141414] p-5 transition-all", cardBorder("verification_pipeline"), cardGlow("verification_pipeline"))}>
+          <div className={cn("flex flex-col rounded-xl border bg-[#141414] p-5 transition-all overflow-hidden", cardBorder("verification_pipeline"), cardGlow("verification_pipeline"))}>
             <div className="flex items-center justify-between mb-4">
               <span className="font-mono text-[9px] uppercase tracking-[1.5px] text-[#A3A3A366]">Verification Pipeline</span>
               {highlightedCards.has("verification_pipeline") && <span className="size-1.5 rounded-full bg-[#3D5A80]" />}
@@ -542,7 +550,7 @@ export default function OverviewPage() {
 
         {/* Rent Distribution */}
         {visibleCards.has("rent_dist") && (
-          <div className={cn("flex flex-col rounded-xl border bg-[#141414] p-5 transition-all", cardBorder("rent_dist"), cardGlow("rent_dist"))}>
+          <div className={cn("flex flex-col rounded-xl border bg-[#141414] p-5 transition-all overflow-hidden", cardBorder("rent_dist"), cardGlow("rent_dist"))}>
             <div className="flex items-center justify-between mb-3">
               <span className="font-mono text-[9px] uppercase tracking-[1.5px] text-[#A3A3A366]">Rent Distribution</span>
               {highlightedCards.has("rent_dist") && <span className="size-1.5 rounded-full bg-[#3D5A80]" />}
@@ -564,7 +572,7 @@ export default function OverviewPage() {
 
         {/* Credit Score Distribution */}
         {visibleCards.has("credit_dist") && (
-          <div className={cn("flex flex-col rounded-xl border bg-[#141414] p-5 transition-all", cardBorder("credit_dist"), cardGlow("credit_dist"))}>
+          <div className={cn("flex flex-col rounded-xl border bg-[#141414] p-5 transition-all overflow-hidden", cardBorder("credit_dist"), cardGlow("credit_dist"))}>
             <div className="flex items-center justify-between mb-3">
               <span className="font-mono text-[9px] uppercase tracking-[1.5px] text-[#A3A3A366]">Credit Scores</span>
               {highlightedCards.has("credit_dist") && <span className="size-1.5 rounded-full bg-[#3D5A80]" />}

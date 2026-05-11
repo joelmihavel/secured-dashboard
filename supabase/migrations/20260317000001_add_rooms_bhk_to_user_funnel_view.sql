@@ -1,7 +1,9 @@
 -- Add rooms_in_agreement and property_bhk_type to v_user_funnel view
 -- Also fix the lateral join to include extraction_failed status for visibility
+-- Must DROP first because this version removes bank-account columns
 
-CREATE OR REPLACE VIEW public.v_user_funnel AS
+DROP VIEW IF EXISTS public.v_user_funnel;
+CREATE VIEW public.v_user_funnel AS
 SELECT
   -- User basics
   u.id AS user_id,
