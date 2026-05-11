@@ -22,14 +22,14 @@ function GatePill({
 }) {
   return (
     <div
-      className={`flex flex-col gap-0.5 rounded-md border px-2 py-1.5 ${
+      className={`flex flex-col gap-0.5 rounded-xl border px-3 py-2 ${
         passed
           ? "border-success/30 bg-success/5"
           : "border-destructive/30 bg-destructive/5"
       }`}
     >
       <span
-        className={`text-[10px] font-semibold uppercase tracking-wider ${
+        className={`font-mono text-[9px] uppercase tracking-[1.5px] ${
           passed ? "text-success" : "text-destructive"
         }`}
       >
@@ -101,26 +101,26 @@ export default function LandlordReviewPage() {
 
   if (loading) {
     return (
-      <div className="flex flex-col gap-4 p-5">
-        <Skeleton className="h-8 w-72 rounded" />
+      <div className="flex flex-col gap-5 px-8 py-6">
+        <Skeleton className="h-8 w-72 rounded-lg" />
         {[1, 2, 3].map((i) => (
-          <Skeleton key={i} className="h-32 rounded-lg" />
+          <Skeleton key={i} className="h-32 rounded-xl" />
         ))}
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col gap-4 p-5">
+    <div className="flex flex-col gap-5 px-8 py-6">
       <div className="flex flex-col gap-1">
-        <span className="text-[11px] font-medium uppercase tracking-[0.16em] text-muted-foreground">
+        <span className="font-mono text-[9px] uppercase tracking-[1.5px] text-muted-foreground/50">
           Operations
         </span>
         <div className="flex items-baseline gap-3">
-          <h1 className="font-display text-[28px] font-medium tracking-[-0.015em] text-foreground">
-            Landlord review queue
+          <h1 className="text-[28px] font-normal tracking-[-0.5px] text-foreground">
+            Landlord Pipeline
           </h1>
-          <span className="text-[13px] tabular text-muted-foreground">
+          <span className="font-mono text-[13px] text-muted-foreground">
             {queue.length} pending
           </span>
         </div>
@@ -133,7 +133,7 @@ export default function LandlordReviewPage() {
 
       {feedback && (
         <div
-          className={`rounded-md border px-4 py-2 text-sm ${
+          className={`rounded-xl border px-4 py-2 text-[13px] ${
             feedback.type === "success"
               ? "border-success/30 bg-success/5 text-success"
               : "border-destructive/30 bg-destructive/5 text-destructive"
@@ -144,8 +144,8 @@ export default function LandlordReviewPage() {
       )}
 
       {queue.length === 0 ? (
-        <Card className="border-border bg-card">
-          <CardContent className="flex items-center justify-center py-16 text-sm text-muted-foreground/60">
+        <Card className="rounded-xl border-border bg-card">
+          <CardContent className="flex items-center justify-center py-16 text-[13px] text-muted-foreground/60">
             No tenancies pending landlord review
           </CardContent>
         </Card>
@@ -154,8 +154,8 @@ export default function LandlordReviewPage() {
           {queue.map((item) => {
             const isActing = actionId === item.tenancy_id;
             return (
-              <Card key={item.tenancy_id} className="border-border bg-card">
-                <CardContent className="flex flex-col gap-3 p-4">
+              <Card key={item.tenancy_id} className="rounded-xl border-border bg-card">
+                <CardContent className="flex flex-col gap-3 p-5">
                   <div className="flex items-start justify-between gap-4">
                     <div className="flex flex-col gap-0.5">
                       <span className="text-[15px] font-medium text-foreground">
@@ -173,14 +173,14 @@ export default function LandlordReviewPage() {
                           </span>
                         )}
                       </span>
-                      <span className="text-[11px] text-muted-foreground/60 font-mono">
+                      <span className="font-mono text-[10px] text-muted-foreground/40">
                         {item.tenancy_id}
                       </span>
                     </div>
                     <div className="flex gap-2">
                       <Button
                         size="sm"
-                        className="h-9 bg-success text-success-foreground text-xs font-semibold"
+                        className="h-9 rounded-lg bg-success text-success-foreground font-mono text-[11px] font-semibold"
                         onClick={() => handle(item, "promote")}
                         disabled={isActing}
                       >
@@ -189,7 +189,7 @@ export default function LandlordReviewPage() {
                       <Button
                         size="sm"
                         variant="outline"
-                        className="h-9 border-destructive/40 text-destructive text-xs"
+                        className="h-9 rounded-lg border-destructive/40 text-destructive font-mono text-[11px]"
                         onClick={() => handle(item, "decline")}
                         disabled={isActing}
                       >
@@ -229,7 +229,7 @@ export default function LandlordReviewPage() {
                   {item.landlord_names && item.landlord_names.length > 0 && (
                     <div className="text-[11px] text-muted-foreground/70">
                       Agreement landlord names:{" "}
-                      <span className="text-foreground/80 font-mono">
+                      <span className="text-foreground/80 font-mono text-[10px]">
                         {item.landlord_names.join(", ")}
                       </span>
                     </div>

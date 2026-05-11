@@ -1,60 +1,126 @@
 "use client";
 
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { cn } from "@/lib/utils";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { getCurrentEnvironment } from "@/lib/supabase";
 import { openCommandPalette } from "@/components/shell/command-palette";
-import { Search } from "lucide-react";
 
-export function Header() {
+const NAV_ITEMS = [
+  { href: "/overview", label: "Overview" },
+  { href: "/triage", label: "Inbox" },
+  { href: "/users", label: "Users" },
+  { href: "/payments", label: "Payments" },
+  { href: "/analytics", label: "Analytics" },
+];
+
+export interface KpiItem {
+  label: string;
+  value: string;
+  color?: string;
+}
+
+const DEFAULT_KPIS: KpiItem[] = [
+  { label: "SIGNUPS", value: "1,204" },
+  { label: "REVENUE", value: "$48.2K" },
+  { label: "CONVERSION", value: "3.8%" },
+  { label: "TRIAGE", value: "27", color: "#F59E0B" },
+  { label: "7D CHANGE", value: "+12.4%" },
+];
+
+interface HeaderProps {
+  kpis?: KpiItem[];
+}
+
+export function Header({ kpis = DEFAULT_KPIS }: HeaderProps) {
   const env = getCurrentEnvironment();
+  const pathname = usePathname();
 
   return (
-    <header className="flex h-12 items-center gap-4 border-b border-border px-5">
+    <header className="flex h-[52px] items-center gap-6 border-b border-[#1F1F1F] px-8">
+      {/* Logo */}
       <div className="flex items-center gap-2">
-        <span className="font-mono text-[15px] font-bold text-foreground">{">_"}</span>
-        <span className="text-[15px] font-semibold tracking-tight text-foreground">
-          Secured Terminal
+        <span className="font-mono text-[16px] font-bold text-foreground">
+          {">_"}
+        </span>
+        <span className="text-[15px] font-normal tracking-[-0.3px] text-foreground">
+          SECURED
         </span>
       </div>
 
-      <div className="h-5 w-px bg-border" />
+      {/* Divider */}
+      <div className="h-6 w-px bg-[#1F1F1F]" />
 
-      <nav className="flex items-center gap-1.5 text-[13px] text-muted-foreground">
-        <span>Dashboard</span>
-        <span className="text-muted-foreground/30">/</span>
-        <span className="text-foreground">Overview</span>
-      </nav>
+      {/* KPI Strip */}
+      <div className="flex items-center gap-5">
+        {kpis.map((kpi) => (
+          <div key={kpi.label} className="flex flex-col items-start gap-[2px]">
+            <span
+              className="font-mono text-[9px] font-normal uppercase leading-none"
+              style={{ letterSpacing: "1.5px", color: "rgba(163, 163, 163, 0.4)" }}
+            >
+              {kpi.label}
+            </span>
+            <span
+              className="font-mono text-[13px] font-semibold leading-none"
+              style={{ color: kpi.color ?? "#E8E8E8" }}
+            >
+              {kpi.value}
+            </span>
+          </div>
+        ))}
+      </div>
 
+      {/* Spacer */}
       <div className="flex-1" />
 
-      <button
-        onClick={openCommandPalette}
-        className="flex h-9 w-[240px] items-center gap-2 rounded-md border border-border bg-card px-3 text-[13px] text-muted-foreground/60 hover:border-muted-foreground/30 transition-colors"
-      >
-        <Search className="size-4" />
-        <span>Search...</span>
-        <span className="ml-auto rounded border border-border px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground/30">
-          ⌘K
-        </span>
-      </button>
+      {/* Nav tabs */}
+      <nav className="flex items-center gap-px">
+        {NAV_ITEMS.map((item) => {
+          const isActive =
+            pathname === item.href || pathname.startsWith(item.href + "/");
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              className={cn(
+                "rounded-[6px] px-[14px] py-[6px] text-[12px] transition-colors",
+                isActive
+                  ? "bg-[#FF9A6D] font-medium text-[#0A0A0A]"
+                  : "text-[#A3A3A3] hover:text-foreground"
+              )}
+            >
+              {item.label}
+            </Link>
+          );
+        })}
+      </nav>
 
-      <div className="flex h-9 items-center gap-1.5 rounded-md border border-border px-3">
+      {/* Divider */}
+      <div className="h-6 w-px bg-[#1F1F1F]" />
+
+      {/* Env indicator */}
+      <div className="flex items-center gap-1.5">
         <div
-          className={`size-2 rounded-full ${
-            env === "dev" ? "bg-warning" : "bg-success"
-          }`}
+          className={cn(
+            "size-[6px] rounded-full",
+            env === "dev" ? "bg-warning" : "bg-green-500"
+          )}
         />
         <span
-          className={`text-xs font-medium ${
+          className={cn(
+            "font-mono text-[11px] font-medium",
             env === "dev" ? "text-warning" : "text-muted-foreground"
-          }`}
+          )}
         >
-          {env === "dev" ? "Dev" : "Main"}
+          {env === "dev" ? "DEV" : "MAIN"}
         </span>
       </div>
 
-      <Avatar className="size-8 border border-border">
-        <AvatarFallback className="bg-secondary text-[11px] font-semibold text-muted-foreground">
+      {/* Avatar */}
+      <Avatar className="size-8 bg-secondary">
+        <AvatarFallback className="bg-secondary text-[11px] text-muted-foreground">
           RA
         </AvatarFallback>
       </Avatar>

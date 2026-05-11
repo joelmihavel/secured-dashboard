@@ -1,245 +1,77 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { useState, useMemo, useCallback } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { fetchView, callEdgeFunction } from "@/lib/supabase";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { callEdgeFunction } from "@/lib/supabase";
 import { formatCurrencyShort, maskPhone } from "@/lib/utils";
+import { computeDecision, sortByPriority } from "@/lib/decision";
+import { useUsers } from "@/hooks/useUsers";
 import type { UserFunnel } from "@/types/user";
-import { ApprovalPreflight } from "@/components/users/approval-preflight";
+import { UserDetail } from "@/components/users/user-detail";
 
 function riskBadge(level: string | null) {
-  switch (level) {
-    case "LOW": return <span className="text-xs text-success">LOW</span>;
-    case "MED": return <span className="text-xs text-warning">MED</span>;
-    case "HIGH": return <span className="text-xs text-destructive">HIGH</span>;
-    default: return <span className="text-xs text-muted-foreground/40">{"\u2014"}</span>;
-  }
-}
-
-interface VerificationFlags {
-  bank: boolean;
-  utility: boolean;
-  landlord: boolean;
-  identity: boolean;
-  agreement: boolean;
-  stamp: boolean;
-}
-
-function verificationFlags(user: UserFunnel): VerificationFlags {
-  return {
-    bank: user.bank_verified === true,
-    utility: user.utility_verified === true,
-    landlord: user.landlord_approved === true,
-    identity: user.m360_status === "SUCCESS",
-    agreement: user.extraction_status === "completed",
-    stamp: user.stamp_verification_status === "verified",
-  };
-}
-
-function verificationCount(flags: VerificationFlags): number {
-  return Object.values(flags).filter(Boolean).length;
-}
-
-const VERIFICATION_TOTAL = 6;
-
-function VerificationPips({ flags }: { flags: VerificationFlags }) {
-  const order: Array<[keyof VerificationFlags, string]> = [
-    ["bank", "Bank"],
-    ["utility", "Utility"],
-    ["landlord", "Landlord"],
-    ["identity", "Identity"],
-    ["agreement", "Agreement"],
-    ["stamp", "Stamp"],
-  ];
-  const count = verificationCount(flags);
-  const countColor =
-    count === VERIFICATION_TOTAL
-      ? "text-success"
-      : count >= VERIFICATION_TOTAL - 2
-        ? "text-warning"
-        : "text-destructive";
-  return (
-    <div className="flex flex-col items-center gap-1">
-      <span className={`text-[12px] font-semibold ${countColor}`}>
-        {count}/{VERIFICATION_TOTAL}
-      </span>
-      <div className="flex gap-0.5">
-        {order.map(([key, label]) => (
-          <span
-            key={key}
-            title={`${label}: ${flags[key] ? "verified" : "not verified"}`}
-            className={`size-1.5 rounded-full ${flags[key] ? "bg-success" : "bg-destructive/40"}`}
-          />
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function auditStatus(user: UserFunnel): { label: string; color: string } {
-  const missing: string[] = [];
-  if (user.extraction_status !== "completed") missing.push("Agreement");
-  if (!user.property_address) missing.push("Address");
-  if (!user.landlord_name && !user.landlord_display_name) missing.push("Landlord");
-  if (!user.monthly_rent_paise || user.monthly_rent_paise <= 0) missing.push("Rent");
-  if (!user.lease_start_date) missing.push("Lease");
-  return missing.length === 0
-    ? { label: "READY", color: "text-success bg-success/10" }
-    : { label: "BLOCKED", color: "text-destructive bg-destructive/10" };
-}
-
-/**
- * Returns the admin-approval readiness for a user. Approval is safe iff
- * both the landlord bank account is verified AND its PAN is verified.
- * Approving a user without these flags puts them in user_status='approved'
- * but they can't transact (settlement requires verified landlord bank).
- *
- * The hint string surfaces the specific gate so admin can WhatsApp the
- * user telling them what's still missing.
- */
-function approvalReadiness(user: UserFunnel): {
-  label: string;
-  color: string;
-  tooltip: string;
-} {
-  const bankVerified = user.landlord_bank_verified === true;
-  const panVerified = user.landlord_bank_pan_verified === true;
-
-  if (bankVerified && panVerified) {
-    return {
-      label: "READY",
-      color: "text-success bg-success/10 border-success/30",
-      tooltip: "Landlord bank verified and PAN verified — safe to approve.",
-    };
-  }
-  if (bankVerified && !panVerified) {
-    return {
-      label: "PAN PENDING",
-      color: "text-warning bg-warning/10 border-warning/30",
-      tooltip: "Landlord bank verified but PAN not verified — user must complete PAN before approval.",
-    };
-  }
-  if (!bankVerified && user.landlord_bank_verified === false) {
-    return {
-      label: "BANK FAILED",
-      color: "text-destructive bg-destructive/10 border-destructive/30",
-      tooltip: "Landlord bank row exists but penny-drop never succeeded — user must re-enter bank details.",
-    };
-  }
-  return {
-    label: "NO BANK",
-    color: "text-destructive bg-destructive/10 border-destructive/30",
-    tooltip: "User hasn't started landlord bank verification — do not approve.",
-  };
+  const color = level === "HIGH" ? "text-destructive" : level === "MED" ? "text-warning" : level === "LOW" ? "text-success" : "text-muted-foreground/30";
+  return <span className={`font-mono text-[11px] font-semibold ${color}`}>{level || "—"}</span>;
 }
 
 export default function TriagePage() {
-  const [users, setUsers] = useState<UserFunnel[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [selected, setSelected] = useState<Set<string>>(new Set());
-  const [preflightUser, setPreflightUser] = useState<UserFunnel | null>(null);
+  const queryClient = useQueryClient();
+  const { users: rawUsers, loading } = useUsers();
+  const [detailUser, setDetailUser] = useState<UserFunnel | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
   const [feedback, setFeedback] = useState<{ type: "success" | "error"; message: string } | null>(null);
 
-  useEffect(() => {
-    loadQueue();
-  }, []);
+  const allUsers = useMemo(() => {
+    const queue = rawUsers.filter((u) =>
+      u.user_status === "waitlisted" || u.user_status === "agreement_confirmed" ||
+      u.admin_review === "due" || u.admin_review === "in_progress"
+    );
+    return queue.length > 0 ? queue : rawUsers;
+  }, [rawUsers]);
 
-  async function loadQueue() {
-    try {
-      const data = await fetchView<UserFunnel>("v_user_funnel", {
-        order: { column: "signed_up_at", ascending: false },
-      });
-      const filtered = data.filter(
-        (u) =>
-          u.user_status === "waitlisted" ||
-          u.user_status === "agreement_confirmed" ||
-          u.admin_review === "due" ||
-          u.admin_review === "in_progress"
-      );
-      setUsers(filtered.length > 0 ? filtered : data);
-    } catch (err) {
-      console.error("Failed to load triage queue:", err);
-    } finally {
-      setLoading(false);
+  const invalidateUsers = useCallback(() => {
+    queryClient.invalidateQueries({ queryKey: ["users"] });
+  }, [queryClient]);
+
+  const users = useMemo(() => sortByPriority(allUsers), [allUsers]);
+
+  const counts = useMemo(() => {
+    const c = { BLOCKED: 0, NEEDS_REVIEW: 0, READY: 0, LOW: 0, MED: 0, HIGH: 0 };
+    for (const u of allUsers) {
+      c[computeDecision(u).state]++;
+      const r = (u.risk_level || "PENDING") as keyof typeof c;
+      if (r in c) c[r]++;
     }
-  }
+    return c;
+  }, [allUsers]);
 
-  function toggleSelect(userId: string) {
-    setSelected((prev) => {
-      const next = new Set(prev);
-      if (next.has(userId)) next.delete(userId);
-      else next.add(userId);
-      return next;
-    });
-  }
-
-  function toggleAll() {
-    if (selected.size === users.length) setSelected(new Set());
-    else setSelected(new Set(users.map((u) => u.user_id)));
-  }
-
-  async function batchAction(action: "approve" | "reject", userIds?: string[]) {
-    const requestedIds = userIds || Array.from(selected);
-    if (requestedIds.length === 0) return;
-
-    // Gate batch approve: filter out users whose landlord bank+PAN aren't both
-    // verified. Approving them would put them in user_status='approved' but
-    // they can't transact, which silently breaks the funnel. We surface the
-    // skipped users to the admin and only proceed with the safe subset.
-    let ids = requestedIds;
-    let skipped = 0;
-    if (action === "approve") {
-      const idToUser = new Map(users.map((u) => [u.user_id, u]));
-      const ready = requestedIds.filter((id) => {
-        const u = idToUser.get(id);
-        return u?.landlord_bank_verified === true && u?.landlord_bank_pan_verified === true;
-      });
-      skipped = requestedIds.length - ready.length;
-
-      if (ready.length === 0) {
-        setFeedback({
-          type: "error",
-          message: `Cannot approve: none of the ${requestedIds.length} selected user${requestedIds.length > 1 ? "s" : ""} have verified landlord bank + PAN. They'd be stuck post-approval with no way to transact.`,
-        });
-        return;
-      }
-
-      if (skipped > 0) {
-        const proceed = window.confirm(
-          `${skipped} of ${requestedIds.length} selected users are not ready (missing landlord bank or PAN verification).\n\n` +
-          `Approving them now would put them in 'approved' state but they can't transact until they finish bank+PAN. ` +
-          `They'd need to come back through the funnel.\n\n` +
-          `Proceed with the ${ready.length} ready user${ready.length > 1 ? "s" : ""} and skip the rest?`
-        );
-        if (!proceed) return;
-      }
-      ids = ready;
-    }
-
+  async function handleAction(userId: string, action: "approve" | "reject") {
     setActionLoading(true);
     setFeedback(null);
     try {
-      await callEdgeFunction("admin-waitlist", {
-        action,
-        user_ids: ids,
-        ...(action === "reject" ? { rejection_reasons: ["Admin rejection"] } : {}),
-      });
-      const skippedSuffix = skipped > 0 ? ` (${skipped} skipped — not ready)` : "";
-      setFeedback({
-        type: "success",
-        message: `${ids.length} user${ids.length > 1 ? "s" : ""} ${action === "approve" ? "approved" : "rejected"}${skippedSuffix}`,
-      });
-      setSelected(new Set());
-      loadQueue();
+      await callEdgeFunction("admin-waitlist", { action, user_ids: [userId], ...(action === "reject" ? { rejection_reasons: ["Admin rejection"] } : {}) });
+      setFeedback({ type: "success", message: `User ${action === "approve" ? "approved" : "rejected"}` });
+      invalidateUsers();
     } catch (err) {
-      setFeedback({
-        type: "error",
-        message: err instanceof Error ? err.message : `Batch ${action} failed`,
-      });
+      setFeedback({ type: "error", message: err instanceof Error ? err.message : `Action failed` });
+    } finally {
+      setActionLoading(false);
+    }
+  }
+
+  async function batchAction(action: "approve" | "reject") {
+    const ids = users.map((u) => u.user_id);
+    if (ids.length === 0) return;
+    setActionLoading(true);
+    try {
+      await callEdgeFunction("admin-waitlist", { action, user_ids: ids, ...(action === "reject" ? { rejection_reasons: ["Batch rejection"] } : {}) });
+      setFeedback({ type: "success", message: `${ids.length} users ${action}d` });
+      invalidateUsers();
+    } catch (err) {
+      setFeedback({ type: "error", message: err instanceof Error ? err.message : "Batch failed" });
     } finally {
       setActionLoading(false);
     }
@@ -247,122 +79,159 @@ export default function TriagePage() {
 
   if (loading) {
     return (
-      <div className="flex flex-col gap-4 p-5">
-        <Skeleton className="h-8 w-48 rounded" />
-        {[1, 2, 3, 4, 5].map((i) => <Skeleton key={i} className="h-12 rounded-lg" />)}
+      <div className="flex gap-4 p-6 px-8 h-full">
+        <div className="w-[280px] flex flex-col gap-4"><Skeleton className="h-36 rounded-xl" /><Skeleton className="h-10 rounded-xl" /><Skeleton className="flex-1 rounded-xl" /></div>
+        <div className="flex-1 grid grid-cols-2 gap-4"><Skeleton className="h-40 rounded-xl" /><Skeleton className="h-40 rounded-xl" /><Skeleton className="h-40 rounded-xl" /><Skeleton className="h-40 rounded-xl" /></div>
+      </div>
+    );
+  }
+
+  if (detailUser) {
+    return (
+      <div className="flex h-full">
+        <div className="flex w-[280px] flex-col border-r border-[#1F1F1F] bg-background">
+          <div className="flex items-center gap-2 border-b border-[#1F1F1F] px-5 py-3">
+            <button onClick={() => setDetailUser(null)} className="font-mono text-[11px] text-muted-foreground hover:text-foreground">← INBOX</button>
+            <span className="font-mono text-[10px] text-muted-foreground/30 tracking-[1.5px]">{users.length} QUEUED</span>
+          </div>
+          <div className="flex-1 overflow-auto">
+            {users.map((u) => {
+              const d = computeDecision(u);
+              return (
+                <button key={u.user_id} onClick={() => setDetailUser(u)}
+                  className={`flex w-full items-center gap-3 border-b border-[#1F1F1F]/50 px-5 py-3.5 text-left transition-colors ${u.user_id === detailUser.user_id ? "bg-primary/5 border-l-[3px] border-l-primary" : "hover:bg-muted/30"}`}>
+                  <div className={`size-[6px] rounded-full ${d.state === "READY" ? "bg-success" : d.state === "NEEDS_REVIEW" ? "bg-warning" : "bg-destructive"}`} />
+                  <div className="flex flex-1 flex-col gap-0.5 overflow-hidden">
+                    <span className="truncate text-[13px] font-medium text-foreground">{u.name || maskPhone(u.phone)}</span>
+                    <span className="font-mono text-[11px] text-muted-foreground/40">{u.property_city || "—"} · {formatCurrencyShort(u.monthly_rent_paise)}</span>
+                  </div>
+                  {riskBadge(u.risk_level)}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+        <UserDetail user={detailUser} />
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col gap-4 p-5">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <h1 className="text-lg font-semibold text-foreground">Triage Queue</h1>
-          <Badge variant="outline" className="bg-warning/10 text-warning border-warning/20 text-xs">
-            {users.length} pending
-          </Badge>
+    <div className="flex gap-4 p-6 px-8 h-full overflow-hidden">
+      {/* Left sidebar */}
+      <div className="flex w-[280px] flex-shrink-0 flex-col gap-4">
+        {/* Triage Queue count */}
+        <div className="flex flex-col rounded-xl border border-[#1F1F1F] bg-[#141414] p-5">
+          <span className="font-mono text-[9px] uppercase tracking-[1.5px] text-[#A3A3A366]">Triage Queue</span>
+          <div className="mt-3">
+            <span className="font-mono text-[72px] font-bold leading-none tracking-[-2px] text-foreground">{allUsers.length}</span>
+          </div>
+          <span className="font-mono text-[13px] uppercase tracking-[1.5px] text-muted-foreground/40 mt-1">Pending</span>
         </div>
-        {selected.size > 0 && (
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-muted-foreground">{selected.size} selected</span>
-            <Button size="sm" className="h-9 bg-success text-success-foreground text-xs font-semibold" onClick={() => batchAction("approve")} disabled={actionLoading}>
-              Batch approve
-            </Button>
-            <Button size="sm" variant="outline" className="h-9 border-destructive/40 text-destructive text-xs" onClick={() => batchAction("reject")} disabled={actionLoading}>
-              Batch reject
-            </Button>
-            <Button size="sm" variant="ghost" className="h-9 text-xs text-muted-foreground" onClick={() => setSelected(new Set())}>
-              Clear
-            </Button>
+
+        {/* Batch actions */}
+        <div className="flex gap-2">
+          <Button onClick={() => batchAction("approve")} disabled={actionLoading}
+            className="flex-1 h-10 rounded-xl bg-success/10 border border-success/30 text-success font-mono text-[12px] font-semibold hover:bg-success/20">
+            Batch approve
+          </Button>
+          <Button onClick={() => batchAction("reject")} disabled={actionLoading} variant="outline"
+            className="flex-1 h-10 rounded-xl border-destructive/30 text-destructive font-mono text-[12px] hover:bg-destructive/10">
+            Batch reject
+          </Button>
+        </div>
+
+        {feedback && (
+          <div className={`rounded-xl border px-4 py-2 font-mono text-[11px] ${feedback.type === "success" ? "border-success/30 bg-success/5 text-success" : "border-destructive/30 bg-destructive/5 text-destructive"}`}>
+            {feedback.message}
           </div>
         )}
+
+        {/* Risk Summary */}
+        <div className="flex flex-1 flex-col rounded-xl border border-[#1F1F1F] bg-[#141414] p-5">
+          <span className="font-mono text-[9px] uppercase tracking-[1.5px] text-[#A3A3A366] mb-4">Risk Summary</span>
+          <div className="flex flex-col gap-2.5">
+            {[
+              { label: "Low risk", count: counts.LOW, color: "text-success" },
+              { label: "Med risk", count: counts.MED, color: "text-warning" },
+              { label: "High risk", count: counts.HIGH, color: "text-destructive" },
+            ].map((r) => (
+              <div key={r.label} className="flex items-center justify-between">
+                <span className="text-[13px] text-muted-foreground">{r.label}</span>
+                <span className={`font-mono text-[13px] font-bold ${r.color}`}>{r.count}</span>
+              </div>
+            ))}
+          </div>
+          <div className="mt-4 pt-4 border-t border-[#1F1F1F] flex flex-col gap-2.5">
+            <div className="flex items-center justify-between">
+              <span className="text-[13px] text-muted-foreground">Ready</span>
+              <span className="font-mono text-[13px] font-bold text-success">{counts.READY}</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-[13px] text-muted-foreground">Blocked</span>
+              <span className="font-mono text-[13px] font-bold text-destructive">{counts.BLOCKED}</span>
+            </div>
+          </div>
+        </div>
       </div>
 
-      {feedback && (
-        <div className={`rounded-md border px-4 py-2 text-sm ${feedback.type === "success" ? "border-success/30 bg-success/5 text-success" : "border-destructive/30 bg-destructive/5 text-destructive"}`}>
-          {feedback.message}
-        </div>
-      )}
-
-      {preflightUser && (
-        <ApprovalPreflight
-          user={preflightUser}
-          onConfirmApprove={async () => {
-            await batchAction("approve", [preflightUser.user_id]);
-            setPreflightUser(null);
-          }}
-          onCancel={() => setPreflightUser(null)}
-          loading={actionLoading}
-        />
-      )}
-
-      <Card className="border-border bg-card">
-        <CardContent className="p-0">
-          <div className="flex items-center border-b border-border bg-muted/30 px-5 py-3 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/40">
-            <div className="w-8">
-              <button onClick={toggleAll} className="flex size-4.5 items-center justify-center rounded border border-border text-[10px] hover:bg-muted">
-                {selected.size === users.length && users.length > 0 ? "\u2713" : ""}
-              </button>
-            </div>
-            <span className="flex-1">User</span>
-            <span className="w-20 text-right">Rent</span>
-            <span className="w-14 text-center">Risk</span>
-            <span className="w-20 text-center">Verified</span>
-            <span className="w-20 text-center">Audit</span>
-            <span className="w-28 text-center">Approve?</span>
-            <span className="w-24 text-center">Review</span>
-            <span className="w-24 text-right">Actions</span>
-          </div>
-
-          {users.length === 0 ? (
-            <div className="flex items-center justify-center py-12 text-sm text-muted-foreground/40">
-              No users pending triage
-            </div>
-          ) : (
-            users.map((user) => {
-              const flags = verificationFlags(user);
-              const audit = auditStatus(user);
-              const readiness = approvalReadiness(user);
-              const isSelected = selected.has(user.user_id);
-              return (
-                <div key={user.user_id} className={`flex items-center border-b border-border/30 px-5 py-3 text-[13px] transition-colors ${isSelected ? "bg-primary/5" : "hover:bg-muted/20"}`}>
-                  <div className="w-8">
-                    <button onClick={() => toggleSelect(user.user_id)} className={`flex size-4.5 items-center justify-center rounded border text-[10px] ${isSelected ? "border-primary bg-primary text-primary-foreground" : "border-border hover:bg-muted"}`}>
-                      {isSelected ? "\u2713" : ""}
-                    </button>
+      {/* Main area — 2-column card grid */}
+      <div className="flex-1 overflow-auto">
+        <div className="grid grid-cols-2 gap-4">
+          {users.map((user) => {
+            const decision = computeDecision(user);
+            const initials = (user.name || "?").split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase();
+            const score = [user.bank_verified, user.utility_verified, user.landlord_approved, user.m360_status === "SUCCESS", user.stamp_verification_status === "verified"].filter(Boolean).length;
+            return (
+              <div key={user.user_id}
+                className="flex flex-col rounded-xl border border-[#1F1F1F] bg-[#141414] p-5 cursor-pointer hover:border-[#2a2a2a] transition-colors"
+                onClick={() => setDetailUser(user)}>
+                {/* User header */}
+                <div className="flex items-start gap-3 mb-4">
+                  <Avatar className="size-9 bg-secondary flex-shrink-0">
+                    <AvatarFallback className="bg-secondary text-[10px] text-muted-foreground">{initials}</AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-[15px] font-medium text-foreground truncate">{user.name || maskPhone(user.phone)}</div>
+                    <div className="text-[12px] text-muted-foreground/50">{user.property_city || "—"} · {formatCurrencyShort(user.monthly_rent_paise)}/mo</div>
                   </div>
-                  <div className="flex flex-1 items-center gap-2 overflow-hidden">
-                    <span className="truncate text-sm font-medium text-foreground">{user.name || maskPhone(user.phone)}</span>
-                    <span className="text-muted-foreground/40 truncate text-[13px]">{user.property_city || ""}</span>
+                  {riskBadge(user.risk_level)}
+                </div>
+
+                {/* Score / Audit / Review row */}
+                <div className="flex gap-6 mb-4">
+                  <div className="flex flex-col">
+                    <span className="font-mono text-[9px] uppercase tracking-[1.5px] text-muted-foreground/30">Score</span>
+                    <span className="font-mono text-[15px] font-bold text-foreground">{score}/5</span>
                   </div>
-                  <span className="w-20 text-right text-[13px] text-muted-foreground">{formatCurrencyShort(user.monthly_rent_paise)}</span>
-                  <div className="w-14 text-center">{riskBadge(user.risk_level)}</div>
-                  <div className="w-20 flex justify-center"><VerificationPips flags={flags} /></div>
-                  <div className="w-20 flex justify-center">
-                    <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${audit.color}`}>{audit.label}</span>
-                  </div>
-                  <div className="w-28 flex justify-center">
-                    <span
-                      title={readiness.tooltip}
-                      className={`rounded-full px-2 py-0.5 text-[11px] font-medium border ${readiness.color}`}
-                    >
-                      {readiness.label}
+                  <div className="flex flex-col">
+                    <span className="font-mono text-[9px] uppercase tracking-[1.5px] text-muted-foreground/30">Audit</span>
+                    <span className={`font-mono text-[13px] font-semibold ${decision.state === "READY" ? "text-success" : decision.state === "BLOCKED" ? "text-destructive" : "text-warning"}`}>
+                      {decision.state === "READY" ? "READY" : decision.state === "BLOCKED" ? "BLOCKED" : "REVIEW"}
                     </span>
                   </div>
-                  <div className="w-24 flex justify-center">
-                    <Badge variant="outline" className="text-[11px]">{user.admin_review || "due"}</Badge>
-                  </div>
-                  <div className="w-24 flex justify-end gap-1.5">
-                    <button onClick={() => setPreflightUser(user)} className="rounded bg-success/10 px-2.5 py-1.5 text-xs font-medium text-success hover:bg-success/20 transition-colors">{"\u2713"}</button>
-                    <button onClick={() => batchAction("reject", [user.user_id])} className="rounded bg-destructive/10 px-2.5 py-1.5 text-xs font-medium text-destructive hover:bg-destructive/20 transition-colors">{"\u2717"}</button>
+                  <div className="flex flex-col">
+                    <span className="font-mono text-[9px] uppercase tracking-[1.5px] text-muted-foreground/30">Review</span>
+                    <span className="text-[13px] text-muted-foreground">{user.admin_review || "due"}</span>
                   </div>
                 </div>
-              );
-            })
-          )}
-        </CardContent>
-      </Card>
+
+                {/* Action buttons */}
+                <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
+                  <button onClick={() => handleAction(user.user_id, "approve")} disabled={actionLoading}
+                    className="flex-1 h-9 rounded-xl border border-success/30 bg-success/5 font-mono text-[12px] text-success hover:bg-success/10 transition-colors">
+                    Approve
+                  </button>
+                  <button onClick={() => handleAction(user.user_id, "reject")} disabled={actionLoading}
+                    className="flex-1 h-9 rounded-xl border border-destructive/30 bg-destructive/5 font-mono text-[12px] text-destructive hover:bg-destructive/10 transition-colors">
+                    Reject
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
     </div>
   );
 }

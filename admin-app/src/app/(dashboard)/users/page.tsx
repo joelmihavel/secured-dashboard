@@ -1,37 +1,20 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { UserList } from "@/components/users/user-list";
 import { UserDetail } from "@/components/users/user-detail";
-import { fetchView } from "@/lib/supabase";
-import type { UserFunnel } from "@/types/user";
+import { useUsers } from "@/hooks/useUsers";
 
 export default function UsersPage() {
-  const [users, setUsers] = useState<UserFunnel[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { users, loading } = useUsers();
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [filter, setFilter] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
 
-  useEffect(() => {
-    async function loadUsers() {
-      try {
-        const data = await fetchView<UserFunnel>("v_user_funnel", {
-          order: { column: "signed_up_at", ascending: false },
-        });
-        setUsers(data);
-        if (data.length > 0 && !selectedUserId) {
-          setSelectedUserId(data[0].user_id);
-        }
-      } catch (err) {
-        console.error("Failed to load users:", err);
-      } finally {
-        setLoading(false);
-      }
-    }
-    loadUsers();
-  }, []);
+  if (!selectedUserId && users.length > 0) {
+    setSelectedUserId(users[0].user_id);
+  }
 
   const selectedUser = users.find((u) => u.user_id === selectedUserId);
 

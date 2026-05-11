@@ -1,209 +1,139 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { Card, CardContent } from "@/components/ui/card";
+import { useMemo, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { fetchView } from "@/lib/supabase";
 import { formatRelativeTime } from "@/lib/utils";
-import { Search } from "lucide-react";
-
-interface AuditLog {
-  id: string;
-  action: string;
-  action_category: string;
-  entity_type: string | null;
-  entity_id: string | null;
-  user_id: string | null;
-  details: Record<string, unknown> | null;
-  status: string | null;
-  created_at: string;
-  ip_address: string | null;
-}
+import { useAuditLogs } from "@/hooks/useAuditLogs";
 
 function actionDot(action: string) {
   if (action.includes("APPROVE")) return "bg-success";
   if (action.includes("REJECT")) return "bg-destructive";
   if (action.includes("OVERRIDE") || action.includes("BYPASS")) return "bg-warning";
-  if (action.includes("IN_PROGRESS") || action.includes("STATUS")) return "bg-blue-400";
-  return "bg-muted-foreground/30";
+  if (action.includes("SIGNUP") || action.includes("REGISTER")) return "bg-muted-foreground/30";
+  return "bg-blue-400";
 }
 
 function actionLabel(action: string) {
-  return action
-    .replace(/_/g, " ")
-    .replace(/WAITLIST BATCH /i, "")
-    .toLowerCase()
-    .replace(/^\w/, (c) => c.toUpperCase());
+  return action.replace(/_/g, " ").replace(/WAITLIST BATCH /i, "").toLowerCase().replace(/^\w/, (c) => c.toUpperCase());
 }
 
 type ActionFilter = "all" | "approve" | "reject" | "override";
 
-function matchesFilter(action: string, filter: ActionFilter): boolean {
-  if (filter === "all") return true;
-  if (filter === "approve") return action.includes("APPROVE");
-  if (filter === "reject") return action.includes("REJECT");
-  if (filter === "override")
-    return action.includes("OVERRIDE") || action.includes("BYPASS");
-  return true;
-}
-
 export default function ActivityPage() {
-  const [logs, setLogs] = useState<AuditLog[]>([]);
-  const [loading, setLoading] = useState(true);
   const [limit, setLimit] = useState(30);
   const [actionFilter, setActionFilter] = useState<ActionFilter>("all");
-  const [searchQuery, setSearchQuery] = useState("");
+  const { logs, loading } = useAuditLogs({ limit });
 
   const filteredLogs = useMemo(() => {
+    if (actionFilter === "all") return logs;
     return logs.filter((log) => {
-      if (!matchesFilter(log.action, actionFilter)) return false;
-      if (searchQuery.trim()) {
-        const q = searchQuery.toLowerCase();
-        const label = actionLabel(log.action).toLowerCase();
-        const entity = (log.entity_type || "").toLowerCase();
-        const details = log.details
-          ? JSON.stringify(log.details).toLowerCase()
-          : "";
-        if (!label.includes(q) && !entity.includes(q) && !details.includes(q))
-          return false;
-      }
+      if (actionFilter === "approve") return log.action.includes("APPROVE");
+      if (actionFilter === "reject") return log.action.includes("REJECT");
+      if (actionFilter === "override") return log.action.includes("OVERRIDE") || log.action.includes("BYPASS");
       return true;
     });
-  }, [logs, actionFilter, searchQuery]);
+  }, [logs, actionFilter]);
 
-  useEffect(() => {
-    async function load() {
-      try {
-        const data = await fetchView<AuditLog>("audit_logs", {
-          order: { column: "created_at", ascending: false },
-          limit,
-        });
-        setLogs(data);
-      } catch (err) {
-        console.error("Failed to load audit logs:", err);
-      } finally {
-        setLoading(false);
-      }
-    }
-    load();
-  }, [limit]);
+  const approveCount = useMemo(() => logs.filter((l) => l.action.includes("APPROVE")).length, [logs]);
+  const rejectCount = useMemo(() => logs.filter((l) => l.action.includes("REJECT")).length, [logs]);
+  const overrideCount = useMemo(() => logs.filter((l) => l.action.includes("OVERRIDE") || l.action.includes("BYPASS")).length, [logs]);
+  const signupCount = useMemo(() => logs.filter((l) => l.action.includes("SIGNUP") || l.action.includes("REGISTER")).length, [logs]);
 
   if (loading) {
     return (
-      <div className="flex flex-col gap-4 p-5">
-        <Skeleton className="h-8 w-32 rounded" />
-        {[1, 2, 3, 4, 5, 6].map((i) => <Skeleton key={i} className="h-14 rounded-lg" />)}
+      <div className="flex gap-4 p-6 px-8 h-full">
+        <Skeleton className="flex-1 rounded-xl" />
+        <div className="w-[280px] flex flex-col gap-4"><Skeleton className="h-32 rounded-xl" /><Skeleton className="h-20 rounded-xl" /><Skeleton className="h-20 rounded-xl" /></div>
       </div>
     );
   }
 
+  const FILTERS: { key: ActionFilter; label: string }[] = [
+    { key: "all", label: "ALL" },
+    { key: "approve", label: "APPROVE" },
+    { key: "reject", label: "REJECT" },
+    { key: "override", label: "OVERRIDE" },
+  ];
+
   return (
-    <div className="flex flex-col gap-4 p-5">
-      <div className="flex items-center justify-between">
-        <h1 className="text-lg font-semibold text-foreground">Activity Log</h1>
-        <span className="text-xs text-muted-foreground/40">
-          {filteredLogs.length === logs.length
-            ? `${logs.length} entries`
-            : `${filteredLogs.length} / ${logs.length} entries`}
-        </span>
-      </div>
-
-      <div className="flex items-center gap-3">
-        <Select
-          value={actionFilter}
-          onValueChange={(v) => setActionFilter(v as ActionFilter)}
-        >
-          <SelectTrigger size="sm" className="h-9 w-[160px] text-sm">
-            <SelectValue placeholder="Action type" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All actions</SelectItem>
-            <SelectItem value="approve">Approve</SelectItem>
-            <SelectItem value="reject">Reject</SelectItem>
-            <SelectItem value="override">Override</SelectItem>
-          </SelectContent>
-        </Select>
-        <div className="relative flex-1 max-w-xs">
-          <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground/40" />
-          <Input
-            placeholder="Search logs..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="h-9 pl-9 text-sm"
-          />
+    <div className="flex gap-4 p-6 px-8 h-full overflow-hidden">
+      {/* Main — Activity log */}
+      <div className="flex flex-1 flex-col min-w-0">
+        <div className="flex items-center justify-between mb-4">
+          <h1 className="text-[28px] font-normal tracking-[-0.5px] text-foreground leading-tight">Activity<br />Log</h1>
+          <div className="flex gap-1">
+            {FILTERS.map((f) => (
+              <button key={f.key} onClick={() => setActionFilter(f.key)}
+                className={`rounded px-3 py-1 font-mono text-[10px] uppercase tracking-[1px] transition-colors ${
+                  actionFilter === f.key ? "bg-[#1F1F1F] text-foreground" : "text-muted-foreground/40 hover:text-muted-foreground"
+                }`}>{f.label}</button>
+            ))}
+          </div>
         </div>
-      </div>
 
-      <Card className="border-border bg-card">
-        <CardContent className="flex flex-col gap-0 p-0">
+        <div className="flex-1 overflow-auto rounded-xl border border-[#1F1F1F] bg-[#141414]">
           {filteredLogs.length === 0 ? (
-            <div className="flex items-center justify-center py-16 text-sm text-muted-foreground/40">
-              {logs.length === 0 ? "No activity recorded yet" : "No matching entries"}
-            </div>
+            <div className="flex items-center justify-center h-full text-[13px] text-muted-foreground/40">No entries</div>
           ) : (
             filteredLogs.map((log) => (
-              <div key={log.id} className="flex gap-3 border-b border-border/30 px-5 py-3.5 hover:bg-muted/10 transition-colors">
-                <div className={`mt-2 size-2 flex-shrink-0 rounded-full ${actionDot(log.action)}`} />
-                <div className="flex flex-1 flex-col gap-1">
+              <div key={log.id} className="flex gap-3 px-5 py-4 border-b border-[#1F1F1F]/30 hover:bg-white/[0.02] transition-colors">
+                <div className={`mt-1.5 size-[6px] flex-shrink-0 rounded-full ${actionDot(log.action)}`} />
+                <div className="flex flex-1 flex-col gap-0.5 min-w-0">
                   <div className="flex items-center gap-2">
-                    <span className="text-[13px] font-medium text-foreground">
-                      {actionLabel(log.action)}
-                    </span>
+                    <span className="text-[14px] font-medium text-foreground">{actionLabel(log.action)}</span>
                     {log.entity_type && (
-                      <Badge variant="outline" className="text-[10px] text-muted-foreground/60">
-                        {log.entity_type}
-                      </Badge>
-                    )}
-                    {log.status && log.status !== "success" && (
-                      <Badge variant="outline" className="text-[10px] text-destructive border-destructive/30">
-                        {log.status}
-                      </Badge>
+                      <Badge variant="outline" className="font-mono text-[9px] text-muted-foreground/50 border-[#1F1F1F] px-1.5 py-0">{log.entity_type}</Badge>
                     )}
                   </div>
                   {log.details && (
-                    <span className="text-xs text-muted-foreground/60 truncate max-w-[600px]">
-                      {typeof log.details === "object"
-                        ? Object.entries(log.details)
-                            .filter(([k]) => k !== "admin_key")
-                            .map(([k, v]) => `${k}: ${typeof v === "object" ? JSON.stringify(v) : v}`)
-                            .join(" \u00b7 ")
-                        : String(log.details)}
+                    <span className="text-[12px] text-muted-foreground/50 truncate">
+                      {Object.entries(log.details).filter(([k]) => k !== "admin_key").map(([k, v]) => `${k}: ${typeof v === "object" ? JSON.stringify(v) : v}`).join(" · ")}
                     </span>
                   )}
                 </div>
                 <div className="flex flex-col items-end gap-0.5 flex-shrink-0">
-                  <span className="text-[11px] text-muted-foreground/40">
-                    {formatRelativeTime(log.created_at)}
-                  </span>
-                  {log.ip_address && (
-                    <span className="font-mono text-[10px] text-muted-foreground/30">
-                      {log.ip_address}
-                    </span>
-                  )}
+                  <span className="font-mono text-[11px] text-muted-foreground/40">{formatRelativeTime(log.created_at)}</span>
+                  {log.ip_address && <span className="font-mono text-[10px] text-muted-foreground/20">{log.ip_address}</span>}
                 </div>
               </div>
             ))
           )}
-        </CardContent>
-      </Card>
-
-      {logs.length >= limit && (
-        <div className="flex justify-center">
-          <Button variant="outline" size="sm" className="text-xs" onClick={() => setLimit((l) => l + 30)}>
-            Load more
-          </Button>
         </div>
-      )}
+
+        {logs.length >= limit && (
+          <div className="flex justify-center mt-3">
+            <Button variant="outline" size="sm" className="rounded-xl font-mono text-[11px]" onClick={() => setLimit((l) => l + 30)}>Load more</Button>
+          </div>
+        )}
+      </div>
+
+      {/* Right sidebar — Stat cards */}
+      <div className="flex w-[280px] flex-shrink-0 flex-col gap-4">
+        <div className="flex flex-col rounded-xl border border-[#1F1F1F] bg-[#141414] p-5">
+          <span className="font-mono text-[9px] uppercase tracking-[1.5px] text-[#A3A3A366]">Total Actions</span>
+          <span className="font-mono text-[48px] font-bold leading-none tracking-[-1px] text-foreground mt-2">{logs.length}</span>
+          <span className="font-mono text-[10px] uppercase tracking-[1.5px] text-muted-foreground/40 mt-1">Last 7 Days</span>
+        </div>
+        <div className="flex flex-col rounded-xl border border-[#1F1F1F] bg-[#141414] p-5">
+          <span className="font-mono text-[9px] uppercase tracking-[1.5px] text-[#A3A3A366]">Approvals</span>
+          <span className="font-mono text-[36px] font-bold leading-none tracking-[-1px] text-success mt-2">{approveCount}</span>
+        </div>
+        <div className="flex flex-col rounded-xl border border-[#1F1F1F] bg-[#141414] p-5">
+          <span className="font-mono text-[9px] uppercase tracking-[1.5px] text-[#A3A3A366]">Rejections</span>
+          <span className="font-mono text-[36px] font-bold leading-none tracking-[-1px] text-destructive mt-2">{rejectCount}</span>
+        </div>
+        <div className="flex flex-col rounded-xl border border-[#1F1F1F] bg-[#141414] p-5">
+          <span className="font-mono text-[9px] uppercase tracking-[1.5px] text-[#A3A3A366]">Overrides</span>
+          <span className="font-mono text-[36px] font-bold leading-none tracking-[-1px] text-foreground mt-2">{overrideCount}</span>
+        </div>
+        <div className="flex flex-1 flex-col justify-end rounded-xl bg-[#FF9A6D] p-5">
+          <span className="font-mono text-[9px] uppercase tracking-[1.5px] text-[#0A0A0A]/50">Signups</span>
+          <span className="font-mono text-[36px] font-bold leading-none tracking-[-1px] text-[#0A0A0A] mt-2">{signupCount}</span>
+          <span className="font-mono text-[10px] uppercase tracking-[1.5px] text-[#0A0A0A]/40 mt-1">This Week</span>
+        </div>
+      </div>
     </div>
   );
 }

@@ -34,13 +34,13 @@ interface SupabaseEnvConfig {
  */
 const ENVIRONMENTS: Record<Environment, SupabaseEnvConfig> = {
   dev: {
-    url: "https://zqlowjveyqiagnbmfwsb.supabase.co",
+    url: process.env.NEXT_PUBLIC_SUPABASE_DEV_URL ?? "https://zqlowjveyqiagnbmfwsb.supabase.co",
     anonKey:
       process.env.NEXT_PUBLIC_SUPABASE_DEV_ANON_KEY ??
       "",
   },
   main: {
-    url: "https://uowjtrzmszuaiokqxgir.supabase.co",
+    url: process.env.NEXT_PUBLIC_SUPABASE_URL ?? "https://uowjtrzmszuaiokqxgir.supabase.co",
     anonKey:
       process.env.NEXT_PUBLIC_SUPABASE_MAIN_ANON_KEY ??
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ??

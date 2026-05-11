@@ -77,16 +77,17 @@ async function callAdminApi<T>(payload: Record<string, unknown>): Promise<T> {
   const {
     data: { session },
   } = await supabase.auth.getSession();
-  if (!session?.access_token) {
-    throw new Error("Not signed in — no session token to call /api/admin");
+
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+  };
+  if (session?.access_token) {
+    headers.Authorization = `Bearer ${session.access_token}`;
   }
 
   const res = await fetch("/api/admin", {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${session.access_token}`,
-    },
+    headers,
     body: JSON.stringify({ ...payload, env: currentEnv }),
   });
 

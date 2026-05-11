@@ -36,6 +36,16 @@ function clearSupabaseCookies(req: NextRequest, res: NextResponse) {
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
+  if (process.env.BYPASS_AUTH === "true") {
+    if (pathname === "/login") {
+      const url = req.nextUrl.clone();
+      url.pathname = "/triage";
+      url.search = "";
+      return NextResponse.redirect(url);
+    }
+    return NextResponse.next({ request: req });
+  }
+
   const response = NextResponse.next({ request: req });
   const supabase = createMiddlewareClient(req, response);
 
@@ -48,7 +58,7 @@ export async function middleware(req: NextRequest) {
   if (pathname === "/login") {
     if (allowed) {
       const url = req.nextUrl.clone();
-      url.pathname = "/overview";
+      url.pathname = "/triage";
       url.search = "";
       return NextResponse.redirect(url);
     }

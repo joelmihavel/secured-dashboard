@@ -4,7 +4,6 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import {
-  LayoutDashboard,
   Inbox,
   Users,
   CreditCard,
@@ -15,12 +14,11 @@ import {
 } from "lucide-react";
 
 const navItems = [
-  { href: "/overview", label: "Overview", icon: LayoutDashboard },
-  { href: "/triage", label: "Triage", icon: Inbox },
-  { href: "/landlord-review", label: "Landlord review", icon: ShieldCheck },
-  { href: "/users", label: "Users", icon: Users },
+  { href: "/triage", label: "Inbox", icon: Inbox },
+  { href: "/users", label: "All Users", icon: Users },
+  { href: "/landlord-review", label: "Landlord Pipeline", icon: ShieldCheck },
   { href: "/payments", label: "Payments", icon: CreditCard },
-  { href: "/analytics", label: "Analytics", icon: BarChart3 },
+  { href: "/analytics", label: "Insights", icon: BarChart3 },
   { href: "/activity", label: "Activity", icon: Activity },
 ];
 
