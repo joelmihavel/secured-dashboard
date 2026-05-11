@@ -9,10 +9,9 @@ import { openCommandPalette } from "@/components/shell/command-palette";
 
 const NAV_ITEMS = [
   { href: "/overview", label: "Overview" },
-  { href: "/triage", label: "Inbox" },
   { href: "/users", label: "Users" },
   { href: "/payments", label: "Payments" },
-  { href: "/analytics", label: "Analytics" },
+  { href: "/settings", label: "Settings" },
 ];
 
 export interface KpiItem {

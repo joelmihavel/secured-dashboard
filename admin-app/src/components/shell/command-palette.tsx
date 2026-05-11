@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   CommandDialog,
@@ -16,36 +16,25 @@ import {
   Users,
   Inbox,
   CreditCard,
-  BarChart3,
-  Activity,
   Settings,
   UserCheck,
   ArrowLeftRight,
 } from "lucide-react";
-
-interface User {
-  id: string;
-  name: string;
-  email?: string;
-}
-
-interface CommandPaletteProps {
-  users?: User[];
-}
+import { useUsers } from "@/hooks/useUsers";
+import { maskPhone } from "@/lib/utils";
 
 const navigationItems = [
   { label: "Overview", href: "/overview", icon: LayoutDashboard },
   { label: "Users", href: "/users", icon: Users },
-  { label: "Triage", href: "/triage", icon: Inbox },
+  { label: "Pending Review", href: "/users?filter=pending", icon: Inbox },
   { label: "Payments", href: "/payments", icon: CreditCard },
-  { label: "Analytics", href: "/analytics", icon: BarChart3 },
-  { label: "Activity", href: "/activity", icon: Activity },
   { label: "Settings", href: "/settings", icon: Settings },
 ];
 
-export function CommandPalette({ users = [] }: CommandPaletteProps) {
+export function CommandPalette() {
   const [open, setOpen] = useState(false);
   const router = useRouter();
+  const { users } = useUsers();
 
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
     if ((e.metaKey || e.ctrlKey) && e.key === "k") {
@@ -64,6 +53,18 @@ export function CommandPalette({ users = [] }: CommandPaletteProps) {
     router.push(href);
   };
 
+  const userItems = useMemo(() =>
+    users.map((u) => ({
+      id: u.user_id,
+      name: u.name || maskPhone(u.phone),
+      phone: u.phone,
+      city: u.property_city || null,
+      status: u.user_status,
+      risk: u.risk_level,
+    })),
+    [users]
+  );
+
   return (
     <CommandDialog
       open={open}
@@ -72,30 +73,39 @@ export function CommandPalette({ users = [] }: CommandPaletteProps) {
       description="Search commands, navigate pages, or find users."
       showCloseButton={false}
     >
-      <CommandInput placeholder="Type a command or search..." />
+      <CommandInput placeholder="Search users, commands..." />
       <CommandList>
         <CommandEmpty>No results found.</CommandEmpty>
 
-        {users.length > 0 && (
+        {userItems.length > 0 && (
           <CommandGroup heading="Users">
-            {users.map((user) => (
+            {userItems.map((user) => (
               <CommandItem
                 key={user.id}
-                onSelect={() => navigate(`/users/${user.id}`)}
+                value={`${user.name} ${user.phone} ${user.city || ""}`}
+                onSelect={() => navigate(`/users`)}
               >
                 <Users className="size-4 opacity-60" />
-                <span>{user.name}</span>
-                {user.email && (
-                  <span className="ml-auto text-xs text-muted-foreground/50">
-                    {user.email}
+                <div className="flex flex-col flex-1 min-w-0">
+                  <span className="truncate">{user.name}</span>
+                  <span className="text-xs text-muted-foreground/50 truncate">
+                    {maskPhone(user.phone)}{user.city ? ` · ${user.city}` : ""}
                   </span>
-                )}
+                </div>
+                <div className="flex items-center gap-2 ml-auto flex-shrink-0">
+                  <span className={`font-mono text-[10px] font-semibold ${
+                    user.risk === "HIGH" ? "text-destructive" :
+                    user.risk === "MED" ? "text-warning" :
+                    user.risk === "LOW" ? "text-success" : "text-muted-foreground/30"
+                  }`}>{user.risk || ""}</span>
+                  <span className="text-[10px] text-muted-foreground/40 font-mono">{user.status}</span>
+                </div>
               </CommandItem>
             ))}
           </CommandGroup>
         )}
 
-        {users.length > 0 && <CommandSeparator />}
+        {userItems.length > 0 && <CommandSeparator />}
 
         <CommandGroup heading="Navigation">
           {navigationItems.map((item) => (
@@ -112,14 +122,13 @@ export function CommandPalette({ users = [] }: CommandPaletteProps) {
         <CommandSeparator />
 
         <CommandGroup heading="Actions">
-          <CommandItem onSelect={() => navigate("/triage")}>
+          <CommandItem onSelect={() => navigate("/users?filter=pending")}>
             <UserCheck className="size-4 opacity-60" />
             <span>Approve user</span>
           </CommandItem>
           <CommandItem
             onSelect={() => {
               setOpen(false);
-              /* Environment switch handled externally */
             }}
           >
             <ArrowLeftRight className="size-4 opacity-60" />
@@ -131,7 +140,6 @@ export function CommandPalette({ users = [] }: CommandPaletteProps) {
   );
 }
 
-/** Opens the command palette programmatically by dispatching Cmd+K */
 export function openCommandPalette() {
   document.dispatchEvent(
     new KeyboardEvent("keydown", {

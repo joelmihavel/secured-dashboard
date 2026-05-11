@@ -12,7 +12,7 @@ export default function DashboardLayout({
     <div className="flex h-screen flex-col bg-background">
       <Header />
       <main className="flex-1 overflow-auto">{children}</main>
-      <CommandPalette users={[]} />
+      <CommandPalette />
     </div>
   );
 }

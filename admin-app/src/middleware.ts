@@ -39,7 +39,7 @@ export async function middleware(req: NextRequest) {
   if (process.env.BYPASS_AUTH === "true") {
     if (pathname === "/login") {
       const url = req.nextUrl.clone();
-      url.pathname = "/triage";
+      url.pathname = "/overview";
       url.search = "";
       return NextResponse.redirect(url);
     }
@@ -58,7 +58,7 @@ export async function middleware(req: NextRequest) {
   if (pathname === "/login") {
     if (allowed) {
       const url = req.nextUrl.clone();
-      url.pathname = "/triage";
+      url.pathname = "/overview";
       url.search = "";
       return NextResponse.redirect(url);
     }
