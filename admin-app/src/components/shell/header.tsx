@@ -1,11 +1,14 @@
 "use client";
 
+import { useMemo } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { getCurrentEnvironment } from "@/lib/supabase";
 import { openCommandPalette } from "@/components/shell/command-palette";
+import { useUsers } from "@/hooks/useUsers";
+import { usePayments } from "@/hooks/usePayments";
 
 const NAV_ITEMS = [
   { href: "/overview", label: "Overview" },
@@ -20,21 +23,36 @@ export interface KpiItem {
   color?: string;
 }
 
-const DEFAULT_KPIS: KpiItem[] = [
-  { label: "SIGNUPS", value: "1,204" },
-  { label: "REVENUE", value: "$48.2K" },
-  { label: "CONVERSION", value: "3.8%" },
-  { label: "TRIAGE", value: "27", color: "#F59E0B" },
-  { label: "7D CHANGE", value: "+12.4%" },
-];
-
-interface HeaderProps {
-  kpis?: KpiItem[];
+function formatCompact(n: number): string {
+  if (n >= 10_000_000) return `₹${(n / 10_000_000).toFixed(1)}Cr`;
+  if (n >= 100_000) return `₹${(n / 100_000).toFixed(1)}L`;
+  if (n >= 1_000) return `₹${(n / 1_000).toFixed(1)}K`;
+  return `₹${n.toLocaleString()}`;
 }
 
-export function Header({ kpis = DEFAULT_KPIS }: HeaderProps) {
+export function Header() {
+  const { users } = useUsers();
+  const { payments } = usePayments();
   const env = getCurrentEnvironment();
   const pathname = usePathname();
+
+  const kpis = useMemo<KpiItem[]>(() => {
+    const totalUsers = users?.length ?? 0;
+    const paidPayments = payments?.filter((p) => p.paid_at) ?? [];
+    const totalRevenue = paidPayments.reduce((s, p) => s + (p.total_amount_paise ?? 0), 0);
+    const activeUsers = users?.filter((u) => u.user_status === "active").length ?? 0;
+    const conversion = totalUsers > 0 ? ((activeUsers / totalUsers) * 100).toFixed(1) : "0";
+    const waitlist = users?.filter((u) =>
+      u.user_status === "signed_up" || u.user_status === "waitlisted"
+    ).length ?? 0;
+
+    return [
+      { label: "TOTAL USERS", value: totalUsers.toLocaleString() },
+      { label: "REVENUE", value: formatCompact(Math.round(totalRevenue / 100)) },
+      { label: "CONVERSION", value: `${conversion}%` },
+      { label: "NEW WAITLIST", value: waitlist.toLocaleString(), color: waitlist > 0 ? "#F59E0B" : undefined },
+    ];
+  }, [users, payments]);
 
   return (
     <header className="flex h-[52px] items-center gap-6 border-b border-[#1F1F1F] px-8">
