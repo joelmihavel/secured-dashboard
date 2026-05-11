@@ -15,8 +15,6 @@
  */
 
 import { NextResponse, type NextRequest } from "next/server";
-import { createMiddlewareClient } from "@/lib/supabase-ssr";
-import { isAdminEmail } from "@/lib/env-server";
 
 const SESSION_COOKIE_PREFIX = "sb-";
 
@@ -45,6 +43,9 @@ export async function middleware(req: NextRequest) {
     }
     return NextResponse.next({ request: req });
   }
+
+  const { createMiddlewareClient } = await import("@/lib/supabase-ssr");
+  const { isAdminEmail } = await import("@/lib/env-server");
 
   const response = NextResponse.next({ request: req });
   const supabase = createMiddlewareClient(req, response);
