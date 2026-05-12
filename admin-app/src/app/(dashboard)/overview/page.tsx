@@ -13,14 +13,6 @@ import { useQueryClient } from "@tanstack/react-query";
 import { FilterBar, useOverviewFilters, type OverviewFilters } from "@/components/overview/filter-bar";
 import { PaymentsFeed } from "@/components/overview/activity-feed";
 
-const FUNNEL_ROUTES: Record<string, string> = {
-  SIGNUP: "/users",
-  AGREE: "/users",
-  APPROV: "/users?filter=pending",
-  ACTIVE: "/users",
-  PAID: "/payments",
-};
-
 type AnalyticsCardId = "city" | "risk" | "verification_pipeline" | "rent_dist" | "credit_dist";
 
 const CARD_RELEVANCE: Record<string, AnalyticsCardId[]> = {
@@ -184,7 +176,15 @@ export default function OverviewPage() {
 
     const avgRentPaise = totalPayments > 0 ? Math.round(fUsers.reduce((s, u) => s + (u.monthly_rent_paise || 0), 0) / totalPayments) : 0;
 
-    return { total, withAgreement, approved, active, paid, totalRevenue, verified, bankVerified, utilityVerified, triage, paidPayments, totalPayments, bankRate, utilityRate, m360Rate, riskCounts, cityEntries, citiesTotal: cities.size, rentDist, creditDist, avgRentPaise };
+    const now = new Date();
+    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const weekStart = new Date(todayStart);
+    weekStart.setDate(weekStart.getDate() - 7);
+    const newToday = fUsers.filter((u) => new Date(u.signed_up_at) >= todayStart).length;
+    const newThisWeek = fUsers.filter((u) => new Date(u.signed_up_at) >= weekStart).length;
+    const waitlisted = fUsers.filter((u) => u.user_status === "signed_up" || u.user_status === "waitlisted").length;
+
+    return { total, withAgreement, approved, active, paid, totalRevenue, verified, bankVerified, utilityVerified, triage, paidPayments, totalPayments, bankRate, utilityRate, m360Rate, riskCounts, cityEntries, citiesTotal: cities.size, rentDist, creditDist, avgRentPaise, newToday, newThisWeek, waitlisted };
   }, [fUsers]);
 
   const globalStats = useMemo(() => ({
@@ -194,15 +194,35 @@ export default function OverviewPage() {
     paid: users.filter((u) => (u.successful_payments || 0) > 0).length,
   }), [users]);
 
+  const paymentStats = useMemo(() => {
+    const completed = payments.filter((p) => p.paid_at);
+    const totalRevenue = completed.reduce((s, p) => s + (p.total_amount_paise ?? 0), 0);
+    return { count: completed.length, totalRevenue };
+  }, [payments]);
+
   const conversionPct = stats.total > 0 ? Math.round((stats.paid / stats.total) * 100) : 0;
 
-  function usersLinkWithFilter(extra?: string): string {
-    const parts: string[] = [];
-    if (filters.cities.length === 1) parts.push(`search=${encodeURIComponent(filters.cities[0])}`);
-    if (filters.buildings.length === 1) parts.push(`search=${encodeURIComponent(filters.buildings[0])}`);
-    if (extra) parts.push(extra);
-    return `/users${parts.length > 0 ? "?" + parts.join("&") : ""}`;
+  function usersLink(overrides: { status?: string; search?: string } = {}): string {
+    const params = new URLSearchParams();
+    if (overrides.status) params.set("status", overrides.status);
+    if (overrides.search) {
+      params.set("search", overrides.search);
+    } else if (filters.cities.length === 1) {
+      params.set("search", filters.cities[0]);
+    } else if (filters.buildings.length === 1) {
+      params.set("search", filters.buildings[0]);
+    }
+    const qs = params.toString();
+    return `/users${qs ? "?" + qs : ""}`;
   }
+
+  const FUNNEL_STEP_STATUS: Record<string, string | undefined> = {
+    SIGNUP: undefined,
+    AGREE: undefined,
+    APPROV: "approved",
+    ACTIVE: "active",
+    PAID: undefined,
+  };
 
   const funnelSteps = [
     { label: "SIGNUP", count: stats.total },
@@ -283,9 +303,9 @@ export default function OverviewPage() {
 
       {/* Row 1 — Main bento grid */}
       <div className="flex gap-4 h-[460px] flex-shrink-0">
-        {/* Column 1 — Tall stat cards */}
+        {/* Column 1 — Hero stat cards */}
         <div className="flex w-[240px] flex-shrink-0 flex-col gap-4">
-          <Link href={usersLinkWithFilter()} className="flex flex-1 flex-col justify-between rounded-xl bg-[#3D5A80] p-5 hover:bg-[#4A6B91] transition-colors cursor-pointer group">
+          <Link href={usersLink()} className="flex flex-1 flex-col justify-between rounded-xl bg-[#3D5A80] p-5 hover:bg-[#4A6B91] transition-colors cursor-pointer group">
             <div className="flex items-center justify-between">
               <span className="font-mono text-[9px] uppercase tracking-[1.5px] text-white/60">Total Users</span>
               <span className="font-mono text-[10px] text-white/0 group-hover:text-white/60 transition-colors">&rarr;</span>
@@ -300,64 +320,67 @@ export default function OverviewPage() {
                 </span>
                 {isFiltered && <ComparisonBadge filtered={stats.total} total={globalStats.total} />}
               </div>
-            </div>
-          </Link>
-
-          <div className="flex flex-1 flex-col justify-between rounded-xl border border-[#1F1F1F] bg-[#141414] p-5">
-            <span className="font-mono text-[9px] uppercase tracking-[1.5px] text-[#A3A3A366]">Verified Users</span>
-            <div>
-              <span className="font-mono text-[72px] font-bold leading-none tracking-[-2px] text-foreground">{stats.verified}</span>
-              <span className="font-mono text-[20px] text-muted-foreground/40 ml-2">/ {stats.total}</span>
-              <div className="font-mono text-[11px] text-muted-foreground/30 mt-1">M360 identity check</div>
-              {isFiltered && (
-                <div className="mt-1">
-                  <ComparisonBadge filtered={stats.verified} total={globalStats.verified} />
-                </div>
+              {stats.newToday > 0 && (
+                <span className="font-mono text-[11px] text-white/50 mt-1 block">+{stats.newToday} today · +{stats.newThisWeek} this week</span>
               )}
             </div>
-          </div>
-        </div>
-
-        {/* Column 2 — Paid payments + Triage queue */}
-        <div className="flex w-[280px] flex-shrink-0 flex-col gap-4">
-          <Link href="/payments" className="flex flex-col gap-3 rounded-xl border border-[#1F1F1F] bg-[#141414] p-5 hover:border-[#2a2a2a] hover:bg-[#181818] transition-colors cursor-pointer group">
-            <div className="flex items-center justify-between">
-              <span className="font-mono text-[9px] uppercase tracking-[1.5px] text-[#A3A3A366]">Paid Payments</span>
-              <span className="font-mono text-[10px] text-transparent group-hover:text-muted-foreground/40 transition-colors">&rarr;</span>
-            </div>
-            <div className="flex items-baseline gap-1">
-              <span className="font-mono text-[48px] font-bold leading-none tracking-[-1px] text-foreground">{stats.paidPayments}</span>
-              <span className="font-mono text-[20px] text-muted-foreground/40">/ {stats.totalPayments}</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <span className="font-mono text-[9px] uppercase tracking-[1.5px] text-[#A3A3A366]">Revenue</span>
-                <span className="font-mono text-[13px] text-muted-foreground">{formatCurrencyShort(stats.totalRevenue)}</span>
-              </div>
-              {isFiltered && <ComparisonBadge filtered={stats.paidPayments} total={globalStats.paidPayments} />}
-            </div>
-            {stats.avgRentPaise > 0 && (
-              <div className="flex items-center gap-3 border-t border-[#1F1F1F] pt-2">
-                <span className="font-mono text-[9px] uppercase tracking-[1.5px] text-[#A3A3A366]">Avg rent</span>
-                <span className="font-mono text-[13px] text-muted-foreground">{formatCurrencyShort(stats.avgRentPaise)}</span>
-              </div>
-            )}
           </Link>
 
-          <div className="flex flex-1 flex-col rounded-xl border border-[#1F1F1F] bg-[#141414] p-5">
-            <Link href="/users?filter=pending" className="flex items-center justify-between mb-3 group cursor-pointer">
+          <Link href="/payments" className="flex flex-1 flex-col justify-between rounded-xl border border-[#1F1F1F] bg-[#141414] p-5 hover:border-[#2a2a2a] hover:bg-[#181818] transition-colors cursor-pointer group">
+            <div className="flex items-center justify-between">
+              <span className="font-mono text-[9px] uppercase tracking-[1.5px] text-[#A3A3A366]">Transactions</span>
+              <span className="font-mono text-[10px] text-transparent group-hover:text-muted-foreground/40 transition-colors">&rarr;</span>
+            </div>
+            <div>
+              <span className="font-mono text-[56px] font-bold leading-none tracking-[-2px] text-[#FF9A6D]">
+                {formatCurrencyShort(stats.totalRevenue)}
+              </span>
+              <div className="font-mono text-[11px] text-muted-foreground/30 mt-1">{paymentStats.count} payments</div>
+              {stats.avgRentPaise > 0 && (
+                <div className="font-mono text-[11px] text-muted-foreground/30">avg rent {formatCurrencyShort(stats.avgRentPaise)}</div>
+              )}
+            </div>
+          </Link>
+        </div>
+
+        {/* Column 2 — Waitlist + Pending Review */}
+        <div className="flex w-[280px] flex-shrink-0 flex-col gap-4">
+          <Link href={usersLink()} className="flex flex-col gap-3 rounded-xl border border-[#1F1F1F] bg-[#141414] p-5 hover:border-[#2a2a2a] hover:bg-[#181818] transition-colors cursor-pointer group">
+            <div className="flex items-center justify-between">
+              <span className="font-mono text-[9px] uppercase tracking-[1.5px] text-[#A3A3A366]">Waitlist</span>
+              <span className="font-mono text-[10px] text-transparent group-hover:text-muted-foreground/40 transition-colors">&rarr;</span>
+            </div>
+            <div className="flex items-baseline gap-2">
+              <span className="font-mono text-[48px] font-bold leading-none tracking-[-1px] text-foreground">{stats.waitlisted}</span>
+              <span className="font-mono text-[13px] text-muted-foreground/30">awaiting</span>
+            </div>
+            <div className="flex items-center gap-3 border-t border-[#1F1F1F] pt-2">
+              <div className="flex flex-col">
+                <span className="font-mono text-[9px] uppercase tracking-[1.5px] text-[#A3A3A366]">This week</span>
+                <span className="font-mono text-[13px] font-semibold text-foreground">+{stats.newThisWeek}</span>
+              </div>
+              <div className="h-6 w-px bg-[#1F1F1F]" />
+              <div className="flex flex-col">
+                <span className="font-mono text-[9px] uppercase tracking-[1.5px] text-[#A3A3A366]">Today</span>
+                <span className="font-mono text-[13px] font-semibold text-foreground">+{stats.newToday}</span>
+              </div>
+            </div>
+          </Link>
+
+          <div className="flex flex-1 flex-col rounded-xl border border-[#1F1F1F] bg-[#141414] p-5 overflow-hidden">
+            <Link href={usersLink({ status: "pending" })} className="flex items-center justify-between mb-3 group cursor-pointer">
               <span className="font-mono text-[9px] uppercase tracking-[1.5px] text-[#A3A3A366] group-hover:text-muted-foreground/60 transition-colors">Pending Review</span>
-              <span className="flex size-6 items-center justify-center rounded-full bg-success/20 font-mono text-[11px] font-semibold text-success">{stats.triage.length}</span>
+              <span className="flex size-6 items-center justify-center rounded-full bg-warning/20 font-mono text-[11px] font-semibold text-warning">{stats.triage.length}</span>
             </Link>
-            <div className="flex flex-col gap-1.5 flex-1">
-              {stats.triage.slice(0, 5).map((u) => {
+            <div className="flex flex-col gap-0.5 flex-1 overflow-y-auto min-h-0">
+              {stats.triage.slice(0, 6).map((u) => {
                 const waitTime = u.waitlist_joined_at ? formatRelativeTime(u.waitlist_joined_at) : null;
                 return (
-                  <button key={u.user_id} onClick={() => router.push(`/users?filter=pending`)}
-                    className="flex items-center gap-2 group/row rounded-lg px-2 py-1.5 -mx-2 hover:bg-white/[0.03] transition-colors">
+                  <button key={u.user_id} onClick={() => router.push(usersLink({ status: "pending" }))}
+                    className="flex items-center gap-2 group/row rounded-lg px-2 py-1.5 -mx-2 hover:bg-white/[0.03] transition-colors text-left">
                     <div className="flex flex-col flex-1 min-w-0">
-                      <span className="text-[12px] text-foreground truncate">{u.name || "—"}</span>
-                      <span className="font-mono text-[10px] text-muted-foreground/30 truncate">
+                      <span className="text-[12px] text-foreground truncate text-left">{u.name || "—"}</span>
+                      <span className="font-mono text-[10px] text-muted-foreground/30 truncate text-left">
                         {u.property_city || "No city"}{waitTime ? ` · ${waitTime}` : ""}
                       </span>
                     </div>
@@ -365,69 +388,77 @@ export default function OverviewPage() {
                       u.risk_level === "HIGH" ? "text-destructive" :
                       u.risk_level === "MED" ? "text-warning" : "text-success"
                     }`}>{u.risk_level || "—"}</span>
-                    <div className="flex gap-1 opacity-0 group-hover/row:opacity-100 transition-opacity flex-shrink-0">
-                      <button onClick={(e) => { e.stopPropagation(); handleTriageAction(u.user_id, "approve"); }} disabled={actionLoading === u.user_id}
-                        className="rounded border border-success/30 bg-success/5 px-1.5 py-0.5 font-mono text-[9px] text-success hover:bg-success/10 transition-colors disabled:opacity-50">&#10003;</button>
-                      <button onClick={(e) => { e.stopPropagation(); handleTriageAction(u.user_id, "reject"); }} disabled={actionLoading === u.user_id}
-                        className="rounded border border-destructive/30 bg-destructive/5 px-1.5 py-0.5 font-mono text-[9px] text-destructive hover:bg-destructive/10 transition-colors disabled:opacity-50">&#10007;</button>
-                    </div>
+                    <span className="font-mono text-[10px] text-transparent group-hover/row:text-muted-foreground/40 transition-colors flex-shrink-0">&rarr;</span>
                   </button>
                 );
               })}
+              {stats.triage.length === 0 && (
+                <span className="text-[12px] text-muted-foreground/30 px-2 py-4">No pending reviews</span>
+              )}
             </div>
-            {stats.triage.length > 5 && (
-              <Link href="/users?filter=pending" className="font-mono text-[11px] text-muted-foreground/40 mt-2 hover:text-muted-foreground transition-colors">
-                +{stats.triage.length - 5} more &rarr;
+            {stats.triage.length > 6 && (
+              <Link href={usersLink({ status: "pending" })} className="font-mono text-[11px] text-muted-foreground/40 mt-2 hover:text-muted-foreground transition-colors">
+                +{stats.triage.length - 6} more &rarr;
               </Link>
             )}
           </div>
         </div>
 
         {/* Column 3 — User Funnel */}
-        <div className="flex flex-1 flex-col rounded-xl border border-[#1F1F1F] bg-[#141414] p-6">
-          <div className="flex items-center justify-between mb-4">
+        <div className="flex flex-1 flex-col rounded-xl border border-[#1F1F1F] bg-[#141414] p-5">
+          <div className="flex items-center justify-between mb-2">
             <span className="font-mono text-[9px] uppercase tracking-[1.5px] text-[#A3A3A366]">User Funnel</span>
             {isFiltered && (
-              <span className="font-mono text-[9px] text-[#7BA3C9] bg-[#3D5A80]/10 rounded px-1.5 py-0.5">
-                Filtered
-              </span>
+              <span className="font-mono text-[9px] text-[#7BA3C9] bg-[#3D5A80]/10 rounded px-1.5 py-0.5">Filtered</span>
             )}
           </div>
 
-          <div className="flex flex-1 items-end gap-3">
+          <div className="flex flex-col flex-1 justify-between py-1">
             {funnelSteps.map((step, i) => {
-              const heightPct = Math.max(15, (step.count / maxFunnel) * 100);
+              const widthPct = maxFunnel > 0 ? Math.max(10, (step.count / maxFunnel) * 100) : 10;
               const isLast = i === funnelSteps.length - 1;
               const prevCount = i > 0 ? funnelSteps[i - 1].count : step.count;
-              const dropoff = prevCount > 0 ? Math.round(((prevCount - step.count) / prevCount) * 100) : 0;
+              const retained = prevCount > 0 ? Math.round((step.count / prevCount) * 100) : 100;
+              const dropoff = 100 - retained;
               return (
-                <div key={step.label} className="flex flex-1 flex-col items-center gap-1.5 cursor-pointer group/bar"
-                  onClick={() => router.push(step.label === "PAID" ? "/payments" : usersLinkWithFilter())}>
-                  {i > 0 && dropoff > 0 && (
-                    <span className="font-mono text-[9px] text-destructive/60">-{dropoff}%</span>
-                  )}
-                  <div className={`w-full rounded-t-lg flex items-center justify-center transition-all group-hover/bar:opacity-80 group-hover/bar:scale-[1.02] ${isLast ? "bg-[#FF9A6D]" : "bg-[#3D5A80]"}`}
-                    style={{ height: `${heightPct}%`, minHeight: 40 }}>
-                    <span className={`font-mono text-[15px] font-bold ${isLast ? "text-[#0A0A0A]" : "text-white"}`}>{step.count}</span>
+                <button key={step.label}
+                  onClick={() => router.push(step.label === "PAID" ? "/payments" : usersLink({ status: FUNNEL_STEP_STATUS[step.label] || undefined }))}
+                  className="group/row flex items-center gap-3 hover:bg-white/[0.02] rounded-lg px-1 -mx-1 transition-colors">
+                  <span className={cn(
+                    "font-mono text-[11px] uppercase tracking-[1px] w-[60px] text-left flex-shrink-0",
+                    isLast ? "text-[#FF9A6D] font-semibold" : "text-muted-foreground/50"
+                  )}>{step.label}</span>
+                  <div className="flex-1 flex items-center gap-2.5 min-w-0">
+                    <div className="flex-1 h-[32px] rounded-md bg-[#1F1F1F] overflow-hidden">
+                      <div
+                        className={cn("h-full rounded-md flex items-center transition-all group-hover/row:brightness-110", isLast ? "bg-[#FF9A6D]" : "bg-[#3D5A80]")}
+                        style={{ width: `${widthPct}%` }}
+                      >
+                        <span className={cn("font-mono text-[14px] font-bold px-3 whitespace-nowrap", isLast ? "text-[#0A0A0A]" : "text-white")}>
+                          {step.count.toLocaleString()}
+                        </span>
+                      </div>
+                    </div>
+                    {i > 0 ? (
+                      <div className="flex flex-col items-end flex-shrink-0 w-[48px]">
+                        <span className="font-mono text-[13px] font-semibold text-foreground tabular-nums">{retained}%</span>
+                        <span className={cn(
+                          "font-mono text-[10px] tabular-nums",
+                          dropoff > 60 ? "text-destructive/60" : dropoff > 40 ? "text-warning/60" : "text-muted-foreground/30"
+                        )}>-{dropoff}%</span>
+                      </div>
+                    ) : (
+                      <span className="w-[48px] flex-shrink-0" />
+                    )}
                   </div>
-                </div>
+                </button>
               );
             })}
           </div>
 
-          <div className="flex gap-3 mt-3">
-            {funnelSteps.map((step) => (
-              <span key={step.label}
-                className={`flex-1 text-center font-mono text-[9px] uppercase tracking-[1px] cursor-pointer hover:opacity-80 transition-opacity ${step.label === "PAID" ? "text-[#FF9A6D]" : "text-muted-foreground/40"}`}
-                onClick={() => router.push(step.label === "PAID" ? "/payments" : usersLinkWithFilter())}>
-                {step.label}
-              </span>
-            ))}
-          </div>
-
-          <div className="flex items-baseline gap-2 mt-4 border-t border-[#1F1F1F] pt-4">
-            <span className="font-mono text-[36px] font-bold tracking-[-1px] text-foreground">{conversionPct}%</span>
-            <span className="font-mono text-[9px] uppercase tracking-[1.5px] text-muted-foreground/40">Signup &rarr; Paid</span>
+          <div className="flex items-center justify-between pt-3 border-t border-[#1F1F1F]">
+            <span className="font-mono text-[10px] text-muted-foreground/30">Signup &rarr; Paid</span>
+            <span className="font-mono text-[20px] font-bold tracking-[-0.5px] text-foreground">{conversionPct}%</span>
           </div>
         </div>
 
@@ -454,7 +485,7 @@ export default function OverviewPage() {
               {stats.cityEntries.map(([city, count]) => {
                 const barPct = maxCity > 0 ? Math.round((count / maxCity) * 100) : 0;
                 return (
-                  <button key={city} onClick={() => router.push(`/users?search=${encodeURIComponent(city)}`)}
+                  <button key={city} onClick={() => router.push(usersLink({ search: city }))}
                     className="flex items-center gap-3 rounded-lg px-2 py-1.5 -mx-2 hover:bg-white/[0.04] transition-colors group/city flex-shrink-0">
                     <span className="text-[12px] text-muted-foreground group-hover/city:text-foreground transition-colors w-[80px] truncate text-left">{city}</span>
                     <div className="flex-1 h-[6px] rounded-full bg-[#1F1F1F] overflow-hidden">
@@ -466,7 +497,7 @@ export default function OverviewPage() {
               })}
             </div>
             {stats.citiesTotal > 5 && (
-              <Link href="/users" className="font-mono text-[10px] text-muted-foreground/30 mt-2 hover:text-muted-foreground/50 transition-colors flex-shrink-0">
+              <Link href={usersLink()} className="font-mono text-[10px] text-muted-foreground/30 mt-2 hover:text-muted-foreground/50 transition-colors flex-shrink-0">
                 +{stats.citiesTotal - 5} more cities &rarr;
               </Link>
             )}

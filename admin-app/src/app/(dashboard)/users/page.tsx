@@ -14,9 +14,15 @@ function UsersPageInner() {
   const queryClient = useQueryClient();
   const { users, loading } = useUsers();
 
-  const initialFilter = searchParams.get("filter") === "pending" ? "Pending" : "All";
+  const statusParam = searchParams.get("status") || searchParams.get("filter") || "";
+  const STATUS_MAP: Record<string, string> = {
+    pending: "Pending", active: "Active", waitlisted: "Waitlisted", approved: "Approved",
+    agreement_confirmed: "Approved",
+  };
+  const initialFilter = STATUS_MAP[statusParam.toLowerCase()] || "All";
   const initialSearch = searchParams.get("search") || searchParams.get("city") || "";
-  const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
+  const initialUserId = searchParams.get("user") || null;
+  const [selectedUserId, setSelectedUserId] = useState<string | null>(initialUserId);
   const [filter, setFilter] = useState(initialFilter);
   const [searchQuery, setSearchQuery] = useState(initialSearch);
   const [batchLoading, setBatchLoading] = useState(false);

@@ -72,10 +72,11 @@ export function CommandPalette() {
       title="Command Palette"
       description="Search commands, navigate pages, or find users."
       showCloseButton={false}
+      className="border border-[#1F1F1F] bg-[#0A0A0A] shadow-2xl"
     >
-      <CommandInput placeholder="Search users, commands..." />
-      <CommandList>
-        <CommandEmpty>No results found.</CommandEmpty>
+      <CommandInput placeholder="Search users, commands..." className="font-mono text-[12px]" />
+      <CommandList className="max-h-[400px]">
+        <CommandEmpty className="font-mono text-[11px] text-muted-foreground/40">No results found.</CommandEmpty>
 
         {userItems.length > 0 && (
           <CommandGroup heading="Users">
@@ -83,12 +84,13 @@ export function CommandPalette() {
               <CommandItem
                 key={user.id}
                 value={`${user.name} ${user.phone} ${user.city || ""}`}
-                onSelect={() => navigate(`/users?search=${encodeURIComponent(user.name)}`)}
+                onSelect={() => navigate(`/users?user=${user.id}&search=${encodeURIComponent(user.name)}`)}
+                className="rounded-lg px-3 py-2.5"
               >
-                <Users className="size-4 opacity-60" />
+                <Users className="size-3.5 opacity-40" />
                 <div className="flex flex-col flex-1 min-w-0">
-                  <span className="truncate">{user.name}</span>
-                  <span className="text-xs text-muted-foreground/50 truncate">
+                  <span className="truncate font-mono text-[12px]">{user.name}</span>
+                  <span className="font-mono text-[10px] text-muted-foreground/40 truncate">
                     {maskPhone(user.phone)}{user.city ? ` · ${user.city}` : ""}
                   </span>
                 </div>
@@ -98,7 +100,7 @@ export function CommandPalette() {
                     user.risk === "MED" ? "text-warning" :
                     user.risk === "LOW" ? "text-success" : "text-muted-foreground/30"
                   }`}>{user.risk || ""}</span>
-                  <span className="text-[10px] text-muted-foreground/40 font-mono">{user.status}</span>
+                  <span className="font-mono text-[10px] text-muted-foreground/30">{user.status?.replace(/_/g, " ")}</span>
                 </div>
               </CommandItem>
             ))}
@@ -112,27 +114,29 @@ export function CommandPalette() {
             <CommandItem
               key={item.href}
               onSelect={() => navigate(item.href)}
+              className="rounded-lg px-3 py-2"
             >
-              <item.icon className="size-4 opacity-60" />
-              <span>{item.label}</span>
+              <item.icon className="size-3.5 opacity-40" />
+              <span className="font-mono text-[12px]">{item.label}</span>
             </CommandItem>
           ))}
         </CommandGroup>
 
-        <CommandSeparator />
+        <CommandSeparator className="bg-[#1F1F1F]" />
 
         <CommandGroup heading="Actions">
-          <CommandItem onSelect={() => navigate("/users?filter=pending")}>
-            <UserCheck className="size-4 opacity-60" />
-            <span>Approve user</span>
+          <CommandItem onSelect={() => navigate("/users?filter=pending")} className="rounded-lg px-3 py-2">
+            <UserCheck className="size-3.5 opacity-40" />
+            <span className="font-mono text-[12px]">Approve user</span>
           </CommandItem>
           <CommandItem
             onSelect={() => {
               setOpen(false);
             }}
+            className="rounded-lg px-3 py-2"
           >
-            <ArrowLeftRight className="size-4 opacity-60" />
-            <span>Switch environment</span>
+            <ArrowLeftRight className="size-3.5 opacity-40" />
+            <span className="font-mono text-[12px]">Switch environment</span>
           </CommandItem>
         </CommandGroup>
       </CommandList>
