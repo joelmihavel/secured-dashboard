@@ -59,21 +59,17 @@ function UsersPageInner() {
     queryClient.invalidateQueries({ queryKey: ["audit_logs"] });
   }, [queryClient]);
 
-  async function handleBatchAction(action: "approve" | "reject") {
-    const pending = overviewFiltered.filter((u) =>
-      u.user_status === "waitlisted" || u.user_status === "agreement_confirmed" ||
-      u.admin_review === "due" || u.admin_review === "in_progress"
-    );
-    if (pending.length === 0) return;
+  async function handleBatchAction(action: "approve" | "reject", userIds: string[]) {
+    if (userIds.length === 0) return;
     setBatchLoading(true);
     setFeedback(null);
     try {
       await callEdgeFunction("admin-waitlist", {
         action,
-        user_ids: pending.map((u) => u.user_id),
+        user_ids: userIds,
         ...(action === "reject" ? { rejection_reasons: ["Batch rejection"] } : {}),
       });
-      setFeedback({ type: "success", message: `${pending.length} users ${action}d` });
+      setFeedback({ type: "success", message: `${userIds.length} user${userIds.length > 1 ? "s" : ""} ${action}d` });
       invalidate();
     } catch (err) {
       setFeedback({ type: "error", message: err instanceof Error ? err.message : "Batch failed" });
@@ -142,8 +138,8 @@ function UsersPageInner() {
           onFilterChange={setFilter}
           searchQuery={searchQuery}
           onSearchChange={setSearchQuery}
-          onBatchApprove={() => handleBatchAction("approve")}
-          onBatchReject={() => handleBatchAction("reject")}
+          onBatchApprove={(ids) => handleBatchAction("approve", ids)}
+          onBatchReject={(ids) => handleBatchAction("reject", ids)}
           batchLoading={batchLoading}
           viewMode={viewMode}
         />

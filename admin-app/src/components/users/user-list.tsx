@@ -1,11 +1,11 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState, useCallback } from "react";
 import { Input } from "@/components/ui/input";
 import { cn, maskPhone } from "@/lib/utils";
 import { UserAvatar } from "@/components/ui/user-avatar";
 import { computeDecision, sortByPriority } from "@/lib/decision";
-import { Search } from "lucide-react";
+import { Search, CheckSquare, Square, MinusSquare } from "lucide-react";
 import type { UserFunnel } from "@/types/user";
 
 const STATUS_FILTERS = ["All", "Pending", "Active", "Waitlisted", "Approved"] as const;
@@ -47,11 +47,13 @@ export function UserList({
   onFilterChange: (filter: string) => void;
   searchQuery: string;
   onSearchChange: (query: string) => void;
-  onBatchApprove?: () => void;
-  onBatchReject?: () => void;
+  onBatchApprove?: (userIds: string[]) => void;
+  onBatchReject?: (userIds: string[]) => void;
   batchLoading?: boolean;
   viewMode?: "tenants" | "landlords";
 }) {
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+
   const filteredUsers = useMemo(() => {
     let result = users;
 
@@ -80,7 +82,36 @@ export function UserList({
   }, [users, filter, searchQuery, viewMode]);
 
   const pendingCount = useMemo(() => users.filter(isPending).length, [users]);
-  const showBatch = filter === "Pending" && filteredUsers.length > 0;
+  const showSelection = filter === "Pending" && !viewMode.startsWith("landlord");
+  const pendingFilteredIds = useMemo(() => new Set(filteredUsers.map((u) => u.user_id)), [filteredUsers]);
+
+  // Clean up selected IDs that are no longer in the filtered list
+  const validSelectedIds = useMemo(() => {
+    const valid = new Set<string>();
+    selectedIds.forEach((id) => { if (pendingFilteredIds.has(id)) valid.add(id); });
+    return valid;
+  }, [selectedIds, pendingFilteredIds]);
+
+  const allSelected = showSelection && filteredUsers.length > 0 && validSelectedIds.size === filteredUsers.length;
+  const someSelected = showSelection && validSelectedIds.size > 0 && !allSelected;
+
+  const toggleSelectAll = useCallback(() => {
+    if (allSelected) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(filteredUsers.map((u) => u.user_id)));
+    }
+  }, [allSelected, filteredUsers]);
+
+  const toggleSelect = useCallback((userId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(userId)) next.delete(userId);
+      else next.add(userId);
+      return next;
+    });
+  }, []);
 
   return (
     <div className="flex w-[320px] flex-shrink-0 flex-col border-r border-[#1F1F1F] bg-background">
@@ -96,7 +127,7 @@ export function UserList({
         </div>
         <div className="flex gap-1 overflow-x-auto">
           {STATUS_FILTERS.map((f) => (
-            <button key={f} onClick={() => onFilterChange(f)}
+            <button key={f} onClick={() => { onFilterChange(f); setSelectedIds(new Set()); }}
               className={cn(
                 "rounded px-2 py-1 font-mono text-[9px] uppercase tracking-[0.5px] transition-colors whitespace-nowrap flex-shrink-0",
                 filter === f ? "bg-[#1F1F1F] text-foreground" : "text-muted-foreground/40 hover:text-muted-foreground"
@@ -106,16 +137,41 @@ export function UserList({
           ))}
         </div>
 
-        {showBatch && onBatchApprove && onBatchReject && (
-          <div className="flex gap-2">
-            <button onClick={onBatchApprove} disabled={batchLoading}
-              className="flex-1 h-8 rounded-xl bg-success/10 border border-success/30 text-success font-mono text-[11px] font-semibold hover:bg-success/20 transition-colors disabled:opacity-50">
-              Approve all ({filteredUsers.length})
+        {/* Selection toolbar */}
+        {showSelection && filteredUsers.length > 0 && (
+          <div className="flex items-center gap-2 rounded-lg border border-[#1F1F1F] bg-[#0A0A0A] px-2.5 py-2">
+            <button onClick={toggleSelectAll} className="flex items-center gap-1.5 text-muted-foreground/50 hover:text-muted-foreground transition-colors">
+              {allSelected ? (
+                <CheckSquare className="size-4 text-[#3D5A80]" />
+              ) : someSelected ? (
+                <MinusSquare className="size-4 text-[#3D5A80]" />
+              ) : (
+                <Square className="size-4" />
+              )}
+              <span className="font-mono text-[10px]">
+                {validSelectedIds.size > 0 ? `${validSelectedIds.size} selected` : "Select all"}
+              </span>
             </button>
-            <button onClick={onBatchReject} disabled={batchLoading}
-              className="flex-1 h-8 rounded-xl border border-destructive/30 text-destructive font-mono text-[11px] hover:bg-destructive/10 transition-colors disabled:opacity-50">
-              Reject all
-            </button>
+
+            {validSelectedIds.size > 0 && (
+              <>
+                <div className="flex-1" />
+                <button
+                  onClick={() => onBatchApprove?.(Array.from(validSelectedIds))}
+                  disabled={batchLoading}
+                  className="h-6 rounded-md bg-success/10 border border-success/30 px-2 text-success font-mono text-[10px] font-semibold hover:bg-success/20 transition-colors disabled:opacity-50"
+                >
+                  Approve
+                </button>
+                <button
+                  onClick={() => onBatchReject?.(Array.from(validSelectedIds))}
+                  disabled={batchLoading}
+                  className="h-6 rounded-md border border-destructive/30 px-2 text-destructive font-mono text-[10px] hover:bg-destructive/10 transition-colors disabled:opacity-50"
+                >
+                  Reject
+                </button>
+              </>
+            )}
           </div>
         )}
       </div>
@@ -129,8 +185,8 @@ export function UserList({
             const displayName = isLandlord
               ? (user.landlord_display_name || user.landlord_name || "Unknown Landlord")
               : (user.name || maskPhone(user.phone));
-            const initials = displayName.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase();
             const showDecisionDot = filter === "Pending" && !isLandlord;
+            const isChecked = validSelectedIds.has(user.user_id);
             return (
               <button key={user.user_id} onClick={() => onSelectUser(user.user_id)}
                 className={cn(
@@ -139,7 +195,15 @@ export function UserList({
                     ? "bg-primary/5 border-l-[3px] border-l-[#3D5A80]"
                     : "hover:bg-white/[0.02]"
                 )}>
-                {showDecisionDot ? (
+                {showSelection ? (
+                  <div onClick={(e) => toggleSelect(user.user_id, e)} className="flex-shrink-0 cursor-pointer">
+                    {isChecked ? (
+                      <CheckSquare className="size-4 text-[#3D5A80]" />
+                    ) : (
+                      <Square className="size-4 text-muted-foreground/20 hover:text-muted-foreground/40 transition-colors" />
+                    )}
+                  </div>
+                ) : showDecisionDot ? (
                   <div className={cn("size-2 flex-shrink-0 rounded-full", decisionDot(user))} />
                 ) : (
                   <UserAvatar name={displayName} size={32} />
