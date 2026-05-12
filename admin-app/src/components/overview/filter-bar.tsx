@@ -7,7 +7,7 @@ import { ChevronDown, X } from "lucide-react";
 import type { UserFunnel } from "@/types/user";
 
 export interface OverviewFilters {
-  dateRange: "all" | "7d" | "30d" | "90d" | "1y";
+  dateRange: "all" | "today" | "7d" | "30d" | "90d" | "1y";
   statuses: string[];
   cities: string[];
   buildings: string[];
@@ -28,6 +28,7 @@ const DEFAULT_FILTERS: OverviewFilters = {
 
 const DATE_OPTIONS = [
   { value: "all", label: "All time" },
+  { value: "today", label: "Today" },
   { value: "7d", label: "7 days" },
   { value: "30d", label: "30 days" },
   { value: "90d", label: "90 days" },
@@ -71,6 +72,11 @@ function daysAgo(days: number): Date {
 
 function getDateCutoff(range: OverviewFilters["dateRange"]): Date | null {
   if (range === "all") return null;
+  if (range === "today") {
+    const d = new Date();
+    d.setHours(0, 0, 0, 0);
+    return d;
+  }
   const map = { "7d": 7, "30d": 30, "90d": 90, "1y": 365 };
   return daysAgo(map[range]);
 }
