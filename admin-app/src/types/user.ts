@@ -69,6 +69,11 @@ export interface UserFunnel {
   // a denormalised mirror; bank_accounts is the source of truth.
   landlord_bank_verified: boolean | null;
   landlord_bank_pan_verified: boolean | null;
+  landlord_bank_agreement_name_matched: boolean | null;
+  landlord_bank_agreement_match_score: number | null;
+  landlord_m360_full_name: string | null;
+  shcil_landlord_name: string | null;
+  shcil_landlord_name_matched: boolean | null;
   // M360
   m360_status: string | null;
   m360_full_name: string | null;

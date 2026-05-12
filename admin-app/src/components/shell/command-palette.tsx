@@ -16,7 +16,6 @@ import {
   Users,
   Inbox,
   CreditCard,
-  Settings,
   UserCheck,
   ArrowLeftRight,
 } from "lucide-react";
@@ -28,7 +27,6 @@ const navigationItems = [
   { label: "Users", href: "/users", icon: Users },
   { label: "Pending Review", href: "/users?filter=pending", icon: Inbox },
   { label: "Payments", href: "/payments", icon: CreditCard },
-  { label: "Settings", href: "/settings", icon: Settings },
 ];
 
 export function CommandPalette() {

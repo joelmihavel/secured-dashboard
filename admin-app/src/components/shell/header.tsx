@@ -4,14 +4,15 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { getCurrentEnvironment } from "@/lib/supabase";
+import { UserAvatar } from "@/components/ui/user-avatar";
+import { openCommandPalette } from "@/components/shell/command-palette";
+import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
+import { Search, ChevronDown, LogOut } from "lucide-react";
 
 const NAV_ITEMS = [
   { href: "/overview", label: "Overview" },
   { href: "/users", label: "Users" },
   { href: "/payments", label: "Payments" },
-  { href: "/settings", label: "Settings" },
 ];
 
 const Y = "bg-[#E8A020]";
@@ -82,7 +83,6 @@ function PixelCat() {
 }
 
 export function Header() {
-  const env = getCurrentEnvironment();
   const pathname = usePathname();
 
   return (
@@ -97,6 +97,16 @@ export function Header() {
 
       {/* Pixel Cat */}
       <PixelCat />
+
+      {/* Search trigger */}
+      <button
+        onClick={openCommandPalette}
+        className="flex items-center gap-2 rounded-lg border border-[#1F1F1F] bg-[#141414] px-3 py-1.5 text-muted-foreground/30 hover:border-[#2a2a2a] hover:text-muted-foreground/50 transition-colors"
+      >
+        <Search className="size-3.5" />
+        <span className="font-mono text-[11px]">Search</span>
+        <kbd className="ml-3 rounded border border-[#1F1F1F] bg-[#0A0A0A] px-1.5 py-0.5 font-mono text-[9px] text-muted-foreground/20">⌘K</kbd>
+      </button>
 
       {/* Spacer */}
       <div className="flex-1" />
@@ -126,30 +136,29 @@ export function Header() {
       {/* Divider */}
       <div className="h-6 w-px bg-[#1F1F1F]" />
 
-      {/* Env indicator */}
-      <div className="flex items-center gap-1.5">
-        <div
-          className={cn(
-            "size-[6px] rounded-full",
-            env === "dev" ? "bg-warning" : "bg-green-500"
-          )}
-        />
-        <span
-          className={cn(
-            "font-mono text-[11px] font-medium",
-            env === "dev" ? "text-warning" : "text-muted-foreground"
-          )}
-        >
-          {env === "dev" ? "DEV" : "MAIN"}
-        </span>
-      </div>
-
-      {/* Avatar */}
-      <Avatar className="size-8 bg-secondary">
-        <AvatarFallback className="bg-secondary text-[11px] text-muted-foreground">
-          RA
-        </AvatarFallback>
-      </Avatar>
+      {/* Profile */}
+      <Popover>
+        <PopoverTrigger asChild>
+          <button className="flex items-center gap-2 rounded-lg px-2 py-1.5 hover:bg-white/[0.04] transition-colors">
+            <UserAvatar name="vidyuth@flent.in" size={28} />
+            <span className="font-mono text-[11px] text-muted-foreground">Admin</span>
+            <ChevronDown className="size-3 text-muted-foreground/40" />
+          </button>
+        </PopoverTrigger>
+        <PopoverContent align="end" className="w-[180px] border-[#1F1F1F] bg-[#141414] p-1.5">
+          <div className="px-2.5 py-2 border-b border-[#1F1F1F] mb-1.5">
+            <div className="font-mono text-[11px] text-foreground">Admin</div>
+            <div className="font-mono text-[10px] text-muted-foreground/40 truncate">vidyuth@flent.in</div>
+          </div>
+          <button
+            onClick={() => { window.location.href = "/login"; }}
+            className="flex w-full items-center gap-2 rounded-md px-2.5 py-2 font-mono text-[11px] text-destructive hover:bg-destructive/10 transition-colors"
+          >
+            <LogOut className="size-3.5" />
+            Sign out
+          </button>
+        </PopoverContent>
+      </Popover>
     </header>
   );
 }

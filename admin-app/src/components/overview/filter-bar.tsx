@@ -264,6 +264,7 @@ export function FilterBar({
   uniqueBuildings,
   totalUsers,
   filteredCount,
+  viewMode,
 }: {
   filters: OverviewFilters;
   activeCount: number;
@@ -273,7 +274,9 @@ export function FilterBar({
   uniqueBuildings: [string, number][];
   totalUsers: number;
   filteredCount: number;
+  viewMode?: "tenants" | "landlords";
 }) {
+  const mode = viewMode || "tenants";
   return (
     <div className="flex items-center gap-2 flex-shrink-0">
       <span className="font-mono text-[9px] uppercase tracking-[1.5px] text-muted-foreground/30 mr-1">Filters</span>
@@ -287,13 +290,15 @@ export function FilterBar({
         ))}
       </FilterChip>
 
-      {/* Status */}
-      <FilterChip label="Status" active={filters.statuses.length > 0} count={filters.statuses.length}>
-        {STATUS_OPTIONS.map((s) => (
-          <CheckOption key={s} checked={filters.statuses.includes(s)} label={s.replace(/_/g, " ")}
-            onClick={() => updateFilter("statuses", toggleInArray(filters.statuses, s))} />
-        ))}
-      </FilterChip>
+      {/* Status — tenants only */}
+      {mode === "tenants" && (
+        <FilterChip label="Status" active={filters.statuses.length > 0} count={filters.statuses.length}>
+          {STATUS_OPTIONS.map((s) => (
+            <CheckOption key={s} checked={filters.statuses.includes(s)} label={s.replace(/_/g, " ")}
+              onClick={() => updateFilter("statuses", toggleInArray(filters.statuses, s))} />
+          ))}
+        </FilterChip>
+      )}
 
       {/* Region / City */}
       <FilterChip label="Region" active={filters.cities.length > 0} count={filters.cities.length}>
@@ -319,31 +324,33 @@ export function FilterBar({
         )}
       </FilterChip>
 
-      {/* Credit Score */}
-      <FilterChip label={CREDIT_OPTIONS.find((c) => c.value === filters.creditScore)?.label === "All" ? "Credit" : CREDIT_OPTIONS.find((c) => c.value === filters.creditScore)?.label || "Credit"} active={filters.creditScore !== "all"}>
-        {CREDIT_OPTIONS.map((opt) => (
-          <OptionButton key={opt.value} selected={filters.creditScore === opt.value} onClick={() => updateFilter("creditScore", opt.value)}>
-            {opt.label}
-          </OptionButton>
-        ))}
-      </FilterChip>
+      {/* Tenant-specific filters */}
+      {mode === "tenants" && (
+        <>
+          <FilterChip label={CREDIT_OPTIONS.find((c) => c.value === filters.creditScore)?.label === "All" ? "Credit" : CREDIT_OPTIONS.find((c) => c.value === filters.creditScore)?.label || "Credit"} active={filters.creditScore !== "all"}>
+            {CREDIT_OPTIONS.map((opt) => (
+              <OptionButton key={opt.value} selected={filters.creditScore === opt.value} onClick={() => updateFilter("creditScore", opt.value)}>
+                {opt.label}
+              </OptionButton>
+            ))}
+          </FilterChip>
 
-      {/* Risk */}
-      <FilterChip label="Risk" active={filters.riskLevels.length > 0} count={filters.riskLevels.length}>
-        {RISK_OPTIONS.map((r) => (
-          <CheckOption key={r} checked={filters.riskLevels.includes(r)} label={r === "LOW" ? "Low" : r === "MED" ? "Medium" : "High"}
-            onClick={() => updateFilter("riskLevels", toggleInArray(filters.riskLevels, r))} />
-        ))}
-      </FilterChip>
+          <FilterChip label="Risk" active={filters.riskLevels.length > 0} count={filters.riskLevels.length}>
+            {RISK_OPTIONS.map((r) => (
+              <CheckOption key={r} checked={filters.riskLevels.includes(r)} label={r === "LOW" ? "Low" : r === "MED" ? "Medium" : "High"}
+                onClick={() => updateFilter("riskLevels", toggleInArray(filters.riskLevels, r))} />
+            ))}
+          </FilterChip>
 
-      {/* Rent */}
-      <FilterChip label={RENT_OPTIONS.find((r) => r.value === filters.rentRange)?.label === "All" ? "Rent" : RENT_OPTIONS.find((r) => r.value === filters.rentRange)?.label || "Rent"} active={filters.rentRange !== "all"}>
-        {RENT_OPTIONS.map((opt) => (
-          <OptionButton key={opt.value} selected={filters.rentRange === opt.value} onClick={() => updateFilter("rentRange", opt.value)}>
-            {opt.label}
-          </OptionButton>
-        ))}
-      </FilterChip>
+          <FilterChip label={RENT_OPTIONS.find((r) => r.value === filters.rentRange)?.label === "All" ? "Rent" : RENT_OPTIONS.find((r) => r.value === filters.rentRange)?.label || "Rent"} active={filters.rentRange !== "all"}>
+            {RENT_OPTIONS.map((opt) => (
+              <OptionButton key={opt.value} selected={filters.rentRange === opt.value} onClick={() => updateFilter("rentRange", opt.value)}>
+                {opt.label}
+              </OptionButton>
+            ))}
+          </FilterChip>
+        </>
+      )}
 
       {/* Clear + count */}
       {activeCount > 0 && (

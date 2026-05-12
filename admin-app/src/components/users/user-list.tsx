@@ -1,9 +1,9 @@
 "use client";
 
 import { useMemo } from "react";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import { cn, maskPhone } from "@/lib/utils";
+import { UserAvatar } from "@/components/ui/user-avatar";
 import { computeDecision, sortByPriority } from "@/lib/decision";
 import { Search } from "lucide-react";
 import type { UserFunnel } from "@/types/user";
@@ -38,6 +38,7 @@ export function UserList({
   onBatchApprove,
   onBatchReject,
   batchLoading,
+  viewMode = "tenants",
 }: {
   users: UserFunnel[];
   selectedUserId: string | null;
@@ -49,6 +50,7 @@ export function UserList({
   onBatchApprove?: () => void;
   onBatchReject?: () => void;
   batchLoading?: boolean;
+  viewMode?: "tenants" | "landlords";
 }) {
   const filteredUsers = useMemo(() => {
     let result = users;
@@ -62,15 +64,20 @@ export function UserList({
 
     if (searchQuery) {
       const q = searchQuery.toLowerCase();
-      result = result.filter((u) =>
-        (u.name || "").toLowerCase().includes(q) ||
-        (u.phone || "").includes(q) ||
-        (u.property_city || "").toLowerCase().includes(q)
-      );
+      result = result.filter((u) => {
+        if (viewMode === "landlords") {
+          return (u.landlord_display_name || u.landlord_name || "").toLowerCase().includes(q) ||
+            (u.landlord_phone || "").includes(q) ||
+            (u.name || "").toLowerCase().includes(q);
+        }
+        return (u.name || "").toLowerCase().includes(q) ||
+          (u.phone || "").includes(q) ||
+          (u.property_city || "").toLowerCase().includes(q);
+      });
     }
 
     return result;
-  }, [users, filter, searchQuery]);
+  }, [users, filter, searchQuery, viewMode]);
 
   const pendingCount = useMemo(() => users.filter(isPending).length, [users]);
   const showBatch = filter === "Pending" && filteredUsers.length > 0;
@@ -118,8 +125,12 @@ export function UserList({
           <div className="flex items-center justify-center h-32 text-[13px] text-muted-foreground/40">No users found</div>
         ) : (
           filteredUsers.map((user) => {
-            const initials = (user.name || "?").split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase();
-            const showDecisionDot = filter === "Pending";
+            const isLandlord = viewMode === "landlords";
+            const displayName = isLandlord
+              ? (user.landlord_display_name || user.landlord_name || "Unknown Landlord")
+              : (user.name || maskPhone(user.phone));
+            const initials = displayName.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase();
+            const showDecisionDot = filter === "Pending" && !isLandlord;
             return (
               <button key={user.user_id} onClick={() => onSelectUser(user.user_id)}
                 className={cn(
@@ -131,19 +142,31 @@ export function UserList({
                 {showDecisionDot ? (
                   <div className={cn("size-2 flex-shrink-0 rounded-full", decisionDot(user))} />
                 ) : (
-                  <Avatar className="size-8 bg-[#3D5A80]/30 flex-shrink-0">
-                    <AvatarFallback className="bg-[#3D5A80]/30 text-[10px] text-muted-foreground">{initials}</AvatarFallback>
-                  </Avatar>
+                  <UserAvatar name={displayName} size={32} />
                 )}
                 <div className="flex flex-1 flex-col gap-0.5 overflow-hidden">
-                  <span className="truncate text-[13px] font-medium text-foreground">{user.name || maskPhone(user.phone)}</span>
-                  <span className="font-mono text-[11px] text-muted-foreground/40 truncate uppercase">
-                    {filter === "Pending" ? (user.admin_review || "due") : user.user_status} · {user.property_city || "—"}
-                  </span>
+                  <span className="truncate text-[13px] font-medium text-foreground">{displayName}</span>
+                  {isLandlord ? (
+                    <span className="font-mono text-[11px] text-muted-foreground/40 truncate">
+                      {user.landlord_phone ? maskPhone(user.landlord_phone, user.landlord_country_code) : "—"} · Tenant: {user.name || maskPhone(user.phone)}
+                    </span>
+                  ) : (
+                    <span className="font-mono text-[11px] text-muted-foreground/40 truncate uppercase">
+                      {filter === "Pending" ? (user.admin_review || "due") : user.user_status} · {user.property_city || "—"}
+                    </span>
+                  )}
                 </div>
-                <span className={cn("font-mono text-[11px] font-semibold flex-shrink-0", riskColor(user.risk_level))}>
-                  {user.risk_level || "—"}
-                </span>
+                {isLandlord ? (
+                  <div className={cn(
+                    "size-2 flex-shrink-0 rounded-full",
+                    user.landlord_bank_verified && user.landlord_bank_pan_verified ? "bg-success" :
+                    user.landlord_bank_verified || user.landlord_bank_pan_verified ? "bg-warning" : "bg-muted-foreground/20"
+                  )} title={`Bank: ${user.landlord_bank_verified ? "✓" : "✗"} · PAN: ${user.landlord_bank_pan_verified ? "✓" : "✗"}`} />
+                ) : (
+                  <span className={cn("font-mono text-[11px] font-semibold flex-shrink-0", riskColor(user.risk_level))}>
+                    {user.risk_level || "—"}
+                  </span>
+                )}
               </button>
             );
           })

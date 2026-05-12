@@ -9,7 +9,6 @@ import {
   CreditCard,
   BarChart3,
   Activity,
-  Settings,
   ShieldCheck,
 } from "lucide-react";
 
@@ -51,20 +50,6 @@ export function Sidebar() {
         })}
       </nav>
 
-      <div className="mt-auto p-3">
-        <Link
-          href="/settings"
-          className={cn(
-            "flex items-center gap-2.5 rounded-md px-3 py-2 text-[13.5px] transition-colors",
-            pathname === "/settings"
-              ? "bg-card text-foreground font-medium"
-              : "text-muted-foreground/70 hover:bg-sidebar-accent hover:text-foreground",
-          )}
-        >
-          <Settings className="size-[17px] opacity-70" />
-          <span>Settings</span>
-        </Link>
-      </div>
     </aside>
   );
 }

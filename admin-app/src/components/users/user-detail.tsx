@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { UserAvatar } from "@/components/ui/user-avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -66,9 +66,7 @@ export function UserDetail({ user }: { user: UserFunnel }) {
       <div className="flex flex-1 flex-col gap-4 min-w-0">
         {/* Profile header */}
         <div className="flex items-center gap-4">
-          <Avatar className="size-14 bg-[#3D5A80] flex-shrink-0">
-            <AvatarFallback className="bg-[#3D5A80] text-white text-[16px] font-bold">{initials}</AvatarFallback>
-          </Avatar>
+          <UserAvatar name={user.name || user.phone} size={56} />
           <div className="flex flex-col gap-0.5 flex-1">
             <span className="text-[24px] font-medium tracking-[-0.5px] text-foreground">{user.name || "Unknown"}</span>
             <span className="font-mono text-[12px] text-muted-foreground/50">
