@@ -3,11 +3,13 @@
 import { useMemo, useState, useCallback } from "react";
 import { cn } from "@/lib/utils";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
-import { ChevronDown, X } from "lucide-react";
+import { ChevronDown, X, Calendar } from "lucide-react";
+import { DateRangeCalendar } from "@/components/ui/date-range-calendar";
 import type { UserFunnel } from "@/types/user";
 
 export interface OverviewFilters {
-  dateRange: "all" | "today" | "7d" | "30d" | "90d" | "1y";
+  dateFrom: string | null;
+  dateTo: string | null;
   statuses: string[];
   cities: string[];
   buildings: string[];
@@ -17,7 +19,8 @@ export interface OverviewFilters {
 }
 
 const DEFAULT_FILTERS: OverviewFilters = {
-  dateRange: "all",
+  dateFrom: null,
+  dateTo: null,
   statuses: [],
   cities: [],
   buildings: [],
@@ -25,15 +28,6 @@ const DEFAULT_FILTERS: OverviewFilters = {
   riskLevels: [],
   rentRange: "all",
 };
-
-const DATE_OPTIONS = [
-  { value: "all", label: "All time" },
-  { value: "today", label: "Today" },
-  { value: "7d", label: "7 days" },
-  { value: "30d", label: "30 days" },
-  { value: "90d", label: "90 days" },
-  { value: "1y", label: "1 year" },
-] as const;
 
 const STATUS_OPTIONS = ["waitlisted", "agreement_confirmed", "approved", "active", "rejected", "churned"];
 
@@ -64,21 +58,12 @@ function extractBuilding(address: string | null): string | null {
   return first;
 }
 
-function daysAgo(days: number): Date {
-  const d = new Date();
-  d.setDate(d.getDate() - days);
+function parseDateBound(val: string | null, end?: boolean): Date | null {
+  if (!val) return null;
+  const d = new Date(val + "T00:00:00");
+  if (isNaN(d.getTime())) return null;
+  if (end) d.setHours(23, 59, 59, 999);
   return d;
-}
-
-function getDateCutoff(range: OverviewFilters["dateRange"]): Date | null {
-  if (range === "all") return null;
-  if (range === "today") {
-    const d = new Date();
-    d.setHours(0, 0, 0, 0);
-    return d;
-  }
-  const map = { "7d": 7, "30d": 30, "90d": 90, "1y": 365 };
-  return daysAgo(map[range]);
 }
 
 function matchesCreditScore(score: number | null, filter: OverviewFilters["creditScore"]): boolean {
@@ -121,9 +106,12 @@ export function useOverviewFilters(users: UserFunnel[]) {
   }, [users]);
 
   const filteredUsers = useMemo(() => {
-    const cutoff = getDateCutoff(filters.dateRange);
+    const from = parseDateBound(filters.dateFrom);
+    const to = parseDateBound(filters.dateTo, true);
     return users.filter((u) => {
-      if (cutoff && new Date(u.signed_up_at) < cutoff) return false;
+      const signedUp = new Date(u.signed_up_at);
+      if (from && signedUp < from) return false;
+      if (to && signedUp > to) return false;
       if (filters.statuses.length > 0 && !filters.statuses.includes(u.user_status)) return false;
       if (filters.cities.length > 0) {
         const raw = u.property_city || "";
@@ -143,7 +131,7 @@ export function useOverviewFilters(users: UserFunnel[]) {
 
   const activeCount = useMemo(() => {
     let count = 0;
-    if (filters.dateRange !== "all") count++;
+    if (filters.dateFrom || filters.dateTo) count++;
     if (filters.statuses.length > 0) count++;
     if (filters.cities.length > 0) count++;
     if (filters.buildings.length > 0) count++;
@@ -282,13 +270,32 @@ export function FilterBar({
       <span className="font-mono text-[9px] uppercase tracking-[1.5px] text-muted-foreground/30 mr-1">Filters</span>
 
       {/* Date Range */}
-      <FilterChip label={DATE_OPTIONS.find((d) => d.value === filters.dateRange)?.label || "All time"} active={filters.dateRange !== "all"}>
-        {DATE_OPTIONS.map((opt) => (
-          <OptionButton key={opt.value} selected={filters.dateRange === opt.value} onClick={() => updateFilter("dateRange", opt.value)}>
-            {opt.label}
-          </OptionButton>
-        ))}
-      </FilterChip>
+      <Popover>
+        <PopoverTrigger asChild>
+          <button className={cn(
+            "flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 font-mono text-[11px] transition-colors",
+            filters.dateFrom || filters.dateTo
+              ? "border-[#3D5A80]/50 bg-[#3D5A80]/10 text-[#7BA3C9]"
+              : "border-[#1F1F1F] bg-[#141414] text-muted-foreground/50 hover:text-muted-foreground/70 hover:border-[#2a2a2a]"
+          )}>
+            <Calendar className="size-3 opacity-60" />
+            {filters.dateFrom || filters.dateTo
+              ? `${filters.dateFrom || "…"} → ${filters.dateTo || "…"}`
+              : "Date range"}
+            <ChevronDown className="size-3 opacity-50" />
+          </button>
+        </PopoverTrigger>
+        <PopoverContent align="start" className="w-auto border-[#1F1F1F] bg-[#141414] p-4">
+          <DateRangeCalendar
+            from={filters.dateFrom}
+            to={filters.dateTo}
+            onChange={(from, to) => {
+              updateFilter("dateFrom", from);
+              updateFilter("dateTo", to);
+            }}
+          />
+        </PopoverContent>
+      </Popover>
 
       {/* Status — tenants only */}
       {mode === "tenants" && (

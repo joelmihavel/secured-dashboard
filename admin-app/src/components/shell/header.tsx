@@ -88,12 +88,9 @@ export function Header() {
   return (
     <header className="flex h-[52px] items-center gap-6 border-b border-[#1F1F1F] px-8">
       {/* Logo */}
-      <div className="flex items-center gap-2">
-        <Image src="/flent-logo.svg" alt="Flent" width={22} height={22} className="brightness-90" />
-        <span className="text-[15px] font-normal tracking-[-0.3px] text-foreground">
-          SECURED
-        </span>
-      </div>
+      <Link href="/overview" className="flex items-center hover:opacity-80 transition-opacity">
+        <Image src="/secured-logo.svg" alt="Secured by Flent" width={120} height={18} className="brightness-90" />
+      </Link>
 
       {/* Pixel Cat */}
       <PixelCat />

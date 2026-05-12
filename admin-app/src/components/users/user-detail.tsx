@@ -12,6 +12,7 @@ import type { UserFunnel } from "@/types/user";
 import { RiskFactorBreakdown } from "./risk-factor-breakdown";
 import { ApprovalPreflight } from "./approval-preflight";
 import { RejectDialog } from "@/components/dialogs/reject-dialog";
+import { Tip } from "@/components/ui/tip";
 
 const DASH = "—";
 
@@ -130,7 +131,7 @@ export function UserDetail({ user }: { user: UserFunnel }) {
         {/* Agreement card */}
         <div className="flex flex-col rounded-xl border border-[#1F1F1F] bg-[#141414] p-5">
           <div className="flex items-center justify-between mb-4">
-            <span className="font-mono text-[9px] uppercase tracking-[1.5px] text-[#A3A3A366]">Agreement</span>
+            <Tip text="Rental agreement uploaded by tenant — extracted data used for verification and risk assessment"><span className="font-mono text-[9px] uppercase tracking-[1.5px] text-[#A3A3A366]">Agreement</span></Tip>
             {user.extraction_confidence != null && (
               <div className="flex items-center gap-2">
                 <Progress value={user.extraction_confidence} className="h-1.5 w-[100px]" />
@@ -168,7 +169,7 @@ export function UserDetail({ user }: { user: UserFunnel }) {
         {/* M360 Identity card */}
         <div className="flex flex-col rounded-xl border border-[#1F1F1F] bg-[#141414] p-5">
           <div className="flex items-center justify-between mb-4">
-            <span className="font-mono text-[9px] uppercase tracking-[1.5px] text-[#A3A3A366]">M360 Identity</span>
+            <Tip text="Identity verification via M360 — checks phone OTP, credit score, age, income, and occupation"><span className="font-mono text-[9px] uppercase tracking-[1.5px] text-[#A3A3A366]">M360 Identity</span></Tip>
             <span className={`font-mono text-[11px] font-semibold ${identityVerified ? "text-success" : "text-warning"}`}>
               {m360Status}
             </span>
@@ -218,7 +219,7 @@ export function UserDetail({ user }: { user: UserFunnel }) {
         {/* Stamp Verification */}
         <div className="flex flex-col rounded-xl border border-[#1F1F1F] bg-[#141414] p-5">
           <div className="flex items-center justify-between mb-3">
-            <span className="font-mono text-[9px] uppercase tracking-[1.5px] text-[#A3A3A366]">Stamp Verification</span>
+            <Tip text="E-stamp verification of the rental agreement — confirms the agreement is legally valid"><span className="font-mono text-[9px] uppercase tracking-[1.5px] text-[#A3A3A366]">Stamp Verification</span></Tip>
             <span className={`font-mono text-[11px] font-semibold ${
               user.stamp_verification_status === "verified" ? "text-success" :
               user.stamp_verification_status ? "text-warning" : "text-muted-foreground/40"
@@ -250,7 +251,7 @@ export function UserDetail({ user }: { user: UserFunnel }) {
 
         {/* Waitlist & Admin */}
         <div className="flex flex-col rounded-xl border border-[#1F1F1F] bg-[#141414] p-5">
-          <span className="font-mono text-[9px] uppercase tracking-[1.5px] text-[#A3A3A366] mb-3">Waitlist & Admin</span>
+          <Tip text="Admin review status, risk scoring, and waitlist position details"><span className="font-mono text-[9px] uppercase tracking-[1.5px] text-[#A3A3A366] mb-3">Waitlist & Admin</span></Tip>
           <div className="grid grid-cols-2 gap-x-8 gap-y-2">
             {([
               ["Position", user.waitlist_position ? `#${user.waitlist_position}` : null],
@@ -288,7 +289,7 @@ export function UserDetail({ user }: { user: UserFunnel }) {
       <div className="flex w-[280px] flex-shrink-0 flex-col gap-4">
         {/* Verification checklist */}
         <div className="flex flex-col rounded-xl bg-success/10 border border-success/20 p-5">
-          <span className="font-mono text-[9px] uppercase tracking-[1.5px] text-success/60 mb-4">Verification</span>
+          <Tip text="Checklist of all verification gates — all must pass for the user to become fully active"><span className="font-mono text-[9px] uppercase tracking-[1.5px] text-success/60 mb-4">Verification</span></Tip>
           <div className="flex flex-col gap-3">
             {([
               ["Bank", bankVerified, null],
@@ -309,7 +310,7 @@ export function UserDetail({ user }: { user: UserFunnel }) {
 
         {/* Payments card */}
         <div className="flex flex-col rounded-xl border border-[#1F1F1F] bg-[#141414] p-5">
-          <span className="font-mono text-[9px] uppercase tracking-[1.5px] text-[#A3A3A366] mb-3">Payments</span>
+          <Tip text="This tenant's payment history — successful payments, total collected, and cashback balance"><span className="font-mono text-[9px] uppercase tracking-[1.5px] text-[#A3A3A366] mb-3">Payments</span></Tip>
           <div className="flex items-baseline gap-1 mb-4">
             <span className="font-mono text-[36px] font-bold leading-none tracking-[-1px] text-foreground">{user.successful_payments || 0}</span>
             <span className="font-mono text-[14px] text-muted-foreground/40">/ paid</span>
@@ -320,11 +321,11 @@ export function UserDetail({ user }: { user: UserFunnel }) {
               <span className="font-mono text-[13px] font-medium text-foreground">{formatCurrency(user.total_paid_paise)}</span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-[12px] text-muted-foreground/50">Cashback Earned</span>
+              <Tip text="Total cashback given to this tenant across all payments"><span className="text-[12px] text-muted-foreground/50">Cashback Earned</span></Tip>
               <span className="font-mono text-[13px] font-medium text-success">{formatCurrency(user.total_cashback_earned_paise)}</span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-[12px] text-muted-foreground/50">CB Balance</span>
+              <Tip text="Unredeemed cashback available for this tenant to use on future payments"><span className="text-[12px] text-muted-foreground/50">CB Balance</span></Tip>
               <span className="font-mono text-[13px] font-medium text-foreground">{formatCurrency(user.cashback_balance_paise)}</span>
             </div>
             <div className="flex items-center justify-between">
@@ -336,7 +337,7 @@ export function UserDetail({ user }: { user: UserFunnel }) {
 
         {/* Bank & Landlord verification details */}
         <div className="flex flex-col rounded-xl border border-[#1F1F1F] bg-[#141414] p-5">
-          <span className="font-mono text-[9px] uppercase tracking-[1.5px] text-[#A3A3A366] mb-3">Bank & Landlord</span>
+          <Tip text="Bank account and landlord verification status — required before rent can be settled"><span className="font-mono text-[9px] uppercase tracking-[1.5px] text-[#A3A3A366] mb-3">Bank & Landlord</span></Tip>
           <div className="flex flex-col gap-2.5">
             {([
               ["Tenant Bank", bankVerified ? "Verified" : "Not verified", bankVerified],
@@ -355,7 +356,7 @@ export function UserDetail({ user }: { user: UserFunnel }) {
 
         {/* Key dates */}
         <div className="flex flex-col rounded-xl border border-[#1F1F1F] bg-[#141414] p-5">
-          <span className="font-mono text-[9px] uppercase tracking-[1.5px] text-[#A3A3A366] mb-3">Timeline</span>
+          <Tip text="Key dates in this user's journey through the platform"><span className="font-mono text-[9px] uppercase tracking-[1.5px] text-[#A3A3A366] mb-3">Timeline</span></Tip>
           <div className="flex flex-col gap-2.5">
             <div className="flex items-center justify-between">
               <span className="text-[12px] text-muted-foreground/50">Signed Up</span>

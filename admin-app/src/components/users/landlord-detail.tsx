@@ -3,6 +3,7 @@
 import { formatCurrency, formatDate, maskPhone } from "@/lib/utils";
 import { UserAvatar } from "@/components/ui/user-avatar";
 import type { UserFunnel } from "@/types/user";
+import { Tip } from "@/components/ui/tip";
 
 const DASH = "—";
 
@@ -37,14 +38,14 @@ export function LandlordDetail({ user }: { user: UserFunnel }) {
       <div className="grid grid-cols-3 gap-3">
         {/* Tenant card */}
         <div className="rounded-xl border border-[#3D5A80]/30 bg-[#3D5A80]/5 p-4">
-          <span className="font-mono text-[9px] uppercase tracking-[1.5px] text-[#3D5A80]/60">Tenant</span>
+          <Tip text="The tenant associated with this landlord's tenancy"><span className="font-mono text-[9px] uppercase tracking-[1.5px] text-[#3D5A80]/60">Tenant</span></Tip>
           <div className="mt-2 text-[14px] font-medium text-foreground truncate">{user.name || maskPhone(user.phone)}</div>
           <div className="font-mono text-[10px] text-muted-foreground/40 mt-0.5 uppercase">{user.user_status} · {user.risk_level || "—"}</div>
         </div>
 
         {/* Bank status */}
         <div className={`rounded-xl border p-4 ${user.landlord_bank_verified ? "border-success/30 bg-success/5" : "border-[#1F1F1F] bg-[#141414]"}`}>
-          <span className="font-mono text-[9px] uppercase tracking-[1.5px] text-muted-foreground/30">Bank</span>
+          <Tip text="Landlord's bank account verification — required for rent settlement"><span className="font-mono text-[9px] uppercase tracking-[1.5px] text-muted-foreground/30">Bank</span></Tip>
           <div className={`mt-2 text-[14px] font-bold ${user.landlord_bank_verified ? "text-success" : "text-muted-foreground/30"}`}>
             {user.landlord_bank_verified ? "Verified" : "Not verified"}
           </div>
@@ -55,7 +56,7 @@ export function LandlordDetail({ user }: { user: UserFunnel }) {
 
         {/* Payments */}
         <div className="rounded-xl border border-[#1F1F1F] bg-[#141414] p-4">
-          <span className="font-mono text-[9px] uppercase tracking-[1.5px] text-muted-foreground/30">Payments</span>
+          <Tip text="Rent payments received for this landlord's property"><span className="font-mono text-[9px] uppercase tracking-[1.5px] text-muted-foreground/30">Payments</span></Tip>
           <div className="mt-2 text-[14px] font-bold text-foreground">{user.successful_payments || 0} <span className="text-[11px] font-normal text-muted-foreground/30">paid</span></div>
           <div className="font-mono text-[10px] text-muted-foreground/40 mt-0.5">{formatCurrency(user.total_paid_paise)}</div>
         </div>
@@ -65,7 +66,7 @@ export function LandlordDetail({ user }: { user: UserFunnel }) {
       <div className="grid grid-cols-2 gap-3">
         {/* Verification */}
         <div className="rounded-xl border border-[#1F1F1F] bg-[#141414] p-4">
-          <span className="font-mono text-[9px] uppercase tracking-[1.5px] text-muted-foreground/30 mb-2 block">Verification</span>
+          <Tip text="Landlord identity and bank verification checks"><span className="font-mono text-[9px] uppercase tracking-[1.5px] text-muted-foreground/30 mb-2 block">Verification</span></Tip>
           <Row label="Bank Verified" value={user.landlord_bank_verified === true ? "Verified" : user.landlord_bank_verified === false ? "Failed" : "Not started"} ok={user.landlord_bank_verified === true ? true : user.landlord_bank_verified === false ? false : undefined} />
           <Row label="PAN Verified" value={user.landlord_bank_pan_verified === true ? "Verified" : user.landlord_bank_pan_verified === false ? "Failed" : "Not started"} ok={user.landlord_bank_pan_verified === true ? true : user.landlord_bank_pan_verified === false ? false : undefined} />
           <Row label="Approved" value={user.landlord_approved === true ? "Yes" : "No"} ok={user.landlord_approved === true} />
@@ -77,7 +78,7 @@ export function LandlordDetail({ user }: { user: UserFunnel }) {
 
         {/* Identity & Stamp */}
         <div className="rounded-xl border border-[#1F1F1F] bg-[#141414] p-4">
-          <span className="font-mono text-[9px] uppercase tracking-[1.5px] text-muted-foreground/30 mb-2 block">Identity & Stamp</span>
+          <Tip text="Landlord name verification via M360 and SHCIL, plus e-stamp validation of the rental agreement"><span className="font-mono text-[9px] uppercase tracking-[1.5px] text-muted-foreground/30 mb-2 block">Identity & Stamp</span></Tip>
           <Row label="M360 Name" value={user.landlord_m360_full_name || DASH} />
           <Row label="SHCIL Name" value={user.shcil_landlord_name || DASH} />
           {user.shcil_landlord_name_matched != null && (
@@ -89,7 +90,7 @@ export function LandlordDetail({ user }: { user: UserFunnel }) {
 
         {/* Property */}
         <div className="rounded-xl border border-[#1F1F1F] bg-[#141414] p-4">
-          <span className="font-mono text-[9px] uppercase tracking-[1.5px] text-muted-foreground/30 mb-2 block">Property</span>
+          <Tip text="Rental property details extracted from the agreement"><span className="font-mono text-[9px] uppercase tracking-[1.5px] text-muted-foreground/30 mb-2 block">Property</span></Tip>
           {user.property_address && (
             <div className="mb-2">
               <span className="text-[11px] text-muted-foreground/50">Address</span>
@@ -103,7 +104,7 @@ export function LandlordDetail({ user }: { user: UserFunnel }) {
 
         {/* Financials */}
         <div className="rounded-xl border border-[#1F1F1F] bg-[#141414] p-4">
-          <span className="font-mono text-[9px] uppercase tracking-[1.5px] text-muted-foreground/30 mb-2 block">Financials</span>
+          <Tip text="Rent, deposit, and maintenance amounts from the agreement — lease dates and last payment"><span className="font-mono text-[9px] uppercase tracking-[1.5px] text-muted-foreground/30 mb-2 block">Financials</span></Tip>
           <Row label="Rent" value={user.monthly_rent_paise ? `${formatCurrency(user.monthly_rent_paise)}/mo` : DASH} />
           <Row label="Security Deposit" value={formatCurrency(user.security_deposit_paise) || DASH} />
           <Row label="Maintenance" value={formatCurrency(user.maintenance_paise) || DASH} />

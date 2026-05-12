@@ -12,6 +12,7 @@ import { callEdgeFunction } from "@/lib/supabase";
 import { useQueryClient } from "@tanstack/react-query";
 import { FilterBar, useOverviewFilters, type OverviewFilters } from "@/components/overview/filter-bar";
 import { PaymentsFeed } from "@/components/overview/activity-feed";
+import { Tip } from "@/components/ui/tip";
 
 type AnalyticsCardId = "city" | "risk" | "verification_pipeline" | "rent_dist" | "credit_dist";
 
@@ -22,12 +23,12 @@ const CARD_RELEVANCE: Record<string, AnalyticsCardId[]> = {
   creditScore: ["credit_dist", "verification_pipeline", "risk"],
   rentRange: ["rent_dist", "city", "risk"],
   statuses: ["city", "risk", "verification_pipeline"],
-  dateRange: ["city", "risk", "verification_pipeline"],
+  dateFrom: ["city", "risk", "verification_pipeline"],
 };
 
 function getVisibleCards(filters: OverviewFilters): Set<AnalyticsCardId> {
   const hasActive =
-    filters.dateRange !== "all" ||
+    !!(filters.dateFrom || filters.dateTo) ||
     filters.statuses.length > 0 ||
     filters.cities.length > 0 ||
     filters.buildings.length > 0 ||
@@ -38,7 +39,7 @@ function getVisibleCards(filters: OverviewFilters): Set<AnalyticsCardId> {
   if (!hasActive) return new Set(["city", "risk", "verification_pipeline"]);
 
   const visible = new Set<AnalyticsCardId>();
-  if (filters.dateRange !== "all") CARD_RELEVANCE.dateRange.forEach((c) => visible.add(c));
+  if (filters.dateFrom || filters.dateTo) CARD_RELEVANCE.dateFrom.forEach((c) => visible.add(c));
   if (filters.statuses.length > 0) CARD_RELEVANCE.statuses.forEach((c) => visible.add(c));
   if (filters.cities.length > 0) CARD_RELEVANCE.cities.forEach((c) => visible.add(c));
   if (filters.buildings.length > 0) CARD_RELEVANCE.buildings.forEach((c) => visible.add(c));
@@ -60,9 +61,10 @@ function getHighlightedCards(filters: OverviewFilters): Set<AnalyticsCardId> {
 
 function buildFilterSubtitle(filters: OverviewFilters): string | null {
   const parts: string[] = [];
-  if (filters.dateRange !== "all") {
-    const labels: Record<string, string> = { "7d": "7 days", "30d": "30 days", "90d": "90 days", "1y": "1 year" };
-    parts.push(labels[filters.dateRange] || filters.dateRange);
+  if (filters.dateFrom || filters.dateTo) {
+    const from = filters.dateFrom || "…";
+    const to = filters.dateTo || "…";
+    parts.push(`${from} → ${to}`);
   }
   if (filters.cities.length > 0) {
     parts.push(filters.cities.length <= 2 ? filters.cities.join(", ") : `${filters.cities.length} cities`);
@@ -114,7 +116,7 @@ export default function OverviewPage() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const { users, loading: usersLoading } = useUsers();
-  const { payments } = usePayments(30);
+  const { payments } = usePayments();
   const loading = usersLoading;
   const [actionLoading, setActionLoading] = useState<string | null>(null);
 
@@ -126,6 +128,7 @@ export default function OverviewPage() {
   const highlightedCards = useMemo(() => getHighlightedCards(filters), [filters]);
 
   const filteredUserIds = useMemo(() => new Set(fUsers.map((u) => u.user_id)), [fUsers]);
+  const filteredUserPhones = useMemo(() => new Set(fUsers.map((u) => u.phone.replace(/^\+/, ""))), [fUsers]);
 
   const stats = useMemo(() => {
     const total = fUsers.length;
@@ -195,10 +198,11 @@ export default function OverviewPage() {
   }), [users]);
 
   const paymentStats = useMemo(() => {
-    const completed = payments.filter((p) => p.paid_at);
-    const totalRevenue = completed.reduce((s, p) => s + (p.total_amount_paise ?? 0), 0);
-    return { count: completed.length, totalRevenue };
-  }, [payments]);
+    const filtered = activeCount > 0 ? payments.filter((p) => filteredUserPhones.has(p.user_phone.replace(/^\+/, ""))) : payments;
+    const successful = filtered.filter((p) => p.payment_status === "success");
+    const totalRevenue = successful.reduce((s, p) => s + (p.total_amount_paise ?? 0), 0);
+    return { successful: successful.length, total: filtered.length, totalRevenue };
+  }, [payments, filteredUserPhones, activeCount]);
 
   const conversionPct = stats.total > 0 ? Math.round((stats.paid / stats.total) * 100) : 0;
 
@@ -307,7 +311,7 @@ export default function OverviewPage() {
         <div className="flex w-[240px] flex-shrink-0 flex-col gap-4">
           <Link href={usersLink()} className="flex flex-1 flex-col justify-between rounded-xl bg-[#3D5A80] p-5 hover:bg-[#4A6B91] transition-colors cursor-pointer group">
             <div className="flex items-center justify-between">
-              <span className="font-mono text-[9px] uppercase tracking-[1.5px] text-white/60">Total Users</span>
+              <Tip text="All registered users on the platform, including waitlisted, approved, and active"><span className="font-mono text-[9px] uppercase tracking-[1.5px] text-white/60">Total Users</span></Tip>
               <span className="font-mono text-[10px] text-white/0 group-hover:text-white/60 transition-colors">&rarr;</span>
             </div>
             <div>
@@ -328,14 +332,14 @@ export default function OverviewPage() {
 
           <Link href="/payments" className="flex flex-1 flex-col justify-between rounded-xl border border-[#1F1F1F] bg-[#141414] p-5 hover:border-[#2a2a2a] hover:bg-[#181818] transition-colors cursor-pointer group">
             <div className="flex items-center justify-between">
-              <span className="font-mono text-[9px] uppercase tracking-[1.5px] text-[#A3A3A366]">Transactions</span>
+              <Tip text="Total rent collected from successful payments processed through the app"><span className="font-mono text-[9px] uppercase tracking-[1.5px] text-[#A3A3A366]">Transactions</span></Tip>
               <span className="font-mono text-[10px] text-transparent group-hover:text-muted-foreground/40 transition-colors">&rarr;</span>
             </div>
             <div>
               <span className="font-mono text-[56px] font-bold leading-none tracking-[-2px] text-[#FF9A6D]">
-                {formatCurrencyShort(stats.totalRevenue)}
+                {formatCurrencyShort(paymentStats.totalRevenue)}
               </span>
-              <div className="font-mono text-[11px] text-muted-foreground/30 mt-1">{paymentStats.count} payments</div>
+              <div className="font-mono text-[11px] text-muted-foreground/30 mt-1">{paymentStats.successful} success / {paymentStats.total} total</div>
               {stats.avgRentPaise > 0 && (
                 <div className="font-mono text-[11px] text-muted-foreground/30">avg rent {formatCurrencyShort(stats.avgRentPaise)}</div>
               )}
@@ -347,7 +351,7 @@ export default function OverviewPage() {
         <div className="flex w-[280px] flex-shrink-0 flex-col gap-4">
           <Link href={usersLink()} className="flex flex-col gap-3 rounded-xl border border-[#1F1F1F] bg-[#141414] p-5 hover:border-[#2a2a2a] hover:bg-[#181818] transition-colors cursor-pointer group">
             <div className="flex items-center justify-between">
-              <span className="font-mono text-[9px] uppercase tracking-[1.5px] text-[#A3A3A366]">Waitlist</span>
+              <Tip text="Users who signed up but haven't been approved yet — waiting for admin review"><span className="font-mono text-[9px] uppercase tracking-[1.5px] text-[#A3A3A366]">Waitlist</span></Tip>
               <span className="font-mono text-[10px] text-transparent group-hover:text-muted-foreground/40 transition-colors">&rarr;</span>
             </div>
             <div className="flex items-baseline gap-2">
@@ -369,7 +373,7 @@ export default function OverviewPage() {
 
           <div className="flex flex-1 flex-col rounded-xl border border-[#1F1F1F] bg-[#141414] p-5 overflow-hidden">
             <Link href={usersLink({ status: "pending" })} className="flex items-center justify-between mb-3 group cursor-pointer">
-              <span className="font-mono text-[9px] uppercase tracking-[1.5px] text-[#A3A3A366] group-hover:text-muted-foreground/60 transition-colors">Pending Review</span>
+              <Tip text="Users needing admin action — either waitlisted or with agreement confirmed but not yet approved"><span className="font-mono text-[9px] uppercase tracking-[1.5px] text-[#A3A3A366] group-hover:text-muted-foreground/60 transition-colors">Pending Review</span></Tip>
               <span className="flex size-6 items-center justify-center rounded-full bg-warning/20 font-mono text-[11px] font-semibold text-warning">{stats.triage.length}</span>
             </Link>
             <div className="flex flex-col gap-0.5 flex-1 overflow-y-auto min-h-0">
@@ -407,7 +411,7 @@ export default function OverviewPage() {
         {/* Column 3 — User Funnel */}
         <div className="flex flex-1 flex-col rounded-xl border border-[#1F1F1F] bg-[#141414] p-5">
           <div className="flex items-center justify-between mb-2">
-            <span className="font-mono text-[9px] uppercase tracking-[1.5px] text-[#A3A3A366]">User Funnel</span>
+            <Tip text="Conversion funnel from signup to first payment — shows drop-off at each stage"><span className="font-mono text-[9px] uppercase tracking-[1.5px] text-[#A3A3A366]">User Funnel</span></Tip>
             {isFiltered && (
               <span className="font-mono text-[9px] text-[#7BA3C9] bg-[#3D5A80]/10 rounded px-1.5 py-0.5">Filtered</span>
             )}
@@ -478,7 +482,7 @@ export default function OverviewPage() {
         {visibleCards.has("city") && (
           <div className={cn("flex flex-col rounded-xl border bg-[#141414] p-5 transition-all overflow-hidden", cardBorder("city"), cardGlow("city"))}>
             <div className="flex items-center justify-between mb-3">
-              <span className="font-mono text-[9px] uppercase tracking-[1.5px] text-[#A3A3A366]">By City</span>
+              <Tip text="User distribution across cities based on property address"><span className="font-mono text-[9px] uppercase tracking-[1.5px] text-[#A3A3A366]">By City</span></Tip>
               {highlightedCards.has("city") && <span className="size-1.5 rounded-full bg-[#3D5A80]" />}
             </div>
             <div className="flex flex-col gap-1 flex-1 overflow-y-auto min-h-0">
@@ -508,7 +512,7 @@ export default function OverviewPage() {
         {visibleCards.has("risk") && (
           <div className={cn("flex flex-col rounded-xl border bg-[#141414] p-5 transition-all overflow-hidden", cardBorder("risk"), cardGlow("risk"))}>
             <div className="flex items-center justify-between mb-3">
-              <span className="font-mono text-[9px] uppercase tracking-[1.5px] text-[#A3A3A366]">Risk Breakdown</span>
+              <Tip text="Risk levels assigned by the scoring engine — LOW, MED, HIGH based on credit, income, and verification data"><span className="font-mono text-[9px] uppercase tracking-[1.5px] text-[#A3A3A366]">Risk Breakdown</span></Tip>
               {highlightedCards.has("risk") && <span className="size-1.5 rounded-full bg-[#3D5A80]" />}
             </div>
             <div className="flex flex-col gap-3">
@@ -546,7 +550,7 @@ export default function OverviewPage() {
         {visibleCards.has("verification_pipeline") && (
           <div className={cn("flex flex-col rounded-xl border bg-[#141414] p-5 transition-all overflow-hidden", cardBorder("verification_pipeline"), cardGlow("verification_pipeline"))}>
             <div className="flex items-center justify-between mb-4">
-              <span className="font-mono text-[9px] uppercase tracking-[1.5px] text-[#A3A3A366]">Verification Pipeline</span>
+              <Tip text="Sequential verification steps — M360 identity check, then bank, then utility. Each step requires the previous"><span className="font-mono text-[9px] uppercase tracking-[1.5px] text-[#A3A3A366]">Verification Pipeline</span></Tip>
               {highlightedCards.has("verification_pipeline") && <span className="size-1.5 rounded-full bg-[#3D5A80]" />}
             </div>
             <div className="flex flex-col gap-3">
@@ -583,7 +587,7 @@ export default function OverviewPage() {
         {visibleCards.has("rent_dist") && (
           <div className={cn("flex flex-col rounded-xl border bg-[#141414] p-5 transition-all overflow-hidden", cardBorder("rent_dist"), cardGlow("rent_dist"))}>
             <div className="flex items-center justify-between mb-3">
-              <span className="font-mono text-[9px] uppercase tracking-[1.5px] text-[#A3A3A366]">Rent Distribution</span>
+              <Tip text="Distribution of monthly rent amounts across tenants"><span className="font-mono text-[9px] uppercase tracking-[1.5px] text-[#A3A3A366]">Rent Distribution</span></Tip>
               {highlightedCards.has("rent_dist") && <span className="size-1.5 rounded-full bg-[#3D5A80]" />}
             </div>
             <div className="flex items-end gap-2 flex-1 min-h-[80px]">
@@ -605,7 +609,7 @@ export default function OverviewPage() {
         {visibleCards.has("credit_dist") && (
           <div className={cn("flex flex-col rounded-xl border bg-[#141414] p-5 transition-all overflow-hidden", cardBorder("credit_dist"), cardGlow("credit_dist"))}>
             <div className="flex items-center justify-between mb-3">
-              <span className="font-mono text-[9px] uppercase tracking-[1.5px] text-[#A3A3A366]">Credit Scores</span>
+              <Tip text="Credit score distribution from M360 identity verification — higher scores indicate lower default risk"><span className="font-mono text-[9px] uppercase tracking-[1.5px] text-[#A3A3A366]">Credit Scores</span></Tip>
               {highlightedCards.has("credit_dist") && <span className="size-1.5 rounded-full bg-[#3D5A80]" />}
             </div>
             <div className="flex items-end gap-2 flex-1 min-h-[80px]">
