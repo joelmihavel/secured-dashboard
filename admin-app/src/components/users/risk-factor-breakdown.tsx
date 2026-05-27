@@ -31,6 +31,8 @@ function signalDot(signal: string) {
       return <span className="inline-block size-2.5 rounded-full bg-warning" />;
     case "RED":
       return <span className="inline-block size-2.5 rounded-full bg-destructive" />;
+    case "MISSING":
+      return <span className="inline-block size-2.5 rounded-full bg-muted-foreground/50 ring-1 ring-muted-foreground/20" />;
     default:
       return <span className="inline-block size-2.5 rounded-full bg-muted-foreground/30" />;
   }
@@ -72,6 +74,7 @@ export function RiskFactorBreakdown({ riskLevel, riskPhase, riskComputedAt, risk
   const greenCount = riskFactors.filter((f) => f.signal === "GREEN").length;
   const yellowCount = riskFactors.filter((f) => f.signal === "YELLOW").length;
   const redCount = riskFactors.filter((f) => f.signal === "RED").length;
+  const missingCount = riskFactors.filter((f) => f.signal === "MISSING").length;
 
   const computedLabel = riskComputedAt
     ? new Date(riskComputedAt).toLocaleString("en-IN", { dateStyle: "short", timeStyle: "short" })
@@ -95,7 +98,7 @@ export function RiskFactorBreakdown({ riskLevel, riskPhase, riskComputedAt, risk
           )}
           <div className="flex-1" />
           <span className="text-[9px] text-muted-foreground/40">
-            {greenCount}G / {yellowCount}Y / {redCount}R
+            {greenCount}G / {yellowCount}Y / {redCount}R{missingCount > 0 ? ` / ${missingCount}?` : ""}
           </span>
           <span className="text-[9px] text-muted-foreground/40">
             Computed {computedLabel}
@@ -108,7 +111,7 @@ export function RiskFactorBreakdown({ riskLevel, riskPhase, riskComputedAt, risk
           <div className="flex flex-col items-center gap-2">
             <RiskRadarChart factors={riskFactors} size={240} />
             <span className="text-[9px] text-muted-foreground/40">
-              Each spoke = one risk factor. Green = pass, Yellow = warning, Red = fail.
+              Green = pass, Yellow = warning, Red = fail, Grey = awaiting data
             </span>
           </div>
 

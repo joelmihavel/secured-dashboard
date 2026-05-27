@@ -39,14 +39,14 @@ function UsersPageInner() {
     if (search) setSearchQuery(search);
   }, [urlUserId, searchParams]);
 
-  const { filters, filteredUsers: overviewFiltered, activeCount, clearAll, updateFilter, uniqueCities, uniqueBuildings } = useOverviewFilters(users);
+  const { filters, filteredUsers: overviewFiltered, activeCount, clearAll, updateFilter, uniqueCities, uniqueBuildings, riskCounts } = useOverviewFilters(users);
 
-  const viewUsers = useMemo(() => {
-    if (viewMode === "landlords") {
-      return overviewFiltered.filter((u) => u.landlord_name || u.landlord_display_name || u.landlord_phone);
-    }
-    return overviewFiltered;
-  }, [overviewFiltered, viewMode]);
+  const landlordUsers = useMemo(() =>
+    overviewFiltered.filter((u) => u.landlord_name || u.landlord_display_name || u.landlord_phone),
+    [overviewFiltered],
+  );
+
+  const viewUsers = viewMode === "landlords" ? landlordUsers : overviewFiltered;
 
   if (!selectedUserId && viewUsers.length > 0) {
     setSelectedUserId(viewUsers[0].user_id);
@@ -105,7 +105,7 @@ function UsersPageInner() {
               viewMode === "tenants" ? "bg-[#3D5A80]/30 text-[#7BA3C9]" : "text-muted-foreground/40 hover:text-muted-foreground/60"
             }`}
           >
-            Tenants
+            Tenants <span className="ml-1 opacity-60">{overviewFiltered.length}</span>
           </button>
           <button
             onClick={() => { setViewMode("landlords"); clearAll(); }}
@@ -113,7 +113,7 @@ function UsersPageInner() {
               viewMode === "landlords" ? "bg-[#FF9A6D]/20 text-[#FF9A6D]" : "text-muted-foreground/40 hover:text-muted-foreground/60"
             }`}
           >
-            Landlords
+            Landlords <span className="ml-1 opacity-60">{landlordUsers.length}</span>
           </button>
         </div>
         <div className="h-4 w-px bg-[#1F1F1F] flex-shrink-0" />
@@ -124,6 +124,7 @@ function UsersPageInner() {
           updateFilter={updateFilter}
           uniqueCities={uniqueCities}
           uniqueBuildings={uniqueBuildings}
+          riskCounts={riskCounts}
           totalUsers={users.length}
           filteredCount={viewUsers.length}
           viewMode={viewMode}

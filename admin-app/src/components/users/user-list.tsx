@@ -2,7 +2,7 @@
 
 import { useMemo, useState, useCallback } from "react";
 import { Input } from "@/components/ui/input";
-import { cn, maskPhone } from "@/lib/utils";
+import { cn, maskPhone, formatTAT, tatColor } from "@/lib/utils";
 import { UserAvatar } from "@/components/ui/user-avatar";
 import { computeDecision, sortByPriority } from "@/lib/decision";
 import { Search, CheckSquare, Square, MinusSquare } from "lucide-react";
@@ -227,9 +227,18 @@ export function UserList({
                     user.landlord_bank_verified || user.landlord_bank_pan_verified ? "bg-warning" : "bg-muted-foreground/20"
                   )} title={`Bank: ${user.landlord_bank_verified ? "✓" : "✗"} · PAN: ${user.landlord_bank_pan_verified ? "✓" : "✗"}`} />
                 ) : (
-                  <span className={cn("font-mono text-[11px] font-semibold flex-shrink-0", riskColor(user.risk_level))}>
-                    {user.risk_level || "—"}
-                  </span>
+                  <div className="flex flex-col items-end gap-0.5 flex-shrink-0">
+                    <span className={cn("font-mono text-[11px] font-semibold", riskColor(user.risk_level))}>
+                      {user.risk_level || "—"}
+                    </span>
+                    {user.waitlist_joined_at && (
+                      <span className={cn("font-mono text-[9px]", user.admin_review === "approved" ? "text-muted-foreground/40" : tatColor(user.waitlist_joined_at))}>
+                        {user.admin_review === "approved" && user.status_updated_at
+                          ? `TAT ${formatTAT(user.status_updated_at)}`
+                          : formatTAT(user.waitlist_joined_at)}
+                      </span>
+                    )}
+                  </div>
                 )}
               </button>
             );

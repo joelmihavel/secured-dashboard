@@ -120,7 +120,7 @@ export default function OverviewPage() {
   const loading = usersLoading;
   const [actionLoading, setActionLoading] = useState<string | null>(null);
 
-  const { filters, filteredUsers: fUsers, activeCount, clearAll, updateFilter, uniqueCities, uniqueBuildings } = useOverviewFilters(users);
+  const { filters, filteredUsers: fUsers, activeCount, clearAll, updateFilter, uniqueCities, uniqueBuildings, riskCounts } = useOverviewFilters(users);
 
   const isFiltered = activeCount > 0;
   const filterSubtitle = useMemo(() => buildFilterSubtitle(filters), [filters]);
@@ -301,6 +301,7 @@ export default function OverviewPage() {
         updateFilter={updateFilter}
         uniqueCities={uniqueCities}
         uniqueBuildings={uniqueBuildings}
+        riskCounts={riskCounts}
         totalUsers={users.length}
         filteredCount={fUsers.length}
       />

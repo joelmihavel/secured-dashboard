@@ -1,9 +1,13 @@
 export interface RiskFactorEntry {
   factor: string;
-  signal: "GREEN" | "YELLOW" | "RED";
+  signal: "GREEN" | "YELLOW" | "RED" | "MISSING";
   weight: number;
   detail: string;
   phase: "pre" | "post";
+  continuous_score?: number;
+  data_state?: "present" | "missing";
+  scored_at?: string;
+  freshness_decay?: number;
 }
 
 export interface UserFunnel {

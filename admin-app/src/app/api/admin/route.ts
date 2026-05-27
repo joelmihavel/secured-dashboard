@@ -60,11 +60,33 @@ interface UpdateTenancyLandlordRequest extends AdminRequestBase {
   reason?: string;
 }
 
+interface UpdateExtractionRequest extends AdminRequestBase {
+  op: "update-extraction";
+  extractionId: string;
+  fields: {
+    monthly_rent_paise?: number;
+    security_deposit_paise?: number;
+    maintenance_paise?: number;
+    rent_due_day?: number;
+    property_address?: string;
+    property_city?: string;
+    property_state?: string;
+    property_pincode?: string;
+    property_bhk_type?: string;
+    lease_start_date?: string;
+    lease_end_date?: string;
+    landlord_name?: string;
+    landlord_phone?: string;
+    rooms_in_agreement?: number;
+  };
+}
+
 type AdminRequest =
   | FetchViewRequest
   | CallEdgeFunctionRequest
   | FetchLandlordReviewQueueRequest
-  | UpdateTenancyLandlordRequest;
+  | UpdateTenancyLandlordRequest
+  | UpdateExtractionRequest;
 
 function resolveEnv(req: NextRequest, body: AdminRequest): Environment | null {
   if (body.env === "dev" || body.env === "main") return body.env;
@@ -154,33 +176,47 @@ export async function POST(req: NextRequest) {
     if (!viewName || typeof viewName !== "string") {
       return NextResponse.json({ error: "Missing `viewName`" }, { status: 400 });
     }
-    let query = supabase.from(viewName).select(options?.select ?? "*");
-    if (options?.filters) {
-      for (const f of options.filters) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        query = (query as any).filter(f.column, f.operator, f.value);
+
+    const PAGE_SIZE = 1000;
+    const allRows: Record<string, unknown>[] = [];
+    let offset = options?.offset ?? 0;
+    const requestedLimit = options?.limit;
+
+    // Paginate through PostgREST's 1000-row cap to fetch all rows
+    // eslint-disable-next-line no-constant-condition
+    while (true) {
+      const batchSize = requestedLimit
+        ? Math.min(PAGE_SIZE, requestedLimit - allRows.length)
+        : PAGE_SIZE;
+
+      let query = supabase.from(viewName).select(options?.select ?? "*");
+      if (options?.filters) {
+        for (const f of options.filters) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          query = (query as any).filter(f.column, f.operator, f.value);
+        }
       }
+      if (options?.order) {
+        query = query.order(options.order.column, {
+          ascending: options.order.ascending ?? true,
+        });
+      }
+      query = query.range(offset, offset + batchSize - 1);
+
+      const { data, error } = await query;
+      if (error) {
+        console.error(`[/api/admin fetch-view ${viewName}] error:`, error);
+        return NextResponse.json({ error: error.message }, { status: 500 });
+      }
+
+      allRows.push(...(data ?? []));
+      offset += batchSize;
+
+      if (!data || data.length < batchSize) break;
+      if (requestedLimit && allRows.length >= requestedLimit) break;
     }
-    if (options?.order) {
-      query = query.order(options.order.column, {
-        ascending: options.order.ascending ?? true,
-      });
-    }
-    if (options?.limit) {
-      query = query.limit(options.limit);
-    }
-    if (options?.offset != null) {
-      query = query.range(
-        options.offset,
-        options.offset + (options.limit ?? 50) - 1,
-      );
-    }
-    const { data, error } = await query;
-    if (error) {
-      console.error(`[/api/admin fetch-view ${viewName}] error:`, error);
-      return NextResponse.json({ error: error.message }, { status: 500 });
-    }
-    return NextResponse.json({ data });
+
+    return NextResponse.json({ data: allRows });
   }
 
   if (payload.op === "call-edge-function") {
@@ -431,6 +467,134 @@ export async function POST(req: NextRequest) {
     }
 
     return NextResponse.json({ data: updated });
+  }
+
+  if (payload.op === "update-extraction") {
+    const { extractionId, fields } = payload;
+
+    if (!extractionId || typeof extractionId !== "string") {
+      return NextResponse.json(
+        { error: "Missing or invalid `extractionId`" },
+        { status: 400 },
+      );
+    }
+
+    if (!fields || typeof fields !== "object" || Object.keys(fields).length === 0) {
+      return NextResponse.json(
+        { error: "Missing or empty `fields` object" },
+        { status: 400 },
+      );
+    }
+
+    const ALLOWED_FIELDS = new Set([
+      "monthly_rent_paise",
+      "security_deposit_paise",
+      "maintenance_paise",
+      "rent_due_day",
+      "property_address",
+      "property_city",
+      "property_state",
+      "property_pincode",
+      "property_bhk_type",
+      "lease_start_date",
+      "lease_end_date",
+      "landlord_name",
+      "landlord_phone",
+      "rooms_in_agreement",
+    ]);
+
+    const unknownKeys = Object.keys(fields).filter((k) => !ALLOWED_FIELDS.has(k));
+    if (unknownKeys.length > 0) {
+      return NextResponse.json(
+        { error: `Unknown field(s): ${unknownKeys.join(", ")}` },
+        { status: 400 },
+      );
+    }
+
+    const PAISE_FIELDS = ["monthly_rent_paise", "security_deposit_paise", "maintenance_paise"];
+    for (const pf of PAISE_FIELDS) {
+      const val = fields[pf as keyof typeof fields];
+      if (val !== undefined) {
+        if (typeof val !== "number" || !Number.isInteger(val) || val <= 0) {
+          return NextResponse.json(
+            { error: `\`${pf}\` must be a positive integer` },
+            { status: 400 },
+          );
+        }
+      }
+    }
+
+    if (fields.rent_due_day !== undefined) {
+      const d = fields.rent_due_day;
+      if (typeof d !== "number" || !Number.isInteger(d) || d < 1 || d > 28) {
+        return NextResponse.json(
+          { error: "`rent_due_day` must be an integer between 1 and 28" },
+          { status: 400 },
+        );
+      }
+    }
+
+    if (fields.property_pincode !== undefined) {
+      if (typeof fields.property_pincode !== "string" || !/^\d{6}$/.test(fields.property_pincode)) {
+        return NextResponse.json(
+          { error: "`property_pincode` must be a 6-digit string" },
+          { status: 400 },
+        );
+      }
+    }
+
+    if (fields.rooms_in_agreement !== undefined) {
+      const r = fields.rooms_in_agreement;
+      if (typeof r !== "number" || !Number.isInteger(r) || r <= 0) {
+        return NextResponse.json(
+          { error: "`rooms_in_agreement` must be a positive integer" },
+          { status: 400 },
+        );
+      }
+    }
+
+    // Build a clean update payload from only the whitelisted keys
+    const updatePayload: Record<string, unknown> = {};
+    for (const key of Object.keys(fields)) {
+      if (ALLOWED_FIELDS.has(key)) {
+        updatePayload[key] = fields[key as keyof typeof fields];
+      }
+    }
+
+    const { data: updatedExtraction, error: extErr } = await supabase
+      .from("extracted_rental_info")
+      .update(updatePayload)
+      .eq("id", extractionId)
+      .select("id, updated_at")
+      .maybeSingle();
+
+    if (extErr) {
+      console.error("[/api/admin update-extraction] err:", extErr);
+      return NextResponse.json({ error: extErr.message }, { status: 500 });
+    }
+    if (!updatedExtraction) {
+      return NextResponse.json(
+        { error: "Extraction record not found" },
+        { status: 404 },
+      );
+    }
+
+    // Best-effort audit log
+    try {
+      await supabase.from("audit_logs").insert({
+        actor_type: "admin",
+        action: "ADMIN_EXTRACTION_UPDATE",
+        action_category: "extraction",
+        entity_type: "extracted_rental_info",
+        entity_id: extractionId,
+        details: { actor_email: callerEmail, fields: updatePayload },
+        status: "success",
+      });
+    } catch (auditErr) {
+      console.warn("[/api/admin update-extraction] audit insert failed:", auditErr);
+    }
+
+    return NextResponse.json({ data: updatedExtraction });
   }
 
   return NextResponse.json({ error: "Unknown op" }, { status: 400 });

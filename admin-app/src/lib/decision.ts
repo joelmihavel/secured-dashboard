@@ -68,6 +68,9 @@ export function computeDecision(user: UserFunnel): DecisionResult {
   if (user.landlord_approved !== true)
     issues.push({ label: "Landlord not confirmed", severity: "warning" });
 
+  if (user.landlord_bank_pan_verified === true && user.landlord_bank_verified !== true)
+    issues.push({ label: "PAN verified but bank failed", severity: "warning" });
+
   const blockers = issues.filter((i) => i.severity === "blocker");
   const warnings = issues.filter((i) => i.severity === "warning");
 

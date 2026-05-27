@@ -88,3 +88,24 @@ export function formatRelativeTime(date: string | null | undefined): string {
   if (diffDay < 7) return `${diffDay}d ago`;
   return formatDate(date);
 }
+
+export function formatTAT(date: string | null | undefined): string {
+  if (!date) return "—";
+  const diffMs = Date.now() - new Date(date).getTime();
+  if (diffMs < 0) return "—";
+  const diffHr = Math.floor(diffMs / 3600000);
+  if (diffHr < 1) return "<1h";
+  if (diffHr < 24) return `${diffHr}h`;
+  const diffDay = Math.floor(diffHr / 24);
+  if (diffDay < 7) return `${diffDay}d`;
+  if (diffDay < 30) return `${Math.floor(diffDay / 7)}w`;
+  return `${Math.floor(diffDay / 30)}mo`;
+}
+
+export function tatColor(date: string | null | undefined): string {
+  if (!date) return "text-muted-foreground/30";
+  const diffDay = Math.floor((Date.now() - new Date(date).getTime()) / 86400000);
+  if (diffDay <= 2) return "text-success";
+  if (diffDay <= 7) return "text-warning";
+  return "text-destructive";
+}

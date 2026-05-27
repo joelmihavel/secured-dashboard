@@ -173,3 +173,14 @@ export async function updateTenancyLandlord(
     reason,
   });
 }
+
+export async function updateExtraction(
+  extractionId: string,
+  fields: Record<string, unknown>,
+): Promise<{ id: string; updated_at: string }> {
+  return await callAdminApi({
+    op: "update-extraction",
+    extractionId,
+    fields,
+  });
+}

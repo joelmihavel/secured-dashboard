@@ -2,8 +2,8 @@
 
 import type { RiskFactorEntry } from "@/types/user";
 
-const SIGNAL_VALUE = { GREEN: 1, YELLOW: 0.5, RED: 0.15 } as const;
-const SIGNAL_COLOR = { GREEN: "#22C55E", YELLOW: "#F59E0B", RED: "#EF4444" } as const;
+const SIGNAL_VALUE: Record<string, number> = { GREEN: 1, YELLOW: 0.5, RED: 0.15, MISSING: 0.65 };
+const SIGNAL_COLOR: Record<string, string> = { GREEN: "#22C55E", YELLOW: "#F59E0B", RED: "#EF4444", MISSING: "#6B7280" };
 
 interface Props {
   factors: RiskFactorEntry[];
@@ -66,6 +66,7 @@ export function RiskRadarChart({ factors, size = 260 }: Props) {
   const green = factors.filter((f) => f.signal === "GREEN").length;
   const yellow = factors.filter((f) => f.signal === "YELLOW").length;
   const red = factors.filter((f) => f.signal === "RED").length;
+  const missing = factors.filter((f) => f.signal === "MISSING").length;
 
   return (
     <svg viewBox={`0 0 ${size} ${size}`} width={size} height={size}>
@@ -153,7 +154,7 @@ export function RiskRadarChart({ factors, size = 260 }: Props) {
         fontFamily="Plus Jakarta Sans, sans-serif"
         fontSize={8}
       >
-        {green}G {yellow}Y {red}R
+        {green}G {yellow}Y {red}R{missing > 0 ? ` ${missing}?` : ""}
       </text>
     </svg>
   );

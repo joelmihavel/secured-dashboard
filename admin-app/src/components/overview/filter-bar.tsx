@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { ChevronDown, X, Calendar } from "lucide-react";
 import { DateRangeCalendar } from "@/components/ui/date-range-calendar";
+import { computeDecision } from "@/lib/decision";
 import type { UserFunnel } from "@/types/user";
 
 export interface OverviewFilters {
@@ -68,11 +69,19 @@ function parseDateBound(val: string | null, end?: boolean): Date | null {
 
 function matchesCreditScore(score: number | null, filter: OverviewFilters["creditScore"]): boolean {
   if (filter === "all") return true;
-  if (score === null) return false;
+  if (score == null) return false;
   if (filter === "<600") return score < 600;
   if (filter === "600-700") return score >= 600 && score <= 700;
   if (filter === "700-750") return score > 700 && score <= 750;
   return score > 750;
+}
+
+function effectiveRiskLevel(user: UserFunnel): string {
+  if (user.risk_level) return user.risk_level;
+  const d = computeDecision(user);
+  if (d.state === "BLOCKED") return "HIGH";
+  if (d.state === "NEEDS_REVIEW") return "MED";
+  return "LOW";
 }
 
 function matchesRentRange(rentPaise: number | null, filter: OverviewFilters["rentRange"]): boolean {
@@ -88,9 +97,10 @@ function matchesRentRange(rentPaise: number | null, filter: OverviewFilters["ren
 export function useOverviewFilters(users: UserFunnel[]) {
   const [filters, setFilters] = useState<OverviewFilters>(DEFAULT_FILTERS);
 
-  const { uniqueCities, uniqueBuildings } = useMemo(() => {
+  const { uniqueCities, uniqueBuildings, riskCounts } = useMemo(() => {
     const citySet = new Map<string, number>();
     const buildingSet = new Map<string, number>();
+    const riskMap = new Map<string, number>();
     users.forEach((u) => {
       const raw = u.property_city || "";
       const city = raw ? (CITY_ALIASES[raw] || raw) : "Not set";
@@ -98,10 +108,14 @@ export function useOverviewFilters(users: UserFunnel[]) {
 
       const building = extractBuilding(u.property_address);
       if (building) buildingSet.set(building, (buildingSet.get(building) || 0) + 1);
+
+      const rk = effectiveRiskLevel(u);
+      riskMap.set(rk, (riskMap.get(rk) || 0) + 1);
     });
     return {
       uniqueCities: Array.from(citySet.entries()).sort((a, b) => b[1] - a[1]),
       uniqueBuildings: Array.from(buildingSet.entries()).sort((a, b) => b[1] - a[1]).slice(0, 30),
+      riskCounts: riskMap,
     };
   }, [users]);
 
@@ -123,7 +137,7 @@ export function useOverviewFilters(users: UserFunnel[]) {
         if (!building || !filters.buildings.includes(building)) return false;
       }
       if (!matchesCreditScore(u.m360_credit_score, filters.creditScore)) return false;
-      if (filters.riskLevels.length > 0 && (!u.risk_level || !filters.riskLevels.includes(u.risk_level))) return false;
+      if (filters.riskLevels.length > 0 && !filters.riskLevels.includes(effectiveRiskLevel(u))) return false;
       if (!matchesRentRange(u.monthly_rent_paise, filters.rentRange)) return false;
       return true;
     });
@@ -146,7 +160,7 @@ export function useOverviewFilters(users: UserFunnel[]) {
     setFilters((prev) => ({ ...prev, [key]: value }));
   }, []);
 
-  return { filters, filteredUsers, activeCount, clearAll, updateFilter, uniqueCities, uniqueBuildings };
+  return { filters, filteredUsers, activeCount, clearAll, updateFilter, uniqueCities, uniqueBuildings, riskCounts };
 }
 
 function FilterChip({ label, active, count, children }: {
@@ -250,6 +264,7 @@ export function FilterBar({
   updateFilter,
   uniqueCities,
   uniqueBuildings,
+  riskCounts,
   totalUsers,
   filteredCount,
   viewMode,
@@ -260,6 +275,7 @@ export function FilterBar({
   updateFilter: <K extends keyof OverviewFilters>(key: K, value: OverviewFilters[K]) => void;
   uniqueCities: [string, number][];
   uniqueBuildings: [string, number][];
+  riskCounts?: Map<string, number>;
   totalUsers: number;
   filteredCount: number;
   viewMode?: "tenants" | "landlords";
@@ -344,7 +360,9 @@ export function FilterBar({
 
           <FilterChip label="Risk" active={filters.riskLevels.length > 0} count={filters.riskLevels.length}>
             {RISK_OPTIONS.map((r) => (
-              <CheckOption key={r} checked={filters.riskLevels.includes(r)} label={r === "LOW" ? "Low" : r === "MED" ? "Medium" : "High"}
+              <CheckOption key={r} checked={filters.riskLevels.includes(r)}
+                label={r === "LOW" ? "Low" : r === "MED" ? "Medium" : "High"}
+                count={riskCounts?.get(r) || 0}
                 onClick={() => updateFilter("riskLevels", toggleInArray(filters.riskLevels, r))} />
             ))}
           </FilterChip>
