@@ -451,20 +451,25 @@ export function UserDetail({ user }: { user: UserFunnel }) {
                 </div>
               </div>
             ) : (
-              <div className="mt-2 grid grid-cols-2 gap-x-8 gap-y-2.5">
-                {([
-                  ["Address", user.property_address],
-                  ["City / State", user.property_city ? `${user.property_city}, ${user.property_state || ""}` : null],
-                  ["Pincode", user.property_pincode],
-                  ["BHK", user.property_bhk_type],
-                  ["Rooms", user.rooms_in_agreement != null ? String(user.rooms_in_agreement) : null],
-                  ["Lease", user.lease_start_date ? `${formatDate(user.lease_start_date)} – ${formatDate(user.lease_end_date)}` : null],
-                ] as [string, string | null | undefined][]).map(([label, value]) => (
-                  <div key={label} className="flex items-center justify-between">
-                    <span className="text-[12px] text-muted-foreground/50">{label}</span>
-                    <span className={`font-mono text-[12px] text-right max-w-[60%] truncate ${value ? "text-foreground/80" : "text-muted-foreground/30"}`}>{value || DASH}</span>
-                  </div>
-                ))}
+              <div className="mt-2 flex flex-col gap-2.5">
+                <div className="flex flex-col gap-1">
+                  <span className="text-[12px] text-muted-foreground/50">Address</span>
+                  <span className={`font-mono text-[12px] ${user.property_address ? "text-foreground/80" : "text-muted-foreground/30"}`}>{user.property_address || DASH}</span>
+                </div>
+                <div className="grid grid-cols-2 gap-x-8 gap-y-2.5">
+                  {([
+                    ["City / State", user.property_city ? `${user.property_city}, ${user.property_state || ""}` : null],
+                    ["Pincode", user.property_pincode],
+                    ["BHK", user.property_bhk_type],
+                    ["Rooms", user.rooms_in_agreement != null ? String(user.rooms_in_agreement) : null],
+                    ["Lease", user.lease_start_date ? `${formatDate(user.lease_start_date)} – ${formatDate(user.lease_end_date)}` : null],
+                  ] as [string, string | null | undefined][]).map(([label, value]) => (
+                    <div key={label} className="flex items-center justify-between">
+                      <span className="text-[12px] text-muted-foreground/50">{label}</span>
+                      <span className={`font-mono text-[12px] text-right max-w-[60%] truncate ${value ? "text-foreground/80" : "text-muted-foreground/30"}`}>{value || DASH}</span>
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
           </div>
