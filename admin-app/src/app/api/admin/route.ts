@@ -81,12 +81,48 @@ interface UpdateExtractionRequest extends AdminRequestBase {
   };
 }
 
+interface UpdateUserRequest extends AdminRequestBase {
+  op: "update-user";
+  userId: string;
+  fields: {
+    user_status?: string;
+    name?: string;
+    role?: string;
+    cashback_balance_paise?: number;
+  };
+}
+
+interface UpdatePaymentRequest extends AdminRequestBase {
+  op: "update-payment";
+  paymentId: string;
+  fields: {
+    settlement_status?: string;
+    status?: string;
+    settled_at?: string | null;
+  };
+}
+
+interface UpdateTenancyRequest extends AdminRequestBase {
+  op: "update-tenancy";
+  tenancyId: string;
+  fields: {
+    bank_verified?: boolean;
+    utility_verified?: boolean;
+    tenancy_status?: string;
+    landlord_approved?: boolean;
+    cashback_balance_paise?: number;
+  };
+}
+
 type AdminRequest =
   | FetchViewRequest
   | CallEdgeFunctionRequest
   | FetchLandlordReviewQueueRequest
   | UpdateTenancyLandlordRequest
-  | UpdateExtractionRequest;
+  | UpdateExtractionRequest
+  | UpdateUserRequest
+  | UpdatePaymentRequest
+  | UpdateTenancyRequest;
 
 function resolveEnv(req: NextRequest, body: AdminRequest): Environment | null {
   if (body.env === "dev" || body.env === "main") return body.env;
@@ -209,7 +245,7 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: error.message }, { status: 500 });
       }
 
-      allRows.push(...(data ?? []));
+      allRows.push(...((data as unknown as Record<string, unknown>[]) ?? []));
       offset += batchSize;
 
       if (!data || data.length < batchSize) break;
@@ -595,6 +631,255 @@ export async function POST(req: NextRequest) {
     }
 
     return NextResponse.json({ data: updatedExtraction });
+  }
+
+  if (payload.op === "update-user") {
+    const { userId, fields } = payload;
+
+    if (!userId || typeof userId !== "string") {
+      return NextResponse.json(
+        { error: "Missing or invalid `userId`" },
+        { status: 400 },
+      );
+    }
+
+    if (!fields || typeof fields !== "object" || Object.keys(fields).length === 0) {
+      return NextResponse.json(
+        { error: "Missing or empty `fields` object" },
+        { status: 400 },
+      );
+    }
+
+    const VALID_USER_STATUSES = ["approved", "rejected", "pending", "waitlisted", "active", "agreement_confirmed"];
+    if (fields.user_status !== undefined && !VALID_USER_STATUSES.includes(fields.user_status)) {
+      return NextResponse.json(
+        { error: `\`user_status\` must be one of: ${VALID_USER_STATUSES.join(", ")}` },
+        { status: 400 },
+      );
+    }
+
+    if (fields.cashback_balance_paise !== undefined) {
+      const v = fields.cashback_balance_paise;
+      if (typeof v !== "number" || !Number.isInteger(v) || v < 0) {
+        return NextResponse.json(
+          { error: "`cashback_balance_paise` must be a non-negative integer" },
+          { status: 400 },
+        );
+      }
+    }
+
+    // Update auth user metadata (name + role in one call if both present)
+    if (fields.name || fields.role) {
+      const metadata: Record<string, unknown> = {};
+      if (fields.name) metadata.full_name = fields.name;
+      if (fields.role) metadata.role = fields.role;
+      const { error: authErr } = await supabase.auth.admin.updateUserById(userId, {
+        user_metadata: metadata,
+      });
+      if (authErr) {
+        console.error("[/api/admin update-user] auth update err:", authErr);
+        return NextResponse.json({ error: authErr.message }, { status: 500 });
+      }
+    }
+
+    // Update waitlist entry status
+    if (fields.user_status) {
+      const { error: wErr } = await supabase
+        .from("waitlist_entries")
+        .update({ admin_review: fields.user_status })
+        .eq("user_id", userId);
+      if (wErr) {
+        console.error("[/api/admin update-user] waitlist update err:", wErr);
+        return NextResponse.json({ error: wErr.message }, { status: 500 });
+      }
+    }
+
+    // Update cashback balance on tenancies
+    if (fields.cashback_balance_paise !== undefined) {
+      const { error: tErr } = await supabase
+        .from("tenancies")
+        .update({ cashback_balance_paise: fields.cashback_balance_paise })
+        .eq("user_id", userId);
+      if (tErr) {
+        console.error("[/api/admin update-user] tenancy cashback update err:", tErr);
+        return NextResponse.json({ error: tErr.message }, { status: 500 });
+      }
+    }
+
+    // Best-effort audit log
+    try {
+      await supabase.from("audit_logs").insert({
+        actor_type: "admin",
+        action: "ADMIN_USER_UPDATE",
+        action_category: "user",
+        entity_type: "user",
+        entity_id: userId,
+        details: { actor_email: callerEmail, fields },
+        status: "success",
+      });
+    } catch (auditErr) {
+      console.warn("[/api/admin update-user] audit insert failed:", auditErr);
+    }
+
+    return NextResponse.json({ data: { userId, updated: fields } });
+  }
+
+  if (payload.op === "update-payment") {
+    const { paymentId, fields } = payload;
+
+    if (!paymentId || typeof paymentId !== "string") {
+      return NextResponse.json(
+        { error: "Missing or invalid `paymentId`" },
+        { status: 400 },
+      );
+    }
+
+    if (!fields || typeof fields !== "object" || Object.keys(fields).length === 0) {
+      return NextResponse.json(
+        { error: "Missing or empty `fields` object" },
+        { status: 400 },
+      );
+    }
+
+    const VALID_SETTLEMENT_STATUSES = ["pending", "processing", "settled", "failed"];
+    if (fields.settlement_status !== undefined && !VALID_SETTLEMENT_STATUSES.includes(fields.settlement_status)) {
+      return NextResponse.json(
+        { error: `\`settlement_status\` must be one of: ${VALID_SETTLEMENT_STATUSES.join(", ")}` },
+        { status: 400 },
+      );
+    }
+
+    const VALID_PAYMENT_STATUSES = ["initiated", "processing", "success", "failed", "refunded"];
+    if (fields.status !== undefined && !VALID_PAYMENT_STATUSES.includes(fields.status)) {
+      return NextResponse.json(
+        { error: `\`status\` must be one of: ${VALID_PAYMENT_STATUSES.join(", ")}` },
+        { status: 400 },
+      );
+    }
+
+    // Auto-set settled_at when marking as settled
+    const updatePayload: Record<string, unknown> = {};
+    if (fields.settlement_status !== undefined) updatePayload.settlement_status = fields.settlement_status;
+    if (fields.status !== undefined) updatePayload.status = fields.status;
+    if (fields.settled_at !== undefined) {
+      updatePayload.settled_at = fields.settled_at;
+    } else if (fields.settlement_status === "settled") {
+      updatePayload.settled_at = new Date().toISOString();
+    }
+
+    const { data: updatedPayment, error: pErr } = await supabase
+      .from("payments")
+      .update(updatePayload)
+      .eq("id", paymentId)
+      .select("id, status, settlement_status, settled_at")
+      .maybeSingle();
+
+    if (pErr) {
+      console.error("[/api/admin update-payment] err:", pErr);
+      return NextResponse.json({ error: pErr.message }, { status: 500 });
+    }
+    if (!updatedPayment) {
+      return NextResponse.json(
+        { error: "Payment not found" },
+        { status: 404 },
+      );
+    }
+
+    // Best-effort audit log
+    try {
+      await supabase.from("audit_logs").insert({
+        actor_type: "admin",
+        action: "ADMIN_PAYMENT_UPDATE",
+        action_category: "payment",
+        entity_type: "payment",
+        entity_id: paymentId,
+        details: { actor_email: callerEmail, fields: updatePayload },
+        status: "success",
+      });
+    } catch (auditErr) {
+      console.warn("[/api/admin update-payment] audit insert failed:", auditErr);
+    }
+
+    return NextResponse.json({ data: updatedPayment });
+  }
+
+  if (payload.op === "update-tenancy") {
+    const { tenancyId, fields } = payload;
+
+    if (!tenancyId || typeof tenancyId !== "string") {
+      return NextResponse.json(
+        { error: "Missing or invalid `tenancyId`" },
+        { status: 400 },
+      );
+    }
+
+    if (!fields || typeof fields !== "object" || Object.keys(fields).length === 0) {
+      return NextResponse.json(
+        { error: "Missing or empty `fields` object" },
+        { status: 400 },
+      );
+    }
+
+    const VALID_TENANCY_STATUSES = ["pending", "active", "paused", "terminated"];
+    if (fields.tenancy_status !== undefined && !VALID_TENANCY_STATUSES.includes(fields.tenancy_status)) {
+      return NextResponse.json(
+        { error: `\`tenancy_status\` must be one of: ${VALID_TENANCY_STATUSES.join(", ")}` },
+        { status: 400 },
+      );
+    }
+
+    if (fields.cashback_balance_paise !== undefined) {
+      const v = fields.cashback_balance_paise;
+      if (typeof v !== "number" || !Number.isInteger(v) || v < 0) {
+        return NextResponse.json(
+          { error: "`cashback_balance_paise` must be a non-negative integer" },
+          { status: 400 },
+        );
+      }
+    }
+
+    // Build update payload from provided fields only
+    const updatePayload: Record<string, unknown> = {};
+    if (fields.bank_verified !== undefined) updatePayload.bank_verified = fields.bank_verified;
+    if (fields.utility_verified !== undefined) updatePayload.utility_verified = fields.utility_verified;
+    if (fields.tenancy_status !== undefined) updatePayload.tenancy_status = fields.tenancy_status;
+    if (fields.landlord_approved !== undefined) updatePayload.landlord_approved = fields.landlord_approved;
+    if (fields.cashback_balance_paise !== undefined) updatePayload.cashback_balance_paise = fields.cashback_balance_paise;
+
+    const { data: updatedTenancy, error: tErr } = await supabase
+      .from("tenancies")
+      .update(updatePayload)
+      .eq("id", tenancyId)
+      .select("id, bank_verified, utility_verified, tenancy_status, landlord_approved")
+      .maybeSingle();
+
+    if (tErr) {
+      console.error("[/api/admin update-tenancy] err:", tErr);
+      return NextResponse.json({ error: tErr.message }, { status: 500 });
+    }
+    if (!updatedTenancy) {
+      return NextResponse.json(
+        { error: "Tenancy not found" },
+        { status: 404 },
+      );
+    }
+
+    // Best-effort audit log
+    try {
+      await supabase.from("audit_logs").insert({
+        actor_type: "admin",
+        action: "ADMIN_TENANCY_UPDATE",
+        action_category: "tenancy",
+        entity_type: "tenancy",
+        entity_id: tenancyId,
+        details: { actor_email: callerEmail, fields: updatePayload },
+        status: "success",
+      });
+    } catch (auditErr) {
+      console.warn("[/api/admin update-tenancy] audit insert failed:", auditErr);
+    }
+
+    return NextResponse.json({ data: updatedTenancy });
   }
 
   return NextResponse.json({ error: "Unknown op" }, { status: 400 });

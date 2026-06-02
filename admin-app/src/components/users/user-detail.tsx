@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useCallback } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { UserAvatar } from "@/components/ui/user-avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -8,7 +9,7 @@ import { Progress } from "@/components/ui/progress";
 import { Input } from "@/components/ui/input";
 import { formatCurrency, formatCurrencyShort, formatDate, maskPhone, formatRelativeTime, formatTAT, tatColor } from "@/lib/utils";
 import { computeDecision } from "@/lib/decision";
-import { callEdgeFunction, updateExtraction } from "@/lib/supabase";
+import { callEdgeFunction, updateExtraction, updateUser, updateTenancy } from "@/lib/supabase";
 import type { UserFunnel } from "@/types/user";
 import { VerdictCard } from "./verdict-card";
 import { CommunicationsBlock } from "./communications-block";
@@ -29,6 +30,7 @@ function statusBadgeColor(status: string) {
 }
 
 export function UserDetail({ user }: { user: UserFunnel }) {
+  const queryClient = useQueryClient();
   const [showPreflight, setShowPreflight] = useState(false);
   const [showRejectDialog, setShowRejectDialog] = useState(false);
   const [approving, setApproving] = useState(false);
@@ -38,6 +40,102 @@ export function UserDetail({ user }: { user: UserFunnel }) {
   const [saving, setSaving] = useState(false);
   const [saveResult, setSaveResult] = useState<{ success: boolean; message: string } | null>(null);
   const [editFields, setEditFields] = useState<Record<string, string>>({});
+
+  // Profile editing state
+  const [editingProfile, setEditingProfile] = useState(false);
+  const [savingProfile, setSavingProfile] = useState(false);
+  const [profileResult, setProfileResult] = useState<{ success: boolean; message: string } | null>(null);
+  const [profileFields, setProfileFields] = useState<Record<string, string>>({});
+
+  // Tenancy/verification editing state
+  const [editingVerification, setEditingVerification] = useState(false);
+  const [savingVerification, setSavingVerification] = useState(false);
+  const [verificationResult, setVerificationResult] = useState<{ success: boolean; message: string } | null>(null);
+  const [verificationFields, setVerificationFields] = useState<Record<string, string | boolean>>({});
+
+  const invalidateAll = useCallback(() => {
+    queryClient.invalidateQueries({ queryKey: ["users"] });
+    queryClient.invalidateQueries({ queryKey: ["audit_logs"] });
+  }, [queryClient]);
+
+  const startEditingProfile = useCallback(() => {
+    setProfileFields({
+      name: user.name || "",
+      user_status: user.user_status || "",
+      role: user.role || "",
+      cashback_balance_paise: user.cashback_balance_paise != null ? String(user.cashback_balance_paise / 100) : "0",
+    });
+    setProfileResult(null);
+    setEditingProfile(true);
+  }, [user]);
+
+  async function handleSaveProfile() {
+    setSavingProfile(true);
+    setProfileResult(null);
+    try {
+      const fields: Record<string, unknown> = {};
+      if (profileFields.name && profileFields.name !== (user.name || "")) fields.name = profileFields.name;
+      if (profileFields.user_status && profileFields.user_status !== user.user_status) fields.user_status = profileFields.user_status;
+      if (profileFields.role && profileFields.role !== user.role) fields.role = profileFields.role;
+      if (profileFields.cashback_balance_paise) {
+        const newVal = Math.round(Number(profileFields.cashback_balance_paise) * 100);
+        if (newVal !== (user.cashback_balance_paise || 0)) fields.cashback_balance_paise = newVal;
+      }
+      if (Object.keys(fields).length === 0) {
+        setProfileResult({ success: true, message: "No changes to save" });
+        setEditingProfile(false);
+        return;
+      }
+      await updateUser(user.user_id, fields as Parameters<typeof updateUser>[1]);
+      setProfileResult({ success: true, message: "Profile updated" });
+      setEditingProfile(false);
+      invalidateAll();
+    } catch (err) {
+      setProfileResult({ success: false, message: err instanceof Error ? err.message : "Save failed" });
+    } finally {
+      setSavingProfile(false);
+    }
+  }
+
+  const startEditingVerification = useCallback(() => {
+    setVerificationFields({
+      bank_verified: user.bank_verified === true,
+      utility_verified: user.utility_verified === true,
+      landlord_approved: user.landlord_approved === true,
+      tenancy_status: user.tenancy_status || "pending",
+    });
+    setVerificationResult(null);
+    setEditingVerification(true);
+  }, [user]);
+
+  async function handleSaveVerification() {
+    if (!user.tenancy_id) {
+      setVerificationResult({ success: false, message: "No tenancy record to update" });
+      return;
+    }
+    setSavingVerification(true);
+    setVerificationResult(null);
+    try {
+      const fields: Record<string, unknown> = {};
+      if (verificationFields.bank_verified !== (user.bank_verified === true)) fields.bank_verified = verificationFields.bank_verified;
+      if (verificationFields.utility_verified !== (user.utility_verified === true)) fields.utility_verified = verificationFields.utility_verified;
+      if (verificationFields.landlord_approved !== (user.landlord_approved === true)) fields.landlord_approved = verificationFields.landlord_approved;
+      if (verificationFields.tenancy_status !== (user.tenancy_status || "pending")) fields.tenancy_status = verificationFields.tenancy_status;
+      if (Object.keys(fields).length === 0) {
+        setVerificationResult({ success: true, message: "No changes to save" });
+        setEditingVerification(false);
+        return;
+      }
+      await updateTenancy(user.tenancy_id, fields as Parameters<typeof updateTenancy>[1]);
+      setVerificationResult({ success: true, message: "Verification updated" });
+      setEditingVerification(false);
+      invalidateAll();
+    } catch (err) {
+      setVerificationResult({ success: false, message: err instanceof Error ? err.message : "Save failed" });
+    } finally {
+      setSavingVerification(false);
+    }
+  }
 
   const startEditing = useCallback(() => {
     setEditFields({
@@ -135,21 +233,66 @@ export function UserDetail({ user }: { user: UserFunnel }) {
         <div className="flex items-center gap-4">
           <UserAvatar name={user.name || user.phone} size={56} />
           <div className="flex flex-col gap-0.5 flex-1">
-            <span className="text-[24px] font-medium tracking-[-0.5px] text-foreground">{user.name || "Unknown"}</span>
-            <span className="font-mono text-[12px] text-muted-foreground/50">
-              {maskPhone(user.phone)} · {user.user_status?.toUpperCase()} · {user.property_city || "—"}
-              {user.waitlist_joined_at && (
-                <> · <span className={tatColor(user.waitlist_joined_at)}>Waiting {formatTAT(user.waitlist_joined_at)}</span></>
-              )}
-              {user.admin_review === "approved" && user.status_updated_at && (
-                <> · <span className="text-muted-foreground/40">TAT {formatTAT(user.status_updated_at)}</span></>
-              )}
-            </span>
+            {editingProfile ? (
+              <div className="flex flex-col gap-2">
+                <div className="flex items-center gap-2">
+                  <Input value={profileFields.name} onChange={(e) => setProfileFields((f) => ({ ...f, name: e.target.value }))}
+                    placeholder="Full name" className="h-8 w-[200px] bg-[#0A0A0A] border-[#252525] font-mono text-[14px] px-2" />
+                  <select value={profileFields.user_status} onChange={(e) => setProfileFields((f) => ({ ...f, user_status: e.target.value }))}
+                    className="h-8 rounded-md border border-[#252525] bg-[#0A0A0A] px-2 font-mono text-[11px] text-foreground outline-none">
+                    {["pending", "waitlisted", "approved", "agreement_confirmed", "active", "rejected"].map((s) => (
+                      <option key={s} value={s}>{s.toUpperCase()}</option>
+                    ))}
+                  </select>
+                  <Input value={profileFields.role} onChange={(e) => setProfileFields((f) => ({ ...f, role: e.target.value }))}
+                    placeholder="Role" className="h-8 w-[100px] bg-[#0A0A0A] border-[#252525] font-mono text-[11px] px-2" />
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] text-muted-foreground/50">CB Balance ₹</span>
+                  <Input value={profileFields.cashback_balance_paise} onChange={(e) => setProfileFields((f) => ({ ...f, cashback_balance_paise: e.target.value }))}
+                    type="number" min={0} className="h-7 w-[100px] bg-[#0A0A0A] border-[#252525] font-mono text-[11px] px-2" />
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button size="sm" onClick={handleSaveProfile} disabled={savingProfile}
+                    className="h-7 rounded-lg bg-success/10 border border-success/30 text-success font-mono text-[10px] font-semibold hover:bg-success/20">
+                    {savingProfile ? "Saving…" : "Save"}
+                  </Button>
+                  <Button size="sm" variant="outline" onClick={() => { setEditingProfile(false); setProfileResult(null); }} disabled={savingProfile}
+                    className="h-7 rounded-lg border-[#252525] font-mono text-[10px] text-muted-foreground hover:bg-[#1F1F1F]">
+                    Cancel
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <>
+                <span className="text-[24px] font-medium tracking-[-0.5px] text-foreground">{user.name || "Unknown"}</span>
+                <span className="font-mono text-[12px] text-muted-foreground/50">
+                  {maskPhone(user.phone)} · {user.user_status?.toUpperCase()} · {user.property_city || "—"}
+                  {user.waitlist_joined_at && (
+                    <> · <span className={tatColor(user.waitlist_joined_at)}>Waiting {formatTAT(user.waitlist_joined_at)}</span></>
+                  )}
+                  {user.admin_review === "approved" && user.status_updated_at && (
+                    <> · <span className="text-muted-foreground/40">TAT {formatTAT(user.status_updated_at)}</span></>
+                  )}
+                </span>
+              </>
+            )}
           </div>
+          {!editingProfile && (
+            <button onClick={startEditingProfile}
+              className="rounded-lg border border-[#252525] px-2.5 py-1 font-mono text-[10px] text-muted-foreground/50 hover:text-foreground hover:border-[#3D5A80]/30 transition-colors mr-2">
+              Edit
+            </button>
+          )}
           <Badge variant="outline" className={`rounded-xl px-4 py-1.5 font-mono text-[12px] font-semibold ${statusBadgeColor(user.user_status)}`}>
             {user.user_status?.toUpperCase() || DASH}
           </Badge>
         </div>
+        {profileResult && (
+          <div className={`rounded-xl border px-4 py-2 font-mono text-[11px] ${profileResult.success ? "border-success/30 bg-success/5 text-success" : "border-destructive/30 bg-destructive/5 text-destructive"}`}>
+            {profileResult.message}
+          </div>
+        )}
 
         {/* Verdict card — 5-second decision strip */}
         <VerdictCard user={user} decision={decision} blockers={blockers} warnings={warnings}
@@ -486,23 +629,95 @@ export function UserDetail({ user }: { user: UserFunnel }) {
       <div className="flex w-[280px] flex-shrink-0 flex-col gap-4">
         {/* Verification checklist */}
         <div className="flex flex-col rounded-xl bg-success/10 border border-success/20 p-5">
-          <Tip text="Checklist of all verification gates — all must pass for the user to become fully active"><span className="font-mono text-[9px] uppercase tracking-[1.5px] text-success/60 mb-4">Verification</span></Tip>
-          <div className="flex flex-col gap-3">
-            {([
-              ["Bank", bankVerified, null],
-              ["Utility", utilityVerified, null],
-              ["Landlord", landlordApproved, null],
-              ["M360", identityVerified, m360Status],
-              ["Risk", riskLevel === "LOW", riskLevel],
-            ] as [string, boolean, string | null][]).map(([label, verified, display]) => (
-              <div key={label} className="flex items-center justify-between">
-                <span className="text-[13px] text-foreground">{label}</span>
-                <span className={`font-mono text-[12px] font-semibold ${verified ? "text-success" : "text-muted-foreground/40"}`}>
-                  {display || (verified ? "✓" : "—")}
+          <div className="flex items-center justify-between mb-4">
+            <Tip text="Checklist of all verification gates — all must pass for the user to become fully active"><span className="font-mono text-[9px] uppercase tracking-[1.5px] text-success/60">Verification</span></Tip>
+            {editingVerification ? (
+              <div className="flex items-center gap-2">
+                <Button size="sm" onClick={handleSaveVerification} disabled={savingVerification}
+                  className="h-6 rounded-lg bg-success/10 border border-success/30 text-success font-mono text-[9px] font-semibold hover:bg-success/20 px-2">
+                  {savingVerification ? "…" : "Save"}
+                </Button>
+                <Button size="sm" variant="outline" onClick={() => { setEditingVerification(false); setVerificationResult(null); }} disabled={savingVerification}
+                  className="h-6 rounded-lg border-[#252525] font-mono text-[9px] text-muted-foreground hover:bg-[#1F1F1F] px-2">
+                  Cancel
+                </Button>
+              </div>
+            ) : (
+              <button onClick={startEditingVerification}
+                className="rounded-lg border border-success/20 px-2 py-0.5 font-mono text-[9px] text-success/50 hover:text-success hover:border-success/40 transition-colors">
+                Edit
+              </button>
+            )}
+          </div>
+          {verificationResult && (
+            <div className={`rounded-lg border px-3 py-1.5 mb-3 font-mono text-[10px] ${
+              verificationResult.success ? "border-success/30 bg-success/5 text-success" : "border-destructive/30 bg-destructive/5 text-destructive"
+            }`}>{verificationResult.message}</div>
+          )}
+          {editingVerification ? (
+            <div className="flex flex-col gap-3">
+              {([
+                ["bank_verified", "Bank"],
+                ["utility_verified", "Utility"],
+                ["landlord_approved", "Landlord"],
+              ] as [string, string][]).map(([key, label]) => (
+                <div key={key} className="flex items-center justify-between">
+                  <span className="text-[13px] text-foreground">{label}</span>
+                  <button
+                    onClick={() => setVerificationFields((f) => ({ ...f, [key]: !f[key] }))}
+                    className={`rounded-md border px-3 py-0.5 font-mono text-[11px] font-semibold transition-colors ${
+                      verificationFields[key]
+                        ? "border-success/30 bg-success/10 text-success"
+                        : "border-[#333] bg-[#1A1A1A] text-muted-foreground/40"
+                    }`}
+                  >
+                    {verificationFields[key] ? "✓ Yes" : "✗ No"}
+                  </button>
+                </div>
+              ))}
+              <div className="flex items-center justify-between">
+                <span className="text-[13px] text-foreground">Status</span>
+                <select
+                  value={verificationFields.tenancy_status as string}
+                  onChange={(e) => setVerificationFields((f) => ({ ...f, tenancy_status: e.target.value }))}
+                  className="h-7 rounded-md border border-[#333] bg-[#1A1A1A] px-2 font-mono text-[11px] text-foreground outline-none"
+                >
+                  {["pending", "active", "paused", "terminated"].map((s) => (
+                    <option key={s} value={s}>{s.toUpperCase()}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-[13px] text-foreground">M360</span>
+                <span className={`font-mono text-[12px] font-semibold ${identityVerified ? "text-success" : "text-muted-foreground/40"}`}>
+                  {m360Status}
                 </span>
               </div>
-            ))}
-          </div>
+              <div className="flex items-center justify-between">
+                <span className="text-[13px] text-foreground">Risk</span>
+                <span className={`font-mono text-[12px] font-semibold ${riskLevel === "LOW" ? "text-success" : "text-muted-foreground/40"}`}>
+                  {riskLevel}
+                </span>
+              </div>
+            </div>
+          ) : (
+            <div className="flex flex-col gap-3">
+              {([
+                ["Bank", bankVerified, null],
+                ["Utility", utilityVerified, null],
+                ["Landlord", landlordApproved, null],
+                ["M360", identityVerified, m360Status],
+                ["Risk", riskLevel === "LOW", riskLevel],
+              ] as [string, boolean, string | null][]).map(([label, verified, display]) => (
+                <div key={label} className="flex items-center justify-between">
+                  <span className="text-[13px] text-foreground">{label}</span>
+                  <span className={`font-mono text-[12px] font-semibold ${verified ? "text-success" : "text-muted-foreground/40"}`}>
+                    {display || (verified ? "✓" : "—")}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Payments card */}

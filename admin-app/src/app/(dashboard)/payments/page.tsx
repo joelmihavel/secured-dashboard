@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn, formatCurrency, formatDate, maskPhone } from "@/lib/utils";
 import { usePayments } from "@/hooks/usePayments";
+import { updatePayment } from "@/lib/supabase";
 import { UserAvatar } from "@/components/ui/user-avatar";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { DateRangeCalendar } from "@/components/ui/date-range-calendar";
@@ -120,6 +121,51 @@ function toggle(arr: string[], val: string) {
   return arr.includes(val) ? arr.filter((v) => v !== val) : [...arr, val];
 }
 
+function EditableStatus({ value, options, paymentId, field, dotClass, labelClass, onUpdated }: {
+  value: string;
+  options: string[];
+  paymentId: string;
+  field: "status" | "settlement_status";
+  dotClass?: (v: string) => string;
+  labelClass?: (v: string) => string;
+  onUpdated: () => void;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [saving, setSaving] = useState(false);
+
+  async function handleChange(newVal: string) {
+    if (newVal === value) { setEditing(false); return; }
+    setSaving(true);
+    try {
+      await updatePayment(paymentId, { [field]: newVal });
+      onUpdated();
+    } catch { /* toast could go here */ }
+    finally { setSaving(false); setEditing(false); }
+  }
+
+  if (editing) {
+    return (
+      <select
+        autoFocus
+        disabled={saving}
+        value={value}
+        onChange={(e) => handleChange(e.target.value)}
+        onBlur={() => setEditing(false)}
+        className="h-6 rounded-md border border-[#3D5A80]/50 bg-[#0A0A0A] px-1 font-mono text-[10px] text-foreground outline-none"
+      >
+        {options.map((o) => <option key={o} value={o}>{o}</option>)}
+      </select>
+    );
+  }
+
+  return (
+    <button onClick={() => setEditing(true)} className="text-left cursor-pointer hover:opacity-80 transition-opacity" title="Click to edit">
+      {dotClass && <span className={cn("inline-block size-[6px] rounded-full mr-1 align-middle", dotClass(value))} />}
+      <span className={cn("font-mono text-[10px] uppercase font-semibold", labelClass?.(value))}>{value}</span>
+    </button>
+  );
+}
+
 function formatCurrencyShort(paise: number | null | undefined): string {
   if (paise == null) return "—";
   const rupees = paise / 100;
@@ -129,7 +175,7 @@ function formatCurrencyShort(paise: number | null | undefined): string {
 }
 
 export default function PaymentsPage() {
-  const { payments, loading } = usePayments();
+  const { payments, loading, refetch } = usePayments();
   const [filters, setFilters] = useState<Filters>({
     status: [], method: [], settlement: [], cashback: "all",
     search: "", dateFrom: null, dateTo: null, month: null,
@@ -466,8 +512,16 @@ export default function PaymentsPage() {
                     <span className="w-[110px] text-[11px] text-muted-foreground/40 truncate">{p.landlord_name || "—"}</span>
                     <span className="w-[70px] font-mono text-[11px] text-muted-foreground/50">{p.payment_month?.slice(0, 7)}</span>
                     <span className="w-[50px] font-mono text-[10px] uppercase text-muted-foreground/40">{p.payment_method || "—"}</span>
-                    <span className={cn("w-[60px] font-mono text-[10px] uppercase font-semibold", statusLabel(p.payment_status))}>{p.payment_status}</span>
-                    <span className={cn("w-[65px] rounded-md border px-1.5 py-0.5 font-mono text-[9px] text-center", settle.cls)}>{settle.text}</span>
+                    <span className="w-[60px]">
+                      <EditableStatus value={p.payment_status} options={["initiated", "processing", "success", "failed", "refunded"]}
+                        paymentId={p.payment_id} field="status" labelClass={statusLabel} onUpdated={refetch} />
+                    </span>
+                    <span className="w-[65px]">
+                      <EditableStatus value={p.settlement_status || "pending"} options={["pending", "processing", "settled", "failed"]}
+                        paymentId={p.payment_id} field="settlement_status"
+                        labelClass={(s) => s === "settled" ? "text-success" : s === "pending" ? "text-warning" : "text-muted-foreground/40"}
+                        onUpdated={refetch} />
+                    </span>
                     <div className="flex-1" />
                     <div className="w-[60px] text-right">
                       {cbEarned > 0 ? (

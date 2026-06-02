@@ -184,3 +184,51 @@ export async function updateExtraction(
     fields,
   });
 }
+
+export async function updateUser(
+  userId: string,
+  fields: {
+    user_status?: string;
+    name?: string;
+    role?: string;
+    cashback_balance_paise?: number;
+  },
+): Promise<{ userId: string; updated: typeof fields }> {
+  return await callAdminApi({
+    op: "update-user",
+    userId,
+    fields,
+  });
+}
+
+export async function updatePayment(
+  paymentId: string,
+  fields: {
+    settlement_status?: string;
+    status?: string;
+    settled_at?: string | null;
+  },
+): Promise<{ id: string; status: string; settlement_status: string; settled_at: string | null }> {
+  return await callAdminApi({
+    op: "update-payment",
+    paymentId,
+    fields,
+  });
+}
+
+export async function updateTenancy(
+  tenancyId: string,
+  fields: {
+    bank_verified?: boolean;
+    utility_verified?: boolean;
+    tenancy_status?: string;
+    landlord_approved?: boolean;
+    cashback_balance_paise?: number;
+  },
+): Promise<{ id: string; bank_verified: boolean; utility_verified: boolean; tenancy_status: string; landlord_approved: boolean }> {
+  return await callAdminApi({
+    op: "update-tenancy",
+    tenancyId,
+    fields,
+  });
+}
