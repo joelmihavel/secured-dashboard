@@ -14,7 +14,20 @@ type NotificationType =
   | "landlord_pending"
   | "rent_due"
   | "rent_overdue"
-  | "payment_failed";
+  | "payment_failed"
+  | "upload_reminder_jun01"
+  | "upload_reminder_may28"
+  | "upload_reminder_may30"
+  | "segment_c1_june2"
+  | "user_approved_referral"
+  | "segment2_june1"
+  | "segment2_june3"
+  | "segment2_may31"
+  | "postrent_june_upi"
+  | "postrent_june_cc"
+  | "waitlist_approved"
+  | "referral_paid"
+  | "waitlist_rejected";
 
 interface QuickAction {
   type: NotificationType;
@@ -41,6 +54,19 @@ const ALL_QUICK_ACTIONS: QuickAction[] = [
   { type: "rent_due", label: "Rent Due", description: "Upcoming rent payment reminder" },
   { type: "rent_overdue", label: "Rent Overdue", description: "Overdue rent payment nudge" },
   { type: "payment_failed", label: "Payment Failed", description: "Retry failed payment" },
+  { type: "upload_reminder_may28", label: "Upload Reminder (28 May)", description: "Agreement upload reminder — May 28 campaign" },
+  { type: "upload_reminder_may30", label: "Upload Reminder (30 May)", description: "Agreement upload reminder — May 30 campaign" },
+  { type: "upload_reminder_jun01", label: "Upload Reminder (1 Jun)", description: "Agreement upload reminder — Jun 01 campaign" },
+  { type: "segment_c1_june2", label: "Segment C1 (2 Jun)", description: "Segment C1 campaign — June 2" },
+  { type: "segment2_may31", label: "Segment 2 (31 May)", description: "Segment 2 campaign — May 31" },
+  { type: "segment2_june1", label: "Segment 2 (1 Jun)", description: "Segment 2 campaign — June 1" },
+  { type: "segment2_june3", label: "Segment 2 (3 Jun)", description: "Segment 2 campaign — June 3" },
+  { type: "postrent_june_upi", label: "Post-Rent UPI (Jun)", description: "Post-rent nudge for UPI payers — June" },
+  { type: "postrent_june_cc", label: "Post-Rent CC (Jun)", description: "Post-rent nudge for card payers — June" },
+  { type: "waitlist_approved", label: "Waitlist Approved", description: "Notify user they've been approved from waitlist" },
+  { type: "waitlist_rejected", label: "Waitlist Rejected", description: "Notify user their application was rejected" },
+  { type: "user_approved_referral", label: "Referral Approved", description: "Notify referrer their referred user was approved" },
+  { type: "referral_paid", label: "Referral Paid", description: "Notify user their referral reward was paid" },
 ];
 
 function suggestActions(user: UserFunnel): QuickAction[] {
