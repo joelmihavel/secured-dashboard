@@ -74,6 +74,17 @@ export function formatDate(date: string | null | undefined): string {
   }).format(new Date(date));
 }
 
+export function formatDateTime(date: string | null | undefined): string {
+  if (!date) return "—";
+  return new Intl.DateTimeFormat("en-IN", {
+    day: "2-digit",
+    month: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: true,
+  }).format(new Date(date));
+}
+
 export function formatRelativeTime(date: string | null | undefined): string {
   if (!date) return "—";
   const now = Date.now();

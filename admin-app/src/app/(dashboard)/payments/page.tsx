@@ -1,8 +1,9 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Skeleton } from "@/components/ui/skeleton";
-import { cn, formatCurrency, formatDate, maskPhone } from "@/lib/utils";
+import { cn, formatCurrency, formatDate, formatDateTime, maskPhone } from "@/lib/utils";
 import { usePayments } from "@/hooks/usePayments";
 import { updatePayment } from "@/lib/supabase";
 import { UserAvatar } from "@/components/ui/user-avatar";
@@ -175,6 +176,7 @@ function formatCurrencyShort(paise: number | null | undefined): string {
 }
 
 export default function PaymentsPage() {
+  const router = useRouter();
   const { payments, loading, refetch } = usePayments();
   const [filters, setFilters] = useState<Filters>({
     status: [], method: [], settlement: [], cashback: "all",
@@ -488,7 +490,7 @@ export default function PaymentsPage() {
             <button onClick={() => toggleSort("total_amount_paise")} className="flex items-center justify-end gap-1 w-[90px] font-mono text-[9px] uppercase tracking-[1px] text-muted-foreground/40 hover:text-muted-foreground transition-colors">
               Amount <SortIcon col="total_amount_paise" />
             </button>
-            <button onClick={() => toggleSort("initiated_at")} className="flex items-center justify-end gap-1 w-[70px] font-mono text-[9px] uppercase tracking-[1px] text-muted-foreground/40 hover:text-muted-foreground transition-colors">
+            <button onClick={() => toggleSort("initiated_at")} className="flex items-center justify-end gap-1 w-[100px] font-mono text-[9px] uppercase tracking-[1px] text-muted-foreground/40 hover:text-muted-foreground transition-colors">
               Date <SortIcon col="initiated_at" />
             </button>
           </div>
@@ -505,10 +507,11 @@ export default function PaymentsPage() {
                 return (
                   <div key={p.payment_id} className="flex items-center gap-3 px-5 py-3 border-b border-[#1F1F1F]/30 hover:bg-white/[0.02] transition-colors">
                     <div className={cn("size-[6px] flex-shrink-0 rounded-full", statusDot(p.payment_status))} />
-                    <div className="w-[150px] flex items-center gap-2 min-w-0">
+                    <button onClick={() => router.push(`/users?search=${encodeURIComponent(p.user_phone || "")}`)}
+                      className="w-[150px] flex items-center gap-2 min-w-0 hover:opacity-70 transition-opacity text-left">
                       <UserAvatar name={p.user_name || p.user_phone} size={24} />
                       <span className="text-[12px] font-medium text-foreground truncate">{p.user_name || maskPhone(p.user_phone)}</span>
-                    </div>
+                    </button>
                     <span className="w-[110px] text-[11px] text-muted-foreground/40 truncate">{p.landlord_name || "—"}</span>
                     <span className="w-[70px] font-mono text-[11px] text-muted-foreground/50">{p.payment_month?.slice(0, 7)}</span>
                     <span className="w-[50px] font-mono text-[10px] uppercase text-muted-foreground/40">{p.payment_method || "—"}</span>
@@ -533,7 +536,7 @@ export default function PaymentsPage() {
                       )}
                     </div>
                     <span className="w-[90px] font-mono text-[12px] font-semibold text-foreground text-right">{formatCurrency(p.total_amount_paise)}</span>
-                    <span className="w-[70px] text-right font-mono text-[10px] text-muted-foreground/40">{formatDate(p.initiated_at)}</span>
+                    <span className="w-[100px] text-right font-mono text-[10px] text-muted-foreground/40">{formatDateTime(p.paid_at || p.initiated_at)}</span>
                   </div>
                 );
               })

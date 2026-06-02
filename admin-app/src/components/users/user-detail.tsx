@@ -1,15 +1,16 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { UserAvatar } from "@/components/ui/user-avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Input } from "@/components/ui/input";
-import { formatCurrency, formatCurrencyShort, formatDate, maskPhone, formatRelativeTime, formatTAT, tatColor } from "@/lib/utils";
+import { formatCurrency, formatCurrencyShort, formatDate, formatDateTime, maskPhone, formatRelativeTime, formatTAT, tatColor } from "@/lib/utils";
 import { computeDecision } from "@/lib/decision";
 import { callEdgeFunction, updateExtraction, updateUser, updateTenancy } from "@/lib/supabase";
+import { usePayments } from "@/hooks/usePayments";
 import type { UserFunnel } from "@/types/user";
 import { VerdictCard } from "./verdict-card";
 import { CommunicationsBlock } from "./communications-block";
@@ -196,6 +197,16 @@ export function UserDetail({ user }: { user: UserFunnel }) {
       setSaving(false);
     }
   }
+
+  const { payments } = usePayments();
+  const userPayments = useMemo(() => {
+    const phone = (user.phone || "").replace(/\D/g, "").slice(-10);
+    if (!phone) return [];
+    return payments
+      .filter((p) => (p.user_phone || "").replace(/\D/g, "").slice(-10) === phone)
+      .sort((a, b) => b.initiated_at.localeCompare(a.initiated_at))
+      .slice(0, 10);
+  }, [payments, user.phone]);
 
   const decision = computeDecision(user);
   const initials = (user.name || "?").split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase();
@@ -751,6 +762,31 @@ export function UserDetail({ user }: { user: UserFunnel }) {
             </div>
           </div>
         </div>
+
+        {/* Payment history */}
+        {userPayments.length > 0 && (
+          <div className="flex flex-col rounded-xl border border-[#1F1F1F] bg-[#141414] p-5">
+            <span className="font-mono text-[9px] uppercase tracking-[1.5px] text-[#A3A3A366] mb-3">Recent Payments</span>
+            <div className="flex flex-col gap-2">
+              {userPayments.map((p) => (
+                <div key={p.payment_id} className="flex items-center justify-between rounded-lg bg-[#1A1A1A] border border-[#252525] px-3 py-2">
+                  <div className="flex flex-col gap-0.5">
+                    <span className="font-mono text-[11px] text-foreground">{formatCurrency(p.total_amount_paise)}</span>
+                    <span className="font-mono text-[9px] text-muted-foreground/40">{formatDateTime(p.paid_at || p.initiated_at)}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="font-mono text-[9px] uppercase text-muted-foreground/40">{p.payment_method || "—"}</span>
+                    <span className={`rounded-md border px-1.5 py-0.5 font-mono text-[9px] ${
+                      p.payment_status === "success" ? "border-success/20 bg-success/10 text-success"
+                        : p.payment_status === "failed" ? "border-destructive/20 bg-destructive/10 text-destructive"
+                        : "border-warning/20 bg-warning/10 text-warning"
+                    }`}>{p.payment_status}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Bank & Landlord verification details */}
         <div className="flex flex-col rounded-xl border border-[#1F1F1F] bg-[#141414] p-5">
