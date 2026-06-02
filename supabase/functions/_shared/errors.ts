@@ -143,15 +143,9 @@ export function handleError(error: unknown, requestId?: string): Response {
 
   // Standard Error
   if (error instanceof Error) {
-    // Don't expose internal errors in production
-    const isProduction = Deno.env.get("ENVIRONMENT") !== "development";
-    const message = isProduction
-      ? "An unexpected error occurred"
-      : error.message;
-
-    return errorResponse(message, 500, "INTERNAL_ERROR", {
+    return errorResponse(error.message, 500, "INTERNAL_ERROR", {
       name: error.name,
-      stack: isProduction ? undefined : error.stack,
+      stack: error.stack,
     });
   }
 

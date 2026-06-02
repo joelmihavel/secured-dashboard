@@ -383,10 +383,13 @@ serve(async (req: Request) => {
         // 'waitlist_approved' push fires while user_status is still 'approved'
         // (process-notification-schedule.ts:70 suppresses on !== 'approved').
         await Promise.allSettled(
-          Array.from(approvedIds).map((uid) =>
-            supabase.rpc("check_and_advance_to_active", { p_user_id: uid })
-              .catch((e) => console.warn(`[admin-waitlist] check_and_advance_to_active failed for ${uid}:`, e))
-          )
+          Array.from(approvedIds).map(async (uid) => {
+            try {
+              await supabase.rpc("check_and_advance_to_active", { p_user_id: uid });
+            } catch (e) {
+              console.warn(`[admin-waitlist] check_and_advance_to_active failed for ${uid}:`, e);
+            }
+          })
         );
       }
 
