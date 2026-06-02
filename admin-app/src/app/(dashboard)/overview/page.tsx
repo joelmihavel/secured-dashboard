@@ -128,7 +128,7 @@ export default function OverviewPage() {
   const highlightedCards = useMemo(() => getHighlightedCards(filters), [filters]);
 
   const filteredUserIds = useMemo(() => new Set(fUsers.map((u) => u.user_id)), [fUsers]);
-  const filteredUserPhones = useMemo(() => new Set(fUsers.map((u) => u.phone.replace(/^\+/, ""))), [fUsers]);
+  const filteredUserPhones = useMemo(() => new Set(fUsers.map((u) => (u.phone || "").replace(/^\+/, ""))), [fUsers]);
 
   const stats = useMemo(() => {
     const total = fUsers.length;
@@ -198,7 +198,7 @@ export default function OverviewPage() {
   }), [users]);
 
   const paymentStats = useMemo(() => {
-    const filtered = activeCount > 0 ? payments.filter((p) => filteredUserPhones.has(p.user_phone.replace(/^\+/, ""))) : payments;
+    const filtered = activeCount > 0 ? payments.filter((p) => filteredUserPhones.has((p.user_phone || "").replace(/^\+/, ""))) : payments;
     const successful = filtered.filter((p) => p.payment_status === "success");
     const totalRevenue = successful.reduce((s, p) => s + (p.total_amount_paise ?? 0), 0);
     return { successful: successful.length, total: filtered.length, totalRevenue };
