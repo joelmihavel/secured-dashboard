@@ -59,10 +59,10 @@ export function maskPhone(
     subscriber = digits;
   }
 
-  const last4 = subscriber.slice(-4);
-  const visibleHead = subscriber.slice(0, Math.max(0, subscriber.length - 4)).slice(0, 3);
-  const masked = `${visibleHead}XX ${last4}`;
-  return cc ? `${cc} ${masked}` : masked;
+  const formatted = subscriber.length === 10
+    ? `${subscriber.slice(0, 5)} ${subscriber.slice(5)}`
+    : subscriber;
+  return cc ? `${cc} ${formatted}` : formatted;
 }
 
 export function formatDate(date: string | null | undefined): string {
