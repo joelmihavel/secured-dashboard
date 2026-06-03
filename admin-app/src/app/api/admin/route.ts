@@ -24,7 +24,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { getServerSupabaseClient } from "@/lib/supabase-server";
-import { getAdminEmails, getAdminKey, isAdminEmail } from "@/lib/env-server";
+import { getAdminEmails, getAdminKey, isAdminEmail, getServerEnvConfig } from "@/lib/env-server";
 import { getEnvConfig, type Environment } from "@/lib/env";
 
 interface AdminRequestBase {
@@ -277,33 +277,39 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    const { data, error } = await supabase.functions.invoke(functionName, {
-      body: finalBody,
+    const config = getEnvConfig(env);
+    const serverConfig = getServerEnvConfig(env);
+    const fnUrl = `${config.url}/functions/v1/${functionName}`;
+    const fnRes = await fetch(fnUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${serverConfig.serviceKey}`,
+      },
+      body: JSON.stringify(finalBody),
     });
-    if (error) {
-      console.error(
-        `[/api/admin call-edge-function ${functionName}] error:`,
-        error,
-        "data:",
-        data,
-      );
-      let detail = error.message;
-      if (data && typeof data === "object") {
-        const d = data as Record<string, unknown>;
-        detail = (d.message as string) ?? (d.error as string) ?? detail;
-        if (d.results) detail = JSON.stringify(d.results);
-      } else if (typeof data === "string") {
-        detail = data;
-      }
-      return NextResponse.json({ error: detail }, { status: 500 });
+
+    let fnData: unknown;
+    try {
+      fnData = await fnRes.json();
+    } catch {
+      fnData = null;
     }
-    if (data && typeof data === "object" && "success" in data && !(data as Record<string, unknown>).success) {
-      const d = data as Record<string, unknown>;
+
+    if (!fnRes.ok) {
+      const d = fnData as Record<string, unknown> | null;
+      const detail = d?.message ?? d?.error ?? `Edge function returned ${fnRes.status}`;
+      console.error(`[/api/admin call-edge-function ${functionName}] ${fnRes.status}:`, d);
+      return NextResponse.json({ error: detail }, { status: fnRes.status });
+    }
+
+    if (fnData && typeof fnData === "object" && "success" in fnData && !(fnData as Record<string, unknown>).success) {
+      const d = fnData as Record<string, unknown>;
       let msg = (d.message as string) ?? "Edge function returned an error";
       if (d.results) msg += " — " + JSON.stringify(d.results);
       return NextResponse.json({ error: msg }, { status: 422 });
     }
-    return NextResponse.json({ data });
+    return NextResponse.json({ data: fnData });
   }
 
   if (payload.op === "fetch-landlord-review-queue") {
