@@ -284,16 +284,23 @@ export async function POST(req: NextRequest) {
       console.error(
         `[/api/admin call-edge-function ${functionName}] error:`,
         error,
+        "data:",
+        data,
       );
-      const detail = (data as Record<string, unknown>)?.message
-        ?? (data as Record<string, unknown>)?.error
-        ?? error.message;
+      let detail = error.message;
+      if (data && typeof data === "object") {
+        const d = data as Record<string, unknown>;
+        detail = (d.message as string) ?? (d.error as string) ?? detail;
+        if (d.results) detail = JSON.stringify(d.results);
+      } else if (typeof data === "string") {
+        detail = data;
+      }
       return NextResponse.json({ error: detail }, { status: 500 });
     }
     if (data && typeof data === "object" && "success" in data && !(data as Record<string, unknown>).success) {
-      const msg = (data as Record<string, unknown>).message
-        ?? (data as Record<string, unknown>).results
-        ?? "Edge function returned an error";
+      const d = data as Record<string, unknown>;
+      let msg = (d.message as string) ?? "Edge function returned an error";
+      if (d.results) msg += " — " + JSON.stringify(d.results);
       return NextResponse.json({ error: msg }, { status: 422 });
     }
     return NextResponse.json({ data });
