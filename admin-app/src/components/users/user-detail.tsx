@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo, useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { UserAvatar } from "@/components/ui/user-avatar";
 import { Badge } from "@/components/ui/badge";
@@ -9,7 +9,7 @@ import { Progress } from "@/components/ui/progress";
 import { Input } from "@/components/ui/input";
 import { formatCurrency, formatCurrencyShort, formatDate, formatDateTime, maskPhone, formatRelativeTime, formatTAT, tatColor } from "@/lib/utils";
 import { computeDecision } from "@/lib/decision";
-import { callEdgeFunction, updateExtraction, updateUser, updateTenancy } from "@/lib/supabase";
+import { callEdgeFunction, fetchView, updateExtraction, updateUser, updateTenancy } from "@/lib/supabase";
 import { usePayments } from "@/hooks/usePayments";
 import type { UserFunnel } from "@/types/user";
 import { VerdictCard } from "./verdict-card";
@@ -26,8 +26,15 @@ function statusBadgeColor(status: string) {
     case "approved":
     case "agreement_confirmed": return "border-success/60 text-success";
     case "waitlisted": return "border-warning text-warning";
+    case "not_eligible": return "border-destructive text-destructive";
     default: return "border-muted-foreground/30 text-muted-foreground";
   }
+}
+
+function displayStatus(userStatus: string, adminReview: string | null): string {
+  if (adminReview === "rejected" || userStatus === "not_eligible") return "REJECTED";
+  if (adminReview === "approved" && userStatus === "approved") return "APPROVED";
+  return userStatus?.toUpperCase() || "—";
 }
 
 export function UserDetail({ user }: { user: UserFunnel }) {
@@ -198,6 +205,22 @@ export function UserDetail({ user }: { user: UserFunnel }) {
     }
   }
 
+  const [rejectionReasons, setRejectionReasons] = useState<string[]>([]);
+
+  useEffect(() => {
+    if (user.admin_review === "rejected" || user.user_status === "not_eligible") {
+      fetchView<{ rejection_reasons: string[] | null }>("waitlist_entries", {
+        filters: [{ column: "user_id", operator: "eq", value: user.user_id }],
+        select: "rejection_reasons",
+        limit: 1,
+      }).then((rows) => {
+        setRejectionReasons(rows[0]?.rejection_reasons ?? []);
+      }).catch(() => {});
+    } else {
+      setRejectionReasons([]);
+    }
+  }, [user.user_id, user.admin_review, user.user_status]);
+
   const { payments } = usePayments();
   const userPayments = useMemo(() => {
     const phone = (user.phone || "").replace(/\D/g, "").slice(-10);
@@ -296,7 +319,7 @@ export function UserDetail({ user }: { user: UserFunnel }) {
             </button>
           )}
           <Badge variant="outline" className={`rounded-xl px-4 py-1.5 font-mono text-[12px] font-semibold ${statusBadgeColor(user.user_status)}`}>
-            {user.user_status?.toUpperCase() || DASH}
+            {displayStatus(user.user_status, user.admin_review)}
           </Badge>
         </div>
         {profileResult && (
@@ -308,6 +331,19 @@ export function UserDetail({ user }: { user: UserFunnel }) {
         {/* Verdict card — 5-second decision strip */}
         <VerdictCard user={user} decision={decision} blockers={blockers} warnings={warnings}
           onApprove={() => setShowPreflight(true)} onReject={() => setShowRejectDialog(true)} />
+
+        {rejectionReasons.length > 0 && (
+          <div className="rounded-xl border border-destructive/30 bg-destructive/5 p-4">
+            <span className="font-mono text-[9px] uppercase tracking-[1.5px] text-destructive/60 mb-2 block">Rejection Reasons</span>
+            <div className="flex flex-wrap gap-2">
+              {rejectionReasons.map((reason, i) => (
+                <span key={i} className="rounded-lg border border-destructive/20 bg-destructive/10 px-3 py-1 font-mono text-[11px] text-destructive">
+                  {reason}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
 
         {approvalResult && (
           <div className={`rounded-xl border px-4 py-2 font-mono text-[11px] ${approvalResult.success ? "border-success/30 bg-success/5 text-success" : "border-destructive/30 bg-destructive/5 text-destructive"}`}>
