@@ -11,6 +11,7 @@ import {
   ShieldAlert,
   FileWarning,
 } from "lucide-react";
+import { confidencePercent } from "@/lib/utils";
 import type { UserFunnel } from "@/types/user";
 
 interface PreflightCheck {
@@ -27,7 +28,10 @@ function runPreflightChecks(user: UserFunnel): PreflightCheck[] {
   // 1. Extraction completed
   function extractionDetail(): string {
     if (user.extraction_status === "completed") {
-      return `Completed with ${user.extraction_confidence ?? 0}% confidence`;
+      const pct = confidencePercent(user.extraction_confidence);
+      return pct == null
+        ? "Completed (confidence not recorded)"
+        : `Completed with ${pct}% confidence`;
     }
     if (user.extraction_status === "extraction_failed") {
       return "Extraction failed — parser returned no fields. User must re-upload the agreement before approval.";
@@ -249,6 +253,25 @@ function runPreflightChecks(user: UserFunnel): PreflightCheck[] {
     blocking: false,
   });
 
+  // 9d. Tenancy bank verified — BLOCKING.
+  // Mirrors the hard gate in supabase/functions/admin-waitlist/index.ts (the
+  // "no force override" bank prerequisite). Without this check the panel shows
+  // all-clear and the approve call then fails with a 422 the admin can't act
+  // on. Note this is tenancies.bank_verified — distinct from the landlord bank
+  // penny-drop above, which really is informational.
+  const tenancyBankOk = !!user.tenancy_id && user.bank_verified === true;
+  checks.push({
+    id: "tenancy_bank",
+    label: "Tenancy bank verified",
+    status: tenancyBankOk ? "pass" : "fail",
+    detail: tenancyBankOk
+      ? "Tenancy exists with verified bank"
+      : !user.tenancy_id
+        ? "No tenancy yet — user hasn't completed bank verification"
+        : "Tenancy exists but bank is not verified",
+    blocking: true,
+  });
+
   // 10. Existing tenancy check
   if (user.tenancy_id) {
     checks.push({
@@ -274,12 +297,13 @@ function runPreflightChecks(user: UserFunnel): PreflightCheck[] {
   }
 
   // 12. Confidence score threshold
-  if (user.extraction_confidence != null) {
+  const confidencePct = confidencePercent(user.extraction_confidence);
+  if (confidencePct != null) {
     checks.push({
       id: "confidence",
       label: "Extraction confidence",
-      status: user.extraction_confidence >= 70 ? "pass" : user.extraction_confidence >= 50 ? "warn" : "fail",
-      detail: `${user.extraction_confidence}% — ${user.extraction_confidence >= 70 ? "above" : "below"} threshold (70%)`,
+      status: confidencePct >= 70 ? "pass" : confidencePct >= 50 ? "warn" : "fail",
+      detail: `${confidencePct}% — ${confidencePct >= 70 ? "above" : "below"} threshold (70%)`,
       blocking: false,
     });
   }

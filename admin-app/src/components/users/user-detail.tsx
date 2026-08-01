@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Input } from "@/components/ui/input";
-import { formatCurrency, formatCurrencyShort, formatDate, formatDateTime, maskPhone, formatRelativeTime, formatTAT, tatColor } from "@/lib/utils";
+import { confidencePercent, formatCurrency, formatCurrencyShort, formatDate, formatDateTime, maskPhone, formatRelativeTime, formatTAT, tatColor } from "@/lib/utils";
 import { computeDecision } from "@/lib/decision";
 import { callEdgeFunction, fetchView, updateExtraction, updateUser, updateTenancy } from "@/lib/supabase";
 import { usePayments } from "@/hooks/usePayments";
@@ -243,6 +243,11 @@ export function UserDetail({ user }: { user: UserFunnel }) {
       await callEdgeFunction("admin-waitlist", { action: "approve", user_ids: [user.user_id] });
       setApprovalResult({ success: true, message: "User approved successfully" });
       setShowPreflight(false);
+      // Refetch so the status badge, verdict card and list row reflect the new
+      // state immediately. Without this the row keeps rendering the stale
+      // cached user and only updates on a manual page refresh. The batch
+      // actions on the list already do this (users/page.tsx handleBatchAction).
+      invalidateAll();
     } catch (err) {
       setApprovalResult({ success: false, message: err instanceof Error ? err.message : "Approval failed" });
     } finally {
@@ -370,12 +375,12 @@ export function UserDetail({ user }: { user: UserFunnel }) {
               }`}>
                 {user.extraction_status?.toUpperCase() || "PENDING"}
               </span>
-              {user.extraction_confidence != null && (
+              {confidencePercent(user.extraction_confidence) != null && (
                 <div className="flex items-center gap-2">
-                  <Progress value={user.extraction_confidence} className="h-1.5 w-[80px]" />
+                  <Progress value={confidencePercent(user.extraction_confidence)!} className="h-1.5 w-[80px]" />
                   <span className={`font-mono text-[11px] font-bold ${
-                    user.extraction_confidence >= 70 ? "text-success" : user.extraction_confidence >= 40 ? "text-warning" : "text-destructive"
-                  }`}>{user.extraction_confidence}%</span>
+                    confidencePercent(user.extraction_confidence)! >= 70 ? "text-success" : confidencePercent(user.extraction_confidence)! >= 40 ? "text-warning" : "text-destructive"
+                  }`}>{confidencePercent(user.extraction_confidence)}%</span>
                 </div>
               )}
               {editingAgreement ? (
@@ -872,7 +877,10 @@ export function UserDetail({ user }: { user: UserFunnel }) {
         onOpenChange={setShowRejectDialog}
         userIds={[user.user_id]}
         userName={user.name || undefined}
-        onSuccess={() => setApprovalResult({ success: true, message: "User rejected successfully" })}
+        onSuccess={() => {
+          setApprovalResult({ success: true, message: "User rejected successfully" });
+          invalidateAll();
+        }}
         onError={(error) => setApprovalResult({ success: false, message: error })}
       />
     </div>

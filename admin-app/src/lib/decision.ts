@@ -1,3 +1,4 @@
+import { confidencePercent } from "@/lib/utils";
 import type { UserFunnel } from "@/types/user";
 
 export type DecisionState = "READY" | "NEEDS_REVIEW" | "BLOCKED";
@@ -53,8 +54,9 @@ export function computeDecision(user: UserFunnel): DecisionResult {
   if (user.m360_status !== "SUCCESS")
     issues.push({ label: "M360 not verified", severity: "warning" });
 
-  if (user.extraction_confidence != null && user.extraction_confidence < 70)
-    issues.push({ label: `Low confidence (${user.extraction_confidence}%)`, severity: "warning" });
+  const decisionConfidencePct = confidencePercent(user.extraction_confidence);
+  if (decisionConfidencePct != null && decisionConfidencePct < 70)
+    issues.push({ label: `Low confidence (${decisionConfidencePct}%)`, severity: "warning" });
 
   if (user.bank_verified !== true)
     issues.push({ label: "Tenant bank not verified", severity: "warning" });

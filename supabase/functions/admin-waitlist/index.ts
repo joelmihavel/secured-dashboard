@@ -342,7 +342,15 @@ serve(async (req: Request) => {
         user_ids: body.user_ids,
       });
 
-      // Send push notifications to approved users
+      // Send push notifications to approved users.
+      //
+      // Everything below is a post-commit side effect: the waitlist row,
+      // users.user_status and the tenancy activation above have already been
+      // written. A throw here used to propagate to handleError and return a
+      // 500, so the admin saw "approval failed" for an approval that had in
+      // fact fully applied — and retrying just re-ran the same writes. Side
+      // effects must never decide the outcome of the request.
+      try {
       if (approvedIds.size > 0) {
         const supabaseUrl = getSupabaseUrl();
         const serviceKey = (Deno.env.get("SB_SECRET_KEY") || Deno.env.get("SUPABASE_SERVICE_ROLE_KEY"))!;
@@ -390,6 +398,16 @@ serve(async (req: Request) => {
               console.warn(`[admin-waitlist] check_and_advance_to_active failed for ${uid}:`, e);
             }
           })
+        );
+      }
+      } catch (sideEffectError) {
+        // Approval itself already succeeded — log loudly and still return 200
+        // so the admin gets an accurate result. Surfacing the real error here
+        // also replaces the masked `TypeError` that handleError was reporting.
+        console.error(
+          "[admin-waitlist] post-approval side effects failed (non-fatal) —",
+          "approval WAS applied for:", Array.from(approvedIds),
+          sideEffectError,
         );
       }
 

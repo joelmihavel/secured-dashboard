@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { RiskRadarChart } from "./risk-radar-chart";
 import { DecisionRadar } from "./decision-radar";
 import { decisionBadgeStyle } from "@/lib/decision";
-import { formatCurrency, formatDate, formatTAT, tatColor } from "@/lib/utils";
+import { confidencePercent, formatCurrency, formatDate, formatTAT, tatColor } from "@/lib/utils";
 import type { DecisionResult, Issue } from "@/lib/decision";
 import type { UserFunnel } from "@/types/user";
 
@@ -58,10 +58,10 @@ function buildTiles(user: UserFunnel): SignalTile[] {
     {
       label: "Agreement",
       value: user.extraction_status === "completed"
-        ? `${user.extraction_confidence != null ? `${user.extraction_confidence}%` : "Done"}`
+        ? `${confidencePercent(user.extraction_confidence) != null ? `${confidencePercent(user.extraction_confidence)}%` : "Done"}`
         : user.extraction_status || "—",
       signal: user.extraction_status === "completed"
-        ? (user.extraction_confidence != null && user.extraction_confidence < 70 ? "warn" : "pass")
+        ? ((confidencePercent(user.extraction_confidence) ?? 100) < 70 ? "warn" : "pass")
         : user.extraction_status ? "fail" : "missing",
     },
     {

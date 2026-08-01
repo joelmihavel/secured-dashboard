@@ -120,3 +120,22 @@ export function tatColor(date: string | null | undefined): string {
   if (diffDay <= 7) return "text-warning";
   return "text-destructive";
 }
+
+/**
+ * Normalise `extracted_rental_info.extraction_confidence` to a 0..100 percent.
+ *
+ * The column is DECIMAL(5,4) — it stores a 0..1 fraction (0.9500 = 95%), and
+ * the DB rejects anything >= 10. Every consumer in this app previously read it
+ * as if it were already a percent, which made a 95% extraction render as
+ * "0.95%" and fall below every `>= 70` threshold, so good extractions showed
+ * as failing. Route all reads through this helper.
+ *
+ * Values > 1 are treated as already-percent so any legacy 0..100 rows (or a
+ * future column change) degrade gracefully instead of reporting 9500%.
+ */
+export function confidencePercent(
+  confidence: number | null | undefined,
+): number | null {
+  if (confidence == null) return null;
+  return Math.round(confidence > 1 ? confidence : confidence * 100);
+}

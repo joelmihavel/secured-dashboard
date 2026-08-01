@@ -1,0 +1,16 @@
+# Keep local secrets out of the uploaded deployment source.
+#
+# admin-app/.gitignore only covers tsconfig.tsbuildinfo and .vercel — the
+# .env rules live in the repo-root .gitignore, which the Vercel CLI does not
+# consult when admin-app/ is the deployment root. Without this file a
+# `vercel deploy` from here uploads .env.local (production service-role key,
+# ADMIN_KEY, BYPASS_AUTH) into the build, where Next.js would also load it in
+# preference to the environment variables configured on the project.
+.env
+.env.local
+.env.*
+!.env.local.example
+
+node_modules
+.next
+tsconfig.tsbuildinfo
