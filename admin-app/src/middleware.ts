@@ -34,6 +34,13 @@ function clearSupabaseCookies(req: NextRequest, res: NextResponse) {
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
+  // OAuth callback runs BEFORE a session exists — it exchanges the code for
+  // one. Gating it would bounce the user to /login and break the flow. Let it
+  // through; the callback redirects to /overview, where the gate revalidates.
+  if (pathname === "/auth/callback") {
+    return NextResponse.next({ request: req });
+  }
+
   if (process.env.BYPASS_AUTH === "true") {
     if (pathname === "/login") {
       const url = req.nextUrl.clone();
